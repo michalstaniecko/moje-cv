@@ -1,0 +1,26 @@
+# Konfiguracja pakowania aplikacji (electron-builder). Budowanie: `pnpm dist:mac`.
+# Cele Windows/Linux można dopisać obok `mac` – reszta konfiguracji jest wspólna.
+appId: com.michalstaniecko.mojecv
+artifactName: Moje-CV-${version}.${ext}
+directories:
+  output: dist
+# Do aplikacji trafia tylko zbudowany kod z `out/` (plus zależności produkcyjne dołączane automatycznie).
+files:
+  - out/**/*
+  - package.json
+# Bez auto-update.
+publish: null
+mac:
+  category: public.app-category.productivity
+  # Podpis ad-hoc („-”), nie Developer ID: bez niego macOS na Apple Silicon uznaje pobraną aplikację za „uszkodzoną”
+  # i nie pozwala jej otworzyć. Z nim działa zwykłe „Otwórz mimo to” (patrz docs/instalacja.md).
+  identity: '-'
+  # Hardened runtime potrzebny jest tylko do notaryzacji; przy podpisie ad-hoc blokowałby ładowanie frameworków Electrona.
+  hardenedRuntime: false
+  target:
+    - target: dmg
+      arch: universal
+dmg:
+  title: Moje CV ${version}
+  # Plik .blockmap służy tylko do auto-update.
+  writeUpdateInfo: false

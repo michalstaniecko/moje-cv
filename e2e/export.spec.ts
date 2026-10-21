@@ -7,9 +7,15 @@ let app: ElectronApplication
 let window: Page
 let outputDir: string
 
+// Ścieżka do pliku wykonywalnego zbudowanej aplikacji (np. z `pnpm test:e2e:packaged`); bez niej testy uruchamiają kod z `out/`.
+const packagedExecutable = process.env['MOJE_CV_APP']
+
 // Uruchamia aplikację na tymczasowym katalogu danych testu, żeby nie dotykać danych użytkownika.
 async function launch() {
-  app = await electron.launch({ args: ['.', `--user-data-dir=${join(outputDir, 'user-data')}`] })
+  const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
+  app = await electron.launch(
+    packagedExecutable ? { executablePath: packagedExecutable, args: [userDataDir] } : { args: ['.', userDataDir] }
+  )
   window = await app.firstWindow()
 }
 
@@ -49,6 +55,12 @@ async function stubOpenDialog(filePath: string | null) {
     dialog.showOpenDialog = stub as typeof dialog.showOpenDialog
   }, filePath)
 }
+
+test('the packaged app identifies itself as „Moje CV” (which names its application data folder)', async () => {
+  test.skip(!packagedExecutable, 'dotyczy tylko zbudowanej aplikacji')
+  const identity = await app.evaluate(({ app }) => ({ name: app.getName(), isPackaged: app.isPackaged }))
+  expect(identity).toEqual({ name: 'Moje CV', isPackaged: true })
+})
 
 test('on first run opens the sample CV, edits it and exports it to a PDF identical to the preview; the edit survives a restart', async () => {
   const pdfPath = join(outputDir, 'export.pdf')
