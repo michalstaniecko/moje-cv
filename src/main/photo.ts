@@ -2,6 +2,7 @@ import { readFile, stat } from 'node:fs/promises'
 import { extname } from 'node:path'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import type { PickPhotoResult } from '../shared/api'
+import type { InterfaceLanguageState } from './interfaceLanguage'
 
 // Formaty, które Chromium potrafi zdekodować (HEIC nie jest obsługiwany, więc nie ma go w oknie wyboru).
 const PHOTO_TYPES: Record<string, string> = {
@@ -14,13 +15,14 @@ const PHOTO_TYPES: Record<string, string> = {
 const MAX_PHOTO_FILE_BYTES = 30 * 1024 * 1024
 
 // Wybór zdjęcia z dysku w systemowym oknie. Renderer dostaje oryginał jako data URL i sam go kadruje.
-export function registerPhotoPicker(): void {
+export function registerPhotoPicker(language: InterfaceLanguageState): void {
   ipcMain.handle('photo:pick', async (event): Promise<PickPhotoResult> => {
     const owner = BrowserWindow.fromWebContents(event.sender)
+    const { dialogs } = language.dictionary()
     const options: Electron.OpenDialogOptions = {
-      title: 'Wybierz zdjęcie',
+      title: dialogs.choosePhoto,
       properties: ['openFile'],
-      filters: [{ name: 'Obrazy', extensions: Object.keys(PHOTO_TYPES) }]
+      filters: [{ name: dialogs.imagesFilter, extensions: Object.keys(PHOTO_TYPES) }]
     }
     const { canceled, filePaths } = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     const [filePath] = filePaths

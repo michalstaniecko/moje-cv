@@ -21,6 +21,16 @@ export const en = {
     // Dwujęzyczne, żeby dało się wrócić po wybraniu języka, którego się nie czyta.
     language: 'Language / Język',
     systemLanguage: 'System'
+  },
+  // Tytuły i filtry systemowych okien plików (przyciski w nich są w języku systemu).
+  dialogs: {
+    exportPdf: 'Export to PDF',
+    pdfFilter: 'PDF',
+    choosePhoto: 'Choose Photo',
+    imagesFilter: 'Images',
+    exportCv: 'Export CV to File',
+    importCv: 'Import CV from File',
+    cvFilter: 'CV (JSON)'
   }
 }
 

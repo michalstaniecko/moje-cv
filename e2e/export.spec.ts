@@ -179,6 +179,46 @@ test('Language / Język switches the menu and the window immediately, the choice
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
 })
 
+test('native file dialogs get their titles and file-type filters in the interface language', async () => {
+  const dialogTexts = async () => {
+    const options = await app.evaluate(() => {
+      const calls = globalThis as { saveDialogCalls?: Electron.SaveDialogOptions[]; openDialogCalls?: Electron.OpenDialogOptions[] }
+      return [...(calls.saveDialogCalls ?? []), ...(calls.openDialogCalls ?? [])]
+    })
+    return options.map(({ title, filters }) => ({ title, filters: filters?.map((filter) => filter.name) }))
+  }
+
+  for (const language of ['en', 'pl'] satisfies InterfaceLanguage[]) {
+    await app.close()
+    await launch({ language })
+    await stubSaveDialog(join(outputDir, `${language}.out`))
+    await stubOpenDialog(null)
+    await window.getByRole('button', { name: 'Importuj z pliku' }).click()
+    await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Eksportuj do pliku' }).click()
+    await expect(window.getByRole('status')).toBeVisible()
+    await openFirstCv()
+    await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
+    await expect(window.getByText('Zapisano PDF')).toBeVisible()
+    await window.getByRole('group', { name: 'Zdjęcie' }).getByRole('button', { name: 'Zmień zdjęcie' }).click()
+
+    expect(await dialogTexts()).toEqual(
+      language === 'en'
+        ? [
+            { title: 'Export CV to File', filters: ['CV (JSON)'] },
+            { title: 'Export to PDF', filters: ['PDF'] },
+            { title: 'Import CV from File', filters: ['CV (JSON)'] },
+            { title: 'Choose Photo', filters: ['Images'] }
+          ]
+        : [
+            { title: 'Eksportuj CV do pliku', filters: ['CV (JSON)'] },
+            { title: 'Eksportuj do PDF', filters: ['PDF'] },
+            { title: 'Importuj CV z pliku', filters: ['CV (JSON)'] },
+            { title: 'Wybierz zdjęcie', filters: ['Obrazy'] }
+          ]
+    )
+  }
+})
+
 test('the packaged app identifies itself as „Moje CV” (which names its application data folder)', async () => {
   test.skip(!packagedExecutable, 'dotyczy tylko zbudowanej aplikacji')
   const identity = await app.evaluate(({ app }) => ({ name: app.getName(), isPackaged: app.isPackaged }))

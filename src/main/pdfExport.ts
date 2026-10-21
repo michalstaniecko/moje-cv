@@ -4,6 +4,7 @@ import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent } f
 import { PDFDocument } from 'pdf-lib'
 import { cvDocumentSchema, type CvDocument } from '../renderer/src/domain/schema'
 import type { ExportPdfResult } from '../shared/api'
+import type { InterfaceLanguageState } from './interfaceLanguage'
 import { loadRenderer, secureWebPreferences } from './windows'
 
 const PRINT_READY_TIMEOUT_MS = 30_000
@@ -24,16 +25,17 @@ export function pdfFileName(fullName: string): string {
   return ['CV', ...parts].join('_') + '.pdf'
 }
 
-export function registerPdfExport(): void {
+export function registerPdfExport(language: InterfaceLanguageState): void {
   ipcMain.handle('pdf:export', async (event, input: unknown): Promise<ExportPdfResult> => {
     const document = cvDocumentSchema.parse(input)
     const pdf = await withMetadata(await renderPdf(document), document.header.fullName)
 
     const owner = BrowserWindow.fromWebContents(event.sender)
+    const { dialogs } = language.dictionary()
     const options = {
-      title: 'Eksportuj do PDF',
+      title: dialogs.exportPdf,
       defaultPath: join(app.getPath('documents'), pdfFileName(document.header.fullName)),
-      filters: [{ name: 'PDF', extensions: ['pdf'] }]
+      filters: [{ name: dialogs.pdfFilter, extensions: ['pdf'] }]
     }
     const { canceled, filePath } = owner
       ? await dialog.showSaveDialog(owner, options)

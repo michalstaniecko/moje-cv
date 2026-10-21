@@ -21,5 +21,14 @@ export const pl: Dictionary = {
     closeWindow: 'Zamknij okno',
     language: 'Language / Język',
     systemLanguage: 'System'
+  },
+  dialogs: {
+    exportPdf: 'Eksportuj do PDF',
+    pdfFilter: 'PDF',
+    choosePhoto: 'Wybierz zdjęcie',
+    imagesFilter: 'Obrazy',
+    exportCv: 'Eksportuj CV do pliku',
+    importCv: 'Importuj CV z pliku',
+    cvFilter: 'CV (JSON)'
   }
 }

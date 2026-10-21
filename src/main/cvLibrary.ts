@@ -4,12 +4,12 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { cvDocumentSchema } from '../renderer/src/domain/schema'
 import type { ExportCvFileResult, ImportCvFileResult } from '../shared/api'
 import { InvalidCvFileError, type CvRepository } from './cvRepository'
+import type { InterfaceLanguageState } from './interfaceLanguage'
 import { requireString } from './ipcArgs'
 import type { SettingsRepository } from './settingsRepository'
 
 // CV ze zdjęciem to kilkaset kB – limit chroni przed wczytaniem ogromnego pliku wybranego przez pomyłkę.
 const MAX_IMPORT_FILE_BYTES = 20 * 1024 * 1024
-const JSON_FILTERS = [{ name: 'CV (JSON)', extensions: ['json'] }]
 
 // „CV – Talent Partners” → „CV – Talent Partners.json” (bez znaków niedozwolonych w nazwach plików).
 export function cvFileName(name: string): string {
@@ -18,7 +18,13 @@ export function cvFileName(name: string): string {
 }
 
 // Operacje biblioteki CV dostępne dla renderera. Argumenty z IPC są weryfikowane przed użyciem.
-export function registerCvLibrary(repository: CvRepository, settings: SettingsRepository): void {
+export function registerCvLibrary(
+  repository: CvRepository,
+  settings: SettingsRepository,
+  language: InterfaceLanguageState
+): void {
+  const jsonFilters = () => [{ name: language.dictionary().dialogs.cvFilter, extensions: ['json'] }]
+
   // Autozapis wysłany przy zamykaniu okna musi trafić na dysk, zanim aplikacja się zakończy.
   const pendingUpdates = new Set<Promise<void>>()
   app.on('will-quit', (event) => {
@@ -44,9 +50,9 @@ export function registerCvLibrary(repository: CvRepository, settings: SettingsRe
     const { name, content } = await repository.exportJson(requireString(id))
     const owner = BrowserWindow.fromWebContents(event.sender)
     const options: Electron.SaveDialogOptions = {
-      title: 'Eksportuj CV do pliku',
+      title: language.dictionary().dialogs.exportCv,
       defaultPath: join(app.getPath('documents'), cvFileName(name)),
-      filters: JSON_FILTERS
+      filters: jsonFilters()
     }
     const { canceled, filePath } = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)
     if (canceled || !filePath) return { status: 'canceled' }
@@ -56,7 +62,11 @@ export function registerCvLibrary(repository: CvRepository, settings: SettingsRe
 
   ipcMain.handle('cv:import-file', async (event): Promise<ImportCvFileResult> => {
     const owner = BrowserWindow.fromWebContents(event.sender)
-    const options: Electron.OpenDialogOptions = { title: 'Importuj CV z pliku', properties: ['openFile'], filters: JSON_FILTERS }
+    const options: Electron.OpenDialogOptions = {
+      title: language.dictionary().dialogs.importCv,
+      properties: ['openFile'],
+      filters: jsonFilters()
+    }
     const { canceled, filePaths } = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     const [filePath] = filePaths
     if (canceled || !filePath) return { status: 'canceled' }
