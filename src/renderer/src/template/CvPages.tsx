@@ -101,9 +101,11 @@ export function CvPages({ document, onReady }: { document: CvDocument; onReady?:
       {layout?.pages.map((ids, index) => (
         <section key={index} className="cv-page">
           <div className="cv-page-content">
-            {ids.map((id) => (
-              <CvBlockView key={id} block={blocksById.get(id)!} />
-            ))}
+            {/* Do czasu ponownego podziału układ może jeszcze wskazywać bloki właśnie usunięte z dokumentu. */}
+            {ids.flatMap((id) => {
+              const block = blocksById.get(id)
+              return block ? [<CvBlockView key={id} block={block} />] : []
+            })}
             {consentText !== null && index === layout.pages.length - 1 && (
               <p className="cv-consent">{consentText}</p>
             )}

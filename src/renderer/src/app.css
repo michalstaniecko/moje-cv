@@ -230,3 +230,52 @@ body {
   align-self: stretch;
   margin-bottom: 0;
 }
+
+.form-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.form .form-section-title-input {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Ukryta sekcja zostaje w formularzu, wyszarzona – nie ma jej w podglądzie i PDF. */
+.form-section--hidden > :not(.form-section-header):not(.form-row) {
+  opacity: 0.5;
+}
+
+.form-row--spread {
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0 0;
+}
+
+.form-row--spread .form-checkbox {
+  padding-top: 0;
+}
+
+.form-section > .form-row .form-checkbox {
+  padding-top: 0;
+}
+
+.order-controls {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.order-controls button {
+  min-width: 24px;
+  padding: 1px 4px;
+}
+
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+}
