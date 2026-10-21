@@ -1,14 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react'
+import type { Dictionary } from '../../../shared/i18n/en'
 import type { CvDocument } from '../domain/schema'
+import { useDictionary } from '../i18n'
 import type { CvEditor } from './cvEditor'
 import { updateHeader } from './documentEdits'
 import { clampView, cropRect, initialView, MAX_ZOOM, outputSize, PHOTO_ASPECT, type CropView } from './photoCrop'
 
-const PICK_ERRORS = {
-  unsupported: 'Nie udało się wczytać zdjęcia – wybierz plik JPEG, PNG lub WebP.',
-  'too-large': 'Nie udało się wczytać zdjęcia – plik jest za duży (maks. 30 MB).',
-  undecodable: 'Nie udało się wczytać zdjęcia – plik jest uszkodzony, niedostępny albo ma nieobsługiwany format.'
-}
+type PickError = keyof Dictionary['editor']['photo']['errors']
 const JPEG_QUALITY = 0.9
 const FRAME_WIDTH_PX = 240
 const FRAME_HEIGHT_PX = FRAME_WIDTH_PX / PHOTO_ASPECT
@@ -16,7 +14,8 @@ const FRAME_HEIGHT_PX = FRAME_WIDTH_PX / PHOTO_ASPECT
 // Zdjęcie w nagłówku: wybór z dysku, kadrowanie przed zapisem i usunięcie (nagłówek bez kolumny na zdjęcie).
 export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocument['header']['photo'] }) {
   const [source, setSource] = useState<HTMLImageElement | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<PickError | null>(null)
+  const t = useDictionary().editor.photo
 
   async function pick() {
     setError(null)
@@ -24,7 +23,7 @@ export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocum
       const result = await window.api.photo.pick()
       if (result.status === 'canceled') return
       if (result.status !== 'picked') {
-        setError(PICK_ERRORS[result.status])
+        setError(result.status)
         return
       }
       const image = new Image()
@@ -33,27 +32,27 @@ export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocum
       setSource(image)
     } catch {
       // Plik nie dał się odczytać z dysku albo zdekodować jako obraz.
-      setError(PICK_ERRORS.undecodable)
+      setError('undecodable')
     }
   }
 
   return (
     <fieldset className="form-group">
-      <legend>Zdjęcie</legend>
+      <legend>{t.legend}</legend>
       <div className="form-row photo-field">
-        {photo && <img className="photo-thumbnail" src={photo.dataUrl} alt="Zdjęcie w CV" />}
+        {photo && <img className="photo-thumbnail" src={photo.dataUrl} alt={t.thumbnail} />}
         <button type="button" onClick={() => void pick()}>
-          {photo ? 'Zmień zdjęcie' : 'Wybierz zdjęcie'}
+          {photo ? t.change : t.choose}
         </button>
         {photo && (
           <button type="button" onClick={() => editor.edit(updateHeader({ photo: null }))}>
-            Usuń zdjęcie
+            {t.remove}
           </button>
         )}
       </div>
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {t.errors[error]}
         </p>
       )}
       {source && (
@@ -87,6 +86,8 @@ function PhotoCropper({
   const canvas = useRef<HTMLCanvasElement>(null)
   const drag = useRef<{ x: number; y: number } | null>(null)
   const rect = cropRect(image, view)
+  const { common, editor } = useDictionary()
+  const t = editor.photo
 
   useEffect(() => {
     dialog.current?.showModal()
@@ -130,19 +131,19 @@ function PhotoCropper({
     <dialog
       ref={dialog}
       className="photo-cropper"
-      aria-label="Kadrowanie zdjęcia"
+      aria-label={t.crop}
       onCancel={(event) => {
         event.preventDefault()
         onCancel()
       }}
     >
-      <h2 className="form-section-title">Kadrowanie zdjęcia</h2>
-      <p className="library-hint">Przeciągnij zdjęcie, żeby ustawić kadr.</p>
+      <h2 className="form-section-title">{t.crop}</h2>
+      <p className="library-hint">{t.cropHint}</p>
       <canvas
         ref={canvas}
         className="photo-cropper-frame"
         role="img"
-        aria-label="Podgląd kadru"
+        aria-label={t.cropPreview}
         style={{ width: FRAME_WIDTH_PX, height: FRAME_HEIGHT_PX }}
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId)
@@ -153,7 +154,7 @@ function PhotoCropper({
         onPointerCancel={() => (drag.current = null)}
       />
       <label className="form-field">
-        <span>Powiększenie</span>
+        <span>{t.zoom}</span>
         <input
           type="range"
           min={1}
@@ -165,10 +166,10 @@ function PhotoCropper({
       </label>
       <div className="form-row form-row--spread">
         <button type="button" onClick={onCancel}>
-          Anuluj
+          {common.cancel}
         </button>
         <button type="button" onClick={apply}>
-          Zastosuj
+          {t.apply}
         </button>
       </div>
     </dialog>

@@ -10,6 +10,7 @@ import {
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { ReactNode } from 'react'
+import { useDictionary } from '../i18n'
 
 // Lista z ręczną kolejnością: przeciąganie za uchwyt (mysz lub klawiatura) i strzałki góra/dół.
 // `onMove(id, toIndex)` – element ma trafić na pozycję `toIndex`. `children` dostaje gotowe
@@ -21,11 +22,12 @@ export function SortableList<T extends { id: string }>({
   children
 }: {
   items: T[]
-  // Nazwa elementu w etykietach przycisków, np. „sekcję „Języki”” → „Przesuń sekcję „Języki” w górę”.
+  // Nazwa elementu w etykietach przycisków, np. „section “Languages”” → „Move section “Languages” up”.
   label: (item: T, index: number) => string
   onMove: (id: string, toIndex: number) => void
   children: (item: T, orderControls: ReactNode, index: number) => ReactNode
 }) {
+  const { order } = useDictionary().editor
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -48,7 +50,7 @@ export function SortableList<T extends { id: string }>({
                   {handle(label(item, index))}
                   <button
                     type="button"
-                    aria-label={`Przesuń ${label(item, index)} w górę`}
+                    aria-label={order.moveUp(label(item, index))}
                     disabled={index === 0}
                     onClick={() => onMove(item.id, index - 1)}
                   >
@@ -56,7 +58,7 @@ export function SortableList<T extends { id: string }>({
                   </button>
                   <button
                     type="button"
-                    aria-label={`Przesuń ${label(item, index)} w dół`}
+                    aria-label={order.moveDown(label(item, index))}
                     disabled={index === items.length - 1}
                     onClick={() => onMove(item.id, index + 1)}
                   >
@@ -75,6 +77,7 @@ export function SortableList<T extends { id: string }>({
 
 function SortableRow({ id, children }: { id: string; children: (handle: (label: string) => ReactNode) => ReactNode }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const { order } = useDictionary().editor
   const style = {
     transform: CSS.Translate.toString(transform),
     transition,
@@ -92,7 +95,7 @@ function SortableRow({ id, children }: { id: string; children: (handle: (label: 
           className="drag-handle"
           {...attributes}
           {...listeners}
-          aria-label={`Przeciągnij ${label}, aby zmienić kolejność`}
+          aria-label={order.drag(label)}
         >
           ⠿
         </button>

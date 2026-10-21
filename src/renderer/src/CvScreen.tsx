@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useStore } from 'zustand'
 import type { Clause, ClauseContent, CvDocument } from './domain/schema'
-import { createCvEditor, type CvEditor, type SaveStatus } from './editor/cvEditor'
+import { createCvEditor, type CvEditor } from './editor/cvEditor'
 import { CvForm } from './editor/CvForm'
+import { useDictionary } from './i18n'
 import { PreviewPane } from './preview/PreviewPane'
 
 type ExportState =
@@ -11,13 +12,6 @@ type ExportState =
   | { status: 'saved'; filePath: string }
   | { status: 'failed' }
 
-const saveStatusText: Record<SaveStatus, string> = {
-  idle: '',
-  pending: 'Zapisywanie…',
-  saved: 'Zmiany zapisane',
-  failed: 'Nie udało się zapisać zmian'
-}
-
 // Otwarte CV: formularz edycji (lewo), podgląd stron (prawo) i eksport do PDF.
 export function CvScreen({ document: initial, onBack }: { document: CvDocument; onBack: () => void }) {
   const [editor] = useState(() => createCvEditor(initial, window.api.cv.update))
@@ -25,6 +19,7 @@ export function CvScreen({ document: initial, onBack }: { document: CvDocument; 
   const saveStatus = useStore(editor.store, (state) => state.saveStatus)
   const [exportState, setExportState] = useState<ExportState>({ status: 'idle' })
   const [clauses, saveClause] = useClauseLibrary()
+  const { appName, common, editor: t } = useDictionary()
   useEditorLifecycle(editor)
 
   const exportPdf = async () => {
@@ -47,32 +42,32 @@ export function CvScreen({ document: initial, onBack }: { document: CvDocument; 
     <div className="editor-screen">
       <header className="toolbar">
         <button type="button" onClick={back}>
-          ← Moje CV
+          {common.back(appName)}
         </button>
         <h1 className="toolbar-title">{document.name}</h1>
         <span
           className={saveStatus === 'failed' ? 'toolbar-status toolbar-status--error' : 'toolbar-status'}
           role="status"
         >
-          {saveStatusText[saveStatus]}
+          {t.saveStatus[saveStatus]}
         </span>
         <button type="button" onClick={exportPdf} disabled={exportState.status === 'exporting'}>
-          {exportState.status === 'exporting' ? 'Eksportowanie…' : 'Eksportuj do PDF'}
+          {exportState.status === 'exporting' ? t.exporting : t.exportPdf}
         </button>
         {exportState.status === 'saved' && (
           <p className="toolbar-notice" role="status">
-            Zapisano PDF: {baseName(exportState.filePath)}
+            {t.savedPdf(baseName(exportState.filePath))}
             <button type="button" onClick={() => window.api.pdf.open(exportState.filePath)}>
-              Otwórz
+              {t.openPdf}
             </button>
             <button type="button" onClick={() => window.api.pdf.showInFolder(exportState.filePath)}>
-              Pokaż w Finderze
+              {t.showInFolder}
             </button>
           </p>
         )}
         {exportState.status === 'failed' && (
           <p className="toolbar-notice toolbar-notice--error" role="alert">
-            Nie udało się zapisać PDF. Spróbuj ponownie.
+            {t.exportFailed}
           </p>
         )}
       </header>
@@ -136,4 +131,4 @@ function useEditorLifecycle(editor: CvEditor) {
   }, [editor])
 }
 
-const baseName = (filePath: string) => filePath.split(/[\\/]/).at(-1)
+const baseName = (filePath: string) => filePath.split(/[\\/]/).at(-1) ?? filePath

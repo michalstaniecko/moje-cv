@@ -193,13 +193,18 @@ test('native file dialogs get their titles and file-type filters in the interfac
     await launch({ language })
     await stubSaveDialog(join(outputDir, `${language}.out`))
     await stubOpenDialog(null)
-    await window.getByRole('button', { name: 'Importuj z pliku' }).click()
-    await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Eksportuj do pliku' }).click()
+    const ui = {
+      en: { importFile: 'Import from file', list: 'CV list', exportFile: 'Export to file', open: 'Open', exportPdf: 'Export to PDF', photo: 'Photo', changePhoto: 'Change photo' },
+      pl: { importFile: 'Importuj z pliku', list: 'Lista CV', exportFile: 'Eksportuj do pliku', open: 'Otwórz', exportPdf: 'Eksportuj do PDF', photo: 'Zdjęcie', changePhoto: 'Zmień zdjęcie' }
+    }[language]
+    await window.getByRole('button', { name: ui.importFile }).click()
+    const list = window.getByRole('list', { name: ui.list })
+    await list.getByRole('button', { name: ui.exportFile }).click()
     await expect(window.getByRole('status')).toBeVisible()
-    await openFirstCv()
-    await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
-    await expect(window.getByText('Zapisano PDF')).toBeVisible()
-    await window.getByRole('group', { name: 'Zdjęcie' }).getByRole('button', { name: 'Zmień zdjęcie' }).click()
+    await list.getByRole('button', { name: ui.open }).click()
+    await window.getByRole('button', { name: ui.exportPdf }).click()
+    await expect(window.getByRole('status').filter({ hasText: 'PDF:' })).toBeVisible()
+    await window.getByRole('group', { name: ui.photo, exact: true }).getByRole('button', { name: ui.changePhoto }).click()
 
     expect(await dialogTexts()).toEqual(
       language === 'en'
@@ -285,6 +290,120 @@ test('switching the language in the menu immediately translates the CV library a
   await clickMenuItem('Language / Język', 'English')
   await expect(window.getByRole('heading', { name: 'Consent clauses' })).toBeVisible()
   await expect(window.getByRole('button', { name: 'Add clause' })).toBeVisible()
+})
+
+test('the CV editor is in English, including the save status, photo cropping and the export actions', async () => {
+  await app.close()
+  await launch({ language: 'en' })
+  await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
+
+  // Formularz: wygląd, nagłówek, sekcje z kolejnością, wpisy i klauzula zgody.
+  for (const label of ['Accent color', 'Full name', 'Contact label 1', 'Contact value 1', 'Summary']) {
+    await expect(window.getByLabel(label)).toBeVisible()
+  }
+  await expect(window.getByLabel('Font')).toHaveValue('lato')
+  await expect(window.getByRole('button', { name: 'Remove contact 1' })).toBeVisible()
+  await expect(window.getByRole('button', { name: 'Add contact' })).toBeVisible()
+  await expect(window.getByRole('button', { name: /^Move section “.+” down$/ }).first()).toBeVisible()
+  await expect(window.getByRole('button', { name: /^Drag section “.+” to reorder$/ }).first()).toBeVisible()
+  await expect(window.getByLabel(/^Section title “.+”$/).first()).toBeVisible()
+  await expect(window.getByLabel('Hide section').first()).toBeVisible()
+  await expect(window.getByLabel('New page before this section').first()).toBeVisible()
+  const position = window.locator('.form fieldset').filter({ has: window.getByLabel('Job title') }).first()
+  for (const label of ['Job title', 'Company', 'City', 'From', 'To', 'present', 'Bullet 1', 'New page before this entry']) {
+    await expect(position.getByLabel(label, { exact: true })).toBeVisible()
+  }
+  for (const name of ['Remove bullet 1', 'Move bullet 2 up', 'Drag bullet 1 to reorder', 'Add bullet', 'Remove position']) {
+    await expect(position.getByRole('button', { name, exact: true })).toBeVisible()
+  }
+  await window.getByRole('button', { name: 'Add education' }).click()
+  for (const [label, placeholder] of [
+    ['Level', 'e.g. Master’s degree'],
+    ['Field of study', 'e.g. Logistics'],
+    ['School', 'e.g. University of Economics']
+  ] as const) {
+    await expect(window.getByLabel(label, { exact: true }).last()).toHaveAttribute('placeholder', placeholder)
+  }
+  await expect(window.getByRole('group', { name: 'New education' })).toBeVisible()
+  await expect(window.getByLabel('From (optional)').last()).toBeVisible()
+  await expect(window.getByLabel('Graduation date').last()).toBeVisible()
+  await expect(window.getByRole('button', { name: 'Add position' })).toBeVisible()
+  await expect(window.getByRole('button', { name: 'Add item' }).first()).toBeVisible()
+  await expect(window.getByLabel('Item 1', { exact: true }).first()).toBeVisible()
+  const consent = window.getByRole('region', { name: 'Consent clause' })
+  await consent.getByLabel('Show the clause at the bottom of the last page').check()
+  await expect(consent.getByLabel('Clause from the library')).toContainText('The library is empty')
+  await expect(consent.getByLabel('Text in this CV')).toBeVisible()
+  await consent.getByLabel('Text in this CV').fill('I agree.')
+  await consent.getByRole('button', { name: 'Save as new clause' }).click()
+  await expect(consent.getByLabel('New clause name')).toHaveAttribute('placeholder', 'Name, e.g. Talent Partners')
+  await consent.getByRole('button', { name: 'Cancel' }).click()
+  await expect(window.getByRole('status').filter({ hasText: 'Changes saved' })).toBeVisible()
+
+  // Zdjęcie: komunikat o pliku, którego nie da się wczytać, i okno kadrowania.
+  const photoField = window.getByRole('group', { name: 'Photo', exact: true })
+  const brokenPath = join(outputDir, 'broken.jpg')
+  await writeFile(brokenPath, 'not an image')
+  await stubOpenDialog(brokenPath)
+  await photoField.getByRole('button', { name: 'Change photo' }).click()
+  await expect(photoField.getByRole('alert')).toHaveText(
+    'Couldn’t load the photo – the file is damaged, unavailable or in an unsupported format.'
+  )
+  const photoPath = join(outputDir, 'photo.png')
+  const png = await app.evaluate(({ nativeImage }) =>
+    nativeImage.createFromBitmap(Buffer.alloc(30 * 40 * 4, 128), { width: 30, height: 40 }).toPNG().toString('base64')
+  )
+  await writeFile(photoPath, Buffer.from(png, 'base64'))
+  await stubOpenDialog(photoPath)
+  await photoField.getByRole('button', { name: 'Change photo' }).click()
+  const cropper = window.getByRole('dialog', { name: 'Crop photo' })
+  await expect(cropper).toContainText('Drag the photo to set the frame.')
+  await expect(cropper.getByRole('img', { name: 'Frame preview' })).toBeVisible()
+  await expect(cropper.getByLabel('Zoom')).toBeVisible()
+  await cropper.getByRole('button', { name: 'Apply' }).click()
+  await expect(photoField.getByRole('img', { name: 'Photo in the CV' })).toBeVisible()
+  await photoField.getByRole('button', { name: 'Remove photo' }).click()
+  await expect(photoField.getByRole('button', { name: 'Choose photo' })).toBeVisible()
+
+  // Eksport do PDF: zapisany plik z akcjami, a potem nieudany zapis.
+  await stubSaveDialog(join(outputDir, 'cv.pdf'))
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  const exported = window.getByRole('status').filter({ hasText: 'Saved PDF: cv.pdf' })
+  await expect(exported.getByRole('button', { name: 'Open' })).toBeVisible()
+  await expect(exported.getByRole('button', { name: 'Show in Finder' })).toBeVisible()
+  await app.evaluate(({ dialog }) => {
+    dialog.showSaveDialog = (async () => {
+      throw new Error('disk full')
+    }) as typeof dialog.showSaveDialog
+  })
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByRole('alert')).toHaveText('Couldn’t save the PDF. Try again.')
+
+  // Nieudany autozapis (plik CV zniknął z dysku).
+  await rm(join(outputDir, 'user-data', 'cvs'), { recursive: true })
+  await window.getByLabel('Full name').fill('Jane Doe')
+  await expect(window.getByRole('status').filter({ hasText: 'Couldn’t save changes' })).toBeVisible()
+})
+
+test('switching the language in the menu translates the open editor without losing unsaved changes or the undo history', async () => {
+  await app.close()
+  await launch({ language: null })
+  await stubSystemLanguages(['en-US'])
+  await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
+  const original = await window.getByLabel('Full name').inputValue()
+  await window.getByLabel('Full name').fill('Ewa Nowak')
+
+  await clickMenuItem('Language / Język', 'Polski')
+  const fullName = window.getByLabel('Imię i nazwisko')
+  await expect(fullName).toHaveValue('Ewa Nowak')
+  await expect(window.getByRole('button', { name: 'Eksportuj do PDF' })).toBeVisible()
+  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+
+  await clickMenuItem('Edycja', 'Cofnij')
+  await expect(fullName).toHaveValue(original)
+  await clickMenuItem('Language / Język', 'English')
+  await window.keyboard.press('Meta+Shift+z')
+  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
 test('the packaged app identifies itself as „Moje CV” (which names its application data folder)', async () => {
