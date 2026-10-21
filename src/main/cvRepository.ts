@@ -92,6 +92,12 @@ export function createCvRepository(dir: string, { now = () => new Date() }: Opti
       return renamed
     },
 
+    // Zapis zmian z edytora (autozapis). Spóźniony zapis nie przywraca usuniętego CV.
+    async update(document: CvDocument): Promise<void> {
+      if (!(await exists(filePath(document.id)))) throw new Error(`CV nie istnieje: ${document.id}`)
+      await save({ ...document, updatedAt: now().toISOString() })
+    },
+
     async delete(id: string): Promise<void> {
       await rm(filePath(id))
     }

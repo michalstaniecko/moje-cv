@@ -7,11 +7,16 @@ let app: ElectronApplication
 let window: Page
 let outputDir: string
 
-// Każdy test startuje z pustym katalogiem danych (pierwsze uruchomienie), żeby nie dotykać danych użytkownika.
-test.beforeEach(async () => {
-  outputDir = await mkdtemp(join(tmpdir(), 'moje-cv-e2e-'))
+// Uruchamia aplikację na tymczasowym katalogu danych testu, żeby nie dotykać danych użytkownika.
+async function launch() {
   app = await electron.launch({ args: ['.', `--user-data-dir=${join(outputDir, 'user-data')}`] })
   window = await app.firstWindow()
+}
+
+// Każdy test startuje z pustym katalogiem danych (pierwsze uruchomienie).
+test.beforeEach(async () => {
+  outputDir = await mkdtemp(join(tmpdir(), 'moje-cv-e2e-'))
+  await launch()
 })
 
 test.afterEach(async () => {
@@ -32,7 +37,7 @@ async function stubSaveDialog(filePath: string) {
   }, filePath)
 }
 
-test('on first run opens the sample CV from the library and exports it to a PDF identical to the preview', async () => {
+test('on first run opens the sample CV, edits it and exports it to a PDF identical to the preview; the edit survives a restart', async () => {
   const pdfPath = join(outputDir, 'export.pdf')
   await stubSaveDialog(pdfPath)
 
@@ -42,6 +47,18 @@ test('on first run opens the sample CV from the library and exports it to a PDF 
   await library.getByRole('button', { name: 'Otwórz' }).click()
 
   await expect(window.locator('.cv-page').first()).toBeVisible()
+
+  // Edycja w formularzu od razu zmienia podgląd; Cmd+Z / Cmd+Shift+Z cofa i ponawia zmianę.
+  const fullName = window.getByLabel('Imię i nazwisko')
+  await fullName.fill('Ewa Nowak-Żelazna')
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Ewa Nowak-Żelazna')
+  await window.keyboard.press('Meta+z')
+  await expect(fullName).toHaveValue('Anna Przykładowa')
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Anna Przykładowa')
+  await window.keyboard.press('Meta+Shift+z')
+  await expect(fullName).toHaveValue('Ewa Nowak-Żelazna')
+  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+
   const previewPageCount = await window.locator('.preview .cv-page').count()
 
   await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
@@ -51,7 +68,7 @@ test('on first run opens the sample CV from the library and exports it to a PDF 
     () => (globalThis as { saveDialogCalls?: Electron.SaveDialogOptions[] }).saveDialogCalls
   )
   expect(saveDialogOptions).toHaveLength(1)
-  expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV_Anna_Przykladowa.pdf')
+  expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV_Ewa_Nowak-Zelazna.pdf')
 
   const pdf = await readPdf(await readFile(pdfPath))
   expect(previewPageCount).toBe(2)
@@ -60,13 +77,21 @@ test('on first run opens the sample CV from the library and exports it to a PDF 
     expect(size.width).toBeCloseTo(A4_PT.width, 0)
     expect(size.height).toBeCloseTo(A4_PT.height, 0)
   }
-  expect(pdf.pages[0]).toContain('Anna Przykładowa')
+  expect(pdf.pages[0]).toContain('Ewa Nowak-Żelazna')
+  expect(pdf.pages.join('')).not.toContain('Anna Przykładowa')
   expect(pdf.pages[0]).toContain('Starsza specjalistka ds. zakupów')
   expect(pdf.pages.at(-1)).toContain('Wyrażam zgodę na przetwarzanie moich danych osobowych')
   expect(pdf.pages.slice(0, -1).join('')).not.toContain('Wyrażam zgodę')
-  expect(pdf.title).toBe('CV – Anna Przykładowa')
-  expect(pdf.author).toBe('Anna Przykładowa')
+  expect(pdf.title).toBe('CV – Ewa Nowak-Żelazna')
+  expect(pdf.author).toBe('Ewa Nowak-Żelazna')
   expect(pdf.embeddedFonts.some((name) => name.includes('Lato'))).toBe(true)
+
+  // Autozapis: po ponownym uruchomieniu zachowana jest także zmiana wpisana tuż przed zamknięciem aplikacji.
+  await fullName.fill('Ewa Nowak')
+  await app.close()
+  await launch()
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await expect(window.getByLabel('Imię i nazwisko')).toHaveValue('Ewa Nowak')
 })
 
 // A4 w punktach PDF (210 × 297 mm).

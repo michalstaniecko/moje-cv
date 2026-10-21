@@ -178,6 +178,31 @@ describe('rename', () => {
   })
 })
 
+describe('update', () => {
+  test('stores the edited content and marks the CV as just changed', async () => {
+    repository = createCvRepository(cvDir, { now: () => new Date('2026-10-21T08:30:00.000Z') })
+    await repository.save(sampleCv)
+    const edited = cv({ header: { ...sampleCv.header, fullName: 'Ewa Nowak' } })
+
+    await repository.update(edited)
+
+    const stored = await repository.get(sampleCv.id)
+    expect(stored.header.fullName).toBe('Ewa Nowak')
+    expect(stored.createdAt).toBe(sampleCv.createdAt)
+    expect(await repository.list()).toEqual([
+      { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: '2026-10-21T08:30:00.000Z' }
+    ])
+  })
+
+  test('a deleted CV is not brought back by a late save', async () => {
+    await repository.save(sampleCv)
+    await repository.delete(sampleCv.id)
+
+    await expect(repository.update(sampleCv)).rejects.toThrow()
+    expect(await repository.list()).toEqual([])
+  })
+})
+
 describe('delete', () => {
   test('removes the CV from the library', async () => {
     await repository.save(cv({ id: 'keep' }))

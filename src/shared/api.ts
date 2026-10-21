@@ -15,6 +15,7 @@ export type Api = {
     create: () => Promise<CvDocument>
     duplicate: (id: string) => Promise<CvDocument>
     rename: (id: string, name: string) => Promise<CvDocument>
+    update: (document: CvDocument) => Promise<void>
     delete: (id: string) => Promise<void>
   }
   pdf: {
