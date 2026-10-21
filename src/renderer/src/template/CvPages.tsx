@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { generateBlocks, type CvBlock } from '../domain/blocks'
 import { paginate, type PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
@@ -51,12 +51,34 @@ function usePagination(
   return { layout, measureRef, consentElement }
 }
 
+// Zgłasza gotowość, gdy strony są ułożone, a wszystkie obrazki (zdjęcie) wczytane.
+function useReadySignal(
+  layout: PaginateResult | null,
+  pagesElement: RefObject<HTMLDivElement | null>,
+  onReady?: () => void
+) {
+  useEffect(() => {
+    if (!layout || !onReady || !pagesElement.current) return
+    let cancelled = false
+    const images = [...pagesElement.current.querySelectorAll('img')]
+    void Promise.all(images.map((image) => image.decode().catch(() => undefined))).then(() => {
+      if (!cancelled) onReady()
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [layout, onReady, pagesElement])
+}
+
 // Strony A4 z treścią CV. Ten sam komponent służy do podglądu i do eksportu PDF.
-export function CvPages({ document }: { document: CvDocument }) {
+// `onReady` – wywoływane, gdy fonty są załadowane, podział policzony, a zdjęcie wczytane.
+export function CvPages({ document, onReady }: { document: CvDocument; onReady?: () => void }) {
   const blocks = useMemo(() => generateBlocks(document), [document])
   const consentText = document.consent.enabled && document.consent.text.trim() ? document.consent.text : null
   const { layout, measureRef, consentElement } = usePagination(blocks, document.settings.font, consentText)
   const blocksById = useMemo(() => new Map(blocks.map((block) => [block.id, block])), [blocks])
+  const pagesElement = useRef<HTMLDivElement>(null)
+  useReadySignal(layout, pagesElement, onReady)
 
   const style = {
     '--accent': document.settings.accentColor,
@@ -64,7 +86,7 @@ export function CvPages({ document }: { document: CvDocument }) {
   } as CSSProperties
 
   return (
-    <div className="cv" style={style}>
+    <div ref={pagesElement} className="cv" style={style}>
       <div className="cv-measure" aria-hidden>
         {blocks.map((block) => (
           <CvBlockView key={block.id} block={block} ref={measureRef(block.id)} />

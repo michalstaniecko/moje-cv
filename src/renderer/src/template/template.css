@@ -160,3 +160,11 @@
   right: 0;
   bottom: 0;
 }
+
+/* ---------- Druk ---------- */
+/* Kontener pomiarowy jest już niepotrzebny, a jego wysokość nie może dokładać stron. */
+@media print {
+  .cv-measure {
+    display: none;
+  }
+}

@@ -1,0 +1,21 @@
+import { join } from 'node:path'
+import { app, type BrowserWindow, type WebPreferences } from 'electron'
+
+// Ustawienia bezpieczeństwa wspólne dla wszystkich okien renderera.
+export const secureWebPreferences: WebPreferences = {
+  preload: join(__dirname, '../preload/index.js'),
+  contextIsolation: true,
+  nodeIntegration: false,
+  sandbox: true
+}
+
+export type LoadRenderer = (window: BrowserWindow, hash?: string) => Promise<void>
+
+// Ładuje renderer (serwer deweloperski albo zbudowane pliki) na wskazanej trasie w hashu.
+export const loadRenderer: LoadRenderer = async (window, hash = '') => {
+  if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
+    await window.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#${hash}`)
+  } else {
+    await window.loadFile(join(__dirname, '../renderer/index.html'), { hash })
+  }
+}

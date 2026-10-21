@@ -1,0 +1,11 @@
+/* Strona druku: strony CV dokładnie na arkuszach A4, bez marginesów i tła aplikacji. */
+@page {
+  size: A4;
+  margin: 0;
+}
+
+html,
+body {
+  margin: 0;
+  background: #fff;
+}
