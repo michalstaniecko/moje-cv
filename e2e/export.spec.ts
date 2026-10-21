@@ -12,9 +12,9 @@ let outputDir: string
 const packagedExecutable = process.env['MOJE_CV_APP']
 
 // Uruchamia aplikację na tymczasowym katalogu danych testu, żeby nie dotykać danych użytkownika.
-// Język interfejsu jest wymuszony (`MOJE_CV_LANGUAGE`), żeby testy nie zależały od języka systemu;
+// Język interfejsu jest wymuszony (`MOJE_CV_LANGUAGE`, domyślnie angielski), żeby testy nie zależały od języka systemu;
 // `language: null` uruchamia aplikację bez wymuszenia (wybór z menu Language / Język, a bez niego system).
-async function launch({ language = 'pl' }: { language?: InterfaceLanguage | null } = {}) {
+async function launch({ language = 'en' }: { language?: InterfaceLanguage | null } = {}) {
   const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
   const env = { ...process.env } as Record<string, string>
   if (language) env['MOJE_CV_LANGUAGE'] = language
@@ -66,7 +66,7 @@ async function stubOpenDialog(filePath: string | null) {
 
 // Otwiera pierwsze CV z biblioteki (przy pierwszym uruchomieniu – przykładowe CV).
 async function openFirstCv() {
-  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
 }
 
 // Klika pozycję menu aplikacji (np. Edycja → Cofnij) tak jak użytkownik: z widocznym oknem aplikacji jako oknem z fokusem.
@@ -158,11 +158,11 @@ test('Language / Język switches the menu and the window immediately, the choice
   await expect(window.locator('html')).toHaveAttribute('lang', 'pl')
 
   // Cofnij z przebudowanego menu nadal działa na historii CV.
-  await openFirstCv()
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
   const fullName = window.getByLabel('Imię i nazwisko')
   await fullName.fill('Ewa Nowak')
   await clickMenuItem('Edycja', 'Cofnij')
-  await expect(fullName).toHaveValue('Anna Przykładowa')
+  await expect(fullName).toHaveValue('Jane Example')
 
   await app.close()
   await launch({ language: null })
@@ -225,8 +225,6 @@ test('native file dialogs get their titles and file-type filters in the interfac
 })
 
 test('the CV library and the consent clause library are in English', async () => {
-  await app.close()
-  await launch({ language: 'en' })
 
   // Biblioteka CV: przyciski, wiersz z datą zmiany w formacie angielskim, zmiana nazwy i potwierdzenie usunięcia.
   await expect(window.getByRole('heading', { name: 'Moje CV' })).toBeVisible()
@@ -293,8 +291,6 @@ test('switching the language in the menu immediately translates the CV library a
 })
 
 test('the CV editor is in English, including the save status, photo cropping and the export actions', async () => {
-  await app.close()
-  await launch({ language: 'en' })
   await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
 
   // Formularz: wygląd, nagłówek, sekcje z kolejnością, wpisy i klauzula zgody.
@@ -406,45 +402,11 @@ test('switching the language in the menu translates the open editor without losi
   await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
-test('the preview shows the page count, warnings and zoom controls in English, and the warnings stay out of the PDF', async () => {
-  await app.close()
-  await launch({ language: 'en' })
-  const pdfPath = join(outputDir, 'long.pdf')
-  await stubSaveDialog(pdfPath)
-  await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
-  const preview = window.locator('.preview')
-  const pageCount = preview.locator('.preview-page-count')
-  await expect(pageCount).toHaveText(/^[12] pages?$/)
-  await expect(preview).not.toContainText('longer than')
-
-  await window.getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
-  const message = 'This fragment is too long to fit on a page – shorten it'
-  await expect(preview.getByText(message)).toBeVisible()
-  await expect(pageCount).toHaveText(/^\d+ pages$/)
-  await expect(preview).toContainText('The CV is longer than 2 pages – consider shortening it.')
-
-  await preview.getByRole('button', { name: 'Zoom in' }).click()
-  await preview.getByRole('button', { name: 'Zoom out' }).click()
-  await preview.getByRole('button', { name: 'Fit' }).click()
-  await expect(preview.getByRole('button', { name: 'Fit' })).toBeDisabled()
-
-  await window.getByRole('button', { name: 'Export to PDF' }).click()
-  await expect(window.getByText('Saved PDF')).toBeVisible()
-  const pdf = await readPdf(await readFile(pdfPath))
-  expect(pdf.pages.join('')).toContain('A very long summary, line 1.')
-  expect(pdf.pages.join('')).not.toContain('This fragment is too long')
-  expect(pdf.pages.join('')).not.toContain('longer than')
-})
-
 test('Default content follows the interface language at creation and never changes existing CVs afterwards', async () => {
-  // Pierwsze uruchomienie od nowa, tym razem po angielsku.
-  await app.close()
-  await rm(join(outputDir, 'user-data'), { recursive: true })
-  await launch({ language: 'en' })
   const library = window.getByRole('list', { name: 'CV list' })
   const rows = library.getByRole('listitem')
 
-  // Pierwsze uruchomienie po angielsku: angielskie przykładowe CV bez klauzuli zgody.
+  // Pierwsze uruchomienie (po angielsku): angielskie przykładowe CV bez klauzuli zgody.
   await expect(rows).toHaveCount(1)
   await expect(rows.first()).toContainText('Sample CV')
   await rows.first().getByRole('button', { name: 'Open' }).click()
@@ -482,8 +444,6 @@ test('Default content follows the interface language at creation and never chang
 })
 
 test('a CV without a name is shown and exported under a fallback name in the interface language', async () => {
-  await app.close()
-  await launch({ language: 'en' })
   const library = window.getByRole('list', { name: 'CV list' })
   const untitledPath = join(outputDir, 'untitled.json')
   await stubSaveDialog(untitledPath)
@@ -503,8 +463,6 @@ test('a CV without a name is shown and exported under a fallback name in the int
 })
 
 test('importing an invalid file shows why in English and leaves the library unchanged', async () => {
-  await app.close()
-  await launch({ language: 'en' })
   const rows = window.getByRole('list', { name: 'CV list' }).getByRole('listitem')
   await expect(rows).toHaveCount(1)
 
@@ -522,6 +480,35 @@ test('importing an invalid file shows why in English and leaves the library unch
   }
 })
 
+test('in a Polish run the sample CV, the editor, the menu and the exported PDF are in Polish', async () => {
+  await app.close()
+  await rm(join(outputDir, 'user-data'), { recursive: true })
+  await launch({ language: 'pl' })
+  const pdfPath = join(outputDir, 'polskie.pdf')
+  await stubSaveDialog(pdfPath)
+
+  const library = window.getByRole('list', { name: 'Lista CV' })
+  await expect(library.getByRole('listitem')).toHaveCount(1)
+  await expect(library.getByText('Przykładowe CV')).toBeVisible()
+  await library.getByRole('button', { name: 'Otwórz' }).click()
+  await expect(window.locator('.preview-page-count')).toHaveText('2 strony')
+  const fullName = window.getByLabel('Imię i nazwisko')
+  await fullName.fill('Ewa Nowak')
+  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+
+  await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
+  await expect(window.getByText('Zapisano PDF: polskie.pdf')).toBeVisible()
+  const pdf = await readPdf(await readFile(pdfPath))
+  expect(pdf.pages).toHaveLength(2)
+  expect(pdf.pages[0]).toContain('Ewa Nowak')
+  expect(pdf.pages[0]).toContain('Starsza specjalistka ds. zakupów')
+  expect(pdf.pages.at(-1)).toContain('Wyrażam zgodę na przetwarzanie moich danych osobowych')
+  expect(pdf.pages.slice(0, -1).join('')).not.toContain('Wyrażam zgodę')
+
+  await clickMenuItem('Edycja', 'Cofnij')
+  await expect(fullName).toHaveValue('Anna Przykładowa')
+})
+
 test('the packaged app identifies itself as „Moje CV” (which names its application data folder)', async () => {
   test.skip(!packagedExecutable, 'dotyczy tylko zbudowanej aplikacji')
   const identity = await app.evaluate(({ app }) => ({ name: app.getName(), isPackaged: app.isPackaged }))
@@ -532,28 +519,28 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   const pdfPath = join(outputDir, 'export.pdf')
   await stubSaveDialog(pdfPath)
 
-  const library = window.getByRole('list', { name: 'Lista CV' })
+  const library = window.getByRole('list', { name: 'CV list' })
   await expect(library.getByRole('listitem')).toHaveCount(1)
-  await expect(library.getByText('Przykładowe CV')).toBeVisible()
-  await library.getByRole('button', { name: 'Otwórz' }).click()
+  await expect(library.getByText('Sample CV')).toBeVisible()
+  await library.getByRole('button', { name: 'Open' }).click()
 
   await expect(window.locator('.cv-page').first()).toBeVisible()
 
   // Edycja w formularzu od razu zmienia podgląd; Cmd+Z / Cmd+Shift+Z cofa i ponawia zmianę.
-  const fullName = window.getByLabel('Imię i nazwisko')
+  const fullName = window.getByLabel('Full name')
   await fullName.fill('Ewa Nowak-Żelazna')
   await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Ewa Nowak-Żelazna')
   await window.keyboard.press('Meta+z')
-  await expect(fullName).toHaveValue('Anna Przykładowa')
-  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Anna Przykładowa')
+  await expect(fullName).toHaveValue('Jane Example')
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Jane Example')
   await window.keyboard.press('Meta+Shift+z')
   await expect(fullName).toHaveValue('Ewa Nowak-Żelazna')
-  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+  await expect(window.getByText('Changes saved')).toBeVisible()
 
   const previewPageCount = await window.locator('.preview .cv-page').count()
 
-  await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
-  await expect(window.getByText('Zapisano PDF')).toBeVisible()
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF')).toBeVisible()
 
   const saveDialogOptions = await app.evaluate(
     () => (globalThis as { saveDialogCalls?: Electron.SaveDialogOptions[] }).saveDialogCalls
@@ -562,17 +549,15 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV_Ewa_Nowak-Zelazna.pdf')
 
   const pdf = await readPdf(await readFile(pdfPath))
-  expect(previewPageCount).toBe(2)
+  expect(previewPageCount).toBeGreaterThan(0)
   expect(pdf.pages).toHaveLength(previewPageCount)
   for (const size of pdf.pageSizes) {
     expect(size.width).toBeCloseTo(A4_PT.width, 0)
     expect(size.height).toBeCloseTo(A4_PT.height, 0)
   }
   expect(pdf.pages[0]).toContain('Ewa Nowak-Żelazna')
-  expect(pdf.pages.join('')).not.toContain('Anna Przykładowa')
-  expect(pdf.pages[0]).toContain('Starsza specjalistka ds. zakupów')
-  expect(pdf.pages.at(-1)).toContain('Wyrażam zgodę na przetwarzanie moich danych osobowych')
-  expect(pdf.pages.slice(0, -1).join('')).not.toContain('Wyrażam zgodę')
+  expect(pdf.pages.join('')).not.toContain('Jane Example')
+  expect(pdf.pages[0]).toContain('Senior Procurement Specialist')
   expect(pdf.title).toBe('CV – Ewa Nowak-Żelazna')
   expect(pdf.author).toBe('Ewa Nowak-Żelazna')
   expect(pdf.embeddedFonts.some((name) => name.includes('Lato'))).toBe(true)
@@ -582,7 +567,7 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   await app.close()
   await launch()
   await openFirstCv()
-  await expect(window.getByLabel('Imię i nazwisko')).toHaveValue('Ewa Nowak')
+  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
 test('edits education and lists, reorders and hides sections, and forces page breaks in the preview and PDF', async () => {
@@ -593,80 +578,80 @@ test('edits education and lists, reorders and hides sections, and forces page br
   await expect(preview.locator('.cv-page').first()).toBeVisible()
 
   // Wykształcenie: nowy wpis renderowany jako „poziom, kierunek, uczelnia”, tytuł sekcji edytowalny.
-  const education = window.getByRole('region', { name: 'Wykształcenie', exact: true })
-  await education.getByRole('button', { name: 'Dodaj wykształcenie' }).click()
-  await education.getByLabel('Poziom').last().fill('Liceum ogólnokształcące')
-  await education.getByLabel('Kierunek').last().fill('Matematyczno-fizyczny')
-  await education.getByLabel('Uczelnia').last().fill('I LO w Poznaniu')
-  await expect(preview).toContainText('Liceum ogólnokształcące, Matematyczno-fizyczny, I LO w Poznaniu')
-  await education.getByLabel('Tytuł sekcji „Wykształcenie”').fill('Edukacja')
-  const educationSection = window.getByRole('region', { name: 'Edukacja', exact: true })
+  const education = window.getByRole('region', { name: 'Education', exact: true })
+  await education.getByRole('button', { name: 'Add education' }).click()
+  await education.getByLabel('Level').last().fill('A levels')
+  await education.getByLabel('Field of study').last().fill('Mathematics and Physics')
+  await education.getByLabel('School').last().fill('Leeds Grammar School')
+  await expect(preview).toContainText('A levels, Mathematics and Physics, Leeds Grammar School')
+  await education.getByLabel('Section title “Education”').fill('Schooling')
+  const educationSection = window.getByRole('region', { name: 'Schooling', exact: true })
 
   // Lista: dodanie i usunięcie elementu.
-  const languages = window.getByRole('region', { name: 'Języki', exact: true })
-  await languages.getByRole('button', { name: 'Dodaj element' }).click()
-  await languages.getByRole('textbox', { name: 'Element 3', exact: true }).fill('Hiszpański – B1')
-  await expect(preview).toContainText('Hiszpański – B1')
-  await languages.getByRole('button', { name: 'Usuń element 2' }).click()
-  await expect(preview).not.toContainText('Niemiecki – A2')
+  const languages = window.getByRole('region', { name: 'Languages', exact: true })
+  await languages.getByRole('button', { name: 'Add item' }).click()
+  await languages.getByRole('textbox', { name: 'Item 3', exact: true }).fill('Spanish – B1')
+  await expect(preview).toContainText('Spanish – B1')
+  await languages.getByRole('button', { name: 'Remove item 2' }).click()
+  await expect(preview).not.toContainText('German – B2')
 
   // Kolejność sekcji, wpisów i punktów strzałkami.
-  await window.getByRole('button', { name: 'Przesuń sekcję „Języki” w górę' }).click()
-  await expect(preview.locator('.cv-page .cv-section-title')).toHaveText(['Doświadczenie zawodowe', 'Edukacja', 'Języki', 'Umiejętności'])
-  await window.getByRole('button', { name: 'Przesuń stanowisko „Asystentka działu zakupów” w górę' }).click()
+  await window.getByRole('button', { name: 'Move section “Languages” up' }).click()
+  await expect(preview.locator('.cv-page .cv-section-title')).toHaveText(['Work experience', 'Schooling', 'Languages', 'Skills'])
+  await window.getByRole('button', { name: 'Move position “Procurement Assistant” up' }).click()
   await expect(preview.locator('.cv-page .cv-role')).toHaveText([
-    'Starsza specjalistka ds. zakupów',
-    'Asystentka działu zakupów',
-    'Specjalistka ds. zakupów',
-    'Młodsza specjalistka ds. obsługi klienta'
+    'Senior Procurement Specialist',
+    'Procurement Assistant',
+    'Procurement Specialist',
+    'Junior Customer Service Specialist'
   ])
-  await window.locator('.form fieldset', { hasText: 'Starsza specjalistka ds. zakupów' }).getByRole('button', { name: 'Przesuń punkt 2 w górę' }).click()
+  await window.locator('.form fieldset', { hasText: 'Senior Procurement Specialist' }).getByRole('button', { name: 'Move bullet 2 up' }).click()
   await expect(preview.locator('.cv-page .cv-bullets li').first()).toHaveText(
-    'Zarządzanie portfelem ponad 60 dostawców komponentów i materiałów pomocniczych.'
+    'Managing a portfolio of more than 60 suppliers of components and auxiliary materials.'
   )
 
   // Przeciąganie za uchwyt: ostatnia umiejętność na pierwsze miejsce.
-  const skills = window.getByRole('region', { name: 'Umiejętności', exact: true })
+  const skills = window.getByRole('region', { name: 'Skills', exact: true })
   await dragOnto(
-    skills.getByRole('button', { name: 'Przeciągnij element 5, aby zmienić kolejność' }),
-    skills.getByRole('button', { name: 'Przeciągnij element 1, aby zmienić kolejność' })
+    skills.getByRole('button', { name: 'Drag item 5 to reorder' }),
+    skills.getByRole('button', { name: 'Drag item 1 to reorder' })
   )
-  await expect(skills.getByRole('textbox', { name: 'Element 1', exact: true })).toHaveValue('Prawo jazdy kat. B')
-  await expect(preview.locator('.cv-page .cv-two-col', { hasText: 'Umiejętności' })).toContainText('Prawo jazdy kat. B')
+  await expect(skills.getByRole('textbox', { name: 'Item 1', exact: true })).toHaveValue('Driving licence (category B)')
+  await expect(preview.locator('.cv-page .cv-two-col', { hasText: 'Skills' })).toContainText('Driving licence (category B)')
 
   // Ukryta sekcja znika z podglądu, ale zostaje w formularzu.
-  await languages.getByLabel('Ukryj sekcję').check()
-  await expect(preview).not.toContainText('Angielski – C1')
-  await expect(languages.getByRole('textbox', { name: 'Element 1', exact: true })).toHaveValue('Angielski – C1')
+  await languages.getByLabel('Hide section').check()
+  await expect(preview).not.toContainText('English – native')
+  await expect(languages.getByRole('textbox', { name: 'Item 1', exact: true })).toHaveValue('English – native')
 
   // Nowa strona przed sekcją i przed wpisem.
-  await educationSection.getByLabel('Nowa strona przed tą sekcją').check()
+  await educationSection.getByLabel('New page before this section').check()
   const firstBlocks = preview.locator('.cv-page-content > .cv-block:first-child')
-  await expect(firstBlocks.locator('.cv-section-title')).toHaveText(['Edukacja'])
+  await expect(firstBlocks.locator('.cv-section-title')).toHaveText(['Schooling'])
   await window
-    .locator('.form fieldset', { hasText: 'Młodsza specjalistka ds. obsługi klienta' })
-    .getByLabel('Nowa strona przed tym wpisem')
+    .locator('.form fieldset', { hasText: 'Junior Customer Service Specialist' })
+    .getByLabel('New page before this entry')
     .check()
-  await expect(firstBlocks.locator('.cv-role')).toHaveText(['Młodsza specjalistka ds. obsługi klienta'])
+  await expect(firstBlocks.locator('.cv-role')).toHaveText(['Junior Customer Service Specialist'])
   const previewPageCount = await preview.locator('.cv-page').count()
 
-  await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
-  await expect(window.getByText('Zapisano PDF')).toBeVisible()
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF')).toBeVisible()
   const pdf = await readPdf(await readFile(pdfPath))
   expect(pdf.pages).toHaveLength(previewPageCount)
-  expect(pdf.pages.some((page) => page.startsWith('Młodsza specjalistka ds. obsługi klienta'))).toBe(true)
-  expect(pdf.pages.some((page) => page.startsWith('Edukacja'))).toBe(true)
-  expect(pdf.pages.join('')).not.toContain('Angielski – C1')
+  expect(pdf.pages.some((page) => page.startsWith('Junior Customer Service Specialist'))).toBe(true)
+  expect(pdf.pages.some((page) => page.startsWith('Schooling'))).toBe(true)
+  expect(pdf.pages.join('')).not.toContain('English – native')
 })
 
 test('changes the accent colour and font of one CV in the preview and PDF, with fonts embedded from the app', async () => {
-  const library = window.getByRole('list', { name: 'Lista CV' })
-  await library.getByRole('button', { name: 'Otwórz' }).click()
+  const library = window.getByRole('list', { name: 'CV list' })
+  await library.getByRole('button', { name: 'Open' }).click()
   const preview = window.locator('.preview')
   await expect(preview.locator('.cv-page').first()).toBeVisible()
 
   // Kolor akcentu: imię, tytuły sekcji i kropki przy datach.
-  const accent = window.getByLabel('Kolor akcentu')
+  const accent = window.getByLabel('Accent color')
   await expect(accent).toHaveValue('#1a6e72')
   await accent.fill('#8a2be2')
   const purple = 'rgb(138, 43, 226)'
@@ -688,16 +673,16 @@ test('changes the accent colour and font of one CV in the preview and PDF, with 
   ]) {
     await font.selectOption(value)
     await expect(preview.locator('.cv-page .cv-name')).toHaveCSS('font-family', new RegExp(`^"?${family}"?,`))
-    await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+    await expect(window.getByText('Changes saved')).toBeVisible()
     const previewPageCount = await preview.locator('.cv-page').count()
 
     const pdfPath = join(outputDir, `${value}.pdf`)
     await stubSaveDialog(pdfPath)
-    await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
-    await expect(window.getByText(`Zapisano PDF: ${basename(pdfPath)}`)).toBeVisible()
+    await window.getByRole('button', { name: 'Export to PDF' }).click()
+    await expect(window.getByText(`Saved PDF: ${basename(pdfPath)}`)).toBeVisible()
     const pdf = await readPdf(await readFile(pdfPath))
     expect(pdf.pages).toHaveLength(previewPageCount)
-    expect(pdf.pages[0]).toContain('Anna Przykładowa')
+    expect(pdf.pages[0]).toContain('Jane Example')
     expect(pdf.embeddedFonts.length).toBeGreaterThan(0)
     expect(pdf.embeddedFonts.every((name) => name.includes(pdfName))).toBe(true)
     expect(pdf.fillColors).toContain('#8a2be2')
@@ -705,88 +690,88 @@ test('changes the accent colour and font of one CV in the preview and PDF, with 
 
   // Ustawienia należą do CV: nowe CV ma domyślne, a zmienione zostają w swoim CV.
   await window.getByRole('button', { name: '← Moje CV' }).click()
-  await window.getByRole('button', { name: 'Nowe CV' }).click()
-  await library.getByRole('listitem').filter({ hasText: 'Nowe CV' }).getByRole('button', { name: 'Otwórz' }).click()
-  await expect(window.getByLabel('Kolor akcentu')).toHaveValue('#1a6e72')
+  await window.getByRole('button', { name: 'New CV' }).click()
+  await library.getByRole('listitem').filter({ hasText: 'New CV' }).getByRole('button', { name: 'Open' }).click()
+  await expect(window.getByLabel('Accent color')).toHaveValue('#1a6e72')
   await expect(window.getByLabel('Font')).toHaveValue('lato')
   await window.getByRole('button', { name: '← Moje CV' }).click()
-  await library.getByRole('listitem').filter({ hasText: 'Przykładowe CV' }).getByRole('button', { name: 'Otwórz' }).click()
-  await expect(window.getByLabel('Kolor akcentu')).toHaveValue('#8a2be2')
+  await library.getByRole('listitem').filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Open' }).click()
+  await expect(window.getByLabel('Accent color')).toHaveValue('#8a2be2')
   await expect(window.getByLabel('Font')).toHaveValue('arimo')
 })
 
 test('manages the consent clause library, uses a clause in a CV without changing the library and leaves a switched-off clause out of the PDF', async () => {
-  const library = window.getByRole('list', { name: 'Lista CV' })
+  const library = window.getByRole('list', { name: 'CV list' })
   await expect(library.getByRole('listitem')).toHaveCount(1)
 
   // Biblioteka: dodanie dwóch klauzul, edycja, domyślna i usunięcie.
-  await window.getByRole('button', { name: 'Klauzule zgody' }).click()
-  const clauses = window.getByRole('list', { name: 'Lista klauzul' })
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
+  const clauses = window.getByRole('list', { name: 'Clause list' })
   const addClause = async (name: string, text: string) => {
-    await window.getByRole('button', { name: 'Dodaj klauzulę' }).click()
-    await window.getByLabel('Nazwa').fill(name)
-    await window.getByLabel('Treść').fill(text)
-    await window.getByRole('button', { name: 'Zapisz' }).click()
+    await window.getByRole('button', { name: 'Add clause' }).click()
+    await window.getByLabel('Name').fill(name)
+    await window.getByLabel('Text').fill(text)
+    await window.getByRole('button', { name: 'Save' }).click()
   }
-  await addClause('Ogólna', 'Wyrażam zgodę na przetwarzanie danych – wersja ogólna.')
-  await addClause('Do usunięcia', 'Tymczasowa')
-  await addClause('Talent', 'Wyrażam zgodę dla Talent Partners.')
+  await addClause('General', 'I consent to the processing of my data – general version.')
+  await addClause('To delete', 'Temporary')
+  await addClause('Talent', 'I consent for Talent Partners.')
   const row = (name: string) => clauses.getByRole('listitem').filter({ hasText: name })
-  await row('Talent').getByRole('button', { name: 'Edytuj' }).click()
-  await window.getByLabel('Nazwa').fill('Talent Partners')
-  await window.getByRole('button', { name: 'Zapisz' }).click()
-  await row('Do usunięcia').getByRole('button', { name: 'Usuń' }).click()
-  await window.getByRole('alertdialog').getByRole('button', { name: 'Usuń' }).click()
-  await row('Ogólna').getByRole('button', { name: 'Ustaw jako domyślną' }).click()
-  await expect(row('Ogólna')).toContainText('(domyślna)')
+  await row('Talent').getByRole('button', { name: 'Edit' }).click()
+  await window.getByLabel('Name').fill('Talent Partners')
+  await window.getByRole('button', { name: 'Save' }).click()
+  await row('To delete').getByRole('button', { name: 'Delete' }).click()
+  await window.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await row('General').getByRole('button', { name: 'Set as default' }).click()
+  await expect(row('General')).toContainText('(default)')
   await expect(clauses.getByRole('listitem')).toHaveCount(2)
-  await expect(row('Talent Partners')).toContainText('Wyrażam zgodę dla Talent Partners.')
+  await expect(row('Talent Partners')).toContainText('I consent for Talent Partners.')
 
   // Nowe CV dostaje klauzulę domyślną, widoczną w podglądzie.
   await window.getByRole('button', { name: '← Moje CV' }).click()
-  await window.getByRole('button', { name: 'Nowe CV' }).click()
-  await library.getByRole('listitem').filter({ hasText: 'Nowe CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await window.getByRole('button', { name: 'New CV' }).click()
+  await library.getByRole('listitem').filter({ hasText: 'New CV' }).getByRole('button', { name: 'Open' }).click()
   const preview = window.locator('.preview')
-  const consent = window.getByRole('region', { name: 'Klauzula zgody' })
-  await expect(consent.getByLabel('Klauzula z biblioteki')).toHaveValue(/.+/)
-  await expect(preview.locator('.cv-page .cv-consent')).toHaveText('Wyrażam zgodę na przetwarzanie danych – wersja ogólna.')
+  const consent = window.getByRole('region', { name: 'Consent clause' })
+  await expect(consent.getByLabel('Clause from the library')).toHaveValue(/.+/)
+  await expect(preview.locator('.cv-page .cv-consent')).toHaveText('I consent to the processing of my data – general version.')
 
   // Wybór innej klauzuli, poprawka w CV, przywrócenie z biblioteki i zapis poprawionej jako nowej.
-  await consent.getByLabel('Klauzula z biblioteki').selectOption({ label: 'Talent Partners' })
-  const text = consent.getByLabel('Treść w tym CV')
-  await expect(text).toHaveValue('Wyrażam zgodę dla Talent Partners.')
-  await text.fill('Wyrażam zgodę dla Talent Partners i Banku.')
-  await expect(preview.locator('.cv-page .cv-consent')).toHaveText('Wyrażam zgodę dla Talent Partners i Banku.')
-  await consent.getByRole('button', { name: 'Przywróć z biblioteki' }).click()
-  await expect(text).toHaveValue('Wyrażam zgodę dla Talent Partners.')
-  await text.fill('Wyrażam zgodę dla Banku.')
-  await consent.getByRole('button', { name: 'Zapisz jako nową klauzulę' }).click()
-  await consent.getByLabel('Nazwa nowej klauzuli').fill('Bank')
-  await consent.getByRole('button', { name: 'Zapisz', exact: true }).click()
-  await expect(consent.getByLabel('Klauzula z biblioteki').locator('option:checked')).toHaveText('Bank')
-  await expect(consent.getByRole('button', { name: 'Przywróć z biblioteki' })).toHaveCount(0)
+  await consent.getByLabel('Clause from the library').selectOption({ label: 'Talent Partners' })
+  const text = consent.getByLabel('Text in this CV')
+  await expect(text).toHaveValue('I consent for Talent Partners.')
+  await text.fill('I consent for Talent Partners and the Bank.')
+  await expect(preview.locator('.cv-page .cv-consent')).toHaveText('I consent for Talent Partners and the Bank.')
+  await consent.getByRole('button', { name: 'Restore from library' }).click()
+  await expect(text).toHaveValue('I consent for Talent Partners.')
+  await text.fill('I consent for the Bank.')
+  await consent.getByRole('button', { name: 'Save as new clause' }).click()
+  await consent.getByLabel('New clause name').fill('Bank')
+  await consent.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(consent.getByLabel('Clause from the library').locator('option:checked')).toHaveText('Bank')
+  await expect(consent.getByRole('button', { name: 'Restore from library' })).toHaveCount(0)
 
   // Wyłączona klauzula znika z podglądu i PDF.
-  await consent.getByLabel('Pokaż klauzulę na dole ostatniej strony').uncheck()
+  await consent.getByLabel('Show the clause at the bottom of the last page').uncheck()
   await expect(preview.locator('.cv-consent')).toHaveCount(0)
-  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
-  const pdfPath = join(outputDir, 'bez-klauzuli.pdf')
+  await expect(window.getByText('Changes saved')).toBeVisible()
+  const pdfPath = join(outputDir, 'without-clause.pdf')
   await stubSaveDialog(pdfPath)
-  await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
-  await expect(window.getByText('Zapisano PDF')).toBeVisible()
-  expect((await readPdf(await readFile(pdfPath))).pages.join('')).not.toContain('Wyrażam zgodę')
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF')).toBeVisible()
+  expect((await readPdf(await readFile(pdfPath))).pages.join('')).not.toContain('I consent')
 
   // Poprawki w CV nie zmieniły biblioteki.
   await window.getByRole('button', { name: '← Moje CV' }).click()
-  await window.getByRole('button', { name: 'Klauzule zgody' }).click()
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
   await expect(clauses.getByRole('listitem')).toHaveCount(3)
-  await expect(row('Talent Partners')).toContainText('Wyrażam zgodę dla Talent Partners.')
-  await expect(row('Bank')).toContainText('Wyrażam zgodę dla Banku.')
+  await expect(row('Talent Partners')).toContainText('I consent for Talent Partners.')
+  await expect(row('Bank')).toContainText('I consent for the Bank.')
 })
 
 test('picks a photo from disk, crops it to 3:4 for the header and removes it, in the preview and PDF', async () => {
   // Zdjęcie poziome 1200 × 800: lewa połowa czerwona, prawa niebieska.
-  const photoPath = join(outputDir, 'zdjecie.png')
+  const photoPath = join(outputDir, 'photo.png')
   const png = await app.evaluate(({ nativeImage }) => {
     const [width, height] = [1200, 800]
     const bitmap = Buffer.alloc(width * height * 4)
@@ -796,36 +781,36 @@ test('picks a photo from disk, crops it to 3:4 for the header and removes it, in
     return nativeImage.createFromBitmap(bitmap, { width, height }).toPNG().toString('base64')
   })
   await writeFile(photoPath, Buffer.from(png, 'base64'))
-  const brokenPath = join(outputDir, 'uszkodzone.jpg')
-  await writeFile(brokenPath, 'to nie jest obraz')
+  const brokenPath = join(outputDir, 'broken.jpg')
+  await writeFile(brokenPath, 'not an image')
   await openFirstCv()
   const preview = window.locator('.preview')
   await expect(preview.locator('.cv-page .cv-photo')).toHaveCount(1)
-  const photoField = window.getByRole('group', { name: 'Zdjęcie' })
+  const photoField = window.getByRole('group', { name: 'Photo', exact: true })
 
   // Plik, którego nie da się odczytać jako obraz, daje komunikat i nie zmienia zdjęcia.
   await stubOpenDialog(brokenPath)
-  await photoField.getByRole('button', { name: 'Zmień zdjęcie' }).click()
-  await expect(photoField.getByRole('alert')).toContainText('Nie udało się wczytać zdjęcia')
-  await expect(window.getByRole('dialog', { name: 'Kadrowanie zdjęcia' })).toHaveCount(0)
+  await photoField.getByRole('button', { name: 'Change photo' }).click()
+  await expect(photoField.getByRole('alert')).toContainText('Couldn’t load the photo')
+  await expect(window.getByRole('dialog', { name: 'Crop photo' })).toHaveCount(0)
 
   // Wybór pliku z dysku przez systemowe okno, kadrowanie i zapis.
   await stubOpenDialog(photoPath)
-  await photoField.getByRole('button', { name: 'Zmień zdjęcie' }).click()
+  await photoField.getByRole('button', { name: 'Change photo' }).click()
   const openDialogOptions = await app.evaluate(
     () => (globalThis as { openDialogCalls?: Electron.OpenDialogOptions[] }).openDialogCalls
   )
   expect(openDialogOptions![0]!.filters![0]!.extensions).toEqual(expect.arrayContaining(['jpg', 'jpeg', 'png']))
-  const cropper = window.getByRole('dialog', { name: 'Kadrowanie zdjęcia' })
+  const cropper = window.getByRole('dialog', { name: 'Crop photo' })
   await expect(cropper).toBeVisible()
   // Kadr przesunięty maksymalnie w prawo – na zdjęciu zostaje sam niebieski.
-  const frame = cropper.getByRole('img', { name: 'Podgląd kadru' })
+  const frame = cropper.getByRole('img', { name: 'Frame preview' })
   const box = (await frame.boundingBox())!
   await window.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await window.mouse.down()
   await window.mouse.move(box.x - box.width * 3, box.y + box.height / 2, { steps: 10 })
   await window.mouse.up()
-  await cropper.getByRole('button', { name: 'Zastosuj' }).click()
+  await cropper.getByRole('button', { name: 'Apply' }).click()
   await expect(cropper).toHaveCount(0)
 
   // W CV wykadrowany JPEG 3:4 w rozdzielczości do druku (42 mm przy 300 dpi), o szerokości 42 mm.
@@ -864,33 +849,33 @@ test('picks a photo from disk, crops it to 3:4 for the header and removes it, in
     expect(r).toBeLessThan(40)
   }
   expect(stored.length).toBeLessThan(300_000)
-  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+  await expect(window.getByText('Changes saved')).toBeVisible()
 
   // Eksport PDF czeka na wczytanie zdjęcia – jest na pierwszej stronie.
-  const withPhoto = join(outputDir, 'ze-zdjeciem.pdf')
+  const withPhoto = join(outputDir, 'with-photo.pdf')
   await stubSaveDialog(withPhoto)
-  await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
-  await expect(window.getByText(`Zapisano PDF: ${basename(withPhoto)}`)).toBeVisible()
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText(`Saved PDF: ${basename(withPhoto)}`)).toBeVisible()
   expect((await readPdf(await readFile(withPhoto))).imagesPerPage[0]).toBe(1)
 
   // Bez zdjęcia nagłówek zajmuje pełną szerokość, a w PDF nie ma obrazu.
-  await photoField.getByRole('button', { name: 'Usuń zdjęcie' }).click()
+  await photoField.getByRole('button', { name: 'Remove photo' }).click()
   await expect(preview.locator('.cv-photo')).toHaveCount(0)
   await expect(preview.locator('.cv-page .cv-header')).toHaveCSS('grid-template-columns', /^\S+$/)
-  await expect(photoField.getByRole('button', { name: 'Wybierz zdjęcie' })).toBeVisible()
-  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
-  const withoutPhoto = join(outputDir, 'bez-zdjecia.pdf')
+  await expect(photoField.getByRole('button', { name: 'Choose photo' })).toBeVisible()
+  await expect(window.getByText('Changes saved')).toBeVisible()
+  const withoutPhoto = join(outputDir, 'without-photo.pdf')
   await stubSaveDialog(withoutPhoto)
-  await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
-  await expect(window.getByText(`Zapisano PDF: ${basename(withoutPhoto)}`)).toBeVisible()
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText(`Saved PDF: ${basename(withoutPhoto)}`)).toBeVisible()
   const pdf = await readPdf(await readFile(withoutPhoto))
   expect(pdf.imagesPerPage.every((count) => count === 0)).toBe(true)
-  expect(pdf.pages[0]).toContain('Anna Przykładowa')
+  expect(pdf.pages[0]).toContain('Jane Example')
 
   // Anulowane okno wyboru niczego nie zmienia.
   await stubOpenDialog(null)
-  await photoField.getByRole('button', { name: 'Wybierz zdjęcie' }).click()
-  await expect(window.getByRole('dialog', { name: 'Kadrowanie zdjęcia' })).toHaveCount(0)
+  await photoField.getByRole('button', { name: 'Choose photo' }).click()
+  await expect(window.getByRole('dialog', { name: 'Crop photo' })).toHaveCount(0)
   await expect(preview.locator('.cv-photo')).toHaveCount(0)
 })
 
@@ -900,23 +885,26 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   await openFirstCv()
   const preview = window.locator('.preview')
   const pageCount = preview.locator('.preview-page-count')
-  await expect(pageCount).toHaveText('2 strony')
-  await expect(preview).not.toContainText('więcej niż 2 strony')
+  await expect(pageCount).toHaveText(/^[12] pages?$/)
+  await expect(preview).not.toContainText('longer than 2 pages')
 
   // Podsumowanie dłuższe niż strona: nagłówek dostaje własną stronę, jest wyróżniony i CV ma ponad 2 strony.
-  await window.getByLabel('Podsumowanie').fill(Array.from({ length: 120 }, (_, i) => `Bardzo długie podsumowanie, wiersz ${i + 1}.`).join('\n'))
-  const message = 'Ten fragment jest za długi, aby zmieścić się na stronie – skróć go'
+  await window.getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
+  const message = 'This fragment is too long to fit on a page – shorten it'
   await expect(preview.getByText(message)).toBeVisible()
   await expect(preview.locator('.cv-page').first().locator('.cv-block--oversized .cv-header')).toHaveCount(1)
-  await expect(pageCount).toHaveText('3 strony')
-  await expect(preview).toContainText('CV ma więcej niż 2 strony – warto je skrócić.')
+  await expect(pageCount).toHaveText(/^\d+ pages$/)
+  const longPageCount = parseInt((await pageCount.textContent())!)
+  expect(longPageCount).toBeGreaterThan(2)
+  await expect(preview).toContainText('The CV is longer than 2 pages – consider shortening it.')
 
   // Eksport nie jest blokowany, a wyróżnienie nie trafia do PDF.
-  await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
-  await expect(window.getByText('Zapisano PDF')).toBeVisible()
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF')).toBeVisible()
   const pdf = await readPdf(await readFile(pdfPath))
-  expect(pdf.pages).toHaveLength(3)
-  expect(pdf.pages.join('')).not.toContain('Ten fragment jest za długi')
+  expect(pdf.pages).toHaveLength(longPageCount)
+  expect(pdf.pages.join('')).not.toContain('This fragment is too long')
+  expect(pdf.pages.join('')).not.toContain('longer than')
   expect(pdf.fillColors).not.toContain('#b42318')
 
   // Domyślnie strona wypełnia szerokość panelu (z marginesami 24 px), także po zmianie rozmiaru okna.
@@ -938,46 +926,46 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   const textsAtFit = await pageTexts()
   await preview.getByRole('button', { name: '100%' }).click()
   await expect.poll(pageWidth).toBeCloseTo(793.7, 0)
-  await preview.getByRole('button', { name: 'Powiększ' }).click()
+  await preview.getByRole('button', { name: 'Zoom in' }).click()
   await expect.poll(pageWidth).toBeCloseTo(793.7 * 1.25, 0)
   expect(await pageTexts()).toEqual(textsAtFit)
-  await preview.getByRole('button', { name: 'Pomniejsz' }).click()
-  await preview.getByRole('button', { name: 'Pomniejsz' }).click()
+  await preview.getByRole('button', { name: 'Zoom out' }).click()
+  await preview.getByRole('button', { name: 'Zoom out' }).click()
   await expect.poll(pageWidth).toBeCloseTo(793.7 * 0.75, 0)
   expect(await pageTexts()).toEqual(textsAtFit)
-  await expect(pageCount).toHaveText('3 strony')
+  await expect(pageCount).toHaveText(`${longPageCount} pages`)
 })
 
-test('Edycja → Cofnij / Ponów in the menu undo and redo CV changes in the form and the preview', async () => {
+test('Edit → Undo / Redo in the menu undo and redo CV changes in the form and the preview', async () => {
   await openFirstCv()
-  const fullName = window.getByLabel('Imię i nazwisko')
+  const fullName = window.getByLabel('Full name')
   const previewName = window.locator('.preview .cv-page .cv-name')
   await fullName.fill('Ewa Nowak')
   await expect(previewName).toHaveText('Ewa Nowak')
 
   // Kursor zostaje w polu tekstowym – mimo to cofana jest historia CV, a nie samo pole.
-  await clickMenuItem('Edycja', 'Cofnij')
-  await expect(fullName).toHaveValue('Anna Przykładowa')
-  await expect(previewName).toHaveText('Anna Przykładowa')
-  await clickMenuItem('Edycja', 'Ponów')
+  await clickMenuItem('Edit', 'Undo')
+  await expect(fullName).toHaveValue('Jane Example')
+  await expect(previewName).toHaveText('Jane Example')
+  await clickMenuItem('Edit', 'Redo')
   await expect(fullName).toHaveValue('Ewa Nowak')
   await expect(previewName).toHaveText('Ewa Nowak')
 })
 
-test('one Cmd+Z / Cmd+Shift+Z press with the Edycja menu in place undoes and redoes exactly one CV change', async () => {
+test('one Cmd+Z / Cmd+Shift+Z press with the Edit menu in place undoes and redoes exactly one CV change', async () => {
   await openFirstCv()
-  const fullName = window.getByLabel('Imię i nazwisko')
-  const summary = window.getByLabel('Podsumowanie')
+  const fullName = window.getByLabel('Full name')
+  const summary = window.getByLabel('Summary')
   const originalSummary = await summary.inputValue()
   await fullName.fill('Ewa Nowak')
-  await summary.fill('Nowe podsumowanie.')
-  await expect(window.locator('.preview .cv-page .cv-summary')).toHaveText('Nowe podsumowanie.')
+  await summary.fill('New summary.')
+  await expect(window.locator('.preview .cv-page .cv-summary')).toHaveText('New summary.')
 
   await window.keyboard.press('Meta+z')
   await expect(summary).toHaveValue(originalSummary)
   await expect(fullName).toHaveValue('Ewa Nowak')
   await window.keyboard.press('Meta+Shift+z')
-  await expect(summary).toHaveValue('Nowe podsumowanie.')
+  await expect(summary).toHaveValue('New summary.')
   await expect(fullName).toHaveValue('Ewa Nowak')
   // Druga zmiana z dwóch pozostaje cofnięta/ponowiona dokładnie raz także po chwili (bez opóźnionego drugiego kroku).
   await window.waitForTimeout(300)
@@ -985,126 +973,126 @@ test('one Cmd+Z / Cmd+Shift+Z press with the Edycja menu in place undoes and red
   await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Ewa Nowak')
 })
 
-test('after Edycja → Cofnij in the menu, Cmd+Z undoes the earlier CV change and the result is saved', async () => {
+test('after Edit → Undo in the menu, Cmd+Z undoes the earlier CV change and the result is saved', async () => {
   await openFirstCv()
-  const fullName = window.getByLabel('Imię i nazwisko')
-  const summary = window.getByLabel('Podsumowanie')
+  const fullName = window.getByLabel('Full name')
+  const summary = window.getByLabel('Summary')
   const originalSummary = await summary.inputValue()
   await fullName.fill('Ewa Nowak')
-  await summary.fill('Nowe podsumowanie.')
+  await summary.fill('New summary.')
 
-  await clickMenuItem('Edycja', 'Cofnij')
+  await clickMenuItem('Edit', 'Undo')
   await expect(summary).toHaveValue(originalSummary)
   await expect(fullName).toHaveValue('Ewa Nowak')
   await window.keyboard.press('Meta+z')
-  await expect(fullName).toHaveValue('Anna Przykładowa')
+  await expect(fullName).toHaveValue('Jane Example')
   await expect(summary).toHaveValue(originalSummary)
-  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Anna Przykładowa')
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Jane Example')
 
   // Ponów z menu, a potem skrótem: kolejno obie zmiany.
-  await clickMenuItem('Edycja', 'Ponów')
+  await clickMenuItem('Edit', 'Redo')
   await expect(fullName).toHaveValue('Ewa Nowak')
   await expect(summary).toHaveValue(originalSummary)
   await window.keyboard.press('Meta+Shift+z')
-  await expect(summary).toHaveValue('Nowe podsumowanie.')
+  await expect(summary).toHaveValue('New summary.')
 
   // Zmiana z menu zapisuje się automatycznie jak przy skrócie.
-  await clickMenuItem('Edycja', 'Cofnij')
+  await clickMenuItem('Edit', 'Undo')
   await expect(summary).toHaveValue(originalSummary)
-  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+  await expect(window.getByText('Changes saved')).toBeVisible()
   await window.getByRole('button', { name: '← Moje CV' }).click()
   await openFirstCv()
-  await expect(window.getByLabel('Imię i nazwisko')).toHaveValue('Ewa Nowak')
-  await expect(window.getByLabel('Podsumowanie')).toHaveValue(originalSummary)
+  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
+  await expect(window.getByLabel('Summary')).toHaveValue(originalSummary)
 })
 
-test('in the CV library Edycja → Cofnij undoes typing in the rename field and never changes the closed CV', async () => {
-  const library = window.getByRole('list', { name: 'Lista CV' })
-  await library.getByRole('button', { name: 'Otwórz' }).click()
-  await window.getByLabel('Imię i nazwisko').fill('Ewa Nowak')
-  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+test('in the CV library Edit → Undo undoes typing in the rename field and never changes the closed CV', async () => {
+  const library = window.getByRole('list', { name: 'CV list' })
+  await library.getByRole('button', { name: 'Open' }).click()
+  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await expect(window.getByText('Changes saved')).toBeVisible()
   await window.getByRole('button', { name: '← Moje CV' }).click()
 
   // Po wyjściu z edytora menu cofa tekst w polu, a nie historię zamkniętego CV.
-  await library.getByRole('button', { name: 'Zmień nazwę' }).click()
-  const name = library.getByLabel('Nazwa CV')
-  await name.pressSequentially(' dla banku')
-  await expect(name).toHaveValue('Przykładowe CV dla banku')
-  await clickMenuItem('Edycja', 'Cofnij')
-  await expect(name).toHaveValue('Przykładowe CV')
-  await clickMenuItem('Edycja', 'Ponów')
-  await expect(name).toHaveValue('Przykładowe CV dla banku')
+  await library.getByRole('button', { name: 'Rename' }).click()
+  const name = library.getByLabel('CV name')
+  await name.pressSequentially(' for the bank')
+  await expect(name).toHaveValue('Sample CV for the bank')
+  await clickMenuItem('Edit', 'Undo')
+  await expect(name).toHaveValue('Sample CV')
+  await clickMenuItem('Edit', 'Redo')
+  await expect(name).toHaveValue('Sample CV for the bank')
 
   // Cmd+Z w polu działa jak dotąd.
   await window.keyboard.press('Meta+z')
-  await expect(name).toHaveValue('Przykładowe CV')
-  await library.getByRole('button', { name: 'Anuluj' }).click()
+  await expect(name).toHaveValue('Sample CV')
+  await library.getByRole('button', { name: 'Cancel' }).click()
 
-  await library.getByRole('button', { name: 'Otwórz' }).click()
-  await expect(window.getByLabel('Imię i nazwisko')).toHaveValue('Ewa Nowak')
+  await library.getByRole('button', { name: 'Open' }).click()
+  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
-test('Edycja → Zaznacz wszystko, Wytnij, Kopiuj and Wklej in the menu work in a form field', async () => {
+test('Edit → Select All, Cut, Copy and Paste in the menu work in a form field', async () => {
   await openFirstCv()
-  const fullName = window.getByLabel('Imię i nazwisko')
+  const fullName = window.getByLabel('Full name')
   await fullName.focus()
 
-  await clickMenuItem('Edycja', 'Zaznacz wszystko')
-  await clickMenuItem('Edycja', 'Wytnij')
+  await clickMenuItem('Edit', 'Select All')
+  await clickMenuItem('Edit', 'Cut')
   await expect(fullName).toHaveValue('')
-  await clickMenuItem('Edycja', 'Wklej')
-  await expect(fullName).toHaveValue('Anna Przykładowa')
+  await clickMenuItem('Edit', 'Paste')
+  await expect(fullName).toHaveValue('Jane Example')
 
-  await clickMenuItem('Edycja', 'Zaznacz wszystko')
-  await clickMenuItem('Edycja', 'Kopiuj')
+  await clickMenuItem('Edit', 'Select All')
+  await clickMenuItem('Edit', 'Copy')
   await fullName.press('ArrowRight')
-  await clickMenuItem('Edycja', 'Wklej')
-  await expect(fullName).toHaveValue('Anna PrzykładowaAnna Przykładowa')
-  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Anna PrzykładowaAnna Przykładowa')
+  await clickMenuItem('Edit', 'Paste')
+  await expect(fullName).toHaveValue('Jane ExampleJane Example')
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Jane ExampleJane Example')
 })
 
 test('exports a CV to a JSON file and imports it back as a new CV; an invalid file leaves the library unchanged', async () => {
-  const library = window.getByRole('list', { name: 'Lista CV' })
+  const library = window.getByRole('list', { name: 'CV list' })
   const rows = library.getByRole('listitem')
   await expect(rows).toHaveCount(1)
-  await library.getByRole('button', { name: 'Zmień nazwę' }).click()
-  await library.getByLabel('Nazwa CV').fill('CV – Talent Partners')
-  await library.getByRole('button', { name: 'Zapisz' }).click()
+  await library.getByRole('button', { name: 'Rename' }).click()
+  await library.getByLabel('CV name').fill('CV – Talent Partners')
+  await library.getByRole('button', { name: 'Save' }).click()
   await expect(rows.first()).toContainText('CV – Talent Partners')
 
   // Eksport przez systemowe okno zapisu, z nazwą pliku podpowiedzianą z nazwy CV.
-  const jsonPath = join(outputDir, 'kopia.json')
+  const jsonPath = join(outputDir, 'copy.json')
   await stubSaveDialog(jsonPath)
-  await library.getByRole('button', { name: 'Eksportuj do pliku' }).click()
-  await expect(window.getByRole('status')).toHaveText('Zapisano plik: kopia.json')
+  await library.getByRole('button', { name: 'Export to file' }).click()
+  await expect(window.getByRole('status')).toHaveText('Saved file: copy.json')
   const saveDialogOptions = await app.evaluate(
     () => (globalThis as { saveDialogCalls?: Electron.SaveDialogOptions[] }).saveDialogCalls
   )
   expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV – Talent Partners.json')
   const exported = JSON.parse(await readFile(jsonPath, 'utf8'))
-  expect(exported).toMatchObject({ schemaVersion: 1, name: 'CV – Talent Partners', header: { fullName: 'Anna Przykładowa' } })
+  expect(exported).toMatchObject({ schemaVersion: 1, name: 'CV – Talent Partners', header: { fullName: 'Jane Example' } })
 
   // Import tego samego pliku dodaje nowe CV obok istniejącego – niczego nie nadpisuje.
   await stubOpenDialog(jsonPath)
-  await window.getByRole('button', { name: 'Importuj z pliku' }).click()
-  await expect(window.getByRole('status')).toHaveText('Zaimportowano „CV – Talent Partners”.')
+  await window.getByRole('button', { name: 'Import from file' }).click()
+  await expect(window.getByRole('status')).toHaveText('Imported “CV – Talent Partners”.')
   await expect(rows).toHaveCount(2)
   await expect(rows.filter({ hasText: 'CV – Talent Partners' })).toHaveCount(2)
-  await rows.first().getByRole('button', { name: 'Otwórz' }).click()
-  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Anna Przykładowa')
+  await rows.first().getByRole('button', { name: 'Open' }).click()
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Jane Example')
   await window.getByRole('button', { name: '← Moje CV' }).click()
 
-  // Niepoprawny plik → komunikat po polsku, biblioteka bez zmian.
-  const invalidPath = join(outputDir, 'zepsute.json')
-  await writeFile(invalidPath, '{ "name": "Nie CV" }')
+  // Niepoprawny plik → komunikat, biblioteka bez zmian.
+  const invalidPath = join(outputDir, 'broken.json')
+  await writeFile(invalidPath, '{ "name": "Not a CV" }')
   await stubOpenDialog(invalidPath)
-  await window.getByRole('button', { name: 'Importuj z pliku' }).click()
-  await expect(window.getByRole('alert')).toHaveText('Nie udało się zaimportować CV. Plik nie zawiera poprawnego CV.')
+  await window.getByRole('button', { name: 'Import from file' }).click()
+  await expect(window.getByRole('alert')).toHaveText('Couldn’t import the CV. The file doesn’t contain a valid CV.')
   await expect(rows).toHaveCount(2)
 
   // Anulowane okno wyboru niczego nie zmienia.
   await stubOpenDialog(null)
-  await window.getByRole('button', { name: 'Importuj z pliku' }).click()
+  await window.getByRole('button', { name: 'Import from file' }).click()
   await expect(window.getByRole('alert')).toHaveCount(0)
   await expect(rows).toHaveCount(2)
 })

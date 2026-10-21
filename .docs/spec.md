@@ -14,7 +14,7 @@ Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/bri
 | Q5 | Podział stron | Automatyczne reguły + przełącznik „nowa strona przed tym elementem” przy sekcji i wpisie. |
 | Q6 | Klauzula – zachowanie | Zawsze na dole ostatniej strony. Gdy się nie mieści – na dół nowej strony. Przełącznik wł./wył. Zwykły tekst. |
 | Q7 | Klauzula – treści | Globalna biblioteka zapisanych klauzul; CV wybiera jedną i może ją nadpisać lokalnie. |
-| Q8 | Język | Język interfejsu (angielski, polski) niezależny od języka CV: przy pierwszym uruchomieniu język systemu, jeśli obsługiwany, inaczej angielski; zmiana w menu Language / Język (English, Polski, System) działa od razu i jest zapamiętywana. Własny typowany słownik (ADR-0001). Nagłówki sekcji z polskimi domyślnymi, edytowalne. |
+| Q8 | Język | Język interfejsu (angielski, polski) niezależny od języka CV: przy pierwszym uruchomieniu język systemu, jeśli obsługiwany, inaczej angielski; zmiana w menu Language / Język (English, Polski, System) działa od razu i jest zapamiętywana. Cały interfejs (menu, okna plików, ekrany, komunikaty, licznik stron z polską odmianą) pochodzi z własnego typowanego słownika wspólnego dla main i renderera (ADR-0001); nowy język = nowy słownik i pozycja na liście języków. Treść domyślna (nazwa nowego CV, tytuły sekcji, etykiety kontaktu, przykładowe CV, dopisek „(kopia)”) powstaje w języku interfejsu z chwili utworzenia, potem jest zwykłą, edytowalną treścią; zmiana języka nie zmienia istniejących CV. Angielskie przykładowe CV nie ma klauzuli zgody. Błędy z procesu głównego widoczne dla użytkownika (np. niepoprawny plik importu) trafiają do renderera jako kody. Nazwa aplikacji i folder danych pozostają „Moje CV”. |
 | Q9 | Zdjęcie | Wgranie pliku, kadrowanie do stałych proporcji, opcja „bez zdjęcia” (nagłówek bez kolumny zdjęcia). |
 | Q10 | Wygląd | Kolor akcentu (domyślnie `#1a6e72`) + wybór fontu (Q24). Reszta stała. |
 | Q11 | Formatowanie | Zwykły tekst wszędzie (bez pogrubień, linków). |
@@ -27,7 +27,7 @@ Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/bri
 | Q18 | Kolejność | Ręczna: drag & drop + strzałki góra/dół (sekcje, wpisy, punkty). |
 | Q19 | Eksport PDF | Systemowe okno zapisu, nazwa `CV_Imie_Nazwisko.pdf`, potem „Pokaż w Finderze / Otwórz”. Tekst zaznaczalny, metadane Title/Author. |
 | Q20 | Liczba stron | Licznik stron w podglądzie; dyskretna informacja przy > 2 stronach. Bez limitu. |
-| Q21 | Dane startowe | Przykładowe CV z fikcyjnymi danymi przy pierwszym uruchomieniu. Prawdziwe dane – osobny JSON do importu, poza repo. |
+| Q21 | Dane startowe | Przykładowe CV z fikcyjnymi danymi przy pierwszym uruchomieniu, w języku interfejsu. Prawdziwe dane – osobny JSON do importu, poza repo. |
 | Q22 | Wersjonowanie | `schemaVersion` w każdym pliku + migracje. |
 | Q23 | Dystrybucja | `.dmg` universal (arm64 + x64) przez electron-builder. Konfiguracja gotowa na Win/Linux. Bez auto-update. |
 | Q24 | Font | Dołączone fonty: **Lato (domyślny)**, Source Sans 3, Arimo. Wybór per CV. Osadzane w PDF. |
@@ -174,15 +174,16 @@ Każda strona to `div` 210×297 mm z paddingiem marginesów, `overflow: hidden`,
 
 ## 6. Architektura
 
-- **main**: okna, IPC, system plików (CV, ustawienia, import/eksport), eksport PDF, dialogi, język interfejsu (wybór → system → angielski; `MOJE_CV_LANGUAGE=en|pl` wymusza go w testach) i menu aplikacji w tym języku (Edycja → Cofnij / Ponów w edytorze CV przekazywane do historii CV, Language / Język).
+- **main**: okna, IPC, system plików (CV, ustawienia, import/eksport), eksport PDF, dialogi (tytuły i filtry w języku interfejsu), język interfejsu (wybór → system → angielski; `MOJE_CV_LANGUAGE=en|pl` wymusza go w testach) i menu aplikacji w tym języku (Edycja → Cofnij / Ponów w edytorze CV przekazywane do historii CV, Language / Język).
 - **preload**: wąskie API przez `contextBridge`: `cv.list/get/save/delete/duplicate/import/export`, `settings.get/save`, `pdf.export`, `photo.pick`, `language.get/onChange` (bieżący język interfejsu i jego zmiany), `editor.setActive/onHistoryCommand` (edytor zgłasza, że jest otwarty, i dostaje Cofnij / Ponów z menu). `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`.
 - **renderer** (React):
   - `domain/` – schematy Zod, migracje, formatowanie dat, generator bloków, `paginate` (bez Reacta, testowane w Vitest).
   - `template/` – komponenty renderujące bloki i strony (`<CvPages>`), CSS przeniesiony z template'u, fonty `@font-face` z plików lokalnych.
   - `editor/` – formularze sekcji, drag & drop, kadrowanie zdjęcia, biblioteka klauzul.
   - `preview/` – panel podglądu: licznik stron, informacja o długości CV, powiększenie (dopasowanie do szerokości, +, −, 100%).
+  - `i18n.tsx` – bieżący język interfejsu z procesu głównego (`useInterfaceLanguage`, `useDictionary`); jego zmiana od razu przerysowuje okno. Słowniki w `src/shared/i18n/` (wspólne z main).
   - `store/` – Zustand + zundo, autozapis.
-- **Testy**: Vitest dla `paginate`, generatora bloków, migracji, formatowania dat. Playwright (Electron): start aplikacji → przykładowe CV → eksport PDF → plik istnieje i ma oczekiwaną liczbę stron.
+- **Testy**: Vitest dla `paginate`, generatora bloków, migracji, formatowania dat. Playwright (Electron): start aplikacji → przykładowe CV → eksport PDF → plik istnieje i ma oczekiwaną liczbę stron. Testy e2e domyślnie wymuszają angielski (`MOJE_CV_LANGUAGE=en`); osobne testy sprawdzają uruchomienie po polsku i zmianę języka.
 
 ## 7. Plan wdrożenia (etapy pionowe)
 
@@ -196,4 +197,4 @@ Każda strona to `div` 210×297 mm z paddingiem marginesów, `overflow: hidden`,
 
 ## 8. Poza zakresem v1
 
-Wiele template'ów, formatowanie tekstu, podpisywanie/notaryzacja, auto-update, wersje Win/Linux (niezablokowane, ale nietestowane), interfejs w innych językach.
+Wiele template'ów, formatowanie tekstu, podpisywanie/notaryzacja, auto-update, wersje Win/Linux (niezablokowane, ale nietestowane).
