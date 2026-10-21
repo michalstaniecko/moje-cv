@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
+import { useDictionary, useInterfaceLanguage } from '../i18n'
 import { CvPages } from '../template/CvPages'
 import { pageCountLabel, RECOMMENDED_MAX_PAGES } from './pageCount'
 import { fitScale, PREVIEW_MARGIN_PX, zoomIn, zoomOut } from './zoom'
@@ -14,37 +15,37 @@ export function PreviewPane({ document }: { document: CvDocument }) {
   const scale = chosenScale ?? fitScale(panelWidth)
   const [pageCount, setPageCount] = useState<number | null>(null)
   const onLayout = useCallback((layout: PaginateResult) => setPageCount(layout.pages.length), [])
+  const t = useDictionary().preview
+  const language = useInterfaceLanguage()
 
   return (
     <main ref={panel} className="preview" style={{ '--scale': scale, '--page-gap': `${PREVIEW_MARGIN_PX}px` } as CSSProperties}>
       <div className="preview-bar">
         {pageCount !== null && (
           <span className="preview-page-count" role="status">
-            {pageCountLabel(pageCount)}
+            {pageCountLabel(pageCount, language)}
           </span>
         )}
         {pageCount !== null && pageCount > RECOMMENDED_MAX_PAGES && (
-          <span className="preview-length-notice">
-            CV ma więcej niż {pageCountLabel(RECOMMENDED_MAX_PAGES)} – warto je skrócić.
-          </span>
+          <span className="preview-length-notice">{t.lengthNotice(pageCountLabel(RECOMMENDED_MAX_PAGES, language))}</span>
         )}
         <div className="preview-zoom">
-          <button type="button" aria-label="Pomniejsz" onClick={() => setChosenScale(zoomOut(scale))}>
+          <button type="button" aria-label={t.zoomOut} onClick={() => setChosenScale(zoomOut(scale))}>
             −
           </button>
           <span className="preview-zoom-value">{Math.round(scale * 100)}%</span>
-          <button type="button" aria-label="Powiększ" onClick={() => setChosenScale(zoomIn(scale))}>
+          <button type="button" aria-label={t.zoomIn} onClick={() => setChosenScale(zoomIn(scale))}>
             +
           </button>
           <button type="button" onClick={() => setChosenScale(1)}>
             100%
           </button>
           <button type="button" onClick={() => setChosenScale(null)} disabled={chosenScale === null}>
-            Dopasuj
+            {t.fit}
           </button>
         </div>
       </div>
-      <CvPages document={document} onLayout={onLayout} markOversized />
+      <CvPages document={document} onLayout={onLayout} oversizedMessage={t.oversized} />
     </main>
   )
 }

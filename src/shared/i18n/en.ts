@@ -1,3 +1,5 @@
+import type { PluralForms } from './plural'
+
 // Słownik angielski – źródło prawdy: każdy inny język musi spełniać jego typ (ADR-0001).
 export const en = {
   appName: 'Moje CV',
@@ -189,6 +191,15 @@ export const en = {
       zoom: 'Zoom',
       apply: 'Apply'
     }
+  },
+  preview: {
+    pages: { one: (count) => `${count} page`, other: (count) => `${count} pages` } as PluralForms,
+    lengthNotice: (pages: string) => `The CV is longer than ${pages} – consider shortening it.`,
+    // Tylko w podglądzie – nigdy nie trafia do PDF.
+    oversized: 'This fragment is too long to fit on a page – shorten it',
+    zoomOut: 'Zoom out',
+    zoomIn: 'Zoom in',
+    fit: 'Fit'
   },
   defaultContent: {
     // Etykiety kontaktu w nowym CV i podpowiedzi w edytorze.

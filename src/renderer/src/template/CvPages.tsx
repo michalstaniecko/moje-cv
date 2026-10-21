@@ -72,17 +72,18 @@ function useReadySignal(
 
 // Strony A4 z treścią CV. Ten sam komponent służy do podglądu i do eksportu PDF.
 // `onReady` – wywoływane, gdy fonty są załadowane, podział policzony, a zdjęcie wczytane.
-// `onLayout` – wywoływane po każdym podziale stron; `markOversized` wyróżnia bloki wyższe niż strona (tylko podgląd).
+// `onLayout` – wywoływane po każdym podziale stron; `oversizedMessage` wyróżnia bloki wyższe niż strona i podpisuje je
+// tym komunikatem (tylko podgląd – okno wydruku nie zna języka interfejsu i niczego nie wyróżnia).
 export function CvPages({
   document,
   onReady,
   onLayout,
-  markOversized = false
+  oversizedMessage
 }: {
   document: CvDocument
   onReady?: () => void
   onLayout?: (layout: PaginateResult) => void
-  markOversized?: boolean
+  oversizedMessage?: string
 }) {
   const blocks = useMemo(() => generateBlocks(document), [document])
   const consentText = document.consent.enabled && document.consent.text.trim() ? document.consent.text : null
@@ -93,6 +94,7 @@ export function CvPages({
   useEffect(() => {
     if (layout) onLayout?.(layout)
   }, [layout, onLayout])
+  const markOversized = oversizedMessage !== undefined
   const oversizedIds = useMemo(() => new Set(markOversized ? layout?.oversizedIds : []), [layout, markOversized])
 
   const style = {
@@ -126,7 +128,7 @@ export function CvPages({
                 })}
                 {ids.some((id) => oversizedIds.has(id)) && (
                   <p className="cv-oversized-message" role="status">
-                    Ten fragment jest za długi, aby zmieścić się na stronie – skróć go
+                    {oversizedMessage}
                   </p>
                 )}
                 {consentText !== null && index === layout.pages.length - 1 && (

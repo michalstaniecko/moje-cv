@@ -406,6 +406,36 @@ test('switching the language in the menu translates the open editor without losi
   await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
+test('the preview shows the page count, warnings and zoom controls in English, and the warnings stay out of the PDF', async () => {
+  await app.close()
+  await launch({ language: 'en' })
+  const pdfPath = join(outputDir, 'long.pdf')
+  await stubSaveDialog(pdfPath)
+  await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
+  const preview = window.locator('.preview')
+  const pageCount = preview.locator('.preview-page-count')
+  await expect(pageCount).toHaveText(/^[12] pages?$/)
+  await expect(preview).not.toContainText('longer than')
+
+  await window.getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
+  const message = 'This fragment is too long to fit on a page – shorten it'
+  await expect(preview.getByText(message)).toBeVisible()
+  await expect(pageCount).toHaveText(/^\d+ pages$/)
+  await expect(preview).toContainText('The CV is longer than 2 pages – consider shortening it.')
+
+  await preview.getByRole('button', { name: 'Zoom in' }).click()
+  await preview.getByRole('button', { name: 'Zoom out' }).click()
+  await preview.getByRole('button', { name: 'Fit' }).click()
+  await expect(preview.getByRole('button', { name: 'Fit' })).toBeDisabled()
+
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF')).toBeVisible()
+  const pdf = await readPdf(await readFile(pdfPath))
+  expect(pdf.pages.join('')).toContain('A very long summary, line 1.')
+  expect(pdf.pages.join('')).not.toContain('This fragment is too long')
+  expect(pdf.pages.join('')).not.toContain('longer than')
+})
+
 test('the packaged app identifies itself as „Moje CV” (which names its application data folder)', async () => {
   test.skip(!packagedExecutable, 'dotyczy tylko zbudowanej aplikacji')
   const identity = await app.evaluate(({ app }) => ({ name: app.getName(), isPackaged: app.isPackaged }))

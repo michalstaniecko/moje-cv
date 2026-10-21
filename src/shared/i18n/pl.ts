@@ -187,6 +187,19 @@ export const pl: Dictionary = {
       apply: 'Zastosuj'
     }
   },
+  preview: {
+    pages: {
+      one: (count) => `${count} strona`,
+      few: (count) => `${count} strony`,
+      many: (count) => `${count} stron`,
+      other: (count) => `${count} strony`
+    },
+    lengthNotice: (pages) => `CV ma więcej niż ${pages} – warto je skrócić.`,
+    oversized: 'Ten fragment jest za długi, aby zmieścić się na stronie – skróć go',
+    zoomOut: 'Pomniejsz',
+    zoomIn: 'Powiększ',
+    fit: 'Dopasuj'
+  },
   defaultContent: {
     contactLabels: ['Tel', 'E-mail', 'LinkedIn', 'Miasto']
   }
