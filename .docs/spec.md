@@ -173,12 +173,13 @@ Każda strona to `div` 210×297 mm z paddingiem marginesów, `overflow: hidden`,
 
 ## 6. Architektura
 
-- **main**: okna, IPC, system plików (CV, ustawienia, import/eksport), eksport PDF, dialogi.
-- **preload**: wąskie API przez `contextBridge`: `cv.list/get/save/delete/duplicate/import/export`, `settings.get/save`, `pdf.export`, `photo.pick`. `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`.
+- **main**: okna, IPC, system plików (CV, ustawienia, import/eksport), eksport PDF, dialogi, polskie menu aplikacji (Edycja → Cofnij / Ponów w edytorze CV przekazywane do historii CV).
+- **preload**: wąskie API przez `contextBridge`: `cv.list/get/save/delete/duplicate/import/export`, `settings.get/save`, `pdf.export`, `photo.pick`, `editor.setActive/onHistoryCommand` (edytor zgłasza, że jest otwarty, i dostaje Cofnij / Ponów z menu). `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`.
 - **renderer** (React):
   - `domain/` – schematy Zod, migracje, formatowanie dat, generator bloków, `paginate` (bez Reacta, testowane w Vitest).
   - `template/` – komponenty renderujące bloki i strony (`<CvPages>`), CSS przeniesiony z template'u, fonty `@font-face` z plików lokalnych.
   - `editor/` – formularze sekcji, drag & drop, kadrowanie zdjęcia, biblioteka klauzul.
+  - `preview/` – panel podglądu: licznik stron, informacja o długości CV, powiększenie (dopasowanie do szerokości, +, −, 100%).
   - `store/` – Zustand + zundo, autozapis.
 - **Testy**: Vitest dla `paginate`, generatora bloków, migracji, formatowania dat. Playwright (Electron): start aplikacji → przykładowe CV → eksport PDF → plik istnieje i ma oczekiwaną liczbę stron.
 

@@ -1,4 +1,6 @@
 import { app, BrowserWindow, ipcMain, Menu, type BaseWindow, type MenuItemConstructorOptions, type WebContents } from 'electron'
+import type { HistoryCommand } from '../shared/api'
+import { requireBoolean } from './ipcArgs'
 
 // Okna (według id webContents), w których jest otwarty edytor CV – zgłasza je renderer.
 // Wartość odpina nasłuchiwanie zamknięcia i przeładowania okna i usuwa flagę.
@@ -8,7 +10,7 @@ const activeEditors = new Map<number, () => void>()
 // a poza edytorem jak zwykłe cofanie pola tekstowego.
 export function registerAppMenu(): void {
   ipcMain.on('editor:active', (event, active: unknown) => {
-    if (active === true) trackEditor(event.sender)
+    if (requireBoolean(active)) trackEditor(event.sender)
     else activeEditors.get(event.sender.id)?.()
   })
   Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate()))
@@ -34,7 +36,7 @@ function trackEditor(contents: WebContents) {
 
 // Skrót Cmd+Z obsłużony przez edytor (preventDefault) nie dociera do menu, więc tu trafia tylko kliknięcie
 // w menu albo skrót poza edytorem.
-function historyCommand(command: 'undo' | 'redo') {
+function historyCommand(command: HistoryCommand) {
   return (_item: Electron.MenuItem, window: BaseWindow | undefined) => {
     if (!(window instanceof BrowserWindow)) return
     const contents = window.webContents

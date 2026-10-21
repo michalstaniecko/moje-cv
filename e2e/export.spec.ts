@@ -56,6 +56,11 @@ async function stubOpenDialog(filePath: string | null) {
   }, filePath)
 }
 
+// Otwiera pierwsze CV z biblioteki (przy pierwszym uruchomieniu – przykładowe CV).
+async function openFirstCv() {
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+}
+
 // Klika pozycję menu aplikacji (np. Edycja → Cofnij) tak jak użytkownik: z widocznym oknem aplikacji jako oknem z fokusem.
 // Natywnego menu Playwright nie kliknie, więc pozycja jest wywoływana w procesie głównym. Pozycje z rolą edycji
 // (Wytnij, Kopiuj, Wklej, Zaznacz wszystko) macOS obsługuje natywnie, a `click()` z JS ich nie wykonuje – wtedy
@@ -135,14 +140,14 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   await fullName.fill('Ewa Nowak')
   await app.close()
   await launch()
-  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await openFirstCv()
   await expect(window.getByLabel('Imię i nazwisko')).toHaveValue('Ewa Nowak')
 })
 
 test('edits education and lists, reorders and hides sections, and forces page breaks in the preview and PDF', async () => {
   const pdfPath = join(outputDir, 'layout.pdf')
   await stubSaveDialog(pdfPath)
-  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await openFirstCv()
   const preview = window.locator('.preview')
   await expect(preview.locator('.cv-page').first()).toBeVisible()
 
@@ -352,7 +357,7 @@ test('picks a photo from disk, crops it to 3:4 for the header and removes it, in
   await writeFile(photoPath, Buffer.from(png, 'base64'))
   const brokenPath = join(outputDir, 'uszkodzone.jpg')
   await writeFile(brokenPath, 'to nie jest obraz')
-  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await openFirstCv()
   const preview = window.locator('.preview')
   await expect(preview.locator('.cv-page .cv-photo')).toHaveCount(1)
   const photoField = window.getByRole('group', { name: 'Zdjęcie' })
@@ -451,7 +456,7 @@ test('picks a photo from disk, crops it to 3:4 for the header and removes it, in
 test('shows the page count, warns about long CVs and oversized fragments only in the preview, and zooms without changing the page split', async () => {
   const pdfPath = join(outputDir, 'long.pdf')
   await stubSaveDialog(pdfPath)
-  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await openFirstCv()
   const preview = window.locator('.preview')
   const pageCount = preview.locator('.preview-page-count')
   await expect(pageCount).toHaveText('2 strony')
@@ -503,7 +508,7 @@ test('shows the page count, warns about long CVs and oversized fragments only in
 })
 
 test('Edycja → Cofnij / Ponów in the menu undo and redo CV changes in the form and the preview', async () => {
-  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await openFirstCv()
   const fullName = window.getByLabel('Imię i nazwisko')
   const previewName = window.locator('.preview .cv-page .cv-name')
   await fullName.fill('Ewa Nowak')
@@ -519,7 +524,7 @@ test('Edycja → Cofnij / Ponów in the menu undo and redo CV changes in the for
 })
 
 test('one Cmd+Z / Cmd+Shift+Z press with the Edycja menu in place undoes and redoes exactly one CV change', async () => {
-  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await openFirstCv()
   const fullName = window.getByLabel('Imię i nazwisko')
   const summary = window.getByLabel('Podsumowanie')
   const originalSummary = await summary.inputValue()
@@ -540,7 +545,7 @@ test('one Cmd+Z / Cmd+Shift+Z press with the Edycja menu in place undoes and red
 })
 
 test('after Edycja → Cofnij in the menu, Cmd+Z undoes the earlier CV change and the result is saved', async () => {
-  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await openFirstCv()
   const fullName = window.getByLabel('Imię i nazwisko')
   const summary = window.getByLabel('Podsumowanie')
   const originalSummary = await summary.inputValue()
@@ -567,7 +572,7 @@ test('after Edycja → Cofnij in the menu, Cmd+Z undoes the earlier CV change an
   await expect(summary).toHaveValue(originalSummary)
   await expect(window.getByText('Zmiany zapisane')).toBeVisible()
   await window.getByRole('button', { name: '← Moje CV' }).click()
-  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await openFirstCv()
   await expect(window.getByLabel('Imię i nazwisko')).toHaveValue('Ewa Nowak')
   await expect(window.getByLabel('Podsumowanie')).toHaveValue(originalSummary)
 })
@@ -599,7 +604,7 @@ test('in the CV library Edycja → Cofnij undoes typing in the rename field and 
 })
 
 test('Edycja → Zaznacz wszystko, Wytnij, Kopiuj and Wklej in the menu work in a form field', async () => {
-  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await openFirstCv()
   const fullName = window.getByLabel('Imię i nazwisko')
   await fullName.focus()
 

@@ -19,6 +19,9 @@ export type ImportCvFileResult =
   | { status: 'canceled' }
   | { status: 'invalid'; message: string }
 
+// Polecenie historii CV wysyłane z menu Edycja do otwartego edytora.
+export type HistoryCommand = 'undo' | 'redo'
+
 // Pozycja na liście CV. Uszkodzony plik (niepoprawny JSON lub niezgodny ze schematem) jest widoczny, ale nie da się go otworzyć.
 export type CvListEntry =
   | { status: 'ok'; id: string; name: string; updatedAt: string }
@@ -56,7 +59,7 @@ export type Api = {
   editor: {
     setActive: (active: boolean) => void
     // Zwraca funkcję wypisania.
-    onHistoryCommand: (listener: (command: 'undo' | 'redo') => void) => () => void
+    onHistoryCommand: (listener: (command: HistoryCommand) => void) => () => void
   }
   // Używane wyłącznie przez ukryte okno wydruku.
   print: {
