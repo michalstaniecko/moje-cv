@@ -10,6 +10,15 @@ export type PickPhotoResult =
   | { status: 'unsupported' }
   | { status: 'too-large' }
 
+// Wynik eksportu CV do pliku .json.
+export type ExportCvFileResult = { status: 'saved'; filePath: string } | { status: 'canceled' }
+
+// Wynik importu CV z pliku .json. Niepoprawny plik niczego nie zmienia w bibliotece – `message` jest gotowy do pokazania.
+export type ImportCvFileResult =
+  | { status: 'imported'; document: CvDocument }
+  | { status: 'canceled' }
+  | { status: 'invalid'; message: string }
+
 // Pozycja na liście CV. Uszkodzony plik (niepoprawny JSON lub niezgodny ze schematem) jest widoczny, ale nie da się go otworzyć.
 export type CvListEntry =
   | { status: 'ok'; id: string; name: string; updatedAt: string }
@@ -24,6 +33,8 @@ export type Api = {
     rename: (id: string, name: string) => Promise<CvDocument>
     update: (document: CvDocument) => Promise<void>
     delete: (id: string) => Promise<void>
+    exportFile: (id: string) => Promise<ExportCvFileResult>
+    importFile: () => Promise<ImportCvFileResult>
   }
   // Ustawienia globalne: biblioteka klauzul zgody.
   settings: {

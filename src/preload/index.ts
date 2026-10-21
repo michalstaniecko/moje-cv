@@ -10,7 +10,9 @@ const api: Api = {
     duplicate: (id) => ipcRenderer.invoke('cv:duplicate', id),
     rename: (id, name) => ipcRenderer.invoke('cv:rename', id, name),
     update: (document) => ipcRenderer.invoke('cv:update', document),
-    delete: (id) => ipcRenderer.invoke('cv:delete', id)
+    delete: (id) => ipcRenderer.invoke('cv:delete', id),
+    exportFile: (id) => ipcRenderer.invoke('cv:export-file', id),
+    importFile: () => ipcRenderer.invoke('cv:import-file')
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),

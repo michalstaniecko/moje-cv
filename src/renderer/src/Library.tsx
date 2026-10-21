@@ -8,7 +8,7 @@ type DamagedEntry = Extract<CvListEntry, { status: 'damaged' }>
 // Tryb pojedynczego wiersza: zwykły, zmiana nazwy albo potwierdzenie usunięcia.
 type RowMode = { id: string; kind: 'rename' | 'confirm-delete' } | null
 
-// Ekran startowy: lista CV z akcjami Nowe / Otwórz / Duplikuj / Zmień nazwę / Usuń i wejście do biblioteki klauzul.
+// Ekran startowy: lista CV z akcjami Nowe / Importuj / Otwórz / Duplikuj / Eksportuj / Zmień nazwę / Usuń i wejście do biblioteki klauzul.
 export function Library({
   onOpen,
   onOpenClauses
@@ -19,6 +19,7 @@ export function Library({
   const [entries, setEntries] = useState<CvListEntry[] | null>(null)
   const [rowMode, setRowMode] = useState<RowMode>(null)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const refresh = useCallback(async () => setEntries(await window.api.cv.list()), [])
 
@@ -29,6 +30,7 @@ export function Library({
   // Wykonuje operację, odświeża listę i zamyka edycję wiersza; błąd pokazuje jako komunikat.
   const runAndRefresh = async (action: () => Promise<unknown>, failure: string) => {
     setError(null)
+    setNotice(null)
     try {
       await action()
       setRowMode(null)
@@ -40,10 +42,37 @@ export function Library({
 
   const open = async (id: string) => {
     setError(null)
+    setNotice(null)
     try {
       onOpen(await window.api.cv.get(id))
     } catch {
       setError('Nie udało się otworzyć CV.')
+      await refresh()
+    }
+  }
+
+  const importFile = async () => {
+    setError(null)
+    setNotice(null)
+    try {
+      const result = await window.api.cv.importFile()
+      if (result.status === 'invalid') setError(`Nie udało się zaimportować CV. ${result.message}`)
+      if (result.status !== 'imported') return
+      setNotice(`Zaimportowano „${result.document.name}”.`)
+      await refresh()
+    } catch {
+      setError('Nie udało się zaimportować CV.')
+    }
+  }
+
+  const exportFile = async (id: string) => {
+    setError(null)
+    setNotice(null)
+    try {
+      const result = await window.api.cv.exportFile(id)
+      if (result.status === 'saved') setNotice(`Zapisano plik: ${baseName(result.filePath)}`)
+    } catch {
+      setError('Nie udało się wyeksportować CV.')
       await refresh()
     }
   }
@@ -55,6 +84,9 @@ export function Library({
         <button type="button" onClick={onOpenClauses}>
           Klauzule zgody
         </button>
+        <button type="button" onClick={importFile}>
+          Importuj z pliku
+        </button>
         <button type="button" onClick={() => runAndRefresh(() => window.api.cv.create(), 'Nie udało się utworzyć CV.')}>
           Nowe CV
         </button>
@@ -63,6 +95,11 @@ export function Library({
         {error && (
           <p className="library-error" role="alert">
             {error}
+          </p>
+        )}
+        {notice && (
+          <p className="library-notice" role="status">
+            {notice}
           </p>
         )}
         {entries?.length === 0 && <p className="library-empty">Nie masz jeszcze żadnego CV. Kliknij „Nowe CV”.</p>}
@@ -105,6 +142,9 @@ export function Library({
                         onClick={() => runAndRefresh(() => window.api.cv.duplicate(entry.id), 'Nie udało się zduplikować CV.')}
                       >
                         Duplikuj
+                      </button>
+                      <button type="button" onClick={() => exportFile(entry.id)}>
+                        Eksportuj do pliku
                       </button>
                       <button type="button" onClick={() => setRowMode({ id: entry.id, kind: 'rename' })}>
                         Zmień nazwę
@@ -186,3 +226,4 @@ function DamagedRow({ entry, onDelete }: { entry: DamagedEntry; onDelete: () => 
 
 const dateTimeFormat = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'short', timeStyle: 'short' })
 const formatDateTime = (iso: string) => dateTimeFormat.format(new Date(iso))
+const baseName = (filePath: string) => filePath.split(/[\\/]/).at(-1)

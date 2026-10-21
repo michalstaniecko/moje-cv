@@ -416,6 +416,52 @@ test('picks a photo from disk, crops it to 3:4 for the header and removes it, in
   await expect(preview.locator('.cv-photo')).toHaveCount(0)
 })
 
+test('exports a CV to a JSON file and imports it back as a new CV; an invalid file leaves the library unchanged', async () => {
+  const library = window.getByRole('list', { name: 'Lista CV' })
+  const rows = library.getByRole('listitem')
+  await expect(rows).toHaveCount(1)
+  await library.getByRole('button', { name: 'Zmień nazwę' }).click()
+  await library.getByLabel('Nazwa CV').fill('CV – Talent Partners')
+  await library.getByRole('button', { name: 'Zapisz' }).click()
+  await expect(rows.first()).toContainText('CV – Talent Partners')
+
+  // Eksport przez systemowe okno zapisu, z nazwą pliku podpowiedzianą z nazwy CV.
+  const jsonPath = join(outputDir, 'kopia.json')
+  await stubSaveDialog(jsonPath)
+  await library.getByRole('button', { name: 'Eksportuj do pliku' }).click()
+  await expect(window.getByRole('status')).toHaveText('Zapisano plik: kopia.json')
+  const saveDialogOptions = await app.evaluate(
+    () => (globalThis as { saveDialogCalls?: Electron.SaveDialogOptions[] }).saveDialogCalls
+  )
+  expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV – Talent Partners.json')
+  const exported = JSON.parse(await readFile(jsonPath, 'utf8'))
+  expect(exported).toMatchObject({ schemaVersion: 1, name: 'CV – Talent Partners', header: { fullName: 'Anna Przykładowa' } })
+
+  // Import tego samego pliku dodaje nowe CV obok istniejącego – niczego nie nadpisuje.
+  await stubOpenDialog(jsonPath)
+  await window.getByRole('button', { name: 'Importuj z pliku' }).click()
+  await expect(window.getByRole('status')).toHaveText('Zaimportowano „CV – Talent Partners”.')
+  await expect(rows).toHaveCount(2)
+  await expect(rows.filter({ hasText: 'CV – Talent Partners' })).toHaveCount(2)
+  await rows.first().getByRole('button', { name: 'Otwórz' }).click()
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Anna Przykładowa')
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+
+  // Niepoprawny plik → komunikat po polsku, biblioteka bez zmian.
+  const invalidPath = join(outputDir, 'zepsute.json')
+  await writeFile(invalidPath, '{ "name": "Nie CV" }')
+  await stubOpenDialog(invalidPath)
+  await window.getByRole('button', { name: 'Importuj z pliku' }).click()
+  await expect(window.getByRole('alert')).toHaveText('Nie udało się zaimportować CV. Plik nie zawiera poprawnego CV.')
+  await expect(rows).toHaveCount(2)
+
+  // Anulowane okno wyboru niczego nie zmienia.
+  await stubOpenDialog(null)
+  await window.getByRole('button', { name: 'Importuj z pliku' }).click()
+  await expect(window.getByRole('alert')).toHaveCount(0)
+  await expect(rows).toHaveCount(2)
+})
+
 // Przeciąga element za uchwyt myszą krok po kroku, tak jak użytkownik (dnd-kit reaguje na zdarzenia wskaźnika).
 async function dragOnto(handle: Locator, target: Locator) {
   await target.scrollIntoViewIfNeeded()

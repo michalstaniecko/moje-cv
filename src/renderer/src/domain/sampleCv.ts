@@ -1,4 +1,4 @@
-import { cvDocumentSchema, defaultCvSettings } from './schema'
+import { CV_SCHEMA_VERSION, cvDocumentSchema, defaultCvSettings } from './schema'
 
 // Szara sylwetka w proporcjach 3:4 – zdjęcie zastępcze przykładowego CV.
 const placeholderPhoto =
@@ -16,7 +16,7 @@ const bullets = (prefix: string, texts: string[]) =>
 
 // Przykładowe CV z fikcyjnymi danymi, w układzie briefu.
 export const sampleCv = cvDocumentSchema.parse({
-  schemaVersion: 1,
+  schemaVersion: CV_SCHEMA_VERSION,
   id: 'sample',
   name: 'Przykładowe CV',
   createdAt: '2026-01-01T00:00:00.000Z',

@@ -1,4 +1,4 @@
-import { cvDocumentSchema, defaultCvSettings, type Clause, type CvDocument } from './schema'
+import { CV_SCHEMA_VERSION, cvDocumentSchema, defaultCvSettings, type Clause, type CvDocument } from './schema'
 
 // Puste CV z domyślnymi sekcjami i podpowiedziami kontaktu – punkt startowy przy „Nowe CV”.
 // Domyślna klauzula z biblioteki jest kopiowana do CV i włączona.
@@ -14,7 +14,7 @@ export function emptyCv({
   const timestamp = now.toISOString()
   const sectionDefaults = { hidden: false, pageBreakBefore: false, items: [] }
   return cvDocumentSchema.parse({
-    schemaVersion: 1,
+    schemaVersion: CV_SCHEMA_VERSION,
     id: newId(),
     name: 'Nowe CV',
     createdAt: timestamp,

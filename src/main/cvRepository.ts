@@ -3,24 +3,29 @@ import { readdir, readFile, rm } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { exists, writeJsonAtomic } from './atomicFile'
 import { emptyCv } from '../renderer/src/domain/emptyCv'
-import { cvDocumentSchema, type Clause, type CvDocument } from '../renderer/src/domain/schema'
+import { cvMigrations, migrateCv, NewerSchemaVersionError, type CvMigrations } from '../renderer/src/domain/migrations'
+import type { Clause, CvDocument } from '../renderer/src/domain/schema'
 import type { CvListEntry } from '../shared/api'
 
 export type CvRepository = ReturnType<typeof createCvRepository>
 
-type Options = { now?: () => Date }
+// Importowany plik nie jest poprawnym CV. Komunikat jest gotowy do pokazania użytkownikowi.
+export class InvalidCvFileError extends Error {}
+
+type Options = { now?: () => Date; migrations?: CvMigrations }
 
 // Repozytorium CV: jedno CV na plik `<id>.json` w podanym katalogu.
-export function createCvRepository(dir: string, { now = () => new Date() }: Options = {}) {
+export function createCvRepository(dir: string, { now = () => new Date(), migrations = cvMigrations }: Options = {}) {
   // id przychodzi przez IPC – musi być zwykłą nazwą pliku w katalogu CV.
   const filePath = (id: string) => {
     if (!id || basename(id) !== id || id.startsWith('.')) throw new Error(`Niepoprawny identyfikator CV: ${id}`)
     return join(dir, `${id}.json`)
   }
 
-  // Niepoprawny JSON lub niezgodność ze schematem kończy się wyjątkiem – plik jest uszkodzony.
+  // Plik ze starszą wersją schematu jest migrowany do bieżącej (na dysk trafia przy najbliższym zapisie).
+  // Niepoprawny JSON, nieudana migracja lub niezgodność ze schematem kończy się wyjątkiem – plik jest uszkodzony.
   async function get(id: string): Promise<CvDocument> {
-    return cvDocumentSchema.parse(JSON.parse(await readFile(filePath(id), 'utf8')))
+    return migrateCv(JSON.parse(await readFile(filePath(id), 'utf8')), migrations)
   }
 
   async function listEntry(id: string): Promise<CvListEntry> {
@@ -93,6 +98,15 @@ export function createCvRepository(dir: string, { now = () => new Date() }: Opti
       await save({ ...document, updatedAt: now().toISOString() })
     },
 
+    // Eksport do pliku: cały dokument (ze zdjęciem) w bieżącej wersji schematu, z nazwą CV do podpowiedzi nazwy pliku.
+    async exportJson(id: string): Promise<{ name: string; content: string }> {
+      const document = await get(id)
+      return { name: document.name, content: JSON.stringify(document, null, 2) }
+    },
+
+    // Import z pliku zawsze tworzy nowe CV – nigdy nie nadpisuje istniejącego.
+    importJson: async (content: string) => saveAsNew(parseImported(content, migrations)),
+
     async delete(id: string): Promise<void> {
       await rm(filePath(id))
     }
@@ -100,3 +114,21 @@ export function createCvRepository(dir: string, { now = () => new Date() }: Opti
 }
 
 const sortKey = (entry: CvListEntry) => (entry.status === 'ok' ? entry.updatedAt : '')
+
+// Treść importowanego pliku → CV w bieżącej wersji schematu albo InvalidCvFileError z komunikatem dla użytkownika.
+function parseImported(content: string, migrations: CvMigrations): CvDocument {
+  let json: unknown
+  try {
+    json = JSON.parse(content)
+  } catch {
+    throw new InvalidCvFileError('Plik nie jest poprawnym plikiem CV (niepoprawny format JSON).')
+  }
+  try {
+    return migrateCv(json, migrations)
+  } catch (error) {
+    if (error instanceof NewerSchemaVersionError) {
+      throw new InvalidCvFileError('Plik pochodzi z nowszej wersji aplikacji Moje CV. Zaktualizuj aplikację, żeby go zaimportować.')
+    }
+    throw new InvalidCvFileError('Plik nie zawiera poprawnego CV.')
+  }
+}

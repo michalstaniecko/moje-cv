@@ -113,6 +113,10 @@ body {
   color: #5b6767;
 }
 
+.library-notice {
+  color: #1a6e72;
+}
+
 .editor-screen {
   display: flex;
   flex-direction: column;

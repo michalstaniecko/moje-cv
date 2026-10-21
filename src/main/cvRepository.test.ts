@@ -3,8 +3,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { sampleCv } from '../renderer/src/domain/sampleCv'
+import type { CvMigrations } from '../renderer/src/domain/migrations'
 import type { CvDocument } from '../renderer/src/domain/schema'
-import { createCvRepository, type CvRepository } from './cvRepository'
+import { createCvRepository, InvalidCvFileError, type CvRepository } from './cvRepository'
 
 let dataDir: string
 let cvDir: string
@@ -280,3 +281,146 @@ test('ids that point outside the CV directory are rejected', async () => {
 })
 
 const cv = (overrides: Partial<CvDocument>): CvDocument => ({ ...sampleCv, ...overrides })
+
+describe('export', () => {
+  test('writes the whole CV as JSON that imports back as a copy with the same content', async () => {
+    await repository.save(sampleCv)
+
+    const { name, content } = await repository.exportJson(sampleCv.id)
+    const imported = await repository.importJson(content)
+
+    expect(name).toBe(sampleCv.name)
+    expect(JSON.parse(content)).toEqual(sampleCv)
+    expect({ ...imported, id: sampleCv.id, createdAt: sampleCv.createdAt, updatedAt: sampleCv.updatedAt }).toEqual(sampleCv)
+  })
+})
+
+describe('import', () => {
+  test('adds the CV from the file to the library under a new id', async () => {
+    repository = createCvRepository(cvDir, { now: () => new Date('2026-10-21T08:30:00.000Z') })
+
+    const imported = await repository.importJson(JSON.stringify(sampleCv))
+
+    expect(imported.id).not.toBe(sampleCv.id)
+    expect(imported.name).toBe(sampleCv.name)
+    expect(imported.header).toEqual(sampleCv.header)
+    expect(imported.sections).toEqual(sampleCv.sections)
+    expect(await repository.get(imported.id)).toEqual(imported)
+    expect(await repository.list()).toEqual([
+      { status: 'ok', id: imported.id, name: sampleCv.name, updatedAt: '2026-10-21T08:30:00.000Z' }
+    ])
+  })
+
+  test('never overwrites a CV already in the library, even one with the same id', async () => {
+    await repository.save(sampleCv)
+    const edited = cv({ name: 'Z innego komputera', header: { ...sampleCv.header, fullName: 'Ewa Nowak' } })
+
+    const first = await repository.importJson(JSON.stringify(edited))
+    const second = await repository.importJson(JSON.stringify(edited))
+
+    expect(await repository.get(sampleCv.id)).toEqual(sampleCv)
+    expect(new Set([sampleCv.id, first.id, second.id]).size).toBe(3)
+    expect(await repository.list()).toHaveLength(3)
+  })
+
+  const invalidFiles = {
+    'is not JSON': ['{ "schemaVersion": 1, "name": ', 'Plik nie jest poprawnym plikiem CV (niepoprawny format JSON).'],
+    'is JSON but not a CV': ['{ "hello": "world" }', 'Plik nie zawiera poprawnego CV.'],
+    'is a CV with invalid content': [
+      JSON.stringify({ ...sampleCv, settings: { ...sampleCv.settings, font: 'comic-sans' } }),
+      'Plik nie zawiera poprawnego CV.'
+    ],
+    'comes from a newer version of the app': [
+      JSON.stringify({ ...sampleCv, schemaVersion: 2 }),
+      'Plik pochodzi z nowszej wersji aplikacji Moje CV. Zaktualizuj aplikację, żeby go zaimportować.'
+    ]
+  }
+
+  for (const [kind, [content, message]] of Object.entries(invalidFiles)) {
+    test(`a file that ${kind} is rejected with a readable message and the library stays as it was`, async () => {
+      await repository.save(sampleCv)
+
+      const error = await repository.importJson(content).catch((error: unknown) => error)
+
+      expect(error).toBeInstanceOf(InvalidCvFileError)
+      expect((error as Error).message).toBe(message)
+      expect(await repository.list()).toEqual([
+        { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt }
+      ])
+    })
+  }
+})
+
+describe('schema migrations', () => {
+  // Testowa historia schematu: w wersji -1 imię i nazwisko było polem `owner` dokumentu,
+  // w wersji 0 trafiło do nagłówka jako `name`, a w bieżącej (1) nazywa się `fullName`.
+  const migrations: CvMigrations = {
+    [-1]: ({ owner, header, ...rest }) => ({ ...rest, header: { ...(header as object), name: owner } }),
+    0: ({ header, ...rest }) => {
+      const { name, ...headerRest } = header as { name: string }
+      return { ...rest, header: { ...headerRest, fullName: name } }
+    }
+  }
+  const { fullName, ...headerWithoutName } = sampleCv.header
+  const version0 = { ...sampleCv, schemaVersion: 0, header: { ...headerWithoutName, name: fullName } }
+  const versionMinus1 = { ...sampleCv, schemaVersion: -1, owner: fullName, header: headerWithoutName }
+
+  beforeEach(() => {
+    repository = createCvRepository(cvDir, { migrations })
+  })
+
+  test('a library file with an older schema version is read as the current version', async () => {
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, `${sampleCv.id}.json`), JSON.stringify(version0))
+
+    expect(await repository.get(sampleCv.id)).toEqual(sampleCv)
+    expect(await repository.list()).toEqual([
+      { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt }
+    ])
+  })
+
+  test('migrations are applied one after another, from the file version up to the current one', async () => {
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, `${sampleCv.id}.json`), JSON.stringify(versionMinus1))
+
+    expect(await repository.get(sampleCv.id)).toEqual(sampleCv)
+  })
+
+  test('an imported file with an older schema version is migrated', async () => {
+    const imported = await repository.importJson(JSON.stringify(versionMinus1))
+
+    expect(imported.schemaVersion).toBe(1)
+    expect(imported.header).toEqual(sampleCv.header)
+    expect(await repository.get(imported.id)).toEqual(imported)
+  })
+
+  test('an edited CV from an older file is saved in the current version', async () => {
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, `${sampleCv.id}.json`), JSON.stringify(version0))
+
+    await repository.rename(sampleCv.id, 'Nowa nazwa')
+
+    const stored = JSON.parse(await readFile(join(cvDir, `${sampleCv.id}.json`), 'utf8'))
+    expect(stored.schemaVersion).toBe(1)
+    expect(stored.header.fullName).toBe(fullName)
+  })
+
+  test('a file with a version that has no migration is damaged and left untouched', async () => {
+    const content = JSON.stringify({ ...version0, schemaVersion: -2 })
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, 'old.json'), content)
+
+    expect(await repository.list()).toEqual([{ status: 'damaged', id: 'old' }])
+    await expect(repository.importJson(content)).rejects.toThrow('Plik nie zawiera poprawnego CV.')
+    expect(await readFile(join(cvDir, 'old.json'), 'utf8')).toBe(content)
+  })
+
+  test('a file a migration cannot handle is damaged', async () => {
+    const content = JSON.stringify({ ...version0, header: null })
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, 'broken.json'), content)
+
+    expect(await repository.list()).toEqual([{ status: 'damaged', id: 'broken' }])
+    await expect(repository.importJson(content)).rejects.toThrow('Plik nie zawiera poprawnego CV.')
+  })
+})

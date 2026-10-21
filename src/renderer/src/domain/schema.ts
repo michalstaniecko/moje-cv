@@ -48,8 +48,11 @@ export const sectionSchema = z.discriminatedUnion('type', [
 ])
 export type Section = z.infer<typeof sectionSchema>
 
+// Bieżąca wersja schematu CV. Zmiana schematu = podbicie wersji i migracja ze starej (patrz migrations.ts).
+export const CV_SCHEMA_VERSION = 1
+
 export const cvDocumentSchema = z.object({
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(CV_SCHEMA_VERSION),
   id: idSchema,
   name: z.string(),
   createdAt: z.iso.datetime(),
