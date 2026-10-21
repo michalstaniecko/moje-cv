@@ -72,7 +72,10 @@ export function Library({
     setNotice(null)
     try {
       const result = await window.api.cv.importFile()
-      if (result.status === 'invalid') showError(({ library }) => `${library.errors.import} ${result.message}`)
+      if (result.status === 'invalid') {
+        const { reason } = result
+        showError(({ library }) => `${library.errors.import} ${library.importErrors[reason]}`)
+      }
       if (result.status !== 'imported') return
       const { name } = result.document
       showNotice(({ library, defaultContent }) => library.imported(displayName(name, defaultContent.untitledCv)))

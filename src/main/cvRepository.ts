@@ -5,13 +5,17 @@ import { exists, writeJsonAtomic } from './atomicFile'
 import { emptyCv } from '../renderer/src/domain/emptyCv'
 import { cvMigrations, migrateCv, NewerSchemaVersionError, type CvMigrations } from '../renderer/src/domain/migrations'
 import type { Clause, CvDocument } from '../renderer/src/domain/schema'
-import type { CvListEntry } from '../shared/api'
+import type { CvListEntry, InvalidCvFileReason } from '../shared/api'
 import type { DefaultContent } from '../shared/i18n/en'
 
 export type CvRepository = ReturnType<typeof createCvRepository>
 
-// Importowany plik nie jest poprawnym CV. Komunikat jest gotowy do pokazania użytkownikowi.
-export class InvalidCvFileError extends Error {}
+// Importowany plik nie jest poprawnym CV. Użytkownik dostaje powód (`reason`), a nie treść komunikatu.
+export class InvalidCvFileError extends Error {
+  constructor(readonly reason: InvalidCvFileReason) {
+    super(`Niepoprawny plik CV: ${reason}`)
+  }
+}
 
 type Options = { now?: () => Date; migrations?: CvMigrations }
 
@@ -117,20 +121,20 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
 
 const sortKey = (entry: CvListEntry) => (entry.status === 'ok' ? entry.updatedAt : '')
 
-// Treść importowanego pliku → CV w bieżącej wersji schematu albo InvalidCvFileError z komunikatem dla użytkownika.
+// Treść importowanego pliku → CV w bieżącej wersji schematu albo InvalidCvFileError z powodem odrzucenia.
 function parseImported(content: string, migrations: CvMigrations): CvDocument {
   let json: unknown
   try {
     json = JSON.parse(content)
   } catch {
-    throw new InvalidCvFileError('Plik nie jest poprawnym plikiem CV (niepoprawny format JSON).')
+    throw new InvalidCvFileError('not-json')
   }
   try {
     return migrateCv(json, migrations)
   } catch (error) {
     if (error instanceof NewerSchemaVersionError) {
-      throw new InvalidCvFileError('Plik pochodzi z nowszej wersji aplikacji Moje CV. Zaktualizuj aplikację, żeby go zaimportować.')
+      throw new InvalidCvFileError('newer-version')
     }
-    throw new InvalidCvFileError('Plik nie zawiera poprawnego CV.')
+    throw new InvalidCvFileError('not-a-cv')
   }
 }

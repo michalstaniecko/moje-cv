@@ -14,11 +14,14 @@ export type PickPhotoResult =
 // Wynik eksportu CV do pliku .json.
 export type ExportCvFileResult = { status: 'saved'; filePath: string } | { status: 'canceled' }
 
-// Wynik importu CV z pliku .json. Niepoprawny plik niczego nie zmienia w bibliotece – `message` jest gotowy do pokazania.
+// Powód odrzucenia importowanego pliku. Renderer pokazuje go w języku interfejsu.
+export type InvalidCvFileReason = 'too-large' | 'not-json' | 'not-a-cv' | 'newer-version'
+
+// Wynik importu CV z pliku .json. Niepoprawny plik niczego nie zmienia w bibliotece.
 export type ImportCvFileResult =
   | { status: 'imported'; document: CvDocument }
   | { status: 'canceled' }
-  | { status: 'invalid'; message: string }
+  | { status: 'invalid'; reason: InvalidCvFileReason }
 
 // Polecenie historii CV wysyłane z menu Edycja do otwartego edytora.
 export type HistoryCommand = 'undo' | 'redo'

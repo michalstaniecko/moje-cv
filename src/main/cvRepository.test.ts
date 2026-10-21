@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { sampleCvs } from '../renderer/src/domain/sampleCv'
 import type { CvMigrations } from '../renderer/src/domain/migrations'
 import type { CvDocument } from '../renderer/src/domain/schema'
+import type { InvalidCvFileReason } from '../shared/api'
 import { en } from '../shared/i18n/en'
 import { pl } from '../shared/i18n/pl'
 import { createCvRepository, InvalidCvFileError, type CvRepository } from './cvRepository'
@@ -343,27 +344,21 @@ describe('import', () => {
     expect(await repository.list()).toHaveLength(3)
   })
 
-  const invalidFiles = {
-    'is not JSON': ['{ "schemaVersion": 1, "name": ', 'Plik nie jest poprawnym plikiem CV (niepoprawny format JSON).'],
-    'is JSON but not a CV': ['{ "hello": "world" }', 'Plik nie zawiera poprawnego CV.'],
-    'is a CV with invalid content': [
-      JSON.stringify({ ...sampleCv, settings: { ...sampleCv.settings, font: 'comic-sans' } }),
-      'Plik nie zawiera poprawnego CV.'
-    ],
-    'comes from a newer version of the app': [
-      JSON.stringify({ ...sampleCv, schemaVersion: 2 }),
-      'Plik pochodzi z nowszej wersji aplikacji Moje CV. Zaktualizuj aplikację, żeby go zaimportować.'
-    ]
+  const invalidFiles: Record<string, [string, InvalidCvFileReason]> = {
+    'is not JSON': ['{ "schemaVersion": 1, "name": ', 'not-json'],
+    'is JSON but not a CV': ['{ "hello": "world" }', 'not-a-cv'],
+    'is a CV with invalid content': [JSON.stringify({ ...sampleCv, settings: { ...sampleCv.settings, font: 'comic-sans' } }), 'not-a-cv'],
+    'comes from a newer version of the app': [JSON.stringify({ ...sampleCv, schemaVersion: 2 }), 'newer-version']
   }
 
-  for (const [kind, [content, message]] of Object.entries(invalidFiles)) {
-    test(`a file that ${kind} is rejected with a readable message and the library stays as it was`, async () => {
+  for (const [kind, [content, reason]] of Object.entries(invalidFiles)) {
+    test(`a file that ${kind} is rejected with the reason "${reason}" and the library stays as it was`, async () => {
       await repository.save(sampleCv)
 
       const error = await repository.importJson(content).catch((error: unknown) => error)
 
       expect(error).toBeInstanceOf(InvalidCvFileError)
-      expect((error as Error).message).toBe(message)
+      expect((error as InvalidCvFileError).reason).toBe(reason)
       expect(await repository.list()).toEqual([
         { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt }
       ])
@@ -431,7 +426,7 @@ describe('schema migrations', () => {
     await writeFile(join(cvDir, 'old.json'), content)
 
     expect(await repository.list()).toEqual([{ status: 'damaged', id: 'old' }])
-    await expect(repository.importJson(content)).rejects.toThrow('Plik nie zawiera poprawnego CV.')
+    await expect(repository.importJson(content)).rejects.toMatchObject({ reason: 'not-a-cv' })
     expect(await readFile(join(cvDir, 'old.json'), 'utf8')).toBe(content)
   })
 
@@ -441,6 +436,6 @@ describe('schema migrations', () => {
     await writeFile(join(cvDir, 'broken.json'), content)
 
     expect(await repository.list()).toEqual([{ status: 'damaged', id: 'broken' }])
-    await expect(repository.importJson(content)).rejects.toThrow('Plik nie zawiera poprawnego CV.')
+    await expect(repository.importJson(content)).rejects.toMatchObject({ reason: 'not-a-cv' })
   })
 })

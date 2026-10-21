@@ -1,3 +1,4 @@
+import type { InvalidCvFileReason } from '../api'
 import type { PluralForms } from './plural'
 
 // Słownik angielski – źródło prawdy: każdy inny język musi spełniać jego typ (ADR-0001).
@@ -58,6 +59,13 @@ export const en = {
     damaged: 'Damaged file – it can’t be opened',
     imported: (name: string) => `Imported “${name}”.`,
     savedFile: (fileName: string) => `Saved file: ${fileName}`,
+    // Dlaczego importowany plik został odrzucony – pokazywane po „Couldn’t import the CV.”.
+    importErrors: {
+      'too-large': 'The file is too large to be a CV file.',
+      'not-json': 'The file isn’t a valid CV file (invalid JSON format).',
+      'not-a-cv': 'The file doesn’t contain a valid CV.',
+      'newer-version': 'The file comes from a newer version of the app. Update the app to import it.'
+    } satisfies Record<InvalidCvFileReason, string>,
     errors: {
       load: 'Couldn’t load the CV list.',
       open: 'Couldn’t open the CV.',

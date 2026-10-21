@@ -75,12 +75,12 @@ export function registerCvLibrary(
     if (canceled || !filePath) return { status: 'canceled' }
 
     if ((await stat(filePath)).size > MAX_IMPORT_FILE_BYTES) {
-      return { status: 'invalid', message: 'Plik jest za duży, żeby był plikiem CV.' }
+      return { status: 'invalid', reason: 'too-large' }
     }
     try {
       return { status: 'imported', document: await repository.importJson(await readFile(filePath, 'utf8')) }
     } catch (error) {
-      if (error instanceof InvalidCvFileError) return { status: 'invalid', message: error.message }
+      if (error instanceof InvalidCvFileError) return { status: 'invalid', reason: error.reason }
       throw error
     }
   })

@@ -55,6 +55,12 @@ export const pl: Dictionary = {
     damaged: 'Plik uszkodzony – nie można go otworzyć',
     imported: (name) => `Zaimportowano „${name}”.`,
     savedFile: (fileName) => `Zapisano plik: ${fileName}`,
+    importErrors: {
+      'too-large': 'Plik jest za duży, żeby był plikiem CV.',
+      'not-json': 'Plik nie jest poprawnym plikiem CV (niepoprawny format JSON).',
+      'not-a-cv': 'Plik nie zawiera poprawnego CV.',
+      'newer-version': 'Plik pochodzi z nowszej wersji aplikacji. Zaktualizuj aplikację, żeby go zaimportować.'
+    },
     errors: {
       load: 'Nie udało się wczytać listy CV.',
       open: 'Nie udało się otworzyć CV.',

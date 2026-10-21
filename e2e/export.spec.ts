@@ -502,6 +502,26 @@ test('a CV without a name is shown and exported under a fallback name in the int
   await expect(window.getByRole('heading', { name: 'Untitled CV' })).toBeVisible()
 })
 
+test('importing an invalid file shows why in English and leaves the library unchanged', async () => {
+  await app.close()
+  await launch({ language: 'en' })
+  const rows = window.getByRole('list', { name: 'CV list' }).getByRole('listitem')
+  await expect(rows).toHaveCount(1)
+
+  for (const [content, message] of [
+    ['{ "name": "Not a CV" }', 'Couldn’t import the CV. The file doesn’t contain a valid CV.'],
+    ['{ "name": ', 'Couldn’t import the CV. The file isn’t a valid CV file (invalid JSON format).'],
+    ['{ "schemaVersion": 99 }', 'Couldn’t import the CV. The file comes from a newer version of the app. Update the app to import it.']
+  ]) {
+    const invalidPath = join(outputDir, 'invalid.json')
+    await writeFile(invalidPath, content!)
+    await stubOpenDialog(invalidPath)
+    await window.getByRole('button', { name: 'Import from file' }).click()
+    await expect(window.getByRole('alert')).toHaveText(message!)
+    await expect(rows).toHaveCount(1)
+  }
+})
+
 test('the packaged app identifies itself as „Moje CV” (which names its application data folder)', async () => {
   test.skip(!packagedExecutable, 'dotyczy tylko zbudowanej aplikacji')
   const identity = await app.evaluate(({ app }) => ({ name: app.getName(), isPackaged: app.isPackaged }))
