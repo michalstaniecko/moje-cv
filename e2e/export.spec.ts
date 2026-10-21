@@ -168,6 +168,62 @@ test('edits education and lists, reorders and hides sections, and forces page br
   expect(pdf.pages.join('')).not.toContain('Angielski – C1')
 })
 
+test('changes the accent colour and font of one CV in the preview and PDF, with fonts embedded from the app', async () => {
+  const library = window.getByRole('list', { name: 'Lista CV' })
+  await library.getByRole('button', { name: 'Otwórz' }).click()
+  const preview = window.locator('.preview')
+  await expect(preview.locator('.cv-page').first()).toBeVisible()
+
+  // Kolor akcentu: imię, tytuły sekcji i kropki przy datach.
+  const accent = window.getByLabel('Kolor akcentu')
+  await expect(accent).toHaveValue('#1a6e72')
+  await accent.fill('#8a2be2')
+  const purple = 'rgb(138, 43, 226)'
+  await expect(preview.locator('.cv-page .cv-name')).toHaveCSS('color', purple)
+  await expect(preview.locator('.cv-page .cv-section-title').first()).toHaveCSS('color', purple)
+  const dotColor = await preview
+    .locator('.cv-page .cv-date--dot')
+    .first()
+    .evaluate((element) => element.ownerDocument.defaultView!.getComputedStyle(element, '::after').backgroundColor)
+  expect(dotColor).toBe(purple)
+
+  // Każdy font: podgląd przeliczony po załadowaniu fontu, PDF z tą samą liczbą stron i osadzonym tylko tym fontem.
+  const font = window.getByLabel('Font')
+  await expect(font).toHaveValue('lato')
+  for (const { value, family, pdfName } of [
+    { value: 'lato', family: 'Lato', pdfName: 'Lato' },
+    { value: 'source-sans-3', family: 'Source Sans 3', pdfName: 'SourceSans3' },
+    { value: 'arimo', family: 'Arimo', pdfName: 'Arimo' }
+  ]) {
+    await font.selectOption(value)
+    await expect(preview.locator('.cv-page .cv-name')).toHaveCSS('font-family', new RegExp(`^"?${family}"?,`))
+    await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+    const previewPageCount = await preview.locator('.cv-page').count()
+
+    const pdfPath = join(outputDir, `${value}.pdf`)
+    await stubSaveDialog(pdfPath)
+    await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
+    await expect(window.getByText(`Zapisano PDF: ${basename(pdfPath)}`)).toBeVisible()
+    const pdf = await readPdf(await readFile(pdfPath))
+    expect(pdf.pages).toHaveLength(previewPageCount)
+    expect(pdf.pages[0]).toContain('Anna Przykładowa')
+    expect(pdf.embeddedFonts.length).toBeGreaterThan(0)
+    expect(pdf.embeddedFonts.every((name) => name.includes(pdfName))).toBe(true)
+    expect(pdf.fillColors).toContain('#8a2be2')
+  }
+
+  // Ustawienia należą do CV: nowe CV ma domyślne, a zmienione zostają w swoim CV.
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  await window.getByRole('button', { name: 'Nowe CV' }).click()
+  await library.getByRole('listitem').filter({ hasText: 'Nowe CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await expect(window.getByLabel('Kolor akcentu')).toHaveValue('#1a6e72')
+  await expect(window.getByLabel('Font')).toHaveValue('lato')
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  await library.getByRole('listitem').filter({ hasText: 'Przykładowe CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await expect(window.getByLabel('Kolor akcentu')).toHaveValue('#8a2be2')
+  await expect(window.getByLabel('Font')).toHaveValue('arimo')
+})
+
 // Przeciąga element za uchwyt myszą krok po kroku, tak jak użytkownik (dnd-kit reaguje na zdarzenia wskaźnika).
 async function dragOnto(handle: Locator, target: Locator) {
   await target.scrollIntoViewIfNeeded()
@@ -186,27 +242,31 @@ async function dragOnto(handle: Locator, target: Locator) {
 // A4 w punktach PDF (210 × 297 mm).
 const A4_PT = { width: 595.28, height: 841.89 }
 
-type ParsedPdf = { pages: string[]; pageSizes: { width: number; height: number }[]; title: string; author: string; embeddedFonts: string[] }
+type ParsedPdf = { pages: string[]; pageSizes: { width: number; height: number }[]; title: string; author: string; embeddedFonts: string[]; fillColors: string[] }
 
-// Odczytuje PDF tak jak czytnik/ATS: zaznaczalny tekst każdej strony, metadane i osadzone fonty.
+// Odczytuje PDF tak jak czytnik/ATS: zaznaczalny tekst każdej strony, metadane, osadzone fonty i kolory wypełnień.
 async function readPdf(bytes: Buffer): Promise<ParsedPdf> {
-  const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  const { getDocument, OPS } = await import('pdfjs-dist/legacy/build/pdf.mjs')
   const document = await getDocument({ data: new Uint8Array(bytes), fontExtraProperties: true }).promise
   const pages: string[] = []
   const pageSizes: ParsedPdf['pageSizes'] = []
   const embeddedFonts = new Set<string>()
+  const fillColors = new Set<string>()
   for (let number = 1; number <= document.numPages; number++) {
     const page = await document.getPage(number)
     const [, , width = 0, height = 0] = page.view
     pageSizes.push({ width, height })
     const content = await page.getTextContent()
     pages.push(content.items.map((item) => ('str' in item ? item.str : '')).join(''))
-    await page.getOperatorList()
+    const operators = await page.getOperatorList()
+    operators.fnArray.forEach((fn, index) => {
+      if (fn === OPS.setFillRGBColor) fillColors.add(String(operators.argsArray[index]?.[0]).toLowerCase())
+    })
     for (const fontId of new Set(content.items.flatMap((item) => ('fontName' in item ? [item.fontName] : [])))) {
       const font = page.commonObjs.get(fontId) as { name?: string; missingFile?: boolean }
       if (font.name && !font.missingFile) embeddedFonts.add(font.name)
     }
   }
   const { info } = (await document.getMetadata()) as { info: { Title?: string; Author?: string } }
-  return { pages, pageSizes, title: info.Title ?? '', author: info.Author ?? '', embeddedFonts: [...embeddedFonts] }
+  return { pages, pageSizes, title: info.Title ?? '', author: info.Author ?? '', embeddedFonts: [...embeddedFonts], fillColors: [...fillColors] }
 }

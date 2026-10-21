@@ -1,6 +1,7 @@
 import { useId, useRef, type ReactNode } from 'react'
 import { useStore } from 'zustand'
 import type { CvDocument, EducationItem, ExperienceItem, Section, TextItem } from '../domain/schema'
+import { fontFamilies, type Font } from '../template/fonts'
 import type { CvEditor } from './cvEditor'
 import {
   addBullet,
@@ -22,7 +23,8 @@ import {
   updateExperienceItem,
   updateHeader,
   updateListItem,
-  updateSection
+  updateSection,
+  updateSettings
 } from './documentEdits'
 import { MonthField } from './MonthField'
 import { SortableList } from './SortableList'
@@ -43,6 +45,7 @@ export function CvForm({ editor }: { editor: CvEditor }) {
 
   return (
     <div className="form">
+      <AppearanceFields editor={editor} settings={document.settings} />
       <HeaderFields editor={editor} header={document.header} />
       <SortableList
         items={document.sections}
@@ -52,6 +55,40 @@ export function CvForm({ editor }: { editor: CvEditor }) {
         {(section, orderControls) => <SectionFields editor={editor} section={section} orderControls={orderControls} />}
       </SortableList>
     </div>
+  )
+}
+
+// Wygląd tego CV: kolor akcentu (imię, tytuły sekcji, kropki przy datach) i font.
+function AppearanceFields({ editor, settings }: { editor: CvEditor; settings: CvDocument['settings'] }) {
+  return (
+    <section className="form-section">
+      <h2 className="form-section-title">Wygląd</h2>
+      <div className="form-row">
+        <label className="form-field">
+          <span>Kolor akcentu</span>
+          <input
+            type="color"
+            value={settings.accentColor}
+            onChange={(event) => editor.edit(updateSettings({ accentColor: event.target.value }), 'settings:accentColor')}
+          />
+        </label>
+        <label className="form-field">
+          <span>Font</span>
+          <select
+            value={settings.font}
+            onChange={(event) =>
+              editor.edit(updateSettings({ font: event.target.value as Font }))
+            }
+          >
+            {Object.entries(fontFamilies).map(([font, name]) => (
+              <option key={font} value={font}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </section>
   )
 }
 

@@ -17,6 +17,10 @@ const moveById = <T extends { id: string }>(items: T[], id: string, toIndex: num
 
 const newId = (): string => crypto.randomUUID()
 
+export const updateSettings =
+  (patch: Partial<CvDocument['settings']>): Change<CvDocument> =>
+  (document) => ({ ...document, settings: { ...document.settings, ...patch } })
+
 export const updateHeader =
   (patch: Partial<CvDocument['header']>): Change<CvDocument> =>
   (document) => ({ ...document, header: { ...document.header, ...patch } })

@@ -170,6 +170,7 @@ body {
 }
 
 .form input:not([type='checkbox']),
+.form select,
 .form textarea {
   box-sizing: border-box;
   width: 100%;
@@ -183,6 +184,11 @@ body {
 
 .form textarea {
   resize: vertical;
+}
+
+.form input[type='color'] {
+  height: 30px;
+  padding: 2px;
 }
 
 .form-group {

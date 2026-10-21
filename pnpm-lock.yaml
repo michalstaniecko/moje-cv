@@ -17,9 +17,15 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.3.1)
+      '@fontsource/arimo':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fontsource/lato':
         specifier: ^5.3.0
         version: 5.3.0
+      '@fontsource/source-sans-3':
+        specifier: ^5.3.1
+        version: 5.3.1
       pdf-lib:
         specifier: ^1.17.1
         version: 1.17.1
@@ -182,8 +188,14 @@ packages:
     resolution: {integrity: sha512-3kSBtG8ObcTVfXanm5vVJ6UnBLEVmVsRk1M+vGqCuMBV+XLCbJYuWQful+yIy0GQDsSlK0kHEriEHn7SPk4EnA==}
     engines: {node: '>=22.12.0'}
 
+  '@fontsource/arimo@5.3.0':
+    resolution: {integrity: sha512-nhxZ2sTVZYX8DJBgLuyX360B5vE4mxqpmjlKTRfucIqfcWRVx9vOYzWBc1IgEX0ist48VMC10PRKbFyH+4QFvQ==}
+
   '@fontsource/lato@5.3.0':
     resolution: {integrity: sha512-0WhF/4rhrw+ErIyneKvhHn2YAl+xf8GDtllgOgOzDmeaSlLQtjpChXaQOpWhG2BchQW0WJy2zLV12Hdg0ndOMw==}
+
+  '@fontsource/source-sans-3@5.3.1':
+    resolution: {integrity: sha512-O3YxvbotUOgYI2Zx0bBcEMNjnwitRf9P2+9pd54sMoux1NHrdXnMwZusw2P78lFhEzOPN4glOEQmX0ASaS68uA==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -1151,7 +1163,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@fontsource/arimo@5.3.0': {}
+
   '@fontsource/lato@5.3.0': {}
+
+  '@fontsource/source-sans-3@5.3.1': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:

@@ -143,8 +143,17 @@
   padding: 0;
 }
 
+/* Trójkątny znacznik „‣” rysowany w CSS: żaden z dołączonych fontów nie ma tego znaku,
+   a zastępczy font systemowy różniłby się między komputerami. */
 .cv-plain-list li::before {
-  content: '‣ ';
+  content: '';
+  display: inline-block;
+  width: 0.3em;
+  height: 0.36em;
+  margin-right: 0.3em;
+  vertical-align: 0.08em;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 
 /* ---------- Klauzula ---------- */
