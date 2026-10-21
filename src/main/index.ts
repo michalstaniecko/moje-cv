@@ -3,6 +3,7 @@ import { app, BrowserWindow } from 'electron'
 import { sampleCv } from '../renderer/src/domain/sampleCv'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
+import { registerAppMenu } from './menu'
 import { registerPdfExport } from './pdfExport'
 import { registerPhotoPicker } from './photo'
 import { registerSettings } from './settings'
@@ -30,6 +31,7 @@ app.whenReady().then(async () => {
   registerSettings(settings)
   registerPdfExport()
   registerPhotoPicker()
+  registerAppMenu()
   createWindow()
 
   app.on('activate', () => {

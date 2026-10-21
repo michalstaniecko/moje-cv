@@ -107,8 +107,9 @@ function useClauseLibrary() {
   return [clauses, saveClause] as const
 }
 
-// Cmd+Z / Cmd+Shift+Z (Ctrl na innych systemach) cofa i ponawia zmiany w dokumencie – także w polu tekstowym,
-// zamiast wbudowanego cofania pola. Oczekująca zmiana jest zapisywana przy zamknięciu okna i wyjściu z edytora.
+// Cmd+Z / Cmd+Shift+Z (Ctrl na innych systemach) i Edycja → Cofnij / Ponów w menu cofają i ponawiają zmiany
+// w dokumencie – także w polu tekstowym, zamiast wbudowanego cofania pola. Skrót obsłużony tutaj (preventDefault)
+// nie uruchamia już pozycji menu. Oczekująca zmiana jest zapisywana przy zamknięciu okna i wyjściu z edytora.
 function useEditorLifecycle(editor: CvEditor) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -121,9 +122,15 @@ function useEditorLifecycle(editor: CvEditor) {
     const onUnload = () => void editor.flush()
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('beforeunload', onUnload)
+    window.api.editor.setActive(true)
+    const unsubscribe = window.api.editor.onHistoryCommand((command) =>
+      command === 'undo' ? editor.undo() : editor.redo()
+    )
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('beforeunload', onUnload)
+      unsubscribe()
+      window.api.editor.setActive(false)
       void editor.flush()
     }
   }, [editor])

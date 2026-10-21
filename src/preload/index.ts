@@ -29,6 +29,19 @@ const api: Api = {
     open: (filePath) => ipcRenderer.invoke('pdf:open', filePath),
     showInFolder: (filePath) => ipcRenderer.invoke('pdf:show-in-folder', filePath)
   },
+  editor: {
+    setActive: (active) => ipcRenderer.send('editor:active', active),
+    onHistoryCommand: (listener) => {
+      const undo = () => listener('undo')
+      const redo = () => listener('redo')
+      ipcRenderer.on('editor:undo', undo)
+      ipcRenderer.on('editor:redo', redo)
+      return () => {
+        ipcRenderer.off('editor:undo', undo)
+        ipcRenderer.off('editor:redo', redo)
+      }
+    }
+  },
   print: {
     getDocument: () => ipcRenderer.invoke('print:document'),
     ready: () => ipcRenderer.send('print:ready')

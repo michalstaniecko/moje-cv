@@ -56,6 +56,26 @@ async function stubOpenDialog(filePath: string | null) {
   }, filePath)
 }
 
+// Klika pozycję menu aplikacji (np. Edycja → Cofnij) tak jak użytkownik: z widocznym oknem aplikacji jako oknem z fokusem.
+// Natywnego menu Playwright nie kliknie, więc pozycja jest wywoływana w procesie głównym. Pozycje z rolą edycji
+// (Wytnij, Kopiuj, Wklej, Zaznacz wszystko) macOS obsługuje natywnie, a `click()` z JS ich nie wykonuje – wtedy
+// rola trafia do treści okna, tak jak przy prawdziwym kliknięciu.
+async function clickMenuItem(menuLabel: string, itemLabel: string) {
+  await app.evaluate(
+    ({ BrowserWindow, Menu }, { menuLabel, itemLabel }) => {
+      const menu = Menu.getApplicationMenu()?.items.find((item) => item.label === menuLabel)
+      const item = menu?.submenu?.items.find((item) => item.label === itemLabel)
+      if (!item) throw new Error(`Brak pozycji menu ${menuLabel} → ${itemLabel}`)
+      const window = BrowserWindow.getAllWindows().find((window) => window.isVisible())
+      const editRoles = ['cut', 'copy', 'paste', 'selectall'] as const
+      const role = editRoles.find((role) => role === item.role?.toLowerCase())
+      if (role && window) window.webContents[role === 'selectall' ? 'selectAll' : role]()
+      else item.click(undefined, window, window?.webContents)
+    },
+    { menuLabel, itemLabel }
+  )
+}
+
 test('the packaged app identifies itself as „Moje CV” (which names its application data folder)', async () => {
   test.skip(!packagedExecutable, 'dotyczy tylko zbudowanej aplikacji')
   const identity = await app.evaluate(({ app }) => ({ name: app.getName(), isPackaged: app.isPackaged }))
@@ -480,6 +500,121 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   await expect.poll(pageWidth).toBeCloseTo(793.7 * 0.75, 0)
   expect(await pageTexts()).toEqual(textsAtFit)
   await expect(pageCount).toHaveText('3 strony')
+})
+
+test('Edycja → Cofnij / Ponów in the menu undo and redo CV changes in the form and the preview', async () => {
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  const fullName = window.getByLabel('Imię i nazwisko')
+  const previewName = window.locator('.preview .cv-page .cv-name')
+  await fullName.fill('Ewa Nowak')
+  await expect(previewName).toHaveText('Ewa Nowak')
+
+  // Kursor zostaje w polu tekstowym – mimo to cofana jest historia CV, a nie samo pole.
+  await clickMenuItem('Edycja', 'Cofnij')
+  await expect(fullName).toHaveValue('Anna Przykładowa')
+  await expect(previewName).toHaveText('Anna Przykładowa')
+  await clickMenuItem('Edycja', 'Ponów')
+  await expect(fullName).toHaveValue('Ewa Nowak')
+  await expect(previewName).toHaveText('Ewa Nowak')
+})
+
+test('one Cmd+Z / Cmd+Shift+Z press with the Edycja menu in place undoes and redoes exactly one CV change', async () => {
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  const fullName = window.getByLabel('Imię i nazwisko')
+  const summary = window.getByLabel('Podsumowanie')
+  const originalSummary = await summary.inputValue()
+  await fullName.fill('Ewa Nowak')
+  await summary.fill('Nowe podsumowanie.')
+  await expect(window.locator('.preview .cv-page .cv-summary')).toHaveText('Nowe podsumowanie.')
+
+  await window.keyboard.press('Meta+z')
+  await expect(summary).toHaveValue(originalSummary)
+  await expect(fullName).toHaveValue('Ewa Nowak')
+  await window.keyboard.press('Meta+Shift+z')
+  await expect(summary).toHaveValue('Nowe podsumowanie.')
+  await expect(fullName).toHaveValue('Ewa Nowak')
+  // Druga zmiana z dwóch pozostaje cofnięta/ponowiona dokładnie raz także po chwili (bez opóźnionego drugiego kroku).
+  await window.waitForTimeout(300)
+  await expect(fullName).toHaveValue('Ewa Nowak')
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Ewa Nowak')
+})
+
+test('after Edycja → Cofnij in the menu, Cmd+Z undoes the earlier CV change and the result is saved', async () => {
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  const fullName = window.getByLabel('Imię i nazwisko')
+  const summary = window.getByLabel('Podsumowanie')
+  const originalSummary = await summary.inputValue()
+  await fullName.fill('Ewa Nowak')
+  await summary.fill('Nowe podsumowanie.')
+
+  await clickMenuItem('Edycja', 'Cofnij')
+  await expect(summary).toHaveValue(originalSummary)
+  await expect(fullName).toHaveValue('Ewa Nowak')
+  await window.keyboard.press('Meta+z')
+  await expect(fullName).toHaveValue('Anna Przykładowa')
+  await expect(summary).toHaveValue(originalSummary)
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Anna Przykładowa')
+
+  // Ponów z menu, a potem skrótem: kolejno obie zmiany.
+  await clickMenuItem('Edycja', 'Ponów')
+  await expect(fullName).toHaveValue('Ewa Nowak')
+  await expect(summary).toHaveValue(originalSummary)
+  await window.keyboard.press('Meta+Shift+z')
+  await expect(summary).toHaveValue('Nowe podsumowanie.')
+
+  // Zmiana z menu zapisuje się automatycznie jak przy skrócie.
+  await clickMenuItem('Edycja', 'Cofnij')
+  await expect(summary).toHaveValue(originalSummary)
+  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await expect(window.getByLabel('Imię i nazwisko')).toHaveValue('Ewa Nowak')
+  await expect(window.getByLabel('Podsumowanie')).toHaveValue(originalSummary)
+})
+
+test('in the CV library Edycja → Cofnij undoes typing in the rename field and never changes the closed CV', async () => {
+  const library = window.getByRole('list', { name: 'Lista CV' })
+  await library.getByRole('button', { name: 'Otwórz' }).click()
+  await window.getByLabel('Imię i nazwisko').fill('Ewa Nowak')
+  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+
+  // Po wyjściu z edytora menu cofa tekst w polu, a nie historię zamkniętego CV.
+  await library.getByRole('button', { name: 'Zmień nazwę' }).click()
+  const name = library.getByLabel('Nazwa CV')
+  await name.pressSequentially(' dla banku')
+  await expect(name).toHaveValue('Przykładowe CV dla banku')
+  await clickMenuItem('Edycja', 'Cofnij')
+  await expect(name).toHaveValue('Przykładowe CV')
+  await clickMenuItem('Edycja', 'Ponów')
+  await expect(name).toHaveValue('Przykładowe CV dla banku')
+
+  // Cmd+Z w polu działa jak dotąd.
+  await window.keyboard.press('Meta+z')
+  await expect(name).toHaveValue('Przykładowe CV')
+  await library.getByRole('button', { name: 'Anuluj' }).click()
+
+  await library.getByRole('button', { name: 'Otwórz' }).click()
+  await expect(window.getByLabel('Imię i nazwisko')).toHaveValue('Ewa Nowak')
+})
+
+test('Edycja → Zaznacz wszystko, Wytnij, Kopiuj and Wklej in the menu work in a form field', async () => {
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  const fullName = window.getByLabel('Imię i nazwisko')
+  await fullName.focus()
+
+  await clickMenuItem('Edycja', 'Zaznacz wszystko')
+  await clickMenuItem('Edycja', 'Wytnij')
+  await expect(fullName).toHaveValue('')
+  await clickMenuItem('Edycja', 'Wklej')
+  await expect(fullName).toHaveValue('Anna Przykładowa')
+
+  await clickMenuItem('Edycja', 'Zaznacz wszystko')
+  await clickMenuItem('Edycja', 'Kopiuj')
+  await fullName.press('ArrowRight')
+  await clickMenuItem('Edycja', 'Wklej')
+  await expect(fullName).toHaveValue('Anna PrzykładowaAnna Przykładowa')
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Anna PrzykładowaAnna Przykładowa')
 })
 
 test('exports a CV to a JSON file and imports it back as a new CV; an invalid file leaves the library unchanged', async () => {

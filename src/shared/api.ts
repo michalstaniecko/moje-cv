@@ -52,6 +52,12 @@ export type Api = {
     open: (filePath: string) => Promise<void>
     showInFolder: (filePath: string) => Promise<void>
   }
+  // Edytor CV zgłasza, że jest otwarty, i dostaje Cofnij / Ponów kliknięte w menu Edycja.
+  editor: {
+    setActive: (active: boolean) => void
+    // Zwraca funkcję wypisania.
+    onHistoryCommand: (listener: (command: 'undo' | 'redo') => void) => () => void
+  }
   // Używane wyłącznie przez ukryte okno wydruku.
   print: {
     getDocument: () => Promise<CvDocument>
