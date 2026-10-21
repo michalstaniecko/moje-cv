@@ -201,10 +201,17 @@ export const en = {
     zoomIn: 'Zoom in',
     fit: 'Fit'
   },
+  // Treść domyślna: powstaje w języku interfejsu z chwili utworzenia, potem jest zwykłą treścią CV (zob. GLOSSARY.md).
   defaultContent: {
+    cvName: 'New CV',
+    // Nazwa wyświetlana zamiast pustej nazwy CV (np. z importowanego pliku).
+    untitledCv: 'Untitled CV',
+    copyName: (name: string) => `${name} (copy)`,
     // Etykiety kontaktu w nowym CV i podpowiedzi w edytorze.
-    contactLabels: ['Phone', 'Email', 'LinkedIn', 'City']
+    contactLabels: ['Phone', 'Email', 'LinkedIn', 'City'],
+    sectionTitles: { experience: 'Work experience', education: 'Education', skills: 'Skills', languages: 'Languages' }
   }
 }
 
 export type Dictionary = typeof en
+export type DefaultContent = Dictionary['defaultContent']

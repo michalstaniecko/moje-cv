@@ -201,6 +201,10 @@ export const pl: Dictionary = {
     fit: 'Dopasuj'
   },
   defaultContent: {
-    contactLabels: ['Tel', 'E-mail', 'LinkedIn', 'Miasto']
+    cvName: 'Nowe CV',
+    untitledCv: 'CV bez nazwy',
+    copyName: (name) => `${name} (kopia)`,
+    contactLabels: ['Tel', 'E-mail', 'LinkedIn', 'Miasto'],
+    sectionTitles: { experience: 'Doświadczenie zawodowe', education: 'Wykształcenie', skills: 'Umiejętności', languages: 'Języki' }
   }
 }

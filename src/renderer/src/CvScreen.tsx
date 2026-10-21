@@ -4,6 +4,7 @@ import type { Clause, ClauseContent, CvDocument } from './domain/schema'
 import { createCvEditor, type CvEditor } from './editor/cvEditor'
 import { CvForm } from './editor/CvForm'
 import { useDictionary } from './i18n'
+import { displayName } from './Library'
 import { PreviewPane } from './preview/PreviewPane'
 
 type ExportState =
@@ -19,7 +20,7 @@ export function CvScreen({ document: initial, onBack }: { document: CvDocument; 
   const saveStatus = useStore(editor.store, (state) => state.saveStatus)
   const [exportState, setExportState] = useState<ExportState>({ status: 'idle' })
   const [clauses, saveClause] = useClauseLibrary()
-  const { appName, common, editor: t } = useDictionary()
+  const { appName, common, editor: t, defaultContent } = useDictionary()
   useEditorLifecycle(editor)
 
   const exportPdf = async () => {
@@ -44,7 +45,7 @@ export function CvScreen({ document: initial, onBack }: { document: CvDocument; 
         <button type="button" onClick={back}>
           {common.back(appName)}
         </button>
-        <h1 className="toolbar-title">{document.name}</h1>
+        <h1 className="toolbar-title">{displayName(document.name, defaultContent.untitledCv)}</h1>
         <span
           className={saveStatus === 'failed' ? 'toolbar-status toolbar-status--error' : 'toolbar-status'}
           role="status"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sampleCv } from '../domain/sampleCv'
+import { sampleCvs } from '../domain/sampleCv'
 import {
   addEducationItem,
   addListItem,
@@ -14,6 +14,8 @@ import {
   updateListItem,
   updateSection
 } from './documentEdits'
+
+const sampleCv = sampleCvs.pl
 
 const sectionIds = (document: typeof sampleCv) => document.sections.map((section) => section.id)
 

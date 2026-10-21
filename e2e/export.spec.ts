@@ -436,6 +436,72 @@ test('the preview shows the page count, warnings and zoom controls in English, a
   expect(pdf.pages.join('')).not.toContain('longer than')
 })
 
+test('Default content follows the interface language at creation and never changes existing CVs afterwards', async () => {
+  // Pierwsze uruchomienie od nowa, tym razem po angielsku.
+  await app.close()
+  await rm(join(outputDir, 'user-data'), { recursive: true })
+  await launch({ language: 'en' })
+  const library = window.getByRole('list', { name: 'CV list' })
+  const rows = library.getByRole('listitem')
+
+  // Pierwsze uruchomienie po angielsku: angielskie przykładowe CV bez klauzuli zgody.
+  await expect(rows).toHaveCount(1)
+  await expect(rows.first()).toContainText('Sample CV')
+  await rows.first().getByRole('button', { name: 'Open' }).click()
+  const preview = window.locator('.preview')
+  await expect(preview.locator('.cv-page .cv-name')).toHaveText('Jane Example')
+  await expect(preview.locator('.cv-page .cv-section-title')).toHaveText(['Work experience', 'Education', 'Skills', 'Languages'])
+  await expect(preview.locator('.cv-consent')).toHaveCount(0)
+  await expect(window.getByRole('region', { name: 'Consent clause' }).getByLabel('Show the clause at the bottom of the last page')).not.toBeChecked()
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+
+  // Nowe CV i kopia po angielsku.
+  await window.getByRole('button', { name: 'New CV' }).click()
+  await rows.filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Duplicate' }).click()
+  await expect(rows.filter({ hasText: 'Sample CV (copy)' })).toHaveCount(1)
+  await rows.filter({ hasText: 'New CV' }).getByRole('button', { name: 'Open' }).click()
+  await expect(window.getByRole('heading', { name: 'New CV' })).toBeVisible()
+  await expect.poll(() => inputValues(window.locator('.form-contact-label'))).toEqual(['Phone', 'Email', 'LinkedIn', 'City'])
+  await expect.poll(() => inputValues(window.getByLabel(/^Section title/))).toEqual(['Work experience', 'Education', 'Skills', 'Languages'])
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+
+  // Po zmianie języka istniejące CV są bez zmian, a nowe treści powstają po polsku.
+  await app.close()
+  await launch({ language: 'pl' })
+  const polishRows = window.getByRole('list', { name: 'Lista CV' }).getByRole('listitem')
+  await expect(polishRows.filter({ hasText: 'Sample CV' })).toHaveCount(2)
+  await window.getByRole('button', { name: 'Nowe CV' }).click()
+  await polishRows.filter({ hasText: 'Sample CV (copy)' }).getByRole('button', { name: 'Duplikuj' }).click()
+  await expect(polishRows.filter({ hasText: 'Sample CV (copy) (kopia)' })).toHaveCount(1)
+  await polishRows.filter({ hasText: /^New CV/ }).getByRole('button', { name: 'Otwórz' }).click()
+  await expect.poll(() => inputValues(window.locator('.form-contact-label'))).toEqual(['Phone', 'Email', 'LinkedIn', 'City'])
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  await polishRows.filter({ hasText: 'Nowe CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await expect.poll(() => inputValues(window.locator('.form-contact-label'))).toEqual(['Tel', 'E-mail', 'LinkedIn', 'Miasto'])
+  await expect.poll(() => inputValues(window.getByLabel(/^Tytuł sekcji/))).toEqual(['Doświadczenie zawodowe', 'Wykształcenie', 'Umiejętności', 'Języki'])
+})
+
+test('a CV without a name is shown and exported under a fallback name in the interface language', async () => {
+  await app.close()
+  await launch({ language: 'en' })
+  const library = window.getByRole('list', { name: 'CV list' })
+  const untitledPath = join(outputDir, 'untitled.json')
+  await stubSaveDialog(untitledPath)
+  await library.getByRole('button', { name: 'Export to file' }).click()
+  await expect(window.getByRole('status')).toBeVisible()
+  await writeFile(untitledPath, JSON.stringify({ ...JSON.parse(await readFile(untitledPath, 'utf8')), name: '' }))
+  await stubOpenDialog(untitledPath)
+  await window.getByRole('button', { name: 'Import from file' }).click()
+  await expect(window.getByRole('status')).toHaveText('Imported “Untitled CV”.')
+  const untitled = library.getByRole('listitem').filter({ hasText: 'Untitled CV' })
+  await stubSaveDialog(join(outputDir, 'again.json'))
+  await untitled.getByRole('button', { name: 'Export to file' }).click()
+  const saveDialogOptions = await app.evaluate(() => (globalThis as { saveDialogCalls?: Electron.SaveDialogOptions[] }).saveDialogCalls)
+  expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('Untitled CV.json')
+  await untitled.getByRole('button', { name: 'Open' }).click()
+  await expect(window.getByRole('heading', { name: 'Untitled CV' })).toBeVisible()
+})
+
 test('the packaged app identifies itself as „Moje CV” (which names its application data folder)', async () => {
   test.skip(!packagedExecutable, 'dotyczy tylko zbudowanej aplikacji')
   const identity = await app.evaluate(({ app }) => ({ name: app.getName(), isPackaged: app.isPackaged }))
@@ -1022,6 +1088,11 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   await expect(window.getByRole('alert')).toHaveCount(0)
   await expect(rows).toHaveCount(2)
 })
+
+// Wartości wszystkich pól wskazanych lokatorem, w kolejności z formularza.
+function inputValues(fields: Locator) {
+  return fields.evaluateAll((elements) => elements.map((element) => (element as unknown as { value: string }).value))
+}
 
 // Przeciąga element za uchwyt myszą krok po kroku, tak jak użytkownik (dnd-kit reaguje na zdarzenia wskaźnika).
 async function dragOnto(handle: Locator, target: Locator) {

@@ -12,9 +12,10 @@ import type { SettingsRepository } from './settingsRepository'
 const MAX_IMPORT_FILE_BYTES = 20 * 1024 * 1024
 
 // „CV – Talent Partners” → „CV – Talent Partners.json” (bez znaków niedozwolonych w nazwach plików).
-export function cvFileName(name: string): string {
-  const safe = name.replace(/[/\\:*?"<>|\p{Cc}]/gu, '-').trim().replace(/^\.+/, '')
-  return `${safe || 'CV'}.json`
+// CV bez nazwy dostaje nazwę `untitled` w języku interfejsu.
+export function cvFileName(name: string, untitled: string): string {
+  const safe = (name: string) => name.replace(/[/\\:*?"<>|\p{Cc}]/gu, '-').trim().replace(/^\.+/, '')
+  return `${safe(name) || safe(untitled)}.json`
 }
 
 // Operacje biblioteki CV dostępne dla renderera. Argumenty z IPC są weryfikowane przed użyciem.
@@ -35,8 +36,10 @@ export function registerCvLibrary(
 
   ipcMain.handle('cv:list', () => repository.list())
   ipcMain.handle('cv:get', (_event, id: unknown) => repository.get(requireString(id)))
-  ipcMain.handle('cv:create', async () => repository.create(await settings.defaultClause()))
-  ipcMain.handle('cv:duplicate', (_event, id: unknown) => repository.duplicate(requireString(id)))
+  // Treść domyślna nowego CV i kopii powstaje w bieżącym języku interfejsu.
+  const defaultContent = () => language.dictionary().defaultContent
+  ipcMain.handle('cv:create', async () => repository.create(defaultContent(), await settings.defaultClause()))
+  ipcMain.handle('cv:duplicate', (_event, id: unknown) => repository.duplicate(requireString(id), defaultContent()))
   ipcMain.handle('cv:rename', (_event, id: unknown, name: unknown) => repository.rename(requireString(id), requireString(name)))
   ipcMain.handle('cv:update', (_event, document: unknown) => {
     const update = repository.update(cvDocumentSchema.parse(document))
@@ -51,7 +54,7 @@ export function registerCvLibrary(
     const owner = BrowserWindow.fromWebContents(event.sender)
     const options: Electron.SaveDialogOptions = {
       title: language.dictionary().dialogs.exportCv,
-      defaultPath: join(app.getPath('documents'), cvFileName(name)),
+      defaultPath: join(app.getPath('documents'), cvFileName(name, defaultContent().untitledCv)),
       filters: jsonFilters()
     }
     const { canceled, filePath } = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)

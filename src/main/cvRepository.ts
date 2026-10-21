@@ -6,6 +6,7 @@ import { emptyCv } from '../renderer/src/domain/emptyCv'
 import { cvMigrations, migrateCv, NewerSchemaVersionError, type CvMigrations } from '../renderer/src/domain/migrations'
 import type { Clause, CvDocument } from '../renderer/src/domain/schema'
 import type { CvListEntry } from '../shared/api'
+import type { DefaultContent } from '../shared/i18n/en'
 
 export type CvRepository = ReturnType<typeof createCvRepository>
 
@@ -76,13 +77,14 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
       if (!(await exists(dir))) await saveAsNew(sample)
     },
 
-    // Nowe CV dostaje domyślną klauzulę z biblioteki (włączoną), o ile jest.
-    create: (defaultClause: Clause | null = null) =>
-      saveAsNew(emptyCv({ now: now(), newId: randomUUID, defaultClause })),
+    // Nowe CV z treścią domyślną (`content`) języka interfejsu i domyślną klauzulą z biblioteki (włączoną), o ile jest.
+    create: (content: DefaultContent, defaultClause: Clause | null = null) =>
+      saveAsNew(emptyCv({ content, now: now(), newId: randomUUID, defaultClause })),
 
-    async duplicate(id: string): Promise<CvDocument> {
+    // Dopisek przy nazwie kopii pochodzi z treści domyślnej języka interfejsu.
+    async duplicate(id: string, content: DefaultContent): Promise<CvDocument> {
       const original = await get(id)
-      return saveAsNew({ ...original, name: `${original.name} (kopia)` })
+      return saveAsNew({ ...original, name: content.copyName(original.name) })
     },
 
     async rename(id: string, name: string): Promise<CvDocument> {

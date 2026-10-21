@@ -2,10 +2,14 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import { sampleCv } from '../renderer/src/domain/sampleCv'
+import { sampleCvs } from '../renderer/src/domain/sampleCv'
 import type { CvMigrations } from '../renderer/src/domain/migrations'
 import type { CvDocument } from '../renderer/src/domain/schema'
+import { en } from '../shared/i18n/en'
+import { pl } from '../shared/i18n/pl'
 import { createCvRepository, InvalidCvFileError, type CvRepository } from './cvRepository'
+
+const sampleCv = sampleCvs.pl
 
 let dataDir: string
 let cvDir: string
@@ -108,7 +112,7 @@ describe('create', () => {
   test('adds an empty CV with default section titles to the library', async () => {
     repository = createCvRepository(cvDir, { now: () => new Date('2026-10-21T08:30:00.000Z') })
 
-    const created = await repository.create()
+    const created = await repository.create(pl.defaultContent)
 
     expect(await repository.list()).toEqual([
       { status: 'ok', id: created.id, name: 'Nowe CV', updatedAt: '2026-10-21T08:30:00.000Z' }
@@ -121,23 +125,33 @@ describe('create', () => {
       ['Umiejętności', 0],
       ['Języki', 0]
     ])
+    expect(stored.header.contacts.map((contact) => contact.label)).toEqual(['Tel', 'E-mail', 'LinkedIn', 'Miasto'])
+  })
+
+  test('takes its name, contact labels and section titles from the Default content of the given language', async () => {
+    const created = await repository.create(en.defaultContent)
+
+    const stored = await repository.get(created.id)
+    expect(stored.name).toBe('New CV')
+    expect(stored.header.contacts.map((contact) => contact.label)).toEqual(['Phone', 'Email', 'LinkedIn', 'City'])
+    expect(stored.sections.map((section) => section.title)).toEqual(['Work experience', 'Education', 'Skills', 'Languages'])
   })
 
   test('starts with the default clause from the library switched on', async () => {
-    const created = await repository.create({ id: 'general', name: 'Ogólna', text: 'Wyrażam zgodę…' })
+    const created = await repository.create(pl.defaultContent, { id: 'general', name: 'Ogólna', text: 'Wyrażam zgodę…' })
 
     expect((await repository.get(created.id)).consent).toEqual({ enabled: true, clauseId: 'general', text: 'Wyrażam zgodę…' })
   })
 
   test('has the clause switched off when the library has no default', async () => {
-    const created = await repository.create(null)
+    const created = await repository.create(pl.defaultContent, null)
 
     expect((await repository.get(created.id)).consent).toEqual({ enabled: false, clauseId: null, text: '' })
   })
 
   test('every new CV gets its own id', async () => {
-    const first = await repository.create()
-    const second = await repository.create()
+    const first = await repository.create(pl.defaultContent)
+    const second = await repository.create(pl.defaultContent)
 
     expect(first.id).not.toBe(second.id)
     expect(await repository.list()).toHaveLength(2)
@@ -148,7 +162,7 @@ describe('duplicate', () => {
   test('stores a copy under a new id and leaves the original as it was', async () => {
     await repository.save(sampleCv)
 
-    const copy = await repository.duplicate(sampleCv.id)
+    const copy = await repository.duplicate(sampleCv.id, pl.defaultContent)
 
     expect(copy.id).not.toBe(sampleCv.id)
     expect(copy.name).toBe('Przykładowe CV (kopia)')
@@ -159,11 +173,17 @@ describe('duplicate', () => {
     expect((await repository.list()).map((entry) => entry.id).sort()).toEqual([copy.id, sampleCv.id].sort())
   })
 
+  test('names the copy with the suffix from the Default content of the given language', async () => {
+    await repository.save(sampleCv)
+
+    expect((await repository.duplicate(sampleCv.id, en.defaultContent)).name).toBe('Przykładowe CV (copy)')
+  })
+
   test('every copy gets its own id', async () => {
     await repository.save(sampleCv)
 
-    const first = await repository.duplicate(sampleCv.id)
-    const second = await repository.duplicate(sampleCv.id)
+    const first = await repository.duplicate(sampleCv.id, pl.defaultContent)
+    const second = await repository.duplicate(sampleCv.id, pl.defaultContent)
 
     expect(first.id).not.toBe(second.id)
     expect(await repository.list()).toHaveLength(3)
@@ -250,7 +270,7 @@ describe('damaged files', () => {
       await writeFile(join(cvDir, 'broken.json'), content)
 
       await expect(repository.get('broken')).rejects.toThrow()
-      await expect(repository.duplicate('broken')).rejects.toThrow()
+      await expect(repository.duplicate('broken', pl.defaultContent)).rejects.toThrow()
       await expect(repository.rename('broken', 'Nowa nazwa')).rejects.toThrow()
       await expect(repository.save(cv({ id: 'broken' }))).rejects.toThrow()
       await repository.list()
