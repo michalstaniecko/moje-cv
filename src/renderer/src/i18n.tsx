@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { Dictionary } from '../../shared/i18n/en'
 import { dictionaryFor, type InterfaceLanguage } from '../../shared/i18n/languages'
 
-const DictionaryContext = createContext<Dictionary | null>(null)
+const LanguageContext = createContext<InterfaceLanguage | null>(null)
 
 // Język interfejsu z procesu głównego. Ekrany pojawiają się dopiero, gdy jest znany (bez mignięcia innym językiem),
 // a jego zmiana od razu przerysowuje okno i ustawia `lang` oraz tytuł dokumentu.
@@ -28,12 +28,17 @@ export function InterfaceLanguageProvider({ children }: { children: ReactNode })
   }, [language])
 
   if (!language) return null
-  return <DictionaryContext.Provider value={dictionaryFor(language)}>{children}</DictionaryContext.Provider>
+  return <LanguageContext.Provider value={language}>{children}</LanguageContext.Provider>
+}
+
+// Bieżący język interfejsu, np. do formatowania dat przez `Intl`.
+export function useInterfaceLanguage(): InterfaceLanguage {
+  const language = useContext(LanguageContext)
+  if (!language) throw new Error('useInterfaceLanguage poza InterfaceLanguageProvider')
+  return language
 }
 
 // Słownik bieżącego języka interfejsu.
 export function useDictionary(): Dictionary {
-  const dictionary = useContext(DictionaryContext)
-  if (!dictionary) throw new Error('useDictionary poza InterfaceLanguageProvider')
-  return dictionary
+  return dictionaryFor(useInterfaceLanguage())
 }

@@ -85,8 +85,8 @@ export type Clause = z.infer<typeof clauseSchema>
 export const clauseContentSchema = clauseSchema.omit({ id: true })
 export type ClauseContent = z.infer<typeof clauseContentSchema>
 
-// Nazwa klauzuli do wyświetlenia – także dla klauzuli bez nazwy.
-export const clauseName = (clause: Pick<Clause, 'name'>) => clause.name.trim() || 'Bez nazwy'
+// Nazwa klauzuli do wyświetlenia – dla klauzuli bez nazwy `untitled` w języku interfejsu.
+export const clauseName = (clause: Pick<Clause, 'name'>, untitled: string) => clause.name.trim() || untitled
 
 export const appSettingsSchema = z.object({
   schemaVersion: z.literal(1),

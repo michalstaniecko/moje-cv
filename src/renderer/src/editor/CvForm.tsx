@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useStore } from 'zustand'
 import { clauseName, type Clause, type ClauseContent, type CvDocument, type EducationItem, type ExperienceItem, type Section, type TextItem } from '../domain/schema'
+import { useDictionary } from '../i18n'
 import { fontFamilies, type Font } from '../template/fonts'
 import type { CvEditor } from './cvEditor'
 import {
@@ -459,6 +460,7 @@ function ConsentFields({
   clauses: Clause[]
   onSaveClause: (content: ClauseContent) => Promise<Clause>
 }) {
+  const { clauses: clausesText } = useDictionary()
   const libraryClause = clauses.find((clause) => clause.id === consent.clauseId) ?? null
   const modified = libraryClause !== null && libraryClause.text !== consent.text
 
@@ -486,7 +488,7 @@ function ConsentFields({
               </option>
               {clauses.map((clause) => (
                 <option key={clause.id} value={clause.id}>
-                  {clauseName(clause)}
+                  {clauseName(clause, clausesText.untitled)}
                 </option>
               ))}
             </select>

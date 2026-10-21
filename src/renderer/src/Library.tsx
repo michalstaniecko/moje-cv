@@ -1,12 +1,23 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import type { CvListEntry } from '../../shared/api'
+import type { Dictionary } from '../../shared/i18n/en'
+import type { InterfaceLanguage } from '../../shared/i18n/languages'
 import type { CvDocument } from './domain/schema'
+import { useDictionary, useInterfaceLanguage } from './i18n'
 
 type OkEntry = Extract<CvListEntry, { status: 'ok' }>
 type DamagedEntry = Extract<CvListEntry, { status: 'damaged' }>
 
 // Tryb pojedynczego wiersza: zwykły, zmiana nazwy albo potwierdzenie usunięcia.
 type RowMode = { id: string; kind: 'rename' | 'confirm-delete' } | null
+
+// Komunikat tłumaczony przy wyświetlaniu, więc zmiana języka obejmuje także widoczny już komunikat.
+type Message = (dictionary: Dictionary) => string
+type Failure = keyof Dictionary['library']['errors']
+const failureMessage =
+  (failure: Failure): Message =>
+  ({ library }) =>
+    library.errors[failure]
 
 // Ekran startowy: lista CV z akcjami Nowe / Importuj / Otwórz / Duplikuj / Eksportuj / Zmień nazwę / Usuń i wejście do biblioteki klauzul.
 export function Library({
@@ -18,17 +29,22 @@ export function Library({
 }) {
   const [entries, setEntries] = useState<CvListEntry[] | null>(null)
   const [rowMode, setRowMode] = useState<RowMode>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [error, setError] = useState<Message | null>(null)
+  const [notice, setNotice] = useState<Message | null>(null)
+  const showError = (message: Message) => setError(() => message)
+  const showNotice = (message: Message) => setNotice(() => message)
+  const dictionary = useDictionary()
+  const { appName, common, library: t } = dictionary
+  const language = useInterfaceLanguage()
 
   const refresh = useCallback(async () => setEntries(await window.api.cv.list()), [])
 
   useEffect(() => {
-    refresh().catch(() => setError('Nie udało się wczytać listy CV.'))
+    refresh().catch(() => showError(failureMessage('load')))
   }, [refresh])
 
   // Wykonuje operację, odświeża listę i zamyka edycję wiersza; błąd pokazuje jako komunikat.
-  const runAndRefresh = async (action: () => Promise<unknown>, failure: string) => {
+  const runAndRefresh = async (action: () => Promise<unknown>, failure: Failure) => {
     setError(null)
     setNotice(null)
     try {
@@ -36,7 +52,7 @@ export function Library({
       setRowMode(null)
       await refresh()
     } catch {
-      setError(failure)
+      showError(failureMessage(failure))
     }
   }
 
@@ -46,7 +62,7 @@ export function Library({
     try {
       onOpen(await window.api.cv.get(id))
     } catch {
-      setError('Nie udało się otworzyć CV.')
+      showError(failureMessage('open'))
       await refresh()
     }
   }
@@ -56,12 +72,13 @@ export function Library({
     setNotice(null)
     try {
       const result = await window.api.cv.importFile()
-      if (result.status === 'invalid') setError(`Nie udało się zaimportować CV. ${result.message}`)
+      if (result.status === 'invalid') showError(({ library }) => `${library.errors.import} ${result.message}`)
       if (result.status !== 'imported') return
-      setNotice(`Zaimportowano „${result.document.name}”.`)
+      const { name } = result.document
+      showNotice(({ library }) => library.imported(name))
       await refresh()
     } catch {
-      setError('Nie udało się zaimportować CV.')
+      showError(failureMessage('import'))
     }
   }
 
@@ -70,9 +87,12 @@ export function Library({
     setNotice(null)
     try {
       const result = await window.api.cv.exportFile(id)
-      if (result.status === 'saved') setNotice(`Zapisano plik: ${baseName(result.filePath)}`)
+      if (result.status === 'saved') {
+        const fileName = baseName(result.filePath)
+        showNotice(({ library }) => library.savedFile(fileName))
+      }
     } catch {
-      setError('Nie udało się wyeksportować CV.')
+      showError(failureMessage('export'))
       await refresh()
     }
   }
@@ -80,30 +100,30 @@ export function Library({
   return (
     <>
       <header className="toolbar">
-        <h1 className="toolbar-title">Moje CV</h1>
+        <h1 className="toolbar-title">{appName}</h1>
         <button type="button" onClick={onOpenClauses}>
-          Klauzule zgody
+          {t.clauses}
         </button>
         <button type="button" onClick={importFile}>
-          Importuj z pliku
+          {t.importFile}
         </button>
-        <button type="button" onClick={() => runAndRefresh(() => window.api.cv.create(), 'Nie udało się utworzyć CV.')}>
-          Nowe CV
+        <button type="button" onClick={() => runAndRefresh(() => window.api.cv.create(), 'create')}>
+          {t.newCv}
         </button>
       </header>
       <main className="library">
         {error && (
           <p className="library-error" role="alert">
-            {error}
+            {error(dictionary)}
           </p>
         )}
         {notice && (
           <p className="library-notice" role="status">
-            {notice}
+            {notice(dictionary)}
           </p>
         )}
-        {entries?.length === 0 && <p className="library-empty">Nie masz jeszcze żadnego CV. Kliknij „Nowe CV”.</p>}
-        <ul className="library-list" aria-label="Lista CV">
+        {entries?.length === 0 && <p className="library-empty">{t.empty}</p>}
+        <ul className="library-list" aria-label={t.list}>
           {entries?.map((entry) => {
             const mode = rowMode?.id === entry.id ? rowMode.kind : null
             const askDelete = () => setRowMode({ id: entry.id, kind: 'confirm-delete' })
@@ -112,11 +132,9 @@ export function Library({
                 {mode === 'confirm-delete' ? (
                   <ConfirmDelete
                     label={
-                      entry.status === 'ok'
-                        ? `Usunąć „${entry.name}”? Tej operacji nie można cofnąć.`
-                        : `Usunąć uszkodzony plik „${entry.id}.json”? Tej operacji nie można cofnąć.`
+                      entry.status === 'ok' ? t.confirmDelete(entry.name) : t.confirmDeleteDamaged(`${entry.id}.json`)
                     }
-                    onDelete={() => runAndRefresh(() => window.api.cv.delete(entry.id), 'Nie udało się usunąć CV.')}
+                    onDelete={() => runAndRefresh(() => window.api.cv.delete(entry.id), 'delete')}
                     onCancel={() => setRowMode(null)}
                   />
                 ) : entry.status === 'damaged' ? (
@@ -124,33 +142,30 @@ export function Library({
                 ) : mode === 'rename' ? (
                   <RenameForm
                     entry={entry}
-                    onSubmit={(name) => runAndRefresh(() => window.api.cv.rename(entry.id, name), 'Nie udało się zmienić nazwy.')}
+                    onSubmit={(name) => runAndRefresh(() => window.api.cv.rename(entry.id, name), 'rename')}
                     onCancel={() => setRowMode(null)}
                   />
                 ) : (
                   <>
                     <div className="library-item-info">
                       <span className="library-item-name">{entry.name}</span>
-                      <span className="library-item-date">Zmieniono {formatDateTime(entry.updatedAt)}</span>
+                      <span className="library-item-date">{t.modified(formatDateTime(entry.updatedAt, language))}</span>
                     </div>
                     <div className="library-item-actions">
                       <button type="button" onClick={() => open(entry.id)}>
-                        Otwórz
+                        {t.open}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => runAndRefresh(() => window.api.cv.duplicate(entry.id), 'Nie udało się zduplikować CV.')}
-                      >
-                        Duplikuj
+                      <button type="button" onClick={() => runAndRefresh(() => window.api.cv.duplicate(entry.id), 'duplicate')}>
+                        {t.duplicate}
                       </button>
                       <button type="button" onClick={() => exportFile(entry.id)}>
-                        Eksportuj do pliku
+                        {t.exportFile}
                       </button>
                       <button type="button" onClick={() => setRowMode({ id: entry.id, kind: 'rename' })}>
-                        Zmień nazwę
+                        {t.rename}
                       </button>
                       <button type="button" onClick={askDelete}>
-                        Usuń
+                        {common.delete}
                       </button>
                     </div>
                   </>
@@ -166,6 +181,7 @@ export function Library({
 
 function RenameForm({ entry, onSubmit, onCancel }: { entry: OkEntry; onSubmit: (name: string) => void; onCancel: () => void }) {
   const [name, setName] = useState(entry.name)
+  const { common, library } = useDictionary()
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (name.trim()) onSubmit(name.trim())
@@ -174,7 +190,7 @@ function RenameForm({ entry, onSubmit, onCancel }: { entry: OkEntry; onSubmit: (
   return (
     <form className="library-item-form" onSubmit={submit}>
       <input
-        aria-label="Nazwa CV"
+        aria-label={library.name}
         value={name}
         autoFocus
         onChange={(event) => setName(event.target.value)}
@@ -182,10 +198,10 @@ function RenameForm({ entry, onSubmit, onCancel }: { entry: OkEntry; onSubmit: (
       />
       <div className="library-item-actions">
         <button type="submit" disabled={!name.trim()}>
-          Zapisz
+          {common.save}
         </button>
         <button type="button" onClick={onCancel}>
-          Anuluj
+          {common.cancel}
         </button>
       </div>
     </form>
@@ -193,15 +209,16 @@ function RenameForm({ entry, onSubmit, onCancel }: { entry: OkEntry; onSubmit: (
 }
 
 function ConfirmDelete({ label, onDelete, onCancel }: { label: string; onDelete: () => void; onCancel: () => void }) {
+  const { common } = useDictionary()
   return (
-    <div className="library-item-form" role="alertdialog" aria-label="Potwierdź usunięcie">
+    <div className="library-item-form" role="alertdialog" aria-label={common.confirmDelete}>
       <span>{label}</span>
       <div className="library-item-actions">
         <button type="button" className="danger" onClick={onDelete}>
-          Usuń
+          {common.delete}
         </button>
         <button type="button" onClick={onCancel} autoFocus>
-          Anuluj
+          {common.cancel}
         </button>
       </div>
     </div>
@@ -209,21 +226,22 @@ function ConfirmDelete({ label, onDelete, onCancel }: { label: string; onDelete:
 }
 
 function DamagedRow({ entry, onDelete }: { entry: DamagedEntry; onDelete: () => void }) {
+  const { common, library } = useDictionary()
   return (
     <>
       <div className="library-item-info">
         <span className="library-item-name">{entry.id}.json</span>
-        <span className="library-item-damaged">Plik uszkodzony – nie można go otworzyć</span>
+        <span className="library-item-damaged">{library.damaged}</span>
       </div>
       <div className="library-item-actions">
         <button type="button" onClick={onDelete}>
-          Usuń
+          {common.delete}
         </button>
       </div>
     </>
   )
 }
 
-const dateTimeFormat = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'short', timeStyle: 'short' })
-const formatDateTime = (iso: string) => dateTimeFormat.format(new Date(iso))
-const baseName = (filePath: string) => filePath.split(/[\\/]/).at(-1)
+const formatDateTime = (iso: string, language: InterfaceLanguage) =>
+  new Intl.DateTimeFormat(language, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso))
+const baseName = (filePath: string) => filePath.split(/[\\/]/).at(-1) ?? filePath

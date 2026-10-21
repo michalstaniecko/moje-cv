@@ -219,6 +219,74 @@ test('native file dialogs get their titles and file-type filters in the interfac
   }
 })
 
+test('the CV library and the consent clause library are in English', async () => {
+  await app.close()
+  await launch({ language: 'en' })
+
+  // Biblioteka CV: przyciski, wiersz z datą zmiany w formacie angielskim, zmiana nazwy i potwierdzenie usunięcia.
+  await expect(window.getByRole('heading', { name: 'Moje CV' })).toBeVisible()
+  const library = window.getByRole('list', { name: 'CV list' })
+  const row = library.getByRole('listitem').first()
+  await expect(row).toContainText(/Modified \d{1,2}\/\d{1,2}\/\d{2}, \d{1,2}:\d{2}\s?[AP]M/)
+  for (const name of ['Open', 'Duplicate', 'Export to file', 'Rename', 'Delete']) {
+    await expect(row.getByRole('button', { name, exact: true })).toBeVisible()
+  }
+  await row.getByRole('button', { name: 'Rename' }).click()
+  await expect(row.getByLabel('CV name')).toBeVisible()
+  await row.getByRole('button', { name: 'Cancel' }).click()
+  await row.getByRole('button', { name: 'Delete' }).click()
+  await expect(row.getByRole('alertdialog', { name: 'Confirm deletion' })).toContainText(/^Delete “.+”\? This can’t be undone\./)
+  await row.getByRole('button', { name: 'Delete' }).click()
+  await expect(window.getByText('You don’t have any CVs yet. Click “New CV”.')).toBeVisible()
+  await window.getByRole('button', { name: 'New CV' }).click()
+  await expect(library.getByRole('listitem')).toHaveCount(1)
+  await expect(window.getByRole('button', { name: 'Import from file' })).toBeVisible()
+
+  // Biblioteka klauzul: pusta, dodanie klauzuli, oznaczenie domyślnej i potwierdzenie usunięcia.
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
+  await expect(window.getByRole('heading', { name: 'Consent clauses' })).toBeVisible()
+  await expect(window.getByText('The default clause is added to every new CV.', { exact: false })).toBeVisible()
+  await expect(window.getByText('The library is empty. Click “Add clause”.')).toBeVisible()
+  await window.getByRole('button', { name: 'Add clause' }).click()
+  const form = window.getByRole('form', { name: 'Clause' })
+  await expect(form.getByLabel('Name')).toHaveAttribute('placeholder', 'e.g. Talent Partners')
+  await form.getByLabel('Name').fill('General')
+  await form.getByLabel('Text').fill('I agree to the processing of my personal data.')
+  await form.getByRole('button', { name: 'Save' }).click()
+  const clause = window.getByRole('list', { name: 'Clause list' }).getByRole('listitem')
+  await clause.getByRole('button', { name: 'Set as default' }).click()
+  await expect(clause).toContainText('General (default)')
+  await expect(clause.getByRole('button', { name: 'Remove default' })).toBeVisible()
+  await clause.getByRole('button', { name: 'Edit' }).click()
+  await form.getByRole('button', { name: 'Cancel' }).click()
+  await clause.getByRole('button', { name: 'Delete' }).click()
+  await expect(clause.getByRole('alertdialog', { name: 'Confirm deletion' })).toHaveText(
+    /Delete the clause “General”\? CVs that use it keep their own copy of the text\./
+  )
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  await expect(library).toBeVisible()
+})
+
+test('switching the language in the menu immediately translates the CV library and the clause library', async () => {
+  await app.close()
+  await launch({ language: null })
+  await stubSystemLanguages(['en-US'])
+  await expect(window.getByRole('button', { name: 'New CV' })).toBeVisible()
+  await expect(window.getByRole('listitem').first()).toContainText(/Modified \d{1,2}\/\d{1,2}\/\d{2}/)
+
+  await clickMenuItem('Language / Język', 'Polski')
+  await expect(window.getByRole('button', { name: 'Nowe CV' })).toBeVisible()
+  await expect(window.getByRole('list', { name: 'Lista CV' }).getByRole('listitem')).toContainText(
+    /Zmieniono \d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}/
+  )
+
+  await window.getByRole('button', { name: 'Klauzule zgody' }).click()
+  await expect(window.getByRole('heading', { name: 'Klauzule zgody' })).toBeVisible()
+  await clickMenuItem('Language / Język', 'English')
+  await expect(window.getByRole('heading', { name: 'Consent clauses' })).toBeVisible()
+  await expect(window.getByRole('button', { name: 'Add clause' })).toBeVisible()
+})
+
 test('the packaged app identifies itself as „Moje CV” (which names its application data folder)', async () => {
   test.skip(!packagedExecutable, 'dotyczy tylko zbudowanej aplikacji')
   const identity = await app.evaluate(({ app }) => ({ name: app.getName(), isPackaged: app.isPackaged }))
