@@ -72,13 +72,28 @@ function useReadySignal(
 
 // Strony A4 z treścią CV. Ten sam komponent służy do podglądu i do eksportu PDF.
 // `onReady` – wywoływane, gdy fonty są załadowane, podział policzony, a zdjęcie wczytane.
-export function CvPages({ document, onReady }: { document: CvDocument; onReady?: () => void }) {
+// `onLayout` – wywoływane po każdym podziale stron; `markOversized` wyróżnia bloki wyższe niż strona (tylko podgląd).
+export function CvPages({
+  document,
+  onReady,
+  onLayout,
+  markOversized = false
+}: {
+  document: CvDocument
+  onReady?: () => void
+  onLayout?: (layout: PaginateResult) => void
+  markOversized?: boolean
+}) {
   const blocks = useMemo(() => generateBlocks(document), [document])
   const consentText = document.consent.enabled && document.consent.text.trim() ? document.consent.text : null
   const { layout, measureRef, consentElement } = usePagination(blocks, document.settings.font, consentText)
   const blocksById = useMemo(() => new Map(blocks.map((block) => [block.id, block])), [blocks])
   const pagesElement = useRef<HTMLDivElement>(null)
   useReadySignal(layout, pagesElement, onReady)
+  useEffect(() => {
+    if (layout) onLayout?.(layout)
+  }, [layout, onLayout])
+  const oversizedIds = useMemo(() => new Set(markOversized ? layout?.oversizedIds : []), [layout, markOversized])
 
   const style = {
     '--accent': document.settings.accentColor,
@@ -98,20 +113,30 @@ export function CvPages({ document, onReady }: { document: CvDocument; onReady?:
         )}
       </div>
 
-      {layout?.pages.map((ids, index) => (
-        <section key={index} className="cv-page">
-          <div className="cv-page-content">
-            {/* Do czasu ponownego podziału układ może jeszcze wskazywać bloki właśnie usunięte z dokumentu. */}
-            {ids.flatMap((id) => {
-              const block = blocksById.get(id)
-              return block ? [<CvBlockView key={id} block={block} />] : []
-            })}
-            {consentText !== null && index === layout.pages.length - 1 && (
-              <p className="cv-consent">{consentText}</p>
-            )}
-          </div>
-        </section>
-      ))}
+      {/* Ramka i warstwa stron pozwalają podglądowi skalować same strony, bez wpływu na pomiar bloków. */}
+      <div className="cv-pages-frame" style={{ '--pages': layout?.pages.length ?? 0 } as CSSProperties}>
+        <div className="cv-pages">
+          {layout?.pages.map((ids, index) => (
+            <section key={index} className="cv-page">
+              <div className="cv-page-content">
+                {/* Do czasu ponownego podziału układ może jeszcze wskazywać bloki właśnie usunięte z dokumentu. */}
+                {ids.flatMap((id) => {
+                  const block = blocksById.get(id)
+                  return block ? [<CvBlockView key={id} block={block} oversized={oversizedIds.has(id)} />] : []
+                })}
+                {ids.some((id) => oversizedIds.has(id)) && (
+                  <p className="cv-oversized-message" role="alert">
+                    Ten fragment jest za długi, aby zmieścić się na stronie – skróć go
+                  </p>
+                )}
+                {consentText !== null && index === layout.pages.length - 1 && (
+                  <p className="cv-consent">{consentText}</p>
+                )}
+              </div>
+            </section>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

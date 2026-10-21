@@ -180,3 +180,23 @@
     display: none;
   }
 }
+
+/* ---------- Za długi fragment (tylko podgląd) ---------- */
+/* Obrys i komunikat nie zmieniają wysokości bloku, więc nie wpływają na podział stron. */
+.cv-block--oversized {
+  outline: 2px solid #b42318;
+  outline-offset: -2px;
+  background: rgba(180, 35, 24, 0.06);
+}
+
+.cv-oversized-message {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 2mm 3mm;
+  background: #b42318;
+  color: #fff;
+  font: 600 12px system-ui, sans-serif;
+}

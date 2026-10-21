@@ -3,7 +3,7 @@ import { useStore } from 'zustand'
 import type { Clause, ClauseContent, CvDocument } from './domain/schema'
 import { createCvEditor, type CvEditor, type SaveStatus } from './editor/cvEditor'
 import { CvForm } from './editor/CvForm'
-import { CvPages } from './template/CvPages'
+import { PreviewPane } from './preview/PreviewPane'
 
 type ExportState =
   | { status: 'idle' }
@@ -80,9 +80,7 @@ export function CvScreen({ document: initial, onBack }: { document: CvDocument; 
         <aside className="editor-form">
           <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} />
         </aside>
-        <main className="preview">
-          <CvPages document={document} />
-        </main>
+        <PreviewPane document={document} />
       </div>
     </div>
   )

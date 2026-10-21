@@ -4,13 +4,57 @@ body {
   background: #e9ecec;
 }
 
+/* Podgląd skaluje same strony (transform), więc pomiar bloków i podział stron nie zależą od powiększenia.
+   Ramka ma wymiary przeskalowanych stron, żeby przewijanie i wyśrodkowanie odpowiadały temu, co widać. */
 .preview {
-  padding: 24px 0;
+  --page-gap: 24px;
+}
+
+.preview .cv-pages-frame {
+  width: calc(210mm * var(--scale));
+  height: calc((297mm + var(--page-gap)) * var(--pages) * var(--scale));
+  margin: var(--page-gap) auto 0;
+}
+
+.preview .cv-pages {
+  width: 210mm;
+  transform: scale(var(--scale));
+  transform-origin: top left;
 }
 
 .preview .cv-page {
-  margin: 0 auto 24px;
+  margin-bottom: var(--page-gap);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.preview-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  background: #f7f9f9;
+  border-bottom: 1px solid #d5dbdb;
+  font: 13px system-ui, sans-serif;
+}
+
+.preview-length-notice {
+  color: #5b6767;
+}
+
+.preview-zoom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.preview-zoom-value {
+  min-width: 3.5em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .toolbar {

@@ -74,9 +74,21 @@ function BlockContent({ block }: { block: CvBlock }) {
   }
 }
 
-export function CvBlockView({ block, ref }: { block: CvBlock; ref?: Ref<HTMLDivElement> }) {
+export function CvBlockView({
+  block,
+  ref,
+  oversized = false
+}: {
+  block: CvBlock
+  ref?: Ref<HTMLDivElement>
+  oversized?: boolean
+}) {
   return (
-    <div ref={ref} className="cv-block" style={{ paddingBottom: `${block.spaceAfterMm}mm` }}>
+    <div
+      ref={ref}
+      className={oversized ? 'cv-block cv-block--oversized' : 'cv-block'}
+      style={{ paddingBottom: `${block.spaceAfterMm}mm` }}
+    >
       <BlockContent block={block} />
     </div>
   )

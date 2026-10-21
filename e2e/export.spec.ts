@@ -428,6 +428,60 @@ test('picks a photo from disk, crops it to 3:4 for the header and removes it, in
   await expect(preview.locator('.cv-photo')).toHaveCount(0)
 })
 
+test('shows the page count, warns about long CVs and oversized fragments only in the preview, and zooms without changing the page split', async () => {
+  const pdfPath = join(outputDir, 'long.pdf')
+  await stubSaveDialog(pdfPath)
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  const preview = window.locator('.preview')
+  const pageCount = preview.getByRole('status')
+  await expect(pageCount).toHaveText('2 strony')
+  await expect(preview).not.toContainText('więcej niż 2 strony')
+
+  // Podsumowanie dłuższe niż strona: nagłówek dostaje własną stronę, jest wyróżniony i CV ma ponad 2 strony.
+  await window.getByLabel('Podsumowanie').fill(Array.from({ length: 120 }, (_, i) => `Bardzo długie podsumowanie, wiersz ${i + 1}.`).join('\n'))
+  const message = 'Ten fragment jest za długi, aby zmieścić się na stronie – skróć go'
+  await expect(preview.getByText(message)).toBeVisible()
+  await expect(preview.locator('.cv-page').first().locator('.cv-block--oversized .cv-header')).toHaveCount(1)
+  await expect(pageCount).toHaveText('3 strony')
+  await expect(preview).toContainText('CV ma więcej niż 2 strony – warto je skrócić.')
+
+  // Eksport nie jest blokowany, a wyróżnienie nie trafia do PDF.
+  await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
+  await expect(window.getByText('Zapisano PDF')).toBeVisible()
+  const pdf = await readPdf(await readFile(pdfPath))
+  expect(pdf.pages).toHaveLength(3)
+  expect(pdf.pages.join('')).not.toContain('Ten fragment jest za długi')
+  expect(pdf.fillColors).not.toContain('#b42318')
+
+  // Domyślnie strona wypełnia szerokość panelu (z marginesami 24 px), także po zmianie rozmiaru okna.
+  const page = preview.locator('.cv-page').first()
+  const pageWidth = async () => (await page.boundingBox())!.width
+  const panelWidth = () => preview.evaluate((element) => element.clientWidth)
+  await expect.poll(async () => (await pageWidth()) - ((await panelWidth()) - 48)).toBeCloseTo(0, 0)
+  const widthBefore = await pageWidth()
+  await app.evaluate(({ BrowserWindow }) => {
+    const [browserWindow] = BrowserWindow.getAllWindows()
+    const [width, height] = browserWindow!.getSize()
+    browserWindow!.setSize(width! + 300, height!)
+  })
+  await expect.poll(pageWidth).toBeGreaterThan(widthBefore + 200)
+  await expect.poll(async () => (await pageWidth()) - ((await panelWidth()) - 48)).toBeCloseTo(0, 0)
+
+  // 100%, +, −: strona w skali 1:1 (210 mm = 793,7 px) i o jeden poziom większa/mniejsza; podział stron bez zmian.
+  const pageTexts = () => preview.locator('.cv-page').evaluateAll((pages) => pages.map((page) => page.textContent))
+  const textsAtFit = await pageTexts()
+  await preview.getByRole('button', { name: '100%' }).click()
+  await expect.poll(pageWidth).toBeCloseTo(793.7, 0)
+  await preview.getByRole('button', { name: 'Powiększ' }).click()
+  await expect.poll(pageWidth).toBeCloseTo(793.7 * 1.25, 0)
+  expect(await pageTexts()).toEqual(textsAtFit)
+  await preview.getByRole('button', { name: 'Pomniejsz' }).click()
+  await preview.getByRole('button', { name: 'Pomniejsz' }).click()
+  await expect.poll(pageWidth).toBeCloseTo(793.7 * 0.75, 0)
+  expect(await pageTexts()).toEqual(textsAtFit)
+  await expect(pageCount).toHaveText('3 strony')
+})
+
 test('exports a CV to a JSON file and imports it back as a new CV; an invalid file leaves the library unchanged', async () => {
   const library = window.getByRole('list', { name: 'Lista CV' })
   const rows = library.getByRole('listitem')
