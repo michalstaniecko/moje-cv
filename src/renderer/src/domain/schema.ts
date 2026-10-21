@@ -73,6 +73,8 @@ export const cvDocumentSchema = z.object({
 })
 export type CvDocument = z.infer<typeof cvDocumentSchema>
 
+export const defaultCvSettings: CvDocument['settings'] = { accentColor: '#1a6e72', font: 'lato' }
+
 export const appSettingsSchema = z.object({
   schemaVersion: z.literal(1),
   clauses: z.array(z.object({ id: idSchema, name: z.string(), text: z.string() })),

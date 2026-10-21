@@ -7,9 +7,10 @@ let app: ElectronApplication
 let window: Page
 let outputDir: string
 
+// Każdy test startuje z pustym katalogiem danych (pierwsze uruchomienie), żeby nie dotykać danych użytkownika.
 test.beforeEach(async () => {
   outputDir = await mkdtemp(join(tmpdir(), 'moje-cv-e2e-'))
-  app = await electron.launch({ args: ['.'] })
+  app = await electron.launch({ args: ['.', `--user-data-dir=${join(outputDir, 'user-data')}`] })
   window = await app.firstWindow()
 })
 
@@ -31,9 +32,14 @@ async function stubSaveDialog(filePath: string) {
   }, filePath)
 }
 
-test('exports the sample CV to a PDF identical to the preview', async () => {
+test('on first run opens the sample CV from the library and exports it to a PDF identical to the preview', async () => {
   const pdfPath = join(outputDir, 'export.pdf')
   await stubSaveDialog(pdfPath)
+
+  const library = window.getByRole('list', { name: 'Lista CV' })
+  await expect(library.getByRole('listitem')).toHaveCount(1)
+  await expect(library.getByText('Przykładowe CV')).toBeVisible()
+  await library.getByRole('button', { name: 'Otwórz' }).click()
 
   await expect(window.locator('.cv-page').first()).toBeVisible()
   const previewPageCount = await window.locator('.preview .cv-page').count()

@@ -1,8 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { Api } from '../shared/api'
 
-// Wąskie API dla renderera. Operacje na CV i ustawieniach dojdą w kolejnych etapach.
+// Wąskie API dla renderera. Ustawienia dojdą w kolejnych etapach.
 const api: Api = {
+  cv: {
+    list: () => ipcRenderer.invoke('cv:list'),
+    get: (id) => ipcRenderer.invoke('cv:get', id),
+    create: () => ipcRenderer.invoke('cv:create'),
+    duplicate: (id) => ipcRenderer.invoke('cv:duplicate', id),
+    rename: (id, name) => ipcRenderer.invoke('cv:rename', id, name),
+    delete: (id) => ipcRenderer.invoke('cv:delete', id)
+  },
   pdf: {
     export: (document) => ipcRenderer.invoke('pdf:export', document),
     open: (filePath) => ipcRenderer.invoke('pdf:open', filePath),

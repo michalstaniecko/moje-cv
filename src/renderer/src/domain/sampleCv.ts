@@ -1,4 +1,4 @@
-import { cvDocumentSchema } from './schema'
+import { cvDocumentSchema, defaultCvSettings } from './schema'
 
 // Szara sylwetka w proporcjach 3:4 – zdjęcie zastępcze przykładowego CV.
 const placeholderPhoto =
@@ -21,7 +21,7 @@ export const sampleCv = cvDocumentSchema.parse({
   name: 'Przykładowe CV',
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
-  settings: { accentColor: '#1a6e72', font: 'lato' },
+  settings: defaultCvSettings,
   header: {
     fullName: 'Anna Przykładowa',
     photo: { dataUrl: placeholderPhoto },

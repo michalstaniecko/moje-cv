@@ -36,3 +36,78 @@ body {
 .toolbar-notice--error {
   color: #b42318;
 }
+
+.toolbar-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.library {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 24px;
+  font: 14px system-ui, sans-serif;
+}
+
+.library-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.library-item,
+.library-item-form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.library-item {
+  margin-bottom: 8px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #d5dbdb;
+  border-radius: 6px;
+}
+
+.library-item-form {
+  flex: 1;
+}
+
+.library-item-form input {
+  flex: 1;
+  font: inherit;
+  padding: 4px 6px;
+}
+
+.library-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.library-item-name {
+  font-weight: 600;
+}
+
+.library-item-date {
+  color: #5b6767;
+}
+
+.library-item-damaged,
+.library-error,
+.danger {
+  color: #b42318;
+}
+
+.library-item-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.library-empty {
+  color: #5b6767;
+}
