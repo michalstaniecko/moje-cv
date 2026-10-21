@@ -57,10 +57,12 @@
   gap: 8mm;
 }
 
+/* Wysokość wynika z proporcji kadru, więc pomiar nagłówka nie czeka na wczytanie zdjęcia. */
 .cv-photo {
   display: block;
   width: 42mm;
-  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
 }
 
 .cv-name {

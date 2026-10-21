@@ -3,6 +3,13 @@ import type { AppSettings, Clause, ClauseContent, CvDocument } from '../renderer
 // Kontrakt API wystawianego przez preload (window.api) – wspólny dla procesu głównego i renderera.
 export type ExportPdfResult = { status: 'saved'; filePath: string } | { status: 'canceled' }
 
+// Wynik wyboru zdjęcia z dysku: oryginał pliku jako data URL (przed kadrowaniem).
+export type PickPhotoResult =
+  | { status: 'picked'; dataUrl: string }
+  | { status: 'canceled' }
+  | { status: 'unsupported' }
+  | { status: 'too-large' }
+
 // Pozycja na liście CV. Uszkodzony plik (niepoprawny JSON lub niezgodny ze schematem) jest widoczny, ale nie da się go otworzyć.
 export type CvListEntry =
   | { status: 'ok'; id: string; name: string; updatedAt: string }
@@ -25,6 +32,9 @@ export type Api = {
     updateClause: (id: string, content: ClauseContent) => Promise<AppSettings>
     deleteClause: (id: string) => Promise<AppSettings>
     setDefaultClause: (id: string | null) => Promise<AppSettings>
+  }
+  photo: {
+    pick: () => Promise<PickPhotoResult>
   }
   pdf: {
     export: (document: CvDocument) => Promise<ExportPdfResult>

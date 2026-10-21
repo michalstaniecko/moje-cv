@@ -29,6 +29,7 @@ import {
   updateSettings
 } from './documentEdits'
 import { MonthField } from './MonthField'
+import { PhotoField } from './PhotoField'
 import { SortableList } from './SortableList'
 
 const CONTACT_LABEL_SUGGESTIONS = ['Tel', 'E-mail', 'LinkedIn', 'Miasto']
@@ -117,6 +118,8 @@ function HeaderFields({ editor, header }: { editor: CvEditor; header: CvDocument
           onChange={(event) => editor.edit(updateHeader({ fullName: event.target.value }), 'header:fullName')}
         />
       </label>
+
+      <PhotoField editor={editor} photo={header.photo} />
 
       <fieldset className="form-group">
         <legend>Kontakt</legend>

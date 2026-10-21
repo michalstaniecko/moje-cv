@@ -19,6 +19,9 @@ const api: Api = {
     deleteClause: (id) => ipcRenderer.invoke('settings:delete-clause', id),
     setDefaultClause: (id) => ipcRenderer.invoke('settings:set-default-clause', id)
   },
+  photo: {
+    pick: () => ipcRenderer.invoke('photo:pick')
+  },
   pdf: {
     export: (document) => ipcRenderer.invoke('pdf:export', document),
     open: (filePath) => ipcRenderer.invoke('pdf:open', filePath),

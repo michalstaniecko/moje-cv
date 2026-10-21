@@ -4,6 +4,7 @@ import { sampleCv } from '../renderer/src/domain/sampleCv'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
 import { registerPdfExport } from './pdfExport'
+import { registerPhotoPicker } from './photo'
 import { registerSettings } from './settings'
 import { createSettingsRepository } from './settingsRepository'
 import { loadRenderer, secureWebPreferences } from './windows'
@@ -28,6 +29,7 @@ app.whenReady().then(async () => {
   registerCvLibrary(repository, settings)
   registerSettings(settings)
   registerPdfExport()
+  registerPhotoPicker()
   createWindow()
 
   app.on('activate', () => {

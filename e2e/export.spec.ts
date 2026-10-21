@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
@@ -34,6 +34,19 @@ async function stubSaveDialog(filePath: string) {
       return { canceled: false, filePath }
     }
     dialog.showSaveDialog = stub as typeof dialog.showSaveDialog
+  }, filePath)
+}
+
+// Podmienia systemowe okno wyboru pliku: zwraca podany plik (albo anulowanie) i zapamiętuje opcje, z którymi je otwarto.
+async function stubOpenDialog(filePath: string | null) {
+  await app.evaluate(({ dialog }, filePath) => {
+    const calls: Electron.OpenDialogOptions[] = []
+    ;(globalThis as { openDialogCalls?: typeof calls }).openDialogCalls = calls
+    const stub = async (...args: unknown[]) => {
+      calls.push(args.at(-1) as Electron.OpenDialogOptions)
+      return filePath ? { canceled: false, filePaths: [filePath] } : { canceled: true, filePaths: [] }
+    }
+    dialog.showOpenDialog = stub as typeof dialog.showOpenDialog
   }, filePath)
 }
 
@@ -293,6 +306,116 @@ test('manages the consent clause library, uses a clause in a CV without changing
   await expect(row('Bank')).toContainText('Wyrażam zgodę dla Banku.')
 })
 
+test('picks a photo from disk, crops it to 3:4 for the header and removes it, in the preview and PDF', async () => {
+  // Zdjęcie poziome 1200 × 800: lewa połowa czerwona, prawa niebieska.
+  const photoPath = join(outputDir, 'zdjecie.png')
+  const png = await app.evaluate(({ nativeImage }) => {
+    const [width, height] = [1200, 800]
+    const bitmap = Buffer.alloc(width * height * 4)
+    // Piksele w kolejności BGRA.
+    for (let y = 0; y < height; y++)
+      for (let x = 0; x < width; x++) bitmap.set(x < width / 2 ? [0, 0, 255, 255] : [255, 0, 0, 255], (y * width + x) * 4)
+    return nativeImage.createFromBitmap(bitmap, { width, height }).toPNG().toString('base64')
+  })
+  await writeFile(photoPath, Buffer.from(png, 'base64'))
+  const brokenPath = join(outputDir, 'uszkodzone.jpg')
+  await writeFile(brokenPath, 'to nie jest obraz')
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  const preview = window.locator('.preview')
+  await expect(preview.locator('.cv-page .cv-photo')).toHaveCount(1)
+  const photoField = window.getByRole('group', { name: 'Zdjęcie' })
+
+  // Plik, którego nie da się odczytać jako obraz, daje komunikat i nie zmienia zdjęcia.
+  await stubOpenDialog(brokenPath)
+  await photoField.getByRole('button', { name: 'Zmień zdjęcie' }).click()
+  await expect(photoField.getByRole('alert')).toContainText('Nie udało się wczytać zdjęcia')
+  await expect(window.getByRole('dialog', { name: 'Kadrowanie zdjęcia' })).toHaveCount(0)
+
+  // Wybór pliku z dysku przez systemowe okno, kadrowanie i zapis.
+  await stubOpenDialog(photoPath)
+  await photoField.getByRole('button', { name: 'Zmień zdjęcie' }).click()
+  const openDialogOptions = await app.evaluate(
+    () => (globalThis as { openDialogCalls?: Electron.OpenDialogOptions[] }).openDialogCalls
+  )
+  expect(openDialogOptions![0]!.filters![0]!.extensions).toEqual(expect.arrayContaining(['jpg', 'jpeg', 'png']))
+  const cropper = window.getByRole('dialog', { name: 'Kadrowanie zdjęcia' })
+  await expect(cropper).toBeVisible()
+  // Kadr przesunięty maksymalnie w prawo – na zdjęciu zostaje sam niebieski.
+  const frame = cropper.getByRole('img', { name: 'Podgląd kadru' })
+  const box = (await frame.boundingBox())!
+  await window.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await window.mouse.down()
+  await window.mouse.move(box.x - box.width * 3, box.y + box.height / 2, { steps: 10 })
+  await window.mouse.up()
+  await cropper.getByRole('button', { name: 'Zastosuj' }).click()
+  await expect(cropper).toHaveCount(0)
+
+  // W CV wykadrowany JPEG 3:4 w rozdzielczości do druku (42 mm przy 300 dpi), o szerokości 42 mm.
+  const photo = preview.locator('.cv-page .cv-photo')
+  await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+  const stored = await photo.evaluate(async (element) => {
+    const image = element as typeof element & { naturalWidth: number; naturalHeight: number; src: string; decode: () => Promise<void> }
+    await image.decode()
+    const view = element.ownerDocument.defaultView!
+    const canvas = element.ownerDocument.createElement('canvas') as unknown as {
+      width: number
+      height: number
+      getContext: (type: '2d') => {
+        drawImage: (image: unknown, x: number, y: number) => void
+        getImageData: (x: number, y: number, width: number, height: number) => { data: Uint8ClampedArray }
+      }
+    }
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    const context = canvas.getContext('2d')
+    context.drawImage(image, 0, 0)
+    const pixel = (x: number, y: number) => [...context.getImageData(x, y, 1, 1).data.slice(0, 3)]
+    return {
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      cssWidth: view.getComputedStyle(element).width,
+      corners: [pixel(2, 2), pixel(canvas.width - 3, canvas.height - 3)],
+      length: image.src.length
+    }
+  })
+  expect(stored.width).toBe(496)
+  expect(stored.height).toBe(661)
+  expect(parseFloat(stored.cssWidth)).toBeCloseTo((42 * 96) / 25.4, 0)
+  for (const [r = 0, , b = 0] of stored.corners) {
+    expect(b).toBeGreaterThan(200)
+    expect(r).toBeLessThan(40)
+  }
+  expect(stored.length).toBeLessThan(300_000)
+  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+
+  // Eksport PDF czeka na wczytanie zdjęcia – jest na pierwszej stronie.
+  const withPhoto = join(outputDir, 'ze-zdjeciem.pdf')
+  await stubSaveDialog(withPhoto)
+  await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
+  await expect(window.getByText(`Zapisano PDF: ${basename(withPhoto)}`)).toBeVisible()
+  expect((await readPdf(await readFile(withPhoto))).imagesPerPage[0]).toBe(1)
+
+  // Bez zdjęcia nagłówek zajmuje pełną szerokość, a w PDF nie ma obrazu.
+  await photoField.getByRole('button', { name: 'Usuń zdjęcie' }).click()
+  await expect(preview.locator('.cv-photo')).toHaveCount(0)
+  await expect(preview.locator('.cv-page .cv-header')).toHaveCSS('grid-template-columns', /^\S+$/)
+  await expect(photoField.getByRole('button', { name: 'Wybierz zdjęcie' })).toBeVisible()
+  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+  const withoutPhoto = join(outputDir, 'bez-zdjecia.pdf')
+  await stubSaveDialog(withoutPhoto)
+  await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
+  await expect(window.getByText(`Zapisano PDF: ${basename(withoutPhoto)}`)).toBeVisible()
+  const pdf = await readPdf(await readFile(withoutPhoto))
+  expect(pdf.imagesPerPage.every((count) => count === 0)).toBe(true)
+  expect(pdf.pages[0]).toContain('Anna Przykładowa')
+
+  // Anulowane okno wyboru niczego nie zmienia.
+  await stubOpenDialog(null)
+  await photoField.getByRole('button', { name: 'Wybierz zdjęcie' }).click()
+  await expect(window.getByRole('dialog', { name: 'Kadrowanie zdjęcia' })).toHaveCount(0)
+  await expect(preview.locator('.cv-photo')).toHaveCount(0)
+})
+
 // Przeciąga element za uchwyt myszą krok po kroku, tak jak użytkownik (dnd-kit reaguje na zdarzenia wskaźnika).
 async function dragOnto(handle: Locator, target: Locator) {
   await target.scrollIntoViewIfNeeded()
@@ -311,9 +434,9 @@ async function dragOnto(handle: Locator, target: Locator) {
 // A4 w punktach PDF (210 × 297 mm).
 const A4_PT = { width: 595.28, height: 841.89 }
 
-type ParsedPdf = { pages: string[]; pageSizes: { width: number; height: number }[]; title: string; author: string; embeddedFonts: string[]; fillColors: string[] }
+type ParsedPdf = { pages: string[]; pageSizes: { width: number; height: number }[]; title: string; author: string; embeddedFonts: string[]; fillColors: string[]; imagesPerPage: number[] }
 
-// Odczytuje PDF tak jak czytnik/ATS: zaznaczalny tekst każdej strony, metadane, osadzone fonty i kolory wypełnień.
+// Odczytuje PDF tak jak czytnik/ATS: zaznaczalny tekst każdej strony, metadane, osadzone fonty, kolory wypełnień i liczbę obrazów na stronach.
 async function readPdf(bytes: Buffer): Promise<ParsedPdf> {
   const { getDocument, OPS } = await import('pdfjs-dist/legacy/build/pdf.mjs')
   const document = await getDocument({ data: new Uint8Array(bytes), fontExtraProperties: true }).promise
@@ -321,6 +444,7 @@ async function readPdf(bytes: Buffer): Promise<ParsedPdf> {
   const pageSizes: ParsedPdf['pageSizes'] = []
   const embeddedFonts = new Set<string>()
   const fillColors = new Set<string>()
+  const imagesPerPage: number[] = []
   for (let number = 1; number <= document.numPages; number++) {
     const page = await document.getPage(number)
     const [, , width = 0, height = 0] = page.view
@@ -328,6 +452,7 @@ async function readPdf(bytes: Buffer): Promise<ParsedPdf> {
     const content = await page.getTextContent()
     pages.push(content.items.map((item) => ('str' in item ? item.str : '')).join(''))
     const operators = await page.getOperatorList()
+    imagesPerPage.push(operators.fnArray.filter((fn) => fn === OPS.paintImageXObject || fn === OPS.paintInlineImageXObject).length)
     operators.fnArray.forEach((fn, index) => {
       if (fn === OPS.setFillRGBColor) fillColors.add(String(operators.argsArray[index]?.[0]).toLowerCase())
     })
@@ -337,5 +462,5 @@ async function readPdf(bytes: Buffer): Promise<ParsedPdf> {
     }
   }
   const { info } = (await document.getMetadata()) as { info: { Title?: string; Author?: string } }
-  return { pages, pageSizes, title: info.Title ?? '', author: info.Author ?? '', embeddedFonts: [...embeddedFonts], fillColors: [...fillColors] }
+  return { pages, pageSizes, title: info.Title ?? '', author: info.Author ?? '', embeddedFonts: [...embeddedFonts], fillColors: [...fillColors], imagesPerPage }
 }
