@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { Api } from '../shared/api'
+import type { InterfaceLanguage } from '../shared/i18n/languages'
 
 // Wąskie API dla renderera.
 const api: Api = {
@@ -28,6 +29,16 @@ const api: Api = {
     export: (document) => ipcRenderer.invoke('pdf:export', document),
     open: (filePath) => ipcRenderer.invoke('pdf:open', filePath),
     showInFolder: (filePath) => ipcRenderer.invoke('pdf:show-in-folder', filePath)
+  },
+  language: {
+    get: () => ipcRenderer.invoke('language:get'),
+    onChange: (listener) => {
+      const changed = (_event: Electron.IpcRendererEvent, language: InterfaceLanguage) => listener(language)
+      ipcRenderer.on('language:changed', changed)
+      return () => {
+        ipcRenderer.off('language:changed', changed)
+      }
+    }
   },
   editor: {
     setActive: (active) => ipcRenderer.send('editor:active', active),

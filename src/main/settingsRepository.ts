@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { appSettingsSchema, type AppSettings, type Clause, type ClauseContent } from '../renderer/src/domain/schema'
+import type { InterfaceLanguage } from '../shared/i18n/languages'
 import { exists, writeJsonAtomic } from './atomicFile'
 
 export type SettingsRepository = ReturnType<typeof createSettingsRepository>
 
 const emptySettings: AppSettings = { schemaVersion: 1, clauses: [], defaultClauseId: null }
 
-// Ustawienia globalne (biblioteka klauzul zgody) w jednym pliku JSON, zapisywanym atomowo.
+// Ustawienia globalne (biblioteka klauzul zgody, język interfejsu) w jednym pliku JSON, zapisywanym atomowo.
 // Uszkodzonego pliku (niepoprawny JSON lub niezgodność ze schematem) nie da się odczytać ani nadpisać.
 export function createSettingsRepository(path: string) {
   async function get(): Promise<AppSettings> {
@@ -57,6 +58,13 @@ export function createSettingsRepository(path: string) {
         if (id !== null) requireClause(settings, id)
         return { ...settings, defaultClauseId: id }
       })
+    },
+
+    // `null` (język systemu) usuwa wybór z pliku.
+    async setInterfaceLanguage(language: InterfaceLanguage | null): Promise<AppSettings> {
+      return change(({ interfaceLanguage: _previous, ...settings }) =>
+        language === null ? settings : { ...settings, interfaceLanguage: language }
+      )
     },
 
     // Klauzula, którą dostaje nowe CV. Uszkodzony plik ustawień nie blokuje tworzenia CV – wtedy bez klauzuli.

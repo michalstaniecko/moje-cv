@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { interfaceLanguageCodes } from '../../../shared/i18n/languages'
 
 export const yearMonthSchema = z.object({
   year: z.number().int(),
@@ -90,6 +91,8 @@ export const clauseName = (clause: Pick<Clause, 'name'>) => clause.name.trim() |
 export const appSettingsSchema = z.object({
   schemaVersion: z.literal(1),
   clauses: z.array(clauseSchema),
-  defaultClauseId: idSchema.nullable()
+  defaultClauseId: idSchema.nullable(),
+  // Wybrany język interfejsu. Brak pola = język systemu (bez podbijania wersji schematu).
+  interfaceLanguage: z.enum(interfaceLanguageCodes).optional()
 })
 export type AppSettings = z.infer<typeof appSettingsSchema>

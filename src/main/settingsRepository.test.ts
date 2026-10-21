@@ -103,6 +103,46 @@ describe('default clause', () => {
   })
 })
 
+describe('interface language preference', () => {
+  test('is missing until chosen, so the app follows the system', async () => {
+    expect((await repository.get()).interfaceLanguage).toBeUndefined()
+  })
+
+  test('a chosen language is kept in the settings file', async () => {
+    await repository.setInterfaceLanguage('en')
+
+    expect((await createSettingsRepository(settingsPath).get()).interfaceLanguage).toBe('en')
+    expect(JSON.parse(await readFile(settingsPath, 'utf8')).interfaceLanguage).toBe('en')
+  })
+
+  test('choosing the system language removes the field and keeps the clause library', async () => {
+    const general = await repository.addClause({ name: 'Ogólna', text: 'A' })
+    await repository.setInterfaceLanguage('pl')
+
+    await repository.setInterfaceLanguage(null)
+
+    const saved = JSON.parse(await readFile(settingsPath, 'utf8'))
+    expect(saved).not.toHaveProperty('interfaceLanguage')
+    expect(saved.clauses).toEqual([general])
+  })
+
+  test('a settings file from before the language preference still loads', async () => {
+    const old = { schemaVersion: 1, clauses: [{ id: 'a', name: 'Ogólna', text: 'A' }], defaultClauseId: 'a' }
+    await writeFile(settingsPath, JSON.stringify(old))
+
+    expect(await repository.get()).toEqual(old)
+    await repository.setInterfaceLanguage('pl')
+    expect(JSON.parse(await readFile(settingsPath, 'utf8'))).toEqual({ ...old, interfaceLanguage: 'pl' })
+  })
+
+  test('an unsupported language in the file makes it unreadable like any other schema mismatch', async () => {
+    const content = JSON.stringify({ schemaVersion: 1, clauses: [], defaultClauseId: null, interfaceLanguage: 'de' })
+    await writeFile(settingsPath, content)
+
+    await expect(repository.get()).rejects.toThrow()
+  })
+})
+
 describe('damaged settings file', () => {
   const damagedFiles = {
     'invalid JSON': '{ "schemaVersion": 1, "clauses": ',

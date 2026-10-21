@@ -1,0 +1,21 @@
+# Moje CV
+
+Desktop app for creating, editing and exporting CVs to PDF.
+
+## Language
+
+**Interface language**:
+The language of the app itself: menus, buttons, dialogs and messages. An app-wide preference, independent of the language any CV is written in.
+_Avoid_: App language, locale (when meaning the CV)
+
+**CV language**:
+The language a single CV is written in, governing the fixed text that ends up on the document (e.g. "present" for an ongoing date range). A property of each CV, separate from the Interface language.
+_Avoid_: Document locale, PDF language
+
+**Default content**:
+The pre-filled values a newly created CV starts with (section titles, contact labels, CV name). Written in the Interface language at the moment of creation; once created, it is ordinary editable CV content.
+_Avoid_: Template text, placeholders
+
+**Tag**:
+A short, user-chosen label attached to a CV to organise the CV library (e.g. "frontend", "EN", "Allegro"). Private metadata: never shown on the CV document itself. A tag exists only as long as at least one CV carries it. Independent of the CV language, even when it names a language.
+_Avoid_: Label (as a separate concept), keyword, skill, category

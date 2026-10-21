@@ -1,6 +1,7 @@
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
+import type { InterfaceLanguage } from '../src/shared/i18n/languages'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 
 let app: ElectronApplication
@@ -11,10 +12,17 @@ let outputDir: string
 const packagedExecutable = process.env['MOJE_CV_APP']
 
 // Uruchamia aplikację na tymczasowym katalogu danych testu, żeby nie dotykać danych użytkownika.
-async function launch() {
+// Język interfejsu jest wymuszony (`MOJE_CV_LANGUAGE`), żeby testy nie zależały od języka systemu;
+// `language: null` uruchamia aplikację bez wymuszenia (wybór z menu Language / Język, a bez niego system).
+async function launch({ language = 'pl' }: { language?: InterfaceLanguage | null } = {}) {
   const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
+  const env = { ...process.env } as Record<string, string>
+  if (language) env['MOJE_CV_LANGUAGE'] = language
+  else delete env['MOJE_CV_LANGUAGE']
   app = await electron.launch(
-    packagedExecutable ? { executablePath: packagedExecutable, args: [userDataDir] } : { args: ['.', userDataDir] }
+    packagedExecutable
+      ? { executablePath: packagedExecutable, args: [userDataDir], env }
+      : { args: ['.', userDataDir], env }
   )
   window = await app.firstWindow()
 }
@@ -80,6 +88,96 @@ async function clickMenuItem(menuLabel: string, itemLabel: string) {
     { menuLabel, itemLabel }
   )
 }
+
+// Etykiety menu aplikacji: górny poziom i pozycje wskazanego podmenu (zaznaczone radio z dopiskiem „✓”).
+async function menuLabels(menuLabel: string) {
+  return app.evaluate(({ Menu }, menuLabel) => {
+    const items = Menu.getApplicationMenu()?.items ?? []
+    const submenu = items.find((item) => item.label === menuLabel)?.submenu?.items ?? []
+    return {
+      top: items.map((item) => item.label),
+      items: submenu.filter((item) => item.type !== 'separator').map((item) => item.label + (item.checked ? ' ✓' : ''))
+    }
+  }, menuLabel)
+}
+
+// Język systemu widziany przez aplikację, żeby wybór „System” dawał przewidywalny wynik.
+async function stubSystemLanguages(languages: string[]) {
+  await app.evaluate(({ app }, languages) => {
+    app.getPreferredSystemLanguages = () => languages
+  }, languages)
+}
+
+test('the whole menu and the document follow the interface language forced for the session', async () => {
+  for (const language of ['en', 'pl'] satisfies InterfaceLanguage[]) {
+    await app.close()
+    await launch({ language })
+    await expect(window.locator('html')).toHaveAttribute('lang', language)
+    await expect.poll(() => window.title()).toBe('Moje CV')
+  }
+
+  await app.close()
+  await launch({ language: 'en' })
+  expect((await menuLabels('Edit')).top).toEqual(['Moje CV', 'Edit', 'Language / Język', 'Window'])
+  expect((await menuLabels('Moje CV')).items).toEqual(['About Moje CV', 'Hide Moje CV', 'Hide Others', 'Show All', 'Quit Moje CV'])
+  expect((await menuLabels('Edit')).items).toEqual(['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All'])
+  expect((await menuLabels('Window')).items).toEqual(['Minimize', 'Zoom', 'Close Window'])
+  expect((await menuLabels('Language / Język')).items).toEqual(['English', 'Polski', 'System ✓'])
+
+  await app.close()
+  await launch({ language: 'pl' })
+  expect((await menuLabels('Edycja')).top).toEqual(['Moje CV', 'Edycja', 'Language / Język', 'Okno'])
+  expect((await menuLabels('Moje CV')).items).toEqual([
+    'O aplikacji Moje CV',
+    'Ukryj Moje CV',
+    'Ukryj pozostałe',
+    'Pokaż wszystkie',
+    'Zakończ Moje CV'
+  ])
+  expect((await menuLabels('Edycja')).items).toEqual(['Cofnij', 'Ponów', 'Wytnij', 'Kopiuj', 'Wklej', 'Zaznacz wszystko'])
+  expect((await menuLabels('Okno')).items).toEqual(['Minimalizuj', 'Zoom', 'Zamknij okno'])
+})
+
+test('Language / Język switches the menu and the window immediately, the choice survives a restart and System follows the system again', async () => {
+  await app.close()
+  await launch({ language: null })
+  await stubSystemLanguages(['de-DE', 'pl-PL'])
+
+  await clickMenuItem('Language / Język', 'English')
+  await expect.poll(() => menuLabels('Language / Język')).toEqual({
+    top: ['Moje CV', 'Edit', 'Language / Język', 'Window'],
+    items: ['English ✓', 'Polski', 'System']
+  })
+  await expect(window.locator('html')).toHaveAttribute('lang', 'en')
+
+  await clickMenuItem('Language / Język', 'Polski')
+  await expect.poll(() => menuLabels('Language / Język')).toEqual({
+    top: ['Moje CV', 'Edycja', 'Language / Język', 'Okno'],
+    items: ['English', 'Polski ✓', 'System']
+  })
+  await expect(window.locator('html')).toHaveAttribute('lang', 'pl')
+
+  // Cofnij z przebudowanego menu nadal działa na historii CV.
+  await openFirstCv()
+  const fullName = window.getByLabel('Imię i nazwisko')
+  await fullName.fill('Ewa Nowak')
+  await clickMenuItem('Edycja', 'Cofnij')
+  await expect(fullName).toHaveValue('Anna Przykładowa')
+
+  await app.close()
+  await launch({ language: null })
+  expect((await menuLabels('Language / Język')).items).toEqual(['English', 'Polski ✓', 'System'])
+  await expect(window.locator('html')).toHaveAttribute('lang', 'pl')
+
+  // System: pierwszy obsługiwany język systemu, a bez takiego angielski.
+  await stubSystemLanguages(['de-DE'])
+  await clickMenuItem('Language / Język', 'System')
+  await expect.poll(() => menuLabels('Language / Język')).toEqual({
+    top: ['Moje CV', 'Edit', 'Language / Język', 'Window'],
+    items: ['English', 'Polski', 'System ✓']
+  })
+  await expect(window.locator('html')).toHaveAttribute('lang', 'en')
+})
 
 test('the packaged app identifies itself as „Moje CV” (which names its application data folder)', async () => {
   test.skip(!packagedExecutable, 'dotyczy tylko zbudowanej aplikacji')

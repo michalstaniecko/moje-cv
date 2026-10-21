@@ -14,7 +14,7 @@ Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/bri
 | Q5 | Podział stron | Automatyczne reguły + przełącznik „nowa strona przed tym elementem” przy sekcji i wpisie. |
 | Q6 | Klauzula – zachowanie | Zawsze na dole ostatniej strony. Gdy się nie mieści – na dół nowej strony. Przełącznik wł./wył. Zwykły tekst. |
 | Q7 | Klauzula – treści | Globalna biblioteka zapisanych klauzul; CV wybiera jedną i może ją nadpisać lokalnie. |
-| Q8 | Język | Interfejs po polsku. Nagłówki sekcji z polskimi domyślnymi, edytowalne. |
+| Q8 | Język | Język interfejsu (angielski, polski) niezależny od języka CV: przy pierwszym uruchomieniu język systemu, jeśli obsługiwany, inaczej angielski; zmiana w menu Language / Język (English, Polski, System) działa od razu i jest zapamiętywana. Własny typowany słownik (ADR-0001). Nagłówki sekcji z polskimi domyślnymi, edytowalne. |
 | Q9 | Zdjęcie | Wgranie pliku, kadrowanie do stałych proporcji, opcja „bez zdjęcia” (nagłówek bez kolumny zdjęcia). |
 | Q10 | Wygląd | Kolor akcentu (domyślnie `#1a6e72`) + wybór fontu (Q24). Reszta stała. |
 | Q11 | Formatowanie | Zwykły tekst wszędzie (bez pogrubień, linków). |
@@ -103,6 +103,7 @@ type AppSettings = {
   schemaVersion: 1
   clauses: { id: Id; name: string; text: string }[]
   defaultClauseId: Id | null
+  interfaceLanguage?: 'en' | 'pl'  // brak = język systemu
 }
 ```
 
@@ -173,8 +174,8 @@ Każda strona to `div` 210×297 mm z paddingiem marginesów, `overflow: hidden`,
 
 ## 6. Architektura
 
-- **main**: okna, IPC, system plików (CV, ustawienia, import/eksport), eksport PDF, dialogi, polskie menu aplikacji (Edycja → Cofnij / Ponów w edytorze CV przekazywane do historii CV).
-- **preload**: wąskie API przez `contextBridge`: `cv.list/get/save/delete/duplicate/import/export`, `settings.get/save`, `pdf.export`, `photo.pick`, `editor.setActive/onHistoryCommand` (edytor zgłasza, że jest otwarty, i dostaje Cofnij / Ponów z menu). `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`.
+- **main**: okna, IPC, system plików (CV, ustawienia, import/eksport), eksport PDF, dialogi, język interfejsu (wybór → system → angielski; `MOJE_CV_LANGUAGE=en|pl` wymusza go w testach) i menu aplikacji w tym języku (Edycja → Cofnij / Ponów w edytorze CV przekazywane do historii CV, Language / Język).
+- **preload**: wąskie API przez `contextBridge`: `cv.list/get/save/delete/duplicate/import/export`, `settings.get/save`, `pdf.export`, `photo.pick`, `language.get/onChange` (bieżący język interfejsu i jego zmiany), `editor.setActive/onHistoryCommand` (edytor zgłasza, że jest otwarty, i dostaje Cofnij / Ponów z menu). `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`.
 - **renderer** (React):
   - `domain/` – schematy Zod, migracje, formatowanie dat, generator bloków, `paginate` (bez Reacta, testowane w Vitest).
   - `template/` – komponenty renderujące bloki i strony (`<CvPages>`), CSS przeniesiony z template'u, fonty `@font-face` z plików lokalnych.

@@ -3,6 +3,7 @@ import { app, BrowserWindow } from 'electron'
 import { sampleCv } from '../renderer/src/domain/sampleCv'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
+import { createInterfaceLanguage, registerInterfaceLanguage, type InterfaceLanguageState } from './interfaceLanguage'
 import { registerAppMenu } from './menu'
 import { registerPdfExport } from './pdfExport'
 import { registerPhotoPicker } from './photo'
@@ -10,11 +11,12 @@ import { registerSettings } from './settings'
 import { createSettingsRepository } from './settingsRepository'
 import { loadRenderer, secureWebPreferences } from './windows'
 
-function createWindow(): void {
+// Tytuł okna to nazwa aplikacji ze słownika; renderer ustawia go także w dokumencie przy zmianie języka.
+function createWindow(language: InterfaceLanguageState): void {
   const window = new BrowserWindow({
     width: 1280,
     height: 900,
-    title: 'Moje CV',
+    title: language.dictionary().appName,
     show: false,
     webPreferences: secureWebPreferences
   })
@@ -31,11 +33,13 @@ app.whenReady().then(async () => {
   registerSettings(settings)
   registerPdfExport()
   registerPhotoPicker()
-  registerAppMenu()
-  createWindow()
+  const language = await createInterfaceLanguage(settings)
+  registerInterfaceLanguage(language)
+  registerAppMenu(language)
+  createWindow(language)
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) createWindow(language)
   })
 })
 

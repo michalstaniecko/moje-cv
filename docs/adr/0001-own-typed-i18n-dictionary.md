@@ -1,0 +1,3 @@
+# Own typed translation dictionary instead of i18next
+
+The Interface language needs ~250 strings in two languages (en, pl), used by both the main process (menu, native dialogs) and the renderer. We use our own dictionary module shared by both processes: `en` is the source of truth and every other language must satisfy its type, so a missing translation is a compile error; plurals go through `Intl.PluralRules` and parametrised strings are plain functions. We rejected i18next + react-i18next because it adds dependencies, needs extra setup to get typed keys, and its runtime features (lazy loading, namespaces, ICU parsing) solve problems a two-language desktop app doesn't have. Revisit if we ever need many languages maintained by non-developers.

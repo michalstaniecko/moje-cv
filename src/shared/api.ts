@@ -1,4 +1,5 @@
 import type { AppSettings, Clause, ClauseContent, CvDocument } from '../renderer/src/domain/schema'
+import type { InterfaceLanguage } from './i18n/languages'
 
 // Kontrakt API wystawianego przez preload (window.api) – wspólny dla procesu głównego i renderera.
 export type ExportPdfResult = { status: 'saved'; filePath: string } | { status: 'canceled' }
@@ -54,6 +55,12 @@ export type Api = {
     export: (document: CvDocument) => Promise<ExportPdfResult>
     open: (filePath: string) => Promise<void>
     showInFolder: (filePath: string) => Promise<void>
+  }
+  // Język interfejsu ustala proces główny; renderer tylko go wyświetla i dostaje jego zmiany.
+  language: {
+    get: () => Promise<InterfaceLanguage>
+    // Zwraca funkcję wypisania.
+    onChange: (listener: (language: InterfaceLanguage) => void) => () => void
   }
   // Edytor CV zgłasza, że jest otwarty, i dostaje Cofnij / Ponów kliknięte w menu Edycja.
   editor: {
