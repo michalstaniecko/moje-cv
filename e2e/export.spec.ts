@@ -480,7 +480,7 @@ test('importing an invalid file shows why in English and leaves the library unch
   }
 })
 
-test('in a Polish run the sample CV, the editor, the menu and the exported PDF are in Polish', async () => {
+test('in a Polish run the sample CV, the editor, the menu, the exported PDF and import errors are in Polish', async () => {
   await app.close()
   await rm(join(outputDir, 'user-data'), { recursive: true })
   await launch({ language: 'pl' })
@@ -507,6 +507,15 @@ test('in a Polish run the sample CV, the editor, the menu and the exported PDF a
 
   await clickMenuItem('Edycja', 'Cofnij')
   await expect(fullName).toHaveValue('Anna Przykładowa')
+
+  // Niepoprawny plik importu → komunikat po polsku, biblioteka bez zmian.
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  const invalidPath = join(outputDir, 'zepsute.json')
+  await writeFile(invalidPath, '{ "name": "Nie CV" }')
+  await stubOpenDialog(invalidPath)
+  await window.getByRole('button', { name: 'Importuj z pliku' }).click()
+  await expect(window.getByRole('alert')).toHaveText('Nie udało się zaimportować CV. Plik nie zawiera poprawnego CV.')
+  await expect(library.getByRole('listitem')).toHaveCount(1)
 })
 
 test('the packaged app identifies itself as „Moje CV” (which names its application data folder)', async () => {

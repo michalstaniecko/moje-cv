@@ -85,6 +85,9 @@ export type Clause = z.infer<typeof clauseSchema>
 export const clauseContentSchema = clauseSchema.omit({ id: true })
 export type ClauseContent = z.infer<typeof clauseContentSchema>
 
+// Nazwa CV do wyświetlenia – CV z pustą nazwą (np. z importowanego pliku) dostaje `untitled` w języku interfejsu.
+export const cvDisplayName = (name: string, untitled: string) => name.trim() || untitled
+
 // Nazwa klauzuli do wyświetlenia – dla klauzuli bez nazwy `untitled` w języku interfejsu.
 export const clauseName = (clause: Pick<Clause, 'name'>, untitled: string) => clause.name.trim() || untitled
 

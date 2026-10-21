@@ -1,6 +1,9 @@
 import type { InvalidCvFileReason } from '../api'
 import type { PluralForms } from './plural'
 
+// Odmiana „page” – zmienna z typem, a nie rzutowanie, żeby brak formy `other` był błędem kompilacji.
+const pages: PluralForms = { one: (count) => `${count} page`, other: (count) => `${count} pages` }
+
 // Słownik angielski – źródło prawdy: każdy inny język musi spełniać jego typ (ADR-0001).
 export const en = {
   appName: 'Moje CV',
@@ -54,6 +57,8 @@ export const en = {
     exportFile: 'Export to file',
     rename: 'Rename',
     name: 'CV name',
+    // Nazwa wyświetlana zamiast pustej nazwy CV (np. z importowanego pliku); nie trafia do CV.
+    untitled: 'Untitled CV',
     confirmDelete: (name: string) => `Delete “${name}”? This can’t be undone.`,
     confirmDeleteDamaged: (fileName: string) => `Delete the damaged file “${fileName}”? This can’t be undone.`,
     damaged: 'Damaged file – it can’t be opened',
@@ -201,7 +206,7 @@ export const en = {
     }
   },
   preview: {
-    pages: { one: (count) => `${count} page`, other: (count) => `${count} pages` } as PluralForms,
+    pages,
     lengthNotice: (pages: string) => `The CV is longer than ${pages} – consider shortening it.`,
     // Tylko w podglądzie – nigdy nie trafia do PDF.
     oversized: 'This fragment is too long to fit on a page – shorten it',
@@ -212,8 +217,6 @@ export const en = {
   // Treść domyślna: powstaje w języku interfejsu z chwili utworzenia, potem jest zwykłą treścią CV (zob. GLOSSARY.md).
   defaultContent: {
     cvName: 'New CV',
-    // Nazwa wyświetlana zamiast pustej nazwy CV (np. z importowanego pliku).
-    untitledCv: 'Untitled CV',
     copyName: (name: string) => `${name} (copy)`,
     // Etykiety kontaktu w nowym CV i podpowiedzi w edytorze.
     contactLabels: ['Phone', 'Email', 'LinkedIn', 'City'],

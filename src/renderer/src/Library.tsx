@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import type { CvListEntry } from '../../shared/api'
 import type { Dictionary } from '../../shared/i18n/en'
 import type { InterfaceLanguage } from '../../shared/i18n/languages'
-import type { CvDocument } from './domain/schema'
+import { cvDisplayName, type CvDocument } from './domain/schema'
 import { useDictionary, useInterfaceLanguage } from './i18n'
 
 type OkEntry = Extract<CvListEntry, { status: 'ok' }>
@@ -34,7 +34,7 @@ export function Library({
   const showError = (message: Message) => setError(() => message)
   const showNotice = (message: Message) => setNotice(() => message)
   const dictionary = useDictionary()
-  const { appName, common, library: t, defaultContent } = dictionary
+  const { appName, common, library: t } = dictionary
   const language = useInterfaceLanguage()
 
   const refresh = useCallback(async () => setEntries(await window.api.cv.list()), [])
@@ -78,7 +78,7 @@ export function Library({
       }
       if (result.status !== 'imported') return
       const { name } = result.document
-      showNotice(({ library, defaultContent }) => library.imported(displayName(name, defaultContent.untitledCv)))
+      showNotice(({ library }) => library.imported(cvDisplayName(name, library.untitled)))
       await refresh()
     } catch {
       showError(failureMessage('import'))
@@ -135,7 +135,7 @@ export function Library({
                 {mode === 'confirm-delete' ? (
                   <ConfirmDelete
                     label={
-                      entry.status === 'ok' ? t.confirmDelete(displayName(entry.name, defaultContent.untitledCv)) : t.confirmDeleteDamaged(`${entry.id}.json`)
+                      entry.status === 'ok' ? t.confirmDelete(cvDisplayName(entry.name, t.untitled)) : t.confirmDeleteDamaged(`${entry.id}.json`)
                     }
                     onDelete={() => runAndRefresh(() => window.api.cv.delete(entry.id), 'delete')}
                     onCancel={() => setRowMode(null)}
@@ -151,7 +151,7 @@ export function Library({
                 ) : (
                   <>
                     <div className="library-item-info">
-                      <span className="library-item-name">{displayName(entry.name, defaultContent.untitledCv)}</span>
+                      <span className="library-item-name">{cvDisplayName(entry.name, t.untitled)}</span>
                       <span className="library-item-date">{t.modified(formatDateTime(entry.updatedAt, language))}</span>
                     </div>
                     <div className="library-item-actions">
@@ -244,9 +244,6 @@ function DamagedRow({ entry, onDelete }: { entry: DamagedEntry; onDelete: () => 
     </>
   )
 }
-
-// CV z pustą nazwą (np. z importowanego pliku) jest pokazywane pod nazwą zastępczą w języku interfejsu.
-export const displayName = (name: string, untitled: string) => name.trim() || untitled
 
 const formatDateTime = (iso: string, language: InterfaceLanguage) =>
   new Intl.DateTimeFormat(language, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso))

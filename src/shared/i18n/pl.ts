@@ -50,6 +50,7 @@ export const pl: Dictionary = {
     exportFile: 'Eksportuj do pliku',
     rename: 'Zmień nazwę',
     name: 'Nazwa CV',
+    untitled: 'CV bez nazwy',
     confirmDelete: (name) => `Usunąć „${name}”? Tej operacji nie można cofnąć.`,
     confirmDeleteDamaged: (fileName) => `Usunąć uszkodzony plik „${fileName}”? Tej operacji nie można cofnąć.`,
     damaged: 'Plik uszkodzony – nie można go otworzyć',
@@ -208,7 +209,6 @@ export const pl: Dictionary = {
   },
   defaultContent: {
     cvName: 'Nowe CV',
-    untitledCv: 'CV bez nazwy',
     copyName: (name) => `${name} (kopia)`,
     contactLabels: ['Tel', 'E-mail', 'LinkedIn', 'Miasto'],
     sectionTitles: { experience: 'Doświadczenie zawodowe', education: 'Wykształcenie', skills: 'Umiejętności', languages: 'Języki' }

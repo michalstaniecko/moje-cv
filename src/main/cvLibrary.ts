@@ -14,7 +14,7 @@ const MAX_IMPORT_FILE_BYTES = 20 * 1024 * 1024
 // „CV – Talent Partners” → „CV – Talent Partners.json” (bez znaków niedozwolonych w nazwach plików).
 // CV bez nazwy dostaje nazwę `untitled` w języku interfejsu.
 export function cvFileName(name: string, untitled: string): string {
-  const safe = (name: string) => name.replace(/[/\\:*?"<>|\p{Cc}]/gu, '-').trim().replace(/^\.+/, '')
+  const safe = (text: string) => text.replace(/[/\\:*?"<>|\p{Cc}]/gu, '-').trim().replace(/^\.+/, '')
   return `${safe(name) || safe(untitled)}.json`
 }
 
@@ -54,7 +54,7 @@ export function registerCvLibrary(
     const owner = BrowserWindow.fromWebContents(event.sender)
     const options: Electron.SaveDialogOptions = {
       title: language.dictionary().dialogs.exportCv,
-      defaultPath: join(app.getPath('documents'), cvFileName(name, defaultContent().untitledCv)),
+      defaultPath: join(app.getPath('documents'), cvFileName(name, language.dictionary().library.untitled)),
       filters: jsonFilters()
     }
     const { canceled, filePath } = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)
