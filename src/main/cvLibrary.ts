@@ -1,9 +1,11 @@
 import { app, ipcMain } from 'electron'
 import { cvDocumentSchema } from '../renderer/src/domain/schema'
 import type { CvRepository } from './cvRepository'
+import { requireString } from './ipcArgs'
+import type { SettingsRepository } from './settingsRepository'
 
 // Operacje biblioteki CV dostępne dla renderera. Argumenty z IPC są weryfikowane przed użyciem.
-export function registerCvLibrary(repository: CvRepository): void {
+export function registerCvLibrary(repository: CvRepository, settings: SettingsRepository): void {
   // Autozapis wysłany przy zamykaniu okna musi trafić na dysk, zanim aplikacja się zakończy.
   const pendingUpdates = new Set<Promise<void>>()
   app.on('will-quit', (event) => {
@@ -14,7 +16,7 @@ export function registerCvLibrary(repository: CvRepository): void {
 
   ipcMain.handle('cv:list', () => repository.list())
   ipcMain.handle('cv:get', (_event, id: unknown) => repository.get(requireString(id)))
-  ipcMain.handle('cv:create', () => repository.create())
+  ipcMain.handle('cv:create', async () => repository.create(await settings.defaultClause()))
   ipcMain.handle('cv:duplicate', (_event, id: unknown) => repository.duplicate(requireString(id)))
   ipcMain.handle('cv:rename', (_event, id: unknown, name: unknown) => repository.rename(requireString(id), requireString(name)))
   ipcMain.handle('cv:update', (_event, document: unknown) => {
@@ -24,9 +26,4 @@ export function registerCvLibrary(repository: CvRepository): void {
     return update
   })
   ipcMain.handle('cv:delete', (_event, id: unknown) => repository.delete(requireString(id)))
-}
-
-function requireString(value: unknown): string {
-  if (typeof value !== 'string') throw new Error('Oczekiwano tekstu')
-  return value
 }

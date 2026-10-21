@@ -1,4 +1,4 @@
-import type { CvDocument } from '../renderer/src/domain/schema'
+import type { AppSettings, Clause, ClauseContent, CvDocument } from '../renderer/src/domain/schema'
 
 // Kontrakt API wystawianego przez preload (window.api) – wspólny dla procesu głównego i renderera.
 export type ExportPdfResult = { status: 'saved'; filePath: string } | { status: 'canceled' }
@@ -17,6 +17,14 @@ export type Api = {
     rename: (id: string, name: string) => Promise<CvDocument>
     update: (document: CvDocument) => Promise<void>
     delete: (id: string) => Promise<void>
+  }
+  // Ustawienia globalne: biblioteka klauzul zgody.
+  settings: {
+    get: () => Promise<AppSettings>
+    addClause: (content: ClauseContent) => Promise<Clause>
+    updateClause: (id: string, content: ClauseContent) => Promise<AppSettings>
+    deleteClause: (id: string) => Promise<AppSettings>
+    setDefaultClause: (id: string | null) => Promise<AppSettings>
   }
   pdf: {
     export: (document: CvDocument) => Promise<ExportPdfResult>

@@ -122,6 +122,18 @@ describe('create', () => {
     ])
   })
 
+  test('starts with the default clause from the library switched on', async () => {
+    const created = await repository.create({ id: 'general', name: 'Ogólna', text: 'Wyrażam zgodę…' })
+
+    expect((await repository.get(created.id)).consent).toEqual({ enabled: true, clauseId: 'general', text: 'Wyrażam zgodę…' })
+  })
+
+  test('has the clause switched off when the library has no default', async () => {
+    const created = await repository.create(null)
+
+    expect((await repository.get(created.id)).consent).toEqual({ enabled: false, clauseId: null, text: '' })
+  })
+
   test('every new CV gets its own id', async () => {
     const first = await repository.create()
     const second = await repository.create()

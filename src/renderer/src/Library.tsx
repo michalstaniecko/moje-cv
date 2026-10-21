@@ -8,8 +8,14 @@ type DamagedEntry = Extract<CvListEntry, { status: 'damaged' }>
 // Tryb pojedynczego wiersza: zwykły, zmiana nazwy albo potwierdzenie usunięcia.
 type RowMode = { id: string; kind: 'rename' | 'confirm-delete' } | null
 
-// Ekran startowy: lista CV z akcjami Nowe / Otwórz / Duplikuj / Zmień nazwę / Usuń.
-export function Library({ onOpen }: { onOpen: (document: CvDocument) => void }) {
+// Ekran startowy: lista CV z akcjami Nowe / Otwórz / Duplikuj / Zmień nazwę / Usuń i wejście do biblioteki klauzul.
+export function Library({
+  onOpen,
+  onOpenClauses
+}: {
+  onOpen: (document: CvDocument) => void
+  onOpenClauses: () => void
+}) {
   const [entries, setEntries] = useState<CvListEntry[] | null>(null)
   const [rowMode, setRowMode] = useState<RowMode>(null)
   const [error, setError] = useState<string | null>(null)
@@ -46,6 +52,9 @@ export function Library({ onOpen }: { onOpen: (document: CvDocument) => void }) 
     <>
       <header className="toolbar">
         <h1 className="toolbar-title">Moje CV</h1>
+        <button type="button" onClick={onOpenClauses}>
+          Klauzule zgody
+        </button>
         <button type="button" onClick={() => runAndRefresh(() => window.api.cv.create(), 'Nie udało się utworzyć CV.')}>
           Nowe CV
         </button>

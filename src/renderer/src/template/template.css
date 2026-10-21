@@ -161,6 +161,7 @@
   font-size: 8pt;
   color: var(--muted);
   margin: 0;
+  white-space: pre-line;
 }
 
 .cv-page-content > .cv-consent {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from 'zustand'
-import type { CvDocument } from './domain/schema'
+import type { Clause, ClauseContent, CvDocument } from './domain/schema'
 import { createCvEditor, type CvEditor, type SaveStatus } from './editor/cvEditor'
 import { CvForm } from './editor/CvForm'
 import { CvPages } from './template/CvPages'
@@ -24,6 +24,7 @@ export function CvScreen({ document: initial, onBack }: { document: CvDocument; 
   const document = useStore(editor.store, (state) => state.document)
   const saveStatus = useStore(editor.store, (state) => state.saveStatus)
   const [exportState, setExportState] = useState<ExportState>({ status: 'idle' })
+  const [clauses, saveClause] = useClauseLibrary()
   useEditorLifecycle(editor)
 
   const exportPdf = async () => {
@@ -77,7 +78,7 @@ export function CvScreen({ document: initial, onBack }: { document: CvDocument; 
       </header>
       <div className="editor-panes">
         <aside className="editor-form">
-          <CvForm editor={editor} />
+          <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} />
         </aside>
         <main className="preview">
           <CvPages document={document} />
@@ -85,6 +86,27 @@ export function CvScreen({ document: initial, onBack }: { document: CvDocument; 
       </div>
     </div>
   )
+}
+
+// Klauzule z biblioteki do wyboru w CV i dodawanie nowej („Zapisz jako nową klauzulę”).
+// Bez dostępu do biblioteki (np. uszkodzony plik ustawień) lista jest pusta, a klauzulę w CV nadal można edytować.
+function useClauseLibrary() {
+  const [clauses, setClauses] = useState<Clause[]>([])
+
+  useEffect(() => {
+    window.api.settings.get().then(
+      (settings) => setClauses(settings.clauses),
+      () => setClauses([])
+    )
+  }, [])
+
+  const saveClause = async (content: ClauseContent) => {
+    const clause = await window.api.settings.addClause(content)
+    setClauses((current) => [...current, clause])
+    return clause
+  }
+
+  return [clauses, saveClause] as const
 }
 
 // Cmd+Z / Cmd+Shift+Z (Ctrl na innych systemach) cofa i ponawia zmiany w dokumencie – także w polu tekstowym,

@@ -224,6 +224,75 @@ test('changes the accent colour and font of one CV in the preview and PDF, with 
   await expect(window.getByLabel('Font')).toHaveValue('arimo')
 })
 
+test('manages the consent clause library, uses a clause in a CV without changing the library and leaves a switched-off clause out of the PDF', async () => {
+  const library = window.getByRole('list', { name: 'Lista CV' })
+  await expect(library.getByRole('listitem')).toHaveCount(1)
+
+  // Biblioteka: dodanie dwóch klauzul, edycja, domyślna i usunięcie.
+  await window.getByRole('button', { name: 'Klauzule zgody' }).click()
+  const clauses = window.getByRole('list', { name: 'Lista klauzul' })
+  const addClause = async (name: string, text: string) => {
+    await window.getByRole('button', { name: 'Dodaj klauzulę' }).click()
+    await window.getByLabel('Nazwa').fill(name)
+    await window.getByLabel('Treść').fill(text)
+    await window.getByRole('button', { name: 'Zapisz' }).click()
+  }
+  await addClause('Ogólna', 'Wyrażam zgodę na przetwarzanie danych – wersja ogólna.')
+  await addClause('Do usunięcia', 'Tymczasowa')
+  await addClause('Talent', 'Wyrażam zgodę dla Talent Partners.')
+  const row = (name: string) => clauses.getByRole('listitem').filter({ hasText: name })
+  await row('Talent').getByRole('button', { name: 'Edytuj' }).click()
+  await window.getByLabel('Nazwa').fill('Talent Partners')
+  await window.getByRole('button', { name: 'Zapisz' }).click()
+  await row('Do usunięcia').getByRole('button', { name: 'Usuń' }).click()
+  await window.getByRole('alertdialog').getByRole('button', { name: 'Usuń' }).click()
+  await row('Ogólna').getByRole('button', { name: 'Ustaw jako domyślną' }).click()
+  await expect(row('Ogólna')).toContainText('(domyślna)')
+  await expect(clauses.getByRole('listitem')).toHaveCount(2)
+  await expect(row('Talent Partners')).toContainText('Wyrażam zgodę dla Talent Partners.')
+
+  // Nowe CV dostaje klauzulę domyślną, widoczną w podglądzie.
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  await window.getByRole('button', { name: 'Nowe CV' }).click()
+  await library.getByRole('listitem').filter({ hasText: 'Nowe CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  const preview = window.locator('.preview')
+  const consent = window.getByRole('region', { name: 'Klauzula zgody' })
+  await expect(consent.getByLabel('Klauzula z biblioteki')).toHaveValue(/.+/)
+  await expect(preview.locator('.cv-page .cv-consent')).toHaveText('Wyrażam zgodę na przetwarzanie danych – wersja ogólna.')
+
+  // Wybór innej klauzuli, poprawka w CV, przywrócenie z biblioteki i zapis poprawionej jako nowej.
+  await consent.getByLabel('Klauzula z biblioteki').selectOption({ label: 'Talent Partners' })
+  const text = consent.getByLabel('Treść w tym CV')
+  await expect(text).toHaveValue('Wyrażam zgodę dla Talent Partners.')
+  await text.fill('Wyrażam zgodę dla Talent Partners i Banku.')
+  await expect(preview.locator('.cv-page .cv-consent')).toHaveText('Wyrażam zgodę dla Talent Partners i Banku.')
+  await consent.getByRole('button', { name: 'Przywróć z biblioteki' }).click()
+  await expect(text).toHaveValue('Wyrażam zgodę dla Talent Partners.')
+  await text.fill('Wyrażam zgodę dla Banku.')
+  await consent.getByRole('button', { name: 'Zapisz jako nową klauzulę' }).click()
+  await consent.getByLabel('Nazwa nowej klauzuli').fill('Bank')
+  await consent.getByRole('button', { name: 'Zapisz', exact: true }).click()
+  await expect(consent.getByLabel('Klauzula z biblioteki').locator('option:checked')).toHaveText('Bank')
+  await expect(consent.getByRole('button', { name: 'Przywróć z biblioteki' })).toHaveCount(0)
+
+  // Wyłączona klauzula znika z podglądu i PDF.
+  await consent.getByLabel('Pokaż klauzulę na dole ostatniej strony').uncheck()
+  await expect(preview.locator('.cv-consent')).toHaveCount(0)
+  await expect(window.getByText('Zmiany zapisane')).toBeVisible()
+  const pdfPath = join(outputDir, 'bez-klauzuli.pdf')
+  await stubSaveDialog(pdfPath)
+  await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
+  await expect(window.getByText('Zapisano PDF')).toBeVisible()
+  expect((await readPdf(await readFile(pdfPath))).pages.join('')).not.toContain('Wyrażam zgodę')
+
+  // Poprawki w CV nie zmieniły biblioteki.
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  await window.getByRole('button', { name: 'Klauzule zgody' }).click()
+  await expect(clauses.getByRole('listitem')).toHaveCount(3)
+  await expect(row('Talent Partners')).toContainText('Wyrażam zgodę dla Talent Partners.')
+  await expect(row('Bank')).toContainText('Wyrażam zgodę dla Banku.')
+})
+
 // Przeciąga element za uchwyt myszą krok po kroku, tak jak użytkownik (dnd-kit reaguje na zdarzenia wskaźnika).
 async function dragOnto(handle: Locator, target: Locator) {
   await target.scrollIntoViewIfNeeded()

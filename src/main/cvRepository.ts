@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import { access, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { readdir, readFile, rm } from 'node:fs/promises'
 import { basename, join } from 'node:path'
+import { exists, writeJsonAtomic } from './atomicFile'
 import { emptyCv } from '../renderer/src/domain/emptyCv'
-import { cvDocumentSchema, type CvDocument } from '../renderer/src/domain/schema'
+import { cvDocumentSchema, type Clause, type CvDocument } from '../renderer/src/domain/schema'
 import type { CvListEntry } from '../shared/api'
 
 export type CvRepository = ReturnType<typeof createCvRepository>
@@ -31,21 +32,13 @@ export function createCvRepository(dir: string, { now = () => new Date() }: Opti
     }
   }
 
-  // Zapis atomowy: plik tymczasowy + rename, więc na dysku jest zawsze cała stara albo cała nowa wersja.
-  // Uszkodzonego pliku nie nadpisujemy – może dać się go jeszcze odzyskać ręcznie.
+  // Zapis atomowy (patrz writeJsonAtomic). Uszkodzonego pliku nie nadpisujemy – może dać się go jeszcze odzyskać ręcznie.
   async function save(document: CvDocument): Promise<void> {
     const targetPath = filePath(document.id)
     if ((await exists(targetPath)) && (await listEntry(document.id)).status === 'damaged') {
       throw new Error(`Plik CV jest uszkodzony i nie zostanie nadpisany: ${document.id}`)
     }
-    await mkdir(dir, { recursive: true })
-    const tempPath = join(dir, `.${document.id}.${randomUUID()}.tmp`)
-    try {
-      await writeFile(tempPath, JSON.stringify(document, null, 2))
-      await rename(tempPath, targetPath)
-    } finally {
-      await rm(tempPath, { force: true })
-    }
+    await writeJsonAtomic(targetPath, document)
   }
 
   // Zapisuje dokument jako nowe CV: nowe id i daty utworzenia/zmiany.
@@ -78,7 +71,9 @@ export function createCvRepository(dir: string, { now = () => new Date() }: Opti
       if (!(await exists(dir))) await saveAsNew(sample)
     },
 
-    create: () => saveAsNew(emptyCv({ now: now(), newId: randomUUID })),
+    // Nowe CV dostaje domyślną klauzulę z biblioteki (włączoną), o ile jest.
+    create: (defaultClause: Clause | null = null) =>
+      saveAsNew(emptyCv({ now: now(), newId: randomUUID, defaultClause })),
 
     async duplicate(id: string): Promise<CvDocument> {
       const original = await get(id)
@@ -103,7 +98,5 @@ export function createCvRepository(dir: string, { now = () => new Date() }: Opti
     }
   }
 }
-
-const exists = (path: string) => access(path).then(() => true, () => false)
 
 const sortKey = (entry: CvListEntry) => (entry.status === 'ok' ? entry.updatedAt : '')

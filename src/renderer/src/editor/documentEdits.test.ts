@@ -3,12 +3,14 @@ import { sampleCv } from '../domain/sampleCv'
 import {
   addEducationItem,
   addListItem,
+  applyClause,
   moveBullet,
   moveItem,
   moveSection,
   removeEducationItem,
   removeListItem,
   updateEducationItem,
+  updateConsent,
   updateListItem,
   updateSection
 } from './documentEdits'
@@ -98,5 +100,32 @@ describe('moveBullet', () => {
     const moved = moveBullet('experience', 'e4', 'e4-b4', 0)(sampleCv)
     const entry = moved.sections[0]!.items.find((item) => item.id === 'e4')!
     expect('bullets' in entry && entry.bullets.map((bullet) => bullet.id)).toEqual(['e4-b4', 'e4-b1', 'e4-b2', 'e4-b3'])
+  })
+})
+
+describe('consent', () => {
+  const talent = { id: 'talent', name: 'Talent Partners', text: 'Wyrażam zgodę dla Talent Partners.' }
+
+  it('can be switched off and on without losing its text', () => {
+    const off = updateConsent({ enabled: false })(sampleCv)
+    expect(off.consent).toEqual({ ...sampleCv.consent, enabled: false })
+    expect(updateConsent({ enabled: true })(off).consent).toEqual(sampleCv.consent)
+  })
+
+  it('takes a copy of the text of the clause chosen from the library', () => {
+    expect(applyClause(talent)(sampleCv).consent).toEqual({
+      enabled: true,
+      clauseId: 'talent',
+      text: 'Wyrażam zgodę dla Talent Partners.'
+    })
+  })
+
+  it('keeps local edits in the CV and gets the library text back on restore', () => {
+    const chosen = applyClause(talent)(sampleCv)
+    const edited = updateConsent({ text: 'Wyrażam zgodę dla Talent Partners i Banku.' })(chosen)
+    expect(edited.consent).toEqual({ enabled: true, clauseId: 'talent', text: 'Wyrażam zgodę dla Talent Partners i Banku.' })
+    expect(talent.text).toBe('Wyrażam zgodę dla Talent Partners.')
+
+    expect(applyClause(talent)(edited).consent).toEqual(chosen.consent)
   })
 })

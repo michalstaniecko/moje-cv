@@ -75,9 +75,18 @@ export type CvDocument = z.infer<typeof cvDocumentSchema>
 
 export const defaultCvSettings: CvDocument['settings'] = { accentColor: '#1a6e72', font: 'lato' }
 
+export const clauseSchema = z.object({ id: idSchema, name: z.string(), text: z.string() })
+export type Clause = z.infer<typeof clauseSchema>
+
+export const clauseContentSchema = clauseSchema.omit({ id: true })
+export type ClauseContent = z.infer<typeof clauseContentSchema>
+
+// Nazwa klauzuli do wyświetlenia – także dla klauzuli bez nazwy.
+export const clauseName = (clause: Pick<Clause, 'name'>) => clause.name.trim() || 'Bez nazwy'
+
 export const appSettingsSchema = z.object({
   schemaVersion: z.literal(1),
-  clauses: z.array(z.object({ id: idSchema, name: z.string(), text: z.string() })),
+  clauses: z.array(clauseSchema),
   defaultClauseId: idSchema.nullable()
 })
 export type AppSettings = z.infer<typeof appSettingsSchema>

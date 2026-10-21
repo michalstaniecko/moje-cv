@@ -4,6 +4,8 @@ import { sampleCv } from '../renderer/src/domain/sampleCv'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
 import { registerPdfExport } from './pdfExport'
+import { registerSettings } from './settings'
+import { createSettingsRepository } from './settingsRepository'
 import { loadRenderer, secureWebPreferences } from './windows'
 
 function createWindow(): void {
@@ -22,7 +24,9 @@ function createWindow(): void {
 app.whenReady().then(async () => {
   const repository = createCvRepository(join(app.getPath('userData'), 'cvs'))
   await repository.addSampleOnFirstRun(sampleCv)
-  registerCvLibrary(repository)
+  const settings = createSettingsRepository(join(app.getPath('userData'), 'settings.json'))
+  registerCvLibrary(repository, settings)
+  registerSettings(settings)
   registerPdfExport()
   createWindow()
 

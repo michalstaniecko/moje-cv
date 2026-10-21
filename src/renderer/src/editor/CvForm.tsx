@@ -1,6 +1,6 @@
-import { useId, useRef, type ReactNode } from 'react'
+import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useStore } from 'zustand'
-import type { CvDocument, EducationItem, ExperienceItem, Section, TextItem } from '../domain/schema'
+import { clauseName, type Clause, type ClauseContent, type CvDocument, type EducationItem, type ExperienceItem, type Section, type TextItem } from '../domain/schema'
 import { fontFamilies, type Font } from '../template/fonts'
 import type { CvEditor } from './cvEditor'
 import {
@@ -9,6 +9,7 @@ import {
   addEducationItem,
   addExperienceItem,
   addListItem,
+  applyClause,
   moveBullet,
   moveItem,
   moveSection,
@@ -18,6 +19,7 @@ import {
   removeExperienceItem,
   removeListItem,
   updateBullet,
+  updateConsent,
   updateContact,
   updateEducationItem,
   updateExperienceItem,
@@ -39,8 +41,17 @@ const SECTION_TYPE_NAMES: Record<Section['type'], string> = {
 
 const sectionName = (section: Section) => section.title.trim() || SECTION_TYPE_NAMES[section.type]
 
-// Formularz edycji CV: nagłówek i sekcje w kolejności z CV. Każda zmiana trafia do edytora (historia + autozapis).
-export function CvForm({ editor }: { editor: CvEditor }) {
+// Formularz edycji CV: nagłówek, sekcje w kolejności z CV i klauzula zgody. Każda zmiana trafia do edytora (historia + autozapis).
+// `clauses` – biblioteka klauzul; `onSaveClause` dodaje do niej nową klauzulę.
+export function CvForm({
+  editor,
+  clauses,
+  onSaveClause
+}: {
+  editor: CvEditor
+  clauses: Clause[]
+  onSaveClause: (content: ClauseContent) => Promise<Clause>
+}) {
   const document = useStore(editor.store, (state) => state.document)
 
   return (
@@ -54,6 +65,7 @@ export function CvForm({ editor }: { editor: CvEditor }) {
       >
         {(section, orderControls) => <SectionFields editor={editor} section={section} orderControls={orderControls} />}
       </SortableList>
+      <ConsentFields editor={editor} consent={document.consent} clauses={clauses} onSaveClause={onSaveClause} />
     </div>
   )
 }
@@ -428,5 +440,126 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
         Dodaj element
       </button>
     </div>
+  )
+}
+
+// Klauzula zgody tego CV: włączenie, wybór z biblioteki i edycja lokalnej kopii treści.
+// Edycja w CV nie zmienia biblioteki; poprawioną treść można zapisać jako nową klauzulę albo przywrócić wersję z biblioteki.
+function ConsentFields({
+  editor,
+  consent,
+  clauses,
+  onSaveClause
+}: {
+  editor: CvEditor
+  consent: CvDocument['consent']
+  clauses: Clause[]
+  onSaveClause: (content: ClauseContent) => Promise<Clause>
+}) {
+  const libraryClause = clauses.find((clause) => clause.id === consent.clauseId) ?? null
+  const modified = libraryClause !== null && libraryClause.text !== consent.text
+
+  return (
+    <section className="form-section" aria-label="Klauzula zgody">
+      <h2 className="form-section-title">Klauzula zgody</h2>
+      <Checkbox
+        label="Pokaż klauzulę na dole ostatniej strony"
+        checked={consent.enabled}
+        onChange={(enabled) => editor.edit(updateConsent({ enabled }))}
+      />
+      {consent.enabled && (
+        <>
+          <label className="form-field">
+            <span>Klauzula z biblioteki</span>
+            <select
+              value={libraryClause?.id ?? ''}
+              onChange={(event) => {
+                const clause = clauses.find((clause) => clause.id === event.target.value)
+                if (clause) editor.edit(applyClause(clause))
+              }}
+            >
+              <option value="" disabled>
+                {consent.clauseId !== null ? 'Klauzula usunięta z biblioteki' : clauses.length ? 'Wybierz klauzulę…' : 'Biblioteka jest pusta'}
+              </option>
+              {clauses.map((clause) => (
+                <option key={clause.id} value={clause.id}>
+                  {clauseName(clause)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="form-field">
+            <span>Treść w tym CV</span>
+            <textarea
+              rows={5}
+              value={consent.text}
+              onChange={(event) => editor.edit(updateConsent({ text: event.target.value }), 'consent:text')}
+            />
+          </label>
+          <div className="consent-actions">
+            {modified && (
+              <>
+                <span className="consent-modified">Treść różni się od wersji w bibliotece.</span>
+                <button type="button" onClick={() => editor.edit(applyClause(libraryClause))}>
+                  Przywróć z biblioteki
+                </button>
+              </>
+            )}
+            <SaveAsNewClause
+              text={consent.text}
+              onSave={async (name) => editor.edit(applyClause(await onSaveClause({ name, text: consent.text })))}
+            />
+          </div>
+        </>
+      )}
+    </section>
+  )
+}
+
+// „Zapisz jako nową klauzulę”: pyta o nazwę w miejscu przycisku, żeby nie przerywać edycji CV oknem dialogowym.
+function SaveAsNewClause({ text, onSave }: { text: string; onSave: (name: string) => Promise<void> }) {
+  const [name, setName] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+  const submit = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!name?.trim()) return
+    try {
+      await onSave(name.trim())
+      setName(null)
+      setFailed(false)
+    } catch {
+      setFailed(true)
+    }
+  }
+
+  if (name === null) {
+    return (
+      <button type="button" disabled={!text.trim()} onClick={() => setName('')}>
+        Zapisz jako nową klauzulę
+      </button>
+    )
+  }
+  return (
+    <form className="form-row" onSubmit={submit}>
+      <input
+        aria-label="Nazwa nowej klauzuli"
+        placeholder="Nazwa, np. Talent Partners"
+        value={name}
+        autoFocus
+        onChange={(event) => setName(event.target.value)}
+        onKeyDown={(event) => event.key === 'Escape' && setName(null)}
+      />
+      <button type="submit" disabled={!name.trim()}>
+        Zapisz
+      </button>
+      <button type="button" onClick={() => setName(null)}>
+        Anuluj
+      </button>
+      {failed && (
+        <span className="toolbar-status--error" role="alert">
+          Nie udało się zapisać klauzuli.
+        </span>
+      )}
+    </form>
   )
 }

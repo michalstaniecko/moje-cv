@@ -1,4 +1,4 @@
-import type { CvDocument, EducationItem, ExperienceItem, Section, TextItem } from '../domain/schema'
+import type { Clause, CvDocument, EducationItem, ExperienceItem, Section, TextItem } from '../domain/schema'
 
 type Contact = CvDocument['header']['contacts'][number]
 type Change<T> = (value: T) => T
@@ -24,6 +24,15 @@ export const updateSettings =
 export const updateHeader =
   (patch: Partial<CvDocument['header']>): Change<CvDocument> =>
   (document) => ({ ...document, header: { ...document.header, ...patch } })
+
+export const updateConsent =
+  (patch: Partial<Pick<CvDocument['consent'], 'enabled' | 'text'>>): Change<CvDocument> =>
+  (document) => ({ ...document, consent: { ...document.consent, ...patch } })
+
+// Wybór (albo przywrócenie) klauzuli z biblioteki: CV dostaje kopię jej treści – późniejsze zmiany w CV nie ruszają biblioteki.
+export const applyClause =
+  (clause: Clause): Change<CvDocument> =>
+  (document) => ({ ...document, consent: { ...document.consent, clauseId: clause.id, text: clause.text } })
 
 const updateContacts =
   (change: Change<Contact[]>): Change<CvDocument> =>
