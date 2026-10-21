@@ -4,9 +4,9 @@ import { paginate, type PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import { CvBlockView } from './CvBlockView'
 import { fontFamilies, loadTemplateFonts } from './fonts'
+import { PX_PER_MM } from './pageSize'
 import './template.css'
 
-const PX_PER_MM = 96 / 25.4
 const CONTENT_HEIGHT_PX = 275 * PX_PER_MM
 const CONSENT_GAP_PX = 6 * PX_PER_MM
 
@@ -125,7 +125,7 @@ export function CvPages({
                   return block ? [<CvBlockView key={id} block={block} oversized={oversizedIds.has(id)} />] : []
                 })}
                 {ids.some((id) => oversizedIds.has(id)) && (
-                  <p className="cv-oversized-message" role="alert">
+                  <p className="cv-oversized-message" role="status">
                     Ten fragment jest za długi, aby zmieścić się na stronie – skróć go
                   </p>
                 )}

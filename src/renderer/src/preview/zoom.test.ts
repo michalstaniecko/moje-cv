@@ -29,4 +29,11 @@ describe('fitScale', () => {
   it('does not shrink the page below the smallest zoom level', () => {
     expect(fitScale(100)).toBe(0.25)
   })
+
+  // Inaczej na bardzo szerokim panelu przycisk + nie miałby już większego poziomu.
+  it('does not enlarge the page above the largest zoom level', () => {
+    expect(fitScale(3000)).toBe(2)
+    expect(zoomIn(fitScale(3000))).toBe(2)
+    expect(zoomOut(fitScale(3000))).toBe(1.5)
+  })
 })

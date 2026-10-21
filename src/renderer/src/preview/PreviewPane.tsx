@@ -2,8 +2,8 @@ import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties, typ
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import { CvPages } from '../template/CvPages'
-import { pageCountLabel } from './pageCount'
-import { fitScale, zoomIn, zoomOut } from './zoom'
+import { pageCountLabel, RECOMMENDED_MAX_PAGES } from './pageCount'
+import { fitScale, PREVIEW_MARGIN_PX, zoomIn, zoomOut } from './zoom'
 
 // Podgląd stron CV z licznikiem stron i powiększeniem. Domyślnie strony dopasowane są do szerokości panelu;
 // po użyciu +, − lub 100% obowiązuje wybrana skala, a „Dopasuj” wraca do dopasowania.
@@ -16,15 +16,17 @@ export function PreviewPane({ document }: { document: CvDocument }) {
   const onLayout = useCallback((layout: PaginateResult) => setPageCount(layout.pages.length), [])
 
   return (
-    <main ref={panel} className="preview" style={{ '--scale': scale } as CSSProperties}>
+    <main ref={panel} className="preview" style={{ '--scale': scale, '--page-gap': `${PREVIEW_MARGIN_PX}px` } as CSSProperties}>
       <div className="preview-bar">
         {pageCount !== null && (
           <span className="preview-page-count" role="status">
             {pageCountLabel(pageCount)}
           </span>
         )}
-        {pageCount !== null && pageCount > 2 && (
-          <span className="preview-length-notice">CV ma więcej niż 2 strony – warto je skrócić.</span>
+        {pageCount !== null && pageCount > RECOMMENDED_MAX_PAGES && (
+          <span className="preview-length-notice">
+            CV ma więcej niż {pageCountLabel(RECOMMENDED_MAX_PAGES)} – warto je skrócić.
+          </span>
         )}
         <div className="preview-zoom">
           <button type="button" aria-label="Pomniejsz" onClick={() => setChosenScale(zoomOut(scale))}>

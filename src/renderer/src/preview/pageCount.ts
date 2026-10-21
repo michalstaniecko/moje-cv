@@ -1,3 +1,6 @@
+// Zalecana długość CV – dłuższe dostaje w podglądzie informację, że warto je skrócić.
+export const RECOMMENDED_MAX_PAGES = 2
+
 // Liczba stron z polską formą liczby mnogiej: 1 strona, 2–4 strony, 5–21 stron, 22–24 strony…
 export function pageCountLabel(count: number): string {
   if (count === 1) return '1 strona'

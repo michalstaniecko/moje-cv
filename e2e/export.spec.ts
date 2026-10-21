@@ -433,7 +433,7 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   await stubSaveDialog(pdfPath)
   await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
   const preview = window.locator('.preview')
-  const pageCount = preview.getByRole('status')
+  const pageCount = preview.locator('.preview-page-count')
   await expect(pageCount).toHaveText('2 strony')
   await expect(preview).not.toContainText('więcej niż 2 strony')
 

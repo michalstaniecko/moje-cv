@@ -5,11 +5,8 @@ body {
 }
 
 /* Podgląd skaluje same strony (transform), więc pomiar bloków i podział stron nie zależą od powiększenia.
-   Ramka ma wymiary przeskalowanych stron, żeby przewijanie i wyśrodkowanie odpowiadały temu, co widać. */
-.preview {
-  --page-gap: 24px;
-}
-
+   Ramka ma wymiary przeskalowanych stron, żeby przewijanie i wyśrodkowanie odpowiadały temu, co widać.
+   --scale i --page-gap ustawia PreviewPane. */
 .preview .cv-pages-frame {
   width: calc(210mm * var(--scale));
   height: calc((297mm + var(--page-gap)) * var(--pages) * var(--scale));
