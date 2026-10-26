@@ -1122,6 +1122,31 @@ test('tags a CV from the list: chips sorted with Polish letters, invalid tags re
     'Zakopane',
     'Ząbki'
   ])
+
+  // Podpowiedzi z tagów innych CV: wybór podpowiedzi dodaje tag, wpisanie innej wielkości liter przejmuje istniejącą pisownię.
+  const newCv = rows.filter({ hasText: 'New CV' })
+  await newCv.getByRole('button', { name: 'Tags' }).click()
+  const newCvEditor = library.getByRole('group', { name: 'Tags of “New CV”' })
+  const suggestions = newCvEditor.getByRole('list', { name: 'Suggested tags' }).getByRole('listitem')
+  await expect(suggestions).toHaveText(['Lublin', 'Łódź', 'Senior Frontend', 'Zakopane', 'Ząbki'])
+  await newCvEditor.getByLabel('New tag').fill('fro')
+  await expect(suggestions).toHaveText(['Senior Frontend'])
+  await newCvEditor.getByRole('button', { name: 'Add tag “Senior Frontend”' }).click()
+  const newCvChips = newCvEditor.getByRole('list', { name: 'Tags' }).getByRole('listitem')
+  await expect(newCvChips).toHaveText([/^Senior Frontend/])
+  await expect(newCvEditor.getByLabel('New tag')).toHaveValue('')
+  await newCvEditor.getByLabel('New tag').fill('zakopane')
+  await newCvEditor.getByLabel('New tag').press('Enter')
+  await expect(newCvChips).toHaveText([/^Senior Frontend/, /^Zakopane/])
+  await expect(suggestions).toHaveText(['Lublin', 'Łódź', 'Ząbki'])
+  await newCvEditor.getByRole('button', { name: 'Done' }).click()
+
+  // Tag usunięty z ostatniego CV, które go miało, znika z podpowiedzi.
+  await sample.getByRole('button', { name: 'Tags' }).click()
+  await editor.getByRole('button', { name: 'Remove tag “Lublin”' }).click()
+  await editor.getByRole('button', { name: 'Done' }).click()
+  await newCv.getByRole('button', { name: 'Tags' }).click()
+  await expect(suggestions).toHaveText(['Łódź', 'Ząbki'])
 })
 
 test('exports a CV to a JSON file and imports it back as a new CV; an invalid file leaves the library unchanged', async () => {

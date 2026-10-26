@@ -57,6 +57,8 @@ export const pl: Dictionary = {
     addTag: 'Dodaj',
     removeTag: (tag) => `Usuń tag „${tag}”`,
     doneTags: 'Gotowe',
+    suggestedTags: 'Podpowiedzi tagów',
+    addSuggestedTag: (tag) => `Dodaj tag „${tag}”`,
     tagErrors: {
       'too-long': 'Tag może mieć najwyżej 30 znaków.'
     },

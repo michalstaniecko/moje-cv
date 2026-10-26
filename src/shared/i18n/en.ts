@@ -65,6 +65,9 @@ export const en = {
     addTag: 'Add',
     removeTag: (tag: string) => `Remove tag “${tag}”`,
     doneTags: 'Done',
+    // Podpowiedzi z tagów innych CV w bibliotece.
+    suggestedTags: 'Suggested tags',
+    addSuggestedTag: (tag: string) => `Add tag “${tag}”`,
     // Dlaczego tag został odrzucony – pokazywane po „Couldn’t change the tags.”.
     tagErrors: {
       'too-long': 'A tag can have at most 30 characters.'
