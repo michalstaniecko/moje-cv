@@ -424,7 +424,14 @@ describe('delete', () => {
 describe('damaged files', () => {
   const damagedFiles = {
     'invalid JSON': '{ "schemaVersion": 1, "name": ',
-    'JSON not matching the schema': JSON.stringify({ ...sampleCv, id: 'broken', settings: { font: 'comic-sans' } })
+    'JSON not matching the schema': JSON.stringify({ ...sampleCv, id: 'broken', settings: { font: 'comic-sans' } }),
+    // Bieżąca wersja schematu, ale szablon nieznany tej wersji aplikacji – bez cichego zastępowania (ADR 0002).
+    'a Template this version does not know': JSON.stringify({
+      ...sampleCv,
+      schemaVersion: CV_SCHEMA_VERSION,
+      id: 'broken',
+      settings: { ...sampleCv.settings, template: 'modern' }
+    })
   }
 
   for (const [kind, content] of Object.entries(damagedFiles)) {

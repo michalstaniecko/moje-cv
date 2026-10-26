@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
+import { PX_PER_MM } from '../src/renderer/src/domain/templateGeometry'
 import type { InterfaceLanguage } from '../src/shared/i18n/languages'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 
@@ -540,7 +541,7 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   await library.getByRole('button', { name: 'Open' }).click()
 
   await expect(window.locator('.cv-page').first()).toBeVisible()
-  // Podgląd renderuje template zapisany w CV – przykładowe CV ma „Klasyczny”.
+  // Podgląd renderuje szablon zapisany w CV – przykładowe CV ma „Klasyczny”.
   await expect(window.locator('.preview .cv.cv-template-classic')).toHaveCount(1)
 
   // Edycja w formularzu od razu zmienia podgląd; Cmd+Z / Cmd+Shift+Z cofa i ponawia zmianę.
@@ -724,7 +725,7 @@ test('picks the Template next to the colour and font from a live thumbnail of th
   const preview = window.locator('.preview')
   await expect(preview.locator('.cv-page').first()).toBeVisible()
 
-  // Wybór w sekcji wyglądu, za fontem, dostępny z klawiatury; jedyny template – „Klasyczny” – jest wybrany.
+  // Wybór w sekcji wyglądu, za fontem, dostępny z klawiatury; jedyny szablon – „Klasyczny” – jest wybrany.
   const picker = window.getByRole('radiogroup', { name: 'Template' })
   await expect(picker.getByRole('radio')).toHaveCount(1)
   const classic = picker.getByRole('radio', { name: 'Classic' })
@@ -733,12 +734,23 @@ test('picks the Template next to the colour and font from a live thumbnail of th
   await window.keyboard.press('Tab')
   await expect(classic).toBeFocused()
 
-  // Miniatura: pomniejszona pierwsza strona bieżącego CV w tym templacie, odświeżana po edycji treści, koloru i fontu.
+  // Miniatura: pomniejszona pierwsza strona bieżącego CV w tym szablonie, odświeżana po edycji treści, koloru i fontu.
   const thumbnail = picker
     .locator('label', { has: window.getByRole('radio', { name: 'Classic' }) })
     .locator('.cv.cv-template-classic')
   await expect(thumbnail.locator('.cv-page')).toHaveCount(1)
   await expect(thumbnail.locator('.cv-page .cv-name')).toHaveText('Jane Example')
+  // Bloki są mierzone na szerokości obszaru treści z geometrii szablonu („Klasyczny”: 210 − 12 − 16 = 182 mm) –
+  // tej samej co treść na stronie, w podglądzie i w miniaturze (skalowane są same strony, nie pomiar).
+  for (const cv of [preview.locator('.cv'), thumbnail]) {
+    const widths = await cv.evaluate((element) => {
+      const style = (selector: string) => element.ownerDocument.defaultView!.getComputedStyle(element.querySelector(selector)!)
+      const width = (selector: string) => parseFloat(style(selector).width)
+      return { measure: width('.cv-measure'), pageContent: width('.cv-page-content') }
+    })
+    expect(widths.measure).toBeCloseTo(182 * PX_PER_MM, 1)
+    expect(widths.pageContent).toBeCloseTo(widths.measure, 1)
+  }
   const thumbnailBox = await thumbnail.locator('.cv-page').boundingBox()
   const previewPageBox = await preview.locator('.cv-page').first().boundingBox()
   expect(thumbnailBox!.width).toBeLessThan(previewPageBox!.width / 2)
