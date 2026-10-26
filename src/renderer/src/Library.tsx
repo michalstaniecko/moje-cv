@@ -3,13 +3,14 @@ import type { CvListEntry } from '../../shared/api'
 import type { Dictionary } from '../../shared/i18n/en'
 import type { InterfaceLanguage } from '../../shared/i18n/languages'
 import { cvDisplayName, type CvDocument } from './domain/schema'
+import { sortTags } from './domain/tags'
 import { useDictionary, useInterfaceLanguage } from './i18n'
 
 type OkEntry = Extract<CvListEntry, { status: 'ok' }>
 type DamagedEntry = Extract<CvListEntry, { status: 'damaged' }>
 
-// Tryb pojedynczego wiersza: zwykły, zmiana nazwy albo potwierdzenie usunięcia.
-type RowMode = { id: string; kind: 'rename' | 'confirm-delete' } | null
+// Tryb pojedynczego wiersza: zwykły, zmiana nazwy, edycja tagów albo potwierdzenie usunięcia.
+type RowMode = { id: string; kind: 'rename' | 'tags' | 'confirm-delete' } | null
 
 // Komunikat tłumaczony przy wyświetlaniu, więc zmiana języka obejmuje także widoczny już komunikat.
 type Message = (dictionary: Dictionary) => string
@@ -19,7 +20,7 @@ const failureMessage =
   ({ library }) =>
     library.errors[failure]
 
-// Ekran startowy: lista CV z akcjami Nowe / Importuj / Otwórz / Duplikuj / Eksportuj / Zmień nazwę / Usuń i wejście do biblioteki klauzul.
+// Ekran startowy: lista CV z akcjami Nowe / Importuj / Otwórz / Duplikuj / Eksportuj / Tagi / Zmień nazwę / Usuń i wejście do biblioteki klauzul.
 export function Library({
   onOpen,
   onOpenClauses
@@ -53,6 +54,26 @@ export function Library({
       await refresh()
     } catch {
       showError(failureMessage(failure))
+    }
+  }
+
+  // Zapisuje tagi CV, nie zamykając trybu „Tagi”. Zwraca, czy się udało; odrzucony tag kończy się komunikatem z powodem.
+  const saveTags = async (id: string, tags: string[]): Promise<boolean> => {
+    setError(null)
+    setNotice(null)
+    try {
+      const result = await window.api.cv.setTags(id, tags)
+      if (result.status === 'invalid') {
+        const { reason } = result
+        showError(({ library }) => `${library.errors.tags} ${library.tagErrors[reason]}`)
+        return false
+      }
+      await refresh()
+      return true
+    } catch {
+      showError(failureMessage('tags'))
+      await refresh()
+      return false
     }
   }
 
@@ -148,11 +169,14 @@ export function Library({
                     onSubmit={(name) => runAndRefresh(() => window.api.cv.rename(entry.id, name), 'rename')}
                     onCancel={() => setRowMode(null)}
                   />
+                ) : mode === 'tags' ? (
+                  <TagsEditor entry={entry} onChange={(tags) => saveTags(entry.id, tags)} onDone={() => setRowMode(null)} />
                 ) : (
                   <>
                     <div className="library-item-info">
                       <span className="library-item-name">{cvDisplayName(entry.name, t.untitled)}</span>
                       <span className="library-item-date">{t.modified(formatDateTime(entry.updatedAt, language))}</span>
+                      {entry.tags.length > 0 && <TagChips tags={entry.tags} />}
                     </div>
                     <div className="library-item-actions">
                       <button type="button" onClick={() => open(entry.id)}>
@@ -163,6 +187,9 @@ export function Library({
                       </button>
                       <button type="button" onClick={() => exportFile(entry.id)}>
                         {t.exportFile}
+                      </button>
+                      <button type="button" onClick={() => setRowMode({ id: entry.id, kind: 'tags' })}>
+                        {t.tags}
                       </button>
                       <button type="button" onClick={() => setRowMode({ id: entry.id, kind: 'rename' })}>
                         {t.rename}
@@ -208,6 +235,74 @@ function RenameForm({ entry, onSubmit, onCancel }: { entry: OkEntry; onSubmit: (
         </button>
       </div>
     </form>
+  )
+}
+
+// Tagi CV jako chipy, alfabetycznie. Z `onRemove` każdy chip ma przycisk usunięcia.
+function TagChips({ tags, onRemove }: { tags: string[]; onRemove?: (tag: string) => void }) {
+  const { library } = useDictionary()
+  return (
+    <ul className="tag-chips" aria-label={library.tags}>
+      {sortTags(tags).map((tag) => (
+        <li key={tag} className="tag-chip">
+          {tag}
+          {onRemove && (
+            <button type="button" className="tag-chip-remove" aria-label={library.removeTag(tag)} onClick={() => onRemove(tag)}>
+              ×
+            </button>
+          )}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// Tryb „Tagi” wiersza: dodawanie tagu z klawiatury (Enter) i usuwanie pojedynczych tagów. Każda zmiana zapisuje się od razu.
+function TagsEditor({
+  entry,
+  onChange,
+  onDone
+}: {
+  entry: OkEntry
+  onChange: (tags: string[]) => Promise<boolean>
+  onDone: () => void
+}) {
+  const [newTag, setNewTag] = useState('')
+  const { library } = useDictionary()
+  const add = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!newTag.trim()) return
+    if (await onChange([...entry.tags, newTag])) setNewTag('')
+  }
+
+  return (
+    <div className="library-item-form tags-editor" role="group" aria-label={library.tagsOf(cvDisplayName(entry.name, library.untitled))}>
+      <div className="tags-editor-content">
+        {entry.tags.length > 0 ? (
+          <TagChips tags={entry.tags} onRemove={(tag) => void onChange(entry.tags.filter((other) => other !== tag))} />
+        ) : (
+          <span className="library-item-date">{library.noTags}</span>
+        )}
+        <form className="tags-editor-add" onSubmit={add}>
+          <input
+            aria-label={library.newTag}
+            placeholder={library.newTag}
+            value={newTag}
+            autoFocus
+            onChange={(event) => setNewTag(event.target.value)}
+            onKeyDown={(event) => event.key === 'Escape' && onDone()}
+          />
+          <button type="submit" disabled={!newTag.trim()}>
+            {library.addTag}
+          </button>
+        </form>
+      </div>
+      <div className="library-item-actions">
+        <button type="button" onClick={onDone}>
+          {library.doneTags}
+        </button>
+      </div>
+    </div>
   )
 }
 

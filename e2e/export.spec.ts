@@ -1060,6 +1060,70 @@ test('Edit → Select All, Cut, Copy and Paste in the menu work in a form field'
   await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Jane ExampleJane Example')
 })
 
+test('tags a CV from the list: chips sorted with Polish letters, invalid tags rejected, nothing in the preview or PDF', async () => {
+  const library = window.getByRole('list', { name: 'CV list' })
+  const rows = library.getByRole('listitem').filter({ has: window.getByRole('button', { name: 'Open' }) })
+  await window.getByRole('button', { name: 'New CV' }).click()
+  await expect(rows).toHaveCount(2)
+  const sample = rows.filter({ hasText: 'Sample CV' })
+  await expect(rows.first()).toContainText('New CV')
+  const modifiedBefore = await sample.locator('.library-item-date').textContent()
+
+  // Tryb „Tags”: dodawanie z klawiatury (Enter) i usuwanie pojedynczych tagów.
+  await sample.getByRole('button', { name: 'Tags' }).click()
+  const editor = library.getByRole('group', { name: 'Tags of “Sample CV”' })
+  const newTag = editor.getByLabel('New tag')
+  for (const tag of ['Zakopane', '  Senior   Frontend ', 'Ząbki', 'Łódź', 'Lublin', 'Allegro', 'allegro']) {
+    await newTag.fill(tag)
+    await newTag.press('Enter')
+    await expect(newTag).toHaveValue('')
+  }
+  const chips = editor.getByRole('list', { name: 'Tags' }).getByRole('listitem')
+  await expect(chips).toHaveText(['Allegro', 'Lublin', 'Łódź', 'Senior Frontend', 'Zakopane', 'Ząbki'].map((tag) => new RegExp(`^${tag}`)))
+  await editor.getByRole('button', { name: 'Remove tag “Allegro”' }).click()
+  await expect(chips).toHaveCount(5)
+
+  // Za długi tag – komunikat w języku interfejsu, tagi bez zmian.
+  await newTag.fill('x'.repeat(31))
+  await newTag.press('Enter')
+  await expect(window.getByRole('alert')).toHaveText('Couldn’t change the tags. A tag can have at most 30 characters.')
+  await expect(chips).toHaveCount(5)
+  await editor.getByRole('button', { name: 'Done' }).click()
+
+  // Chipy w wierszu, alfabetycznie z polskimi znakami; data „Modified” i kolejność listy bez zmian.
+  await expect(sample.getByRole('list', { name: 'Tags' }).getByRole('listitem')).toHaveText([
+    'Lublin',
+    'Łódź',
+    'Senior Frontend',
+    'Zakopane',
+    'Ząbki'
+  ])
+  await expect(sample.locator('.library-item-date')).toHaveText(modifiedBefore!)
+  await expect(rows.first()).toContainText('New CV')
+  await expect(rows.filter({ hasText: 'New CV' }).getByRole('list', { name: 'Tags' })).toHaveCount(0)
+
+  // Tagi nie trafiają do podglądu ani do PDF, a autozapis z edytora ich nie usuwa.
+  await sample.getByRole('button', { name: 'Open' }).click()
+  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await expect(window.getByText('Changes saved')).toBeVisible()
+  await expect(window.locator('.preview')).not.toContainText('Zakopane')
+  const pdfPath = join(outputDir, 'tagged.pdf')
+  await stubSaveDialog(pdfPath)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: tagged.pdf')).toBeVisible()
+  const pdf = (await readPdf(await readFile(pdfPath))).pages.join('')
+  expect(pdf).toContain('Ewa Nowak')
+  for (const tag of ['Lublin', 'Łódź', 'Senior Frontend', 'Zakopane', 'Ząbki']) expect(pdf).not.toContain(tag)
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  await expect(rows.first().getByRole('list', { name: 'Tags' }).getByRole('listitem')).toHaveText([
+    'Lublin',
+    'Łódź',
+    'Senior Frontend',
+    'Zakopane',
+    'Ząbki'
+  ])
+})
+
 test('exports a CV to a JSON file and imports it back as a new CV; an invalid file leaves the library unchanged', async () => {
   const library = window.getByRole('list', { name: 'CV list' })
   const rows = library.getByRole('listitem')
@@ -1079,7 +1143,7 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   )
   expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV – Talent Partners.json')
   const exported = JSON.parse(await readFile(jsonPath, 'utf8'))
-  expect(exported).toMatchObject({ schemaVersion: 1, name: 'CV – Talent Partners', header: { fullName: 'Jane Example' } })
+  expect(exported).toMatchObject({ schemaVersion: 2, name: 'CV – Talent Partners', header: { fullName: 'Jane Example' } })
 
   // Import tego samego pliku dodaje nowe CV obok istniejącego – niczego nie nadpisuje.
   await stubOpenDialog(jsonPath)

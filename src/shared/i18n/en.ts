@@ -1,4 +1,4 @@
-import type { InvalidCvFileReason } from '../api'
+import type { InvalidCvFileReason, InvalidTagReason } from '../api'
 import type { PluralForms } from './plural'
 
 // Odmiana „page” – zmienna z typem, a nie rzutowanie, żeby brak formy `other` był błędem kompilacji.
@@ -57,6 +57,18 @@ export const en = {
     exportFile: 'Export to file',
     rename: 'Rename',
     name: 'CV name',
+    // Tagi CV (zob. GLOSSARY.md) – tryb „Tags” w wierszu listy.
+    tags: 'Tags',
+    tagsOf: (name: string) => `Tags of “${name}”`,
+    noTags: 'No tags yet.',
+    newTag: 'New tag',
+    addTag: 'Add',
+    removeTag: (tag: string) => `Remove tag “${tag}”`,
+    doneTags: 'Done',
+    // Dlaczego tag został odrzucony – pokazywane po „Couldn’t change the tags.”.
+    tagErrors: {
+      'too-long': 'A tag can have at most 30 characters.'
+    } satisfies Record<InvalidTagReason, string>,
     // Nazwa wyświetlana zamiast pustej nazwy CV (np. z importowanego pliku); nie trafia do CV.
     untitled: 'Untitled CV',
     confirmDelete: (name: string) => `Delete “${name}”? This can’t be undone.`,
@@ -77,6 +89,7 @@ export const en = {
       create: 'Couldn’t create the CV.',
       duplicate: 'Couldn’t duplicate the CV.',
       rename: 'Couldn’t rename the CV.',
+      tags: 'Couldn’t change the tags.',
       delete: 'Couldn’t delete the CV.',
       export: 'Couldn’t export the CV.',
       import: 'Couldn’t import the CV.'

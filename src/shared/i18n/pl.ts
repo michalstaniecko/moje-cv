@@ -50,6 +50,16 @@ export const pl: Dictionary = {
     exportFile: 'Eksportuj do pliku',
     rename: 'Zmień nazwę',
     name: 'Nazwa CV',
+    tags: 'Tagi',
+    tagsOf: (name) => `Tagi „${name}”`,
+    noTags: 'Brak tagów.',
+    newTag: 'Nowy tag',
+    addTag: 'Dodaj',
+    removeTag: (tag) => `Usuń tag „${tag}”`,
+    doneTags: 'Gotowe',
+    tagErrors: {
+      'too-long': 'Tag może mieć najwyżej 30 znaków.'
+    },
     untitled: 'CV bez nazwy',
     confirmDelete: (name) => `Usunąć „${name}”? Tej operacji nie można cofnąć.`,
     confirmDeleteDamaged: (fileName) => `Usunąć uszkodzony plik „${fileName}”? Tej operacji nie można cofnąć.`,
@@ -68,6 +78,7 @@ export const pl: Dictionary = {
       create: 'Nie udało się utworzyć CV.',
       duplicate: 'Nie udało się zduplikować CV.',
       rename: 'Nie udało się zmienić nazwy.',
+      tags: 'Nie udało się zmienić tagów.',
       delete: 'Nie udało się usunąć CV.',
       export: 'Nie udało się wyeksportować CV.',
       import: 'Nie udało się zaimportować CV.'

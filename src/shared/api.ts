@@ -44,6 +44,8 @@ export type Api = {
     create: () => Promise<CvDocument>
     duplicate: (id: string) => Promise<CvDocument>
     rename: (id: string, name: string) => Promise<CvDocument>
+    // Zastępuje tagi CV; repozytorium je normalizuje. Nie zmienia daty ostatniej zmiany.
+    setTags: (id: string, tags: string[]) => Promise<SetCvTagsResult>
     update: (document: CvDocument) => Promise<void>
     delete: (id: string) => Promise<void>
     exportFile: (id: string) => Promise<ExportCvFileResult>
