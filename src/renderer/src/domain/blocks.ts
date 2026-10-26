@@ -1,5 +1,6 @@
 import { formatDateRange } from './dates'
 import type { CvDocument, EducationItem, ExperienceItem, Section } from './schema'
+import type { BlockSpacingMm } from './templateGeometry'
 
 type BlockContent =
   | {
@@ -31,7 +32,7 @@ type DraftBlock = BlockContent & {
   id: string
   keepWithNext?: boolean
   breakBefore?: boolean
-  // Marginesy z briefu; odstęp między blokami to większy z nich, jak przy zapadaniu marginesów.
+  // Odstępy z geometrii templatu; odstęp między blokami to większy z nich, jak przy zapadaniu marginesów.
   marginTopMm?: number
   marginBottomMm?: number
 }
@@ -39,11 +40,7 @@ type DraftBlock = BlockContent & {
 const isFilled = (text: string): boolean => text.trim() !== ''
 const joinFilled = (parts: string[], separator: string): string => parts.filter(isFilled).join(separator)
 
-const ENTRY_GAP_MM = 5
-const BULLET_GAP_MM = 0.6
-const COMPANY_GAP_MM = 2
-
-function headerBlocks(header: CvDocument['header']): DraftBlock[] {
+function headerBlocks(header: CvDocument['header'], spacing: BlockSpacingMm): DraftBlock[] {
   const contacts = header.contacts.filter((contact) => isFilled(contact.value))
   const photoUrl = header.photo?.dataUrl ?? null
   if (!isFilled(header.fullName) && contacts.length === 0 && !isFilled(header.summary) && !photoUrl) return []
@@ -55,12 +52,12 @@ function headerBlocks(header: CvDocument['header']): DraftBlock[] {
       photoUrl,
       contacts,
       summary: header.summary,
-      marginBottomMm: 6
+      marginBottomMm: spacing.afterHeader
     }
   ]
 }
 
-function titleBlocks(section: Section): DraftBlock[] {
+function titleBlocks(section: Section, spacing: BlockSpacingMm): DraftBlock[] {
   if (!isFilled(section.title)) return []
   return [
     {
@@ -68,13 +65,13 @@ function titleBlocks(section: Section): DraftBlock[] {
       id: `${section.id}:title`,
       title: section.title,
       keepWithNext: true,
-      marginTopMm: 6,
-      marginBottomMm: 3
+      marginTopMm: spacing.beforeSectionTitle,
+      marginBottomMm: spacing.afterSectionTitle
     }
   ]
 }
 
-function experienceItemBlocks(item: ExperienceItem): DraftBlock[] {
+function experienceItemBlocks(item: ExperienceItem, spacing: BlockSpacingMm): DraftBlock[] {
   const dates = formatDateRange(item.start, item.end)
   const companyLine = joinFilled([item.company, item.location], ' – ')
   const bullets = item.bullets.filter((bullet) => isFilled(bullet.text))
@@ -89,7 +86,7 @@ function experienceItemBlocks(item: ExperienceItem): DraftBlock[] {
     companyLine,
     firstBullet: first?.text ?? null,
     breakBefore: item.pageBreakBefore,
-    marginBottomMm: first ? BULLET_GAP_MM : COMPANY_GAP_MM
+    marginBottomMm: first ? spacing.betweenBullets : spacing.afterExperienceEntryWithoutBullets
   }
   const blocks: DraftBlock[] = [
     entry,
@@ -98,37 +95,44 @@ function experienceItemBlocks(item: ExperienceItem): DraftBlock[] {
         kind: 'experienceBullet',
         id: `${item.id}:${bullet.id}`,
         text: bullet.text,
-        marginBottomMm: BULLET_GAP_MM
+        marginBottomMm: spacing.betweenBullets
       })
     )
   ]
-  blocks[blocks.length - 1]!.marginBottomMm! += ENTRY_GAP_MM
+  blocks[blocks.length - 1]!.marginBottomMm! += spacing.afterExperienceItem
   return blocks
 }
 
-function educationItemBlocks(item: EducationItem): DraftBlock[] {
+function educationItemBlocks(item: EducationItem, spacing: BlockSpacingMm): DraftBlock[] {
   const dates = formatDateRange(item.start, item.end)
   const text = joinFilled([item.level, item.field, item.institution], ', ')
   if (!dates && !text) return []
   return [
-    { kind: 'educationEntry', id: item.id, dates, text, breakBefore: item.pageBreakBefore, marginBottomMm: 2 }
+    {
+      kind: 'educationEntry',
+      id: item.id,
+      dates,
+      text,
+      breakBefore: item.pageBreakBefore,
+      marginBottomMm: spacing.afterEducationItem
+    }
   ]
 }
 
-function sectionBlocks(section: Section): DraftBlock[] {
+function sectionBlocks(section: Section, spacing: BlockSpacingMm): DraftBlock[] {
   if (section.hidden) return []
 
   let blocks: DraftBlock[]
   switch (section.type) {
     case 'experience': {
-      const items = section.items.flatMap(experienceItemBlocks)
-      blocks = items.length > 0 ? [...titleBlocks(section), ...items] : []
+      const items = section.items.flatMap((item) => experienceItemBlocks(item, spacing))
+      blocks = items.length > 0 ? [...titleBlocks(section, spacing), ...items] : []
       break
     }
     case 'education': {
-      const items = section.items.flatMap(educationItemBlocks)
-      if (items.length > 0) items[items.length - 1]!.marginBottomMm = 6
-      blocks = items.length > 0 ? [...titleBlocks(section), ...items] : []
+      const items = section.items.flatMap((item) => educationItemBlocks(item, spacing))
+      if (items.length > 0) items[items.length - 1]!.marginBottomMm = spacing.afterEducationSection
+      blocks = items.length > 0 ? [...titleBlocks(section, spacing), ...items] : []
       break
     }
     case 'list': {
@@ -138,8 +142,8 @@ function sectionBlocks(section: Section): DraftBlock[] {
         { kind: 'listFirst', id: `${section.id}:${first.id}`, title: section.title, text: first.text },
         ...rest.map((item): DraftBlock => ({ kind: 'listItem', id: `${section.id}:${item.id}`, text: item.text }))
       ]
-      for (const block of blocks) block.marginBottomMm = BULLET_GAP_MM
-      blocks[blocks.length - 1]!.marginBottomMm! += 4
+      for (const block of blocks) block.marginBottomMm = spacing.betweenListItems
+      blocks[blocks.length - 1]!.marginBottomMm! += spacing.afterListSection
       break
     }
   }
@@ -149,9 +153,12 @@ function sectionBlocks(section: Section): DraftBlock[] {
 }
 
 // Zamienia dokument na płaską listę bloków do podziału na strony. Puste pola, puste sekcje
-// i sekcje ukryte są pomijane.
-export function generateBlocks(document: CvDocument): CvBlock[] {
-  const drafts = [...headerBlocks(document.header), ...document.sections.flatMap(sectionBlocks)]
+// i sekcje ukryte są pomijane. Odstępy między blokami pochodzą z geometrii templatu.
+export function generateBlocks(document: CvDocument, spacing: BlockSpacingMm): CvBlock[] {
+  const drafts = [
+    ...headerBlocks(document.header, spacing),
+    ...document.sections.flatMap((section) => sectionBlocks(section, spacing))
+  ]
   return drafts.map(({ marginTopMm: _top, marginBottomMm, ...block }, index) => {
     const next = drafts[index + 1]
     return {

@@ -1,6 +1,8 @@
-import type { Ref } from 'react'
+import type { ComponentType, Ref } from 'react'
 import type { CvBlock } from '../domain/blocks'
+import type { BlockViewOverrides } from './templateDefinition'
 
+// Wspólne komponenty bloków – template może nadpisać dowolny rodzaj bloku (BlockViewOverrides).
 function BlockContent({ block }: { block: CvBlock }) {
   switch (block.kind) {
     case 'header':
@@ -76,20 +78,24 @@ function BlockContent({ block }: { block: CvBlock }) {
 
 export function CvBlockView({
   block,
+  views = {},
   ref,
   oversized = false
 }: {
   block: CvBlock
+  views?: BlockViewOverrides
   ref?: Ref<HTMLDivElement>
   oversized?: boolean
 }) {
+  // Nadpisanie jest typowane per rodzaj bloku, a tu wybierane po block.kind.
+  const Content = (views[block.kind] as ComponentType<{ block: CvBlock }> | undefined) ?? BlockContent
   return (
     <div
       ref={ref}
       className={oversized ? 'cv-block cv-block--oversized' : 'cv-block'}
       style={{ paddingBottom: `${block.spaceAfterMm}mm` }}
     >
-      <BlockContent block={block} />
+      <Content block={block} />
     </div>
   )
 }

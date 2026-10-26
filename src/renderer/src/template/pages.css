@@ -1,0 +1,78 @@
+/* Wspólna struktura dokumentu dla wszystkich templatów: strony A4, kontener pomiarowy, bloki, klauzula
+   na dole ostatniej strony. Wymiary obszaru treści przychodzą z geometrii templatu jako zmienne CSS
+   ustawiane przez CvPages (--cv-margin-*, --cv-content-width, --cv-content-height). */
+.cv {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.cv *,
+.cv *::before,
+.cv *::after {
+  box-sizing: border-box;
+}
+
+.cv-page {
+  width: 210mm;
+  height: 297mm;
+  padding: var(--cv-margin-top) var(--cv-margin-right) var(--cv-margin-bottom) var(--cv-margin-left);
+  overflow: hidden;
+  background: #fff;
+  break-after: page;
+}
+
+.cv-page-content {
+  position: relative;
+  height: var(--cv-content-height);
+}
+
+/* Ukryty kontener do pomiaru bloków – szerokość obszaru treści, poza ekranem. */
+.cv-measure {
+  position: absolute;
+  top: 0;
+  left: -10000px;
+  width: var(--cv-content-width);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Blok nie przepuszcza marginesów dzieci, więc jego wysokość jest pełną wysokością w układzie. */
+.cv-block {
+  display: flow-root;
+}
+
+/* Klauzula na dole ostatniej strony; odstęp od treści zapewnia podział stron (geometria templatu). */
+.cv-page-content > .cv-consent {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* ---------- Druk ---------- */
+/* Kontener pomiarowy jest już niepotrzebny, a jego wysokość nie może dokładać stron. */
+@media print {
+  .cv-measure {
+    display: none;
+  }
+}
+
+/* ---------- Za długi fragment (tylko podgląd) ---------- */
+/* Obrys i komunikat nie zmieniają wysokości bloku, więc nie wpływają na podział stron. */
+.cv-block--oversized {
+  outline: 2px solid #b42318;
+  outline-offset: -2px;
+  background: rgba(180, 35, 24, 0.06);
+}
+
+.cv-oversized-message {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 2mm 3mm;
+  background: #b42318;
+  color: #fff;
+  font: 600 12px system-ui, sans-serif;
+}

@@ -2,19 +2,19 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperti
 import { generateBlocks, type CvBlock } from '../domain/blocks'
 import { paginate, type PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
+import { contentAreaMm, pageMetricsPx, type TemplateGeometry } from '../domain/templateGeometry'
 import { CvBlockView } from './CvBlockView'
 import { fontFamilies, loadTemplateFonts } from './fonts'
-import { PX_PER_MM } from './pageSize'
-import './template.css'
-
-const CONTENT_HEIGHT_PX = 275 * PX_PER_MM
-const CONSENT_GAP_PX = 6 * PX_PER_MM
+import './pages.css'
+import type { TemplateDefinition } from './templateDefinition'
+import { DEFAULT_TEMPLATE_ID, templates } from './templates'
 
 // Mierzy bloki w ukrytym kontenerze (po załadowaniu fontów) i dzieli je na strony.
 function usePagination(
   blocks: CvBlock[],
   font: CvDocument['settings']['font'],
-  consentText: string | null
+  consentText: string | null,
+  geometry: TemplateGeometry
 ) {
   const blockElements = useRef(new Map<string, HTMLDivElement>())
   const consentElement = useRef<HTMLParagraphElement>(null)
@@ -24,6 +24,7 @@ function usePagination(
     let cancelled = false
     void loadTemplateFonts(font).then(() => {
       if (cancelled) return
+      const metrics = pageMetricsPx(geometry)
       const height = (element: Element | null | undefined) => element?.getBoundingClientRect().height ?? 0
       setLayout(
         paginate({
@@ -33,15 +34,15 @@ function usePagination(
             keepWithNext: block.keepWithNext,
             breakBefore: block.breakBefore
           })),
-          pageHeight: CONTENT_HEIGHT_PX,
-          consent: consentText === null ? null : { height: height(consentElement.current), gap: CONSENT_GAP_PX }
+          pageHeight: metrics.contentHeight,
+          consent: consentText === null ? null : { height: height(consentElement.current), gap: metrics.consentGap }
         })
       )
     })
     return () => {
       cancelled = true
     }
-  }, [blocks, font, consentText])
+  }, [blocks, font, consentText, geometry])
 
   const measureRef = (id: string) => (element: HTMLDivElement | null) => {
     if (element) blockElements.current.set(id, element)
@@ -70,24 +71,33 @@ function useReadySignal(
   }, [layout, onReady, pagesElement])
 }
 
-// Strony A4 z treścią CV. Ten sam komponent służy do podglądu i do eksportu PDF.
+// Strony A4 z treścią CV w danym templacie. Ten sam komponent służy do podglądu i do eksportu PDF.
+// `template` – na razie zawsze „Klasyczny” (CV jeszcze nie wybiera templatu).
 // `onReady` – wywoływane, gdy fonty są załadowane, podział policzony, a zdjęcie wczytane.
 // `onLayout` – wywoływane po każdym podziale stron; `oversizedMessage` wyróżnia bloki wyższe niż strona i podpisuje je
 // tym komunikatem (tylko podgląd – okno wydruku nie zna języka interfejsu i niczego nie wyróżnia).
 export function CvPages({
   document,
+  template = templates[DEFAULT_TEMPLATE_ID],
   onReady,
   onLayout,
   oversizedMessage
 }: {
   document: CvDocument
+  template?: TemplateDefinition
   onReady?: () => void
   onLayout?: (layout: PaginateResult) => void
   oversizedMessage?: string
 }) {
-  const blocks = useMemo(() => generateBlocks(document), [document])
+  const { geometry } = template
+  const blocks = useMemo(() => generateBlocks(document, geometry.blockSpacingMm), [document, geometry])
   const consentText = document.consent.enabled && document.consent.text.trim() ? document.consent.text : null
-  const { layout, measureRef, consentElement } = usePagination(blocks, document.settings.font, consentText)
+  const { layout, measureRef, consentElement } = usePagination(
+    blocks,
+    document.settings.font,
+    consentText,
+    geometry
+  )
   const blocksById = useMemo(() => new Map(blocks.map((block) => [block.id, block])), [blocks])
   const pagesElement = useRef<HTMLDivElement>(null)
   useReadySignal(layout, pagesElement, onReady)
@@ -97,16 +107,24 @@ export function CvPages({
   const markOversized = oversizedMessage !== undefined
   const oversizedIds = useMemo(() => new Set(markOversized ? layout?.oversizedIds : []), [layout, markOversized])
 
+  const contentArea = contentAreaMm(geometry)
+  const margins = geometry.pageMarginsMm
   const style = {
     '--accent': document.settings.accentColor,
+    '--cv-margin-top': `${margins.top}mm`,
+    '--cv-margin-right': `${margins.right}mm`,
+    '--cv-margin-bottom': `${margins.bottom}mm`,
+    '--cv-margin-left': `${margins.left}mm`,
+    '--cv-content-width': `${contentArea.width}mm`,
+    '--cv-content-height': `${contentArea.height}mm`,
     fontFamily: `"${fontFamilies[document.settings.font]}", sans-serif`
   } as CSSProperties
 
   return (
-    <div ref={pagesElement} className="cv" style={style}>
+    <div ref={pagesElement} className={`cv ${template.className}`} style={style}>
       <div className="cv-measure" aria-hidden>
         {blocks.map((block) => (
-          <CvBlockView key={block.id} block={block} ref={measureRef(block.id)} />
+          <CvBlockView key={block.id} block={block} views={template.blockViews} ref={measureRef(block.id)} />
         ))}
         {consentText !== null && (
           <p ref={consentElement} className="cv-consent">
@@ -124,7 +142,14 @@ export function CvPages({
                 {/* Do czasu ponownego podziału układ może jeszcze wskazywać bloki właśnie usunięte z dokumentu. */}
                 {ids.flatMap((id) => {
                   const block = blocksById.get(id)
-                  return block ? [<CvBlockView key={id} block={block} oversized={oversizedIds.has(id)} />] : []
+                  return block ? [
+                        <CvBlockView
+                          key={id}
+                          block={block}
+                          views={template.blockViews}
+                          oversized={oversizedIds.has(id)}
+                        />
+                      ] : []
                 })}
                 {ids.some((id) => oversizedIds.has(id)) && (
                   <p className="cv-oversized-message" role="status">

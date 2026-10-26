@@ -1,3 +1,4 @@
-// Wymiary strony A4 w pikselach CSS (96 px na cal) – te same co w template.css.
-export const PX_PER_MM = 96 / 25.4
-export const PAGE_WIDTH_PX = 210 * PX_PER_MM
+import { A4_MM, PX_PER_MM } from '../domain/templateGeometry'
+
+// Szerokość strony A4 w pikselach CSS (96 px na cal) – ta sama co w pages.css.
+export const PAGE_WIDTH_PX = A4_MM.width * PX_PER_MM
