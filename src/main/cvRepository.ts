@@ -52,6 +52,27 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     }
   }
 
+  // Pisownia tagów pozostałych (nieuszkodzonych) CV w bibliotece, według tagu bez względu na wielkość liter.
+  // Brak osobnego rejestru – istniejące tagi to suma tagów CV (zob. GLOSSARY.md).
+  async function existingSpellings(exceptId: string): Promise<Map<string, string>> {
+    const spellings = new Map<string, string>()
+    for (const entry of await listEntries()) {
+      if (entry.status !== 'ok' || entry.id === exceptId) continue
+      for (const tag of entry.tags) if (!spellings.has(tagKey(tag))) spellings.set(tagKey(tag), tag)
+    }
+    return spellings
+  }
+
+  async function listEntries(): Promise<CvListEntry[]> {
+    if (!(await exists(dir))) return []
+    const fileNames = await readdir(dir)
+    return Promise.all(
+      fileNames
+        .filter((fileName) => fileName.endsWith('.json') && !fileName.startsWith('.'))
+        .map((fileName) => listEntry(fileName.slice(0, -'.json'.length)))
+    )
+  }
+
   // Zapis atomowy (patrz writeJsonAtomic). Uszkodzonego pliku nie nadpisujemy – może dać się go jeszcze odzyskać ręcznie.
   async function save(document: CvDocument): Promise<void> {
     const targetPath = filePath(document.id)
@@ -72,14 +93,7 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
   return {
     // Najpierw CV od ostatnio zmienionego, uszkodzone pliki na końcu.
     async list(): Promise<CvListEntry[]> {
-      if (!(await exists(dir))) return []
-      const fileNames = await readdir(dir)
-      const entries = await Promise.all(
-        fileNames
-          .filter((fileName) => fileName.endsWith('.json') && !fileName.startsWith('.'))
-          .map((fileName) => listEntry(fileName.slice(0, -'.json'.length)))
-      )
-      return entries.sort((a, b) => sortKey(b).localeCompare(sortKey(a)))
+      return (await listEntries()).sort((a, b) => sortKey(b).localeCompare(sortKey(a)))
     },
 
     get,
@@ -108,9 +122,12 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
       return renamed
     },
 
-    // Zastępuje tagi CV (znormalizowanymi). Nie zmienia daty ostatniej zmiany – porządkowanie biblioteki nie miesza kolejności listy.
+    // Zastępuje tagi CV (znormalizowanymi). Tag równy bez względu na wielkość liter tagowi innego CV przejmuje tamtą pisownię.
+    // Nie zmienia daty ostatniej zmiany – porządkowanie biblioteki nie miesza kolejności listy.
     async setTags(id: string, tags: string[]): Promise<CvDocument> {
-      const tagged = { ...(await get(id)), tags: normalizeTags(tags) }
+      const document = await get(id)
+      const spellings = await existingSpellings(id)
+      const tagged = { ...document, tags: normalizeTags(tags).map((tag) => spellings.get(tagKey(tag)) ?? tag) }
       await save(tagged)
       return tagged
     },
@@ -146,11 +163,14 @@ function normalizeTags(tags: string[]): string[] {
     const clean = tag.replace(/\s+/g, ' ').trim()
     if (!clean) continue
     if (clean.length > MAX_TAG_LENGTH) throw new InvalidTagError('too-long')
-    const key = clean.toLocaleLowerCase()
+    const key = tagKey(clean)
     if (!normalized.has(key)) normalized.set(key, clean)
   }
   return [...normalized.values()]
 }
+
+// Tagi równe bez względu na wielkość liter mają ten sam klucz.
+const tagKey = (tag: string) => tag.toLocaleLowerCase()
 
 const sortKey = (entry: CvListEntry) => (entry.status === 'ok' ? entry.updatedAt : '')
 

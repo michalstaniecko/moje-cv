@@ -251,6 +251,40 @@ describe('set tags', () => {
     expect((await repository.setTags(sampleCv.id, ['Frontend', 'frontend', 'FRONTEND'])).tags).toEqual(['Frontend'])
   })
 
+  test('a tag differing from one on another CV only in letter case takes the existing spelling', async () => {
+    await repository.save(cv({ id: 'tagged' }))
+    await repository.save(cv({ id: 'other' }))
+    await repository.setTags('tagged', ['Frontend', 'EN'])
+
+    expect((await repository.setTags('other', ['frontend', 'en', 'Allegro'])).tags).toEqual(['Frontend', 'EN', 'Allegro'])
+    expect((await repository.get('other')).tags).toEqual(['Frontend', 'EN', 'Allegro'])
+  })
+
+  test('the spelling on the CV being tagged is not taken over: its own tag can change letter case', async () => {
+    await repository.save(sampleCv)
+    await repository.setTags(sampleCv.id, ['frontend'])
+
+    expect((await repository.setTags(sampleCv.id, ['Frontend'])).tags).toEqual(['Frontend'])
+  })
+
+  test('a spelling no CV has any more is not taken over', async () => {
+    await repository.save(cv({ id: 'tagged' }))
+    await repository.save(cv({ id: 'other' }))
+    await repository.setTags('tagged', ['Frontend'])
+    await repository.setTags('tagged', [])
+
+    expect((await repository.setTags('other', ['frontend'])).tags).toEqual(['frontend'])
+  })
+
+  test('damaged files next to the CV do not get in the way of taking an existing spelling', async () => {
+    await repository.save(cv({ id: 'tagged' }))
+    await repository.save(cv({ id: 'other' }))
+    await repository.setTags('tagged', ['Frontend'])
+    await writeFile(join(cvDir, 'broken.json'), '{ not json')
+
+    expect((await repository.setTags('other', ['frontend'])).tags).toEqual(['Frontend'])
+  })
+
   test('empty tags are dropped', async () => {
     await repository.save(sampleCv)
 
