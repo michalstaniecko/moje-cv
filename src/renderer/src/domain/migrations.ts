@@ -7,7 +7,10 @@ export type CvMigration = (document: JsonObject) => JsonObject
 export type CvMigrations = Record<number, CvMigration>
 
 // Migracje schematu CV. Zmiana schematu = podbicie CV_SCHEMA_VERSION i migracja ze starej wersji.
-export const cvMigrations: CvMigrations = {}
+export const cvMigrations: CvMigrations = {
+  // 1 → 2: CV dostaje listę tagów – istniejące CV startują bez tagów.
+  1: (document) => ({ ...document, tags: [] })
+}
 
 // Dokument z nowszej wersji aplikacji – tej wersji nie da się go odczytać.
 export class NewerSchemaVersionError extends Error {}

@@ -23,12 +23,18 @@ export type ImportCvFileResult =
   | { status: 'canceled' }
   | { status: 'invalid'; reason: InvalidCvFileReason }
 
+// Powód odrzucenia tagu CV. Renderer pokazuje go w języku interfejsu.
+export type InvalidTagReason = 'too-long'
+
+// Wynik ustawienia tagów CV. Odrzucone tagi niczego nie zmieniają.
+export type SetCvTagsResult = { status: 'saved'; document: CvDocument } | { status: 'invalid'; reason: InvalidTagReason }
+
 // Polecenie historii CV wysyłane z menu Edycja do otwartego edytora.
 export type HistoryCommand = 'undo' | 'redo'
 
 // Pozycja na liście CV. Uszkodzony plik (niepoprawny JSON lub niezgodny ze schematem) jest widoczny, ale nie da się go otworzyć.
 export type CvListEntry =
-  | { status: 'ok'; id: string; name: string; updatedAt: string }
+  | { status: 'ok'; id: string; name: string; updatedAt: string; tags: string[] }
   | { status: 'damaged'; id: string }
 
 export type Api = {

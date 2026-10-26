@@ -5,7 +5,7 @@ import { exists, writeJsonAtomic } from './atomicFile'
 import { emptyCv } from '../renderer/src/domain/emptyCv'
 import { cvMigrations, migrateCv, NewerSchemaVersionError, type CvMigrations } from '../renderer/src/domain/migrations'
 import type { Clause, CvDocument } from '../renderer/src/domain/schema'
-import type { CvListEntry, InvalidCvFileReason } from '../shared/api'
+import type { CvListEntry, InvalidCvFileReason, InvalidTagReason } from '../shared/api'
 import type { DefaultContent } from '../shared/i18n/en'
 
 export type CvRepository = ReturnType<typeof createCvRepository>
@@ -16,6 +16,16 @@ export class InvalidCvFileError extends Error {
     super(`Niepoprawny plik CV: ${reason}`)
   }
 }
+
+// Tag nie spełnia reguł (np. jest za długi). Użytkownik dostaje powód (`reason`), a nie treść komunikatu.
+export class InvalidTagError extends Error {
+  constructor(readonly reason: InvalidTagReason) {
+    super(`Niepoprawny tag: ${reason}`)
+  }
+}
+
+// Najdłuższy tag – żeby chip mieścił się w wierszu listy CV.
+export const MAX_TAG_LENGTH = 30
 
 type Options = { now?: () => Date; migrations?: CvMigrations }
 
@@ -35,8 +45,8 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
 
   async function listEntry(id: string): Promise<CvListEntry> {
     try {
-      const { name, updatedAt } = await get(id)
-      return { status: 'ok', id, name, updatedAt }
+      const { name, updatedAt, tags } = await get(id)
+      return { status: 'ok', id, name, updatedAt, tags }
     } catch {
       return { status: 'damaged', id }
     }
@@ -98,10 +108,19 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
       return renamed
     },
 
+    // Zastępuje tagi CV (znormalizowanymi). Nie zmienia daty ostatniej zmiany – porządkowanie biblioteki nie miesza kolejności listy.
+    async setTags(id: string, tags: string[]): Promise<CvDocument> {
+      const tagged = { ...(await get(id)), tags: normalizeTags(tags) }
+      await save(tagged)
+      return tagged
+    },
+
     // Zapis zmian z edytora (autozapis). Spóźniony zapis nie przywraca usuniętego CV.
+    // Tagami zarządza wyłącznie lista CV – zostają te z dysku, więc spóźniony autozapis nie nadpisze świeżo ustawionych.
     async update(document: CvDocument): Promise<void> {
       if (!(await exists(filePath(document.id)))) throw new Error(`CV nie istnieje: ${document.id}`)
-      await save({ ...document, updatedAt: now().toISOString() })
+      const { tags } = await get(document.id)
+      await save({ ...document, tags, updatedAt: now().toISOString() })
     },
 
     // Eksport do pliku: cały dokument (ze zdjęciem) w bieżącej wersji schematu, z nazwą CV do podpowiedzi nazwy pliku.
@@ -117,6 +136,20 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
       await rm(filePath(id))
     }
   }
+}
+
+// Tagi CV: bez skrajnych spacji, z pojedynczymi spacjami w środku, bez pustych i bez powtórzeń różniących się tylko wielkością liter
+// (zostaje pierwsza pisownia). Za długi tag kończy się InvalidTagError.
+function normalizeTags(tags: string[]): string[] {
+  const normalized = new Map<string, string>()
+  for (const tag of tags) {
+    const clean = tag.replace(/\s+/g, ' ').trim()
+    if (!clean) continue
+    if (clean.length > MAX_TAG_LENGTH) throw new InvalidTagError('too-long')
+    const key = clean.toLocaleLowerCase()
+    if (!normalized.has(key)) normalized.set(key, clean)
+  }
+  return [...normalized.values()]
 }
 
 const sortKey = (entry: CvListEntry) => (entry.status === 'ok' ? entry.updatedAt : '')
