@@ -1216,7 +1216,17 @@ test('filters the CV list by tags (all selected tags), keeps the filter for the 
   await expect(cvNames()).toHaveText(['Frontend PL', 'Backend PL', 'Sample CV'])
   await expect(window.getByText('No CV has all of these tags.')).toHaveCount(0)
 
-  // Tag, którego nie ma już żadne CV, znika z paska.
+  // Zaznaczony tag, którego nie ma już żadne CV, znika z paska i z filtra – gdy wróci, nie jest zaznaczony.
+  await tagButton('backend').click()
+  await expect(cvNames()).toHaveText(['Backend PL'])
+  await rows.filter({ hasText: 'Backend PL' }).getByRole('button', { name: 'Tags' }).click()
+  await library.getByRole('button', { name: 'Remove tag “backend”' }).click()
+  await library.getByRole('button', { name: 'Done' }).click()
+  await expect(filterBar.getByRole('button', { pressed: false })).toHaveText(['EN', 'frontend', 'Łódź', 'PL'])
+  await expect(cvNames()).toHaveText(['Frontend PL', 'Backend PL', 'Sample CV'])
+  await tagRow('Backend PL', ['backend'])
+  await expect(filterBar.getByRole('button', { pressed: false })).toHaveText(['backend', 'EN', 'frontend', 'Łódź', 'PL'])
+  await expect(cvNames()).toHaveText(['Frontend PL', 'Backend PL', 'Sample CV'])
   await rows.filter({ hasText: 'Backend PL' }).getByRole('button', { name: 'Tags' }).click()
   await library.getByRole('button', { name: 'Remove tag “backend”' }).click()
   await library.getByRole('button', { name: 'Done' }).click()

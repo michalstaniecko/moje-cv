@@ -43,7 +43,8 @@ export const en = {
     save: 'Save',
     cancel: 'Cancel',
     delete: 'Delete',
-    confirmDelete: 'Confirm deletion'
+    confirmDelete: 'Confirm deletion',
+    done: 'Done'
   },
   library: {
     clauses: 'Consent clauses',
@@ -64,7 +65,6 @@ export const en = {
     newTag: 'New tag',
     addTag: 'Add',
     removeTag: (tag: string) => `Remove tag “${tag}”`,
-    doneTags: 'Done',
     // Pasek filtra nad listą CV: lista pokazuje tylko CV mające wszystkie zaznaczone tagi.
     tagFilter: 'Filter by tag',
     clearTagFilter: 'Clear',
@@ -74,8 +74,8 @@ export const en = {
     addSuggestedTag: (tag: string) => `Add tag “${tag}”`,
     // Dlaczego tag został odrzucony – pokazywane po „Couldn’t change the tags.”.
     tagErrors: {
-      'too-long': 'A tag can have at most 30 characters.'
-    } satisfies Record<InvalidTagReason, string>,
+      'too-long': (maxTagLength: number) => `A tag can have at most ${maxTagLength} characters.`
+    } satisfies Record<InvalidTagReason, (maxTagLength: number) => string>,
     // Nazwa wyświetlana zamiast pustej nazwy CV (np. z importowanego pliku); nie trafia do CV.
     untitled: 'Untitled CV',
     confirmDelete: (name: string) => `Delete “${name}”? This can’t be undone.`,
@@ -89,8 +89,8 @@ export const en = {
       'not-json': 'The file isn’t a valid CV file (invalid JSON format).',
       'not-a-cv': 'The file doesn’t contain a valid CV.',
       'newer-version': 'The file comes from a newer version of the app. Update the app to import it.',
-      'tag-too-long': 'The CV in the file has a tag longer than 30 characters.'
-    } satisfies Record<InvalidCvFileReason, string>,
+      'tag-too-long': (maxTagLength: number) => `The CV in the file has a tag longer than ${maxTagLength} characters.`
+    } satisfies Record<InvalidCvFileReason, string | ((maxTagLength: number) => string)>,
     errors: {
       load: 'Couldn’t load the CV list.',
       open: 'Couldn’t open the CV.',

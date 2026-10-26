@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import type { CvListEntry } from '../../shared/api'
+import type { CvListEntry, InvalidCvFileReason } from '../../shared/api'
 import type { Dictionary } from '../../shared/i18n/en'
 import type { InterfaceLanguage } from '../../shared/i18n/languages'
 import { cvDisplayName, type CvDocument } from './domain/schema'
-import { sortTags } from './domain/tags'
+import { cleanTag, MAX_TAG_LENGTH, sortTags, tagKey } from './domain/tags'
 import { useDictionary, useInterfaceLanguage } from './i18n'
 
 type OkEntry = Extract<CvListEntry, { status: 'ok' }>
@@ -43,8 +43,9 @@ export function Library({
   const { appName, common, library: t } = dictionary
   const language = useInterfaceLanguage()
 
-  // Wszystkie istniejące tagi (suma tagów poprawnych CV). Zaznaczony tag, którego nie ma już żadne CV, przestaje filtrować.
-  const allTags = sortTags([...new Set(entries?.flatMap((entry) => (entry.status === 'ok' ? entry.tags : [])))])
+  // Wszystkie istniejące tagi (suma tagów poprawnych CV).
+  const allTags = sortTags([...new Set(tagsOf(entries ?? []))])
+  // Zaznaczony tag, którego nie ma już żadne CV, przestaje filtrować od razu, a z filtra znika w efekcie poniżej.
   const selectedTags = tagFilter.filter((tag) => allTags.includes(tag))
   const toggleTag = (tag: string) =>
     onTagFilterChange(selectedTags.includes(tag) ? selectedTags.filter((other) => other !== tag) : [...selectedTags, tag])
@@ -58,6 +59,13 @@ export function Library({
   useEffect(() => {
     refresh().catch(() => showError(failureMessage('load')))
   }, [refresh])
+
+  // Tag, którego nie ma już żadne CV, wypada z filtra – gdy później wróci, nie jest zaznaczony.
+  useEffect(() => {
+    if (!entries) return
+    const existing = new Set(tagsOf(entries))
+    if (tagFilter.some((tag) => !existing.has(tag))) onTagFilterChange(tagFilter.filter((tag) => existing.has(tag)))
+  }, [entries, tagFilter, onTagFilterChange])
 
   // Wykonuje operację, odświeża listę i zamyka edycję wiersza; błąd pokazuje jako komunikat.
   const runAndRefresh = async (action: () => Promise<unknown>, failure: Failure) => {
@@ -80,7 +88,7 @@ export function Library({
       const result = await window.api.cv.setTags(id, tags)
       if (result.status === 'invalid') {
         const { reason } = result
-        showError(({ library }) => `${library.errors.tags} ${library.tagErrors[reason]}`)
+        showError(({ library }) => `${library.errors.tags} ${library.tagErrors[reason](MAX_TAG_LENGTH)}`)
         return false
       }
       await refresh()
@@ -110,7 +118,7 @@ export function Library({
       const result = await window.api.cv.importFile()
       if (result.status === 'invalid') {
         const { reason } = result
-        showError(({ library }) => `${library.errors.import} ${library.importErrors[reason]}`)
+        showError(({ library }) => `${library.errors.import} ${importErrorText(library, reason)}`)
       }
       if (result.status !== 'imported') return
       const { name } = result.document
@@ -192,8 +200,10 @@ export function Library({
                 ) : mode === 'tags' ? (
                   <TagsEditor
                     entry={entry}
-                    otherTags={(entries ?? []).flatMap((other) => (other.status === 'ok' && other.id !== entry.id ? other.tags : []))}
-                    onChange={(tags) => saveTags(entry.id, tags)} onDone={() => setRowMode(null)} />
+                    otherTags={tagsOf((entries ?? []).filter((other) => other.id !== entry.id))}
+                    onChange={(tags) => saveTags(entry.id, tags)}
+                    onDone={() => setRowMode(null)}
+                  />
                 ) : (
                   <>
                     <div className="library-item-info">
@@ -330,7 +340,7 @@ function TagsEditor({
   onDone: () => void
 }) {
   const [newTag, setNewTag] = useState('')
-  const { library } = useDictionary()
+  const { common, library } = useDictionary()
   const addTag = async (tag: string) => {
     if (await onChange([...entry.tags, tag])) setNewTag('')
   }
@@ -338,11 +348,9 @@ function TagsEditor({
     event.preventDefault()
     if (newTag.trim()) await addTag(newTag)
   }
-  const ownTags = new Set(entry.tags.map((tag) => tag.toLocaleLowerCase()))
-  const typed = newTag.replace(/\s+/g, ' ').trim().toLocaleLowerCase()
-  const suggestions = sortTags([...new Set(otherTags)]).filter(
-    (tag) => !ownTags.has(tag.toLocaleLowerCase()) && tag.toLocaleLowerCase().includes(typed)
-  )
+  const ownTags = new Set(entry.tags.map(tagKey))
+  const typed = tagKey(cleanTag(newTag))
+  const suggestions = sortTags([...new Set(otherTags)]).filter((tag) => !ownTags.has(tagKey(tag)) && tagKey(tag).includes(typed))
 
   return (
     <div className="library-item-form tags-editor" role="group" aria-label={library.tagsOf(cvDisplayName(entry.name, library.untitled))}>
@@ -384,7 +392,7 @@ function TagsEditor({
       </div>
       <div className="library-item-actions">
         <button type="button" onClick={onDone}>
-          {library.doneTags}
+          {common.done}
         </button>
       </div>
     </div>
@@ -423,6 +431,15 @@ function DamagedRow({ entry, onDelete }: { entry: DamagedEntry; onDelete: () => 
       </div>
     </>
   )
+}
+
+// Tagi wszystkich poprawnych CV (z powtórzeniami); uszkodzone pliki nie mają tagów.
+const tagsOf = (entries: readonly CvListEntry[]) => entries.flatMap((entry) => (entry.status === 'ok' ? entry.tags : []))
+
+// Powód odrzucenia importu jako tekst; komunikat o za długim tagu podaje limit długości.
+const importErrorText = (library: Dictionary['library'], reason: InvalidCvFileReason) => {
+  const message = library.importErrors[reason]
+  return typeof message === 'function' ? message(MAX_TAG_LENGTH) : message
 }
 
 const formatDateTime = (iso: string, language: InterfaceLanguage) =>

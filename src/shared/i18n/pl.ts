@@ -36,7 +36,8 @@ export const pl: Dictionary = {
     save: 'Zapisz',
     cancel: 'Anuluj',
     delete: 'Usuń',
-    confirmDelete: 'Potwierdź usunięcie'
+    confirmDelete: 'Potwierdź usunięcie',
+    done: 'Gotowe'
   },
   library: {
     clauses: 'Klauzule zgody',
@@ -56,14 +57,13 @@ export const pl: Dictionary = {
     newTag: 'Nowy tag',
     addTag: 'Dodaj',
     removeTag: (tag) => `Usuń tag „${tag}”`,
-    doneTags: 'Gotowe',
     tagFilter: 'Filtruj po tagach',
     clearTagFilter: 'Wyczyść',
     noFilterMatches: 'Żadne CV nie ma tych tagów.',
     suggestedTags: 'Podpowiedzi tagów',
     addSuggestedTag: (tag) => `Dodaj tag „${tag}”`,
     tagErrors: {
-      'too-long': 'Tag może mieć najwyżej 30 znaków.'
+      'too-long': (maxTagLength) => `Tag może mieć najwyżej ${maxTagLength} znaków.`
     },
     untitled: 'CV bez nazwy',
     confirmDelete: (name) => `Usunąć „${name}”? Tej operacji nie można cofnąć.`,
@@ -76,7 +76,7 @@ export const pl: Dictionary = {
       'not-json': 'Plik nie jest poprawnym plikiem CV (niepoprawny format JSON).',
       'not-a-cv': 'Plik nie zawiera poprawnego CV.',
       'newer-version': 'Plik pochodzi z nowszej wersji aplikacji. Zaktualizuj aplikację, żeby go zaimportować.',
-      'tag-too-long': 'CV w pliku ma tag dłuższy niż 30 znaków.'
+      'tag-too-long': (maxTagLength) => `CV w pliku ma tag dłuższy niż ${maxTagLength} znaków.`
     },
     errors: {
       load: 'Nie udało się wczytać listy CV.',
