@@ -49,8 +49,13 @@ export const sectionSchema = z.discriminatedUnion('type', [
 ])
 export type Section = z.infer<typeof sectionSchema>
 
+// Identyfikatory templatów (zob. GLOSSARY.md). Definicje templatów (template/templates.ts) są kluczowane tą listą.
+// Nowy template = nowy identyfikator + podbicie CV_SCHEMA_VERSION z pustą migracją (ADR 0002).
+export const cvTemplateIds = ['classic'] as const
+export type CvTemplateId = (typeof cvTemplateIds)[number]
+
 // Bieżąca wersja schematu CV. Zmiana schematu = podbicie wersji i migracja ze starej (patrz migrations.ts).
-export const CV_SCHEMA_VERSION = 2
+export const CV_SCHEMA_VERSION = 3
 
 export const cvDocumentSchema = z.object({
   schemaVersion: z.literal(CV_SCHEMA_VERSION),
@@ -63,7 +68,9 @@ export const cvDocumentSchema = z.object({
   updatedAt: z.iso.datetime(),
   settings: z.object({
     accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-    font: z.enum(['lato', 'source-sans-3', 'arimo'])
+    font: z.enum(['lato', 'source-sans-3', 'arimo']),
+    // Template, którym CV jest renderowane. Nieznany template = niepoprawny plik (bez cichego zastępowania, ADR 0002).
+    template: z.enum(cvTemplateIds)
   }),
   header: z.object({
     fullName: z.string(),
@@ -80,7 +87,7 @@ export const cvDocumentSchema = z.object({
 })
 export type CvDocument = z.infer<typeof cvDocumentSchema>
 
-export const defaultCvSettings: CvDocument['settings'] = { accentColor: '#1a6e72', font: 'lato' }
+export const defaultCvSettings: CvDocument['settings'] = { accentColor: '#1a6e72', font: 'lato', template: 'classic' }
 
 export const clauseSchema = z.object({ id: idSchema, name: z.string(), text: z.string() })
 export type Clause = z.infer<typeof clauseSchema>

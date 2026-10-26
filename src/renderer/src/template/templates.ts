@@ -1,11 +1,12 @@
+import { cvTemplateIds, type CvTemplateId } from '../domain/schema'
 import { classicTemplate } from './classic'
 import type { TemplateDefinition } from './templateDefinition'
 
-// Wszystkie templaty aplikacji. Nowy template = wpis tutaj + podbicie schematu CV (ADR 0002).
+// Wszystkie templaty aplikacji, kluczowane identyfikatorami ze schematu CV.
+// Nowy template = identyfikator w `cvTemplateIds` + wpis tutaj + podbicie schematu CV (ADR 0002).
 export const templates = {
   classic: classicTemplate
-} as const satisfies Record<string, TemplateDefinition>
+} as const satisfies Record<CvTemplateId, TemplateDefinition>
 
-export type TemplateId = keyof typeof templates
-export const templateIds = Object.keys(templates) as TemplateId[]
-export const DEFAULT_TEMPLATE_ID: TemplateId = 'classic'
+export type TemplateId = CvTemplateId
+export const templateIds = cvTemplateIds

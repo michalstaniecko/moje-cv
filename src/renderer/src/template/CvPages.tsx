@@ -7,7 +7,7 @@ import { CvBlockView } from './CvBlockView'
 import { fontFamilies, loadTemplateFonts } from './fonts'
 import './pages.css'
 import type { TemplateDefinition } from './templateDefinition'
-import { DEFAULT_TEMPLATE_ID, templates } from './templates'
+import { templates } from './templates'
 
 // Mierzy bloki w ukrytym kontenerze (po załadowaniu fontów) i dzieli je na strony.
 function usePagination(
@@ -72,13 +72,13 @@ function useReadySignal(
 }
 
 // Strony A4 z treścią CV w danym templacie. Ten sam komponent służy do podglądu i do eksportu PDF.
-// `template` – na razie zawsze „Klasyczny” (CV jeszcze nie wybiera templatu).
+// `template` – domyślnie template zapisany w CV; podany jawnie zastępuje go (np. miniatura innego templatu).
 // `onReady` – wywoływane, gdy fonty są załadowane, podział policzony, a zdjęcie wczytane.
 // `onLayout` – wywoływane po każdym podziale stron; `oversizedMessage` wyróżnia bloki wyższe niż strona i podpisuje je
 // tym komunikatem (tylko podgląd – okno wydruku nie zna języka interfejsu i niczego nie wyróżnia).
 export function CvPages({
   document,
-  template = templates[DEFAULT_TEMPLATE_ID],
+  template = templates[document.settings.template],
   onReady,
   onLayout,
   oversizedMessage

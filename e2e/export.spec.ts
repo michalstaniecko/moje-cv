@@ -539,6 +539,8 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   await library.getByRole('button', { name: 'Open' }).click()
 
   await expect(window.locator('.cv-page').first()).toBeVisible()
+  // Podgląd renderuje template zapisany w CV – przykładowe CV ma „Klasyczny”.
+  await expect(window.locator('.preview .cv.cv-template-classic')).toHaveCount(1)
 
   // Edycja w formularzu od razu zmienia podgląd; Cmd+Z / Cmd+Shift+Z cofa i ponawia zmianę.
   const fullName = window.getByLabel('Full name')
@@ -1302,7 +1304,12 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   )
   expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV – Talent Partners.json')
   const exported = JSON.parse(await readFile(jsonPath, 'utf8'))
-  expect(exported).toMatchObject({ schemaVersion: 2, name: 'CV – Talent Partners', header: { fullName: 'Jane Example' } })
+  expect(exported).toMatchObject({
+    schemaVersion: 3,
+    name: 'CV – Talent Partners',
+    settings: { template: 'classic' },
+    header: { fullName: 'Jane Example' }
+  })
 
   // Import tego samego pliku dodaje nowe CV obok istniejącego – niczego nie nadpisuje.
   await stubOpenDialog(jsonPath)
