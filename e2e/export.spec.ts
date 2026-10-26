@@ -497,6 +497,7 @@ test('in a Polish run the sample CV, the editor, the menu, the exported PDF and 
   await expect(library.getByText('Przykładowe CV')).toBeVisible()
   await library.getByRole('button', { name: 'Otwórz' }).click()
   await expect(window.locator('.preview-page-count')).toHaveText('2 strony')
+  await expect(window.getByRole('radiogroup', { name: 'Szablon' }).getByRole('radio', { name: 'Klasyczny' })).toBeChecked()
   const fullName = window.getByLabel('Imię i nazwisko')
   await fullName.fill('Ewa Nowak')
   await expect(window.getByText('Zmiany zapisane')).toBeVisible()
@@ -714,6 +715,51 @@ test('changes the accent colour and font of one CV in the preview and PDF, with 
   await library.getByRole('listitem').filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Open' }).click()
   await expect(window.getByLabel('Accent color')).toHaveValue('#8a2be2')
   await expect(window.getByLabel('Font')).toHaveValue('arimo')
+})
+
+test('picks the Template next to the colour and font from a live thumbnail of the CV, without changing the preview or the PDF', async () => {
+  const pdfPath = join(outputDir, 'template.pdf')
+  await stubSaveDialog(pdfPath)
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  await expect(preview.locator('.cv-page').first()).toBeVisible()
+
+  // Wybór w sekcji wyglądu, za fontem, dostępny z klawiatury; jedyny template – „Klasyczny” – jest wybrany.
+  const picker = window.getByRole('radiogroup', { name: 'Template' })
+  await expect(picker.getByRole('radio')).toHaveCount(1)
+  const classic = picker.getByRole('radio', { name: 'Classic' })
+  await expect(classic).toBeChecked()
+  await window.getByLabel('Font').focus()
+  await window.keyboard.press('Tab')
+  await expect(classic).toBeFocused()
+
+  // Miniatura: pomniejszona pierwsza strona bieżącego CV w tym templacie, odświeżana po edycji treści, koloru i fontu.
+  const thumbnail = picker
+    .locator('label', { has: window.getByRole('radio', { name: 'Classic' }) })
+    .locator('.cv.cv-template-classic')
+  await expect(thumbnail.locator('.cv-page')).toHaveCount(1)
+  await expect(thumbnail.locator('.cv-page .cv-name')).toHaveText('Jane Example')
+  const thumbnailBox = await thumbnail.locator('.cv-page').boundingBox()
+  const previewPageBox = await preview.locator('.cv-page').first().boundingBox()
+  expect(thumbnailBox!.width).toBeLessThan(previewPageBox!.width / 2)
+
+  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await expect(thumbnail.locator('.cv-page .cv-name')).toHaveText('Ewa Nowak')
+  await window.getByLabel('Accent color').fill('#8a2be2')
+  await expect(thumbnail.locator('.cv-page .cv-name')).toHaveCSS('color', 'rgb(138, 43, 226)')
+  await window.getByLabel('Font').selectOption('arimo')
+  await expect(thumbnail.locator('.cv-page .cv-name')).toHaveCSS('font-family', /^"?Arimo"?,/)
+  await expect(window.getByText('Changes saved')).toBeVisible()
+
+  // Podgląd i PDF jak dotąd: jeden dokument „Klasyczny”, ta sama liczba stron, bez miniatur.
+  await expect(window.locator('.preview .cv')).toHaveCount(1)
+  await expect(window.locator('.preview .cv.cv-template-classic')).toHaveCount(1)
+  const previewPageCount = await preview.locator('.cv-page').count()
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: template.pdf')).toBeVisible()
+  const pdf = await readPdf(await readFile(pdfPath))
+  expect(pdf.pages).toHaveLength(previewPageCount)
+  expect(pdf.pages[0]!.match(/Ewa Nowak/g)).toHaveLength(1)
 })
 
 test('manages the consent clause library, uses a clause in a CV without changing the library and leaves a switched-off clause out of the PDF', async () => {

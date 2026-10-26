@@ -126,6 +126,8 @@ export const pl: Dictionary = {
     appearance: 'Wygląd',
     accentColor: 'Kolor akcentu',
     font: 'Font',
+    template: 'Szablon',
+    templateNames: { classic: 'Klasyczny' },
     header: 'Nagłówek',
     fullName: 'Imię i nazwisko',
     contact: 'Kontakt',

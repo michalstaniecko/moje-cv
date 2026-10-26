@@ -33,6 +33,7 @@ import {
 import { MonthField } from './MonthField'
 import { PhotoField } from './PhotoField'
 import { SortableList } from './SortableList'
+import { TemplatePicker } from './TemplatePicker'
 
 type EditorText = Dictionary['editor']
 
@@ -54,7 +55,7 @@ export function CvForm({
 
   return (
     <div className="form">
-      <AppearanceFields editor={editor} settings={document.settings} />
+      <AppearanceFields editor={editor} document={document} />
       <HeaderFields editor={editor} header={document.header} />
       <SortableList
         items={document.sections}
@@ -68,9 +69,10 @@ export function CvForm({
   )
 }
 
-// Wygląd tego CV: kolor akcentu (imię, tytuły sekcji, kropki przy datach) i font.
-function AppearanceFields({ editor, settings }: { editor: CvEditor; settings: CvDocument['settings'] }) {
+// Wygląd tego CV: kolor akcentu (imię, tytuły sekcji, kropki przy datach), font i template.
+function AppearanceFields({ editor, document }: { editor: CvEditor; document: CvDocument }) {
   const t = useDictionary().editor
+  const { settings } = document
   return (
     <section className="form-section">
       <h2 className="form-section-title">{t.appearance}</h2>
@@ -99,6 +101,7 @@ function AppearanceFields({ editor, settings }: { editor: CvEditor; settings: Cv
           </select>
         </label>
       </div>
+      <TemplatePicker document={document} onChange={(template) => editor.edit(updateSettings({ template }))} />
     </section>
   )
 }

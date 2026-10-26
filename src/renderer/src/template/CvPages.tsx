@@ -73,18 +73,21 @@ function useReadySignal(
 
 // Strony A4 z treścią CV w danym templacie. Ten sam komponent służy do podglądu i do eksportu PDF.
 // `template` – domyślnie template zapisany w CV; podany jawnie zastępuje go (np. miniatura innego templatu).
+// `firstPageOnly` – renderuje tylko pierwszą stronę (miniatura); podział stron jest liczony jak dla całego dokumentu.
 // `onReady` – wywoływane, gdy fonty są załadowane, podział policzony, a zdjęcie wczytane.
 // `onLayout` – wywoływane po każdym podziale stron; `oversizedMessage` wyróżnia bloki wyższe niż strona i podpisuje je
 // tym komunikatem (tylko podgląd – okno wydruku nie zna języka interfejsu i niczego nie wyróżnia).
 export function CvPages({
   document,
   template = templates[document.settings.template],
+  firstPageOnly = false,
   onReady,
   onLayout,
   oversizedMessage
 }: {
   document: CvDocument
   template?: TemplateDefinition
+  firstPageOnly?: boolean
   onReady?: () => void
   onLayout?: (layout: PaginateResult) => void
   oversizedMessage?: string
@@ -105,6 +108,8 @@ export function CvPages({
     if (layout) onLayout?.(layout)
   }, [layout, onLayout])
   const markOversized = oversizedMessage !== undefined
+  const pageCount = layout?.pages.length ?? 0
+  const pages = firstPageOnly ? layout?.pages.slice(0, 1) : layout?.pages
   const oversizedIds = useMemo(() => new Set(markOversized ? layout?.oversizedIds : []), [layout, markOversized])
 
   const contentArea = contentAreaMm(geometry)
@@ -134,9 +139,9 @@ export function CvPages({
       </div>
 
       {/* Ramka i warstwa stron pozwalają podglądowi skalować same strony, bez wpływu na pomiar bloków. */}
-      <div className="cv-pages-frame" style={{ '--pages': layout?.pages.length ?? 0 } as CSSProperties}>
+      <div className="cv-pages-frame" style={{ '--pages': pages?.length ?? 0 } as CSSProperties}>
         <div className="cv-pages">
-          {layout?.pages.map((ids, index) => (
+          {pages?.map((ids, index) => (
             <section key={index} className="cv-page">
               <div className="cv-page-content">
                 {/* Do czasu ponownego podziału układ może jeszcze wskazywać bloki właśnie usunięte z dokumentu. */}
@@ -156,7 +161,7 @@ export function CvPages({
                     {oversizedMessage}
                   </p>
                 )}
-                {consentText !== null && index === layout.pages.length - 1 && (
+                {consentText !== null && index === pageCount - 1 && (
                   <p className="cv-consent">{consentText}</p>
                 )}
               </div>
