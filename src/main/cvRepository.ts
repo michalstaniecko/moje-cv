@@ -52,9 +52,17 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     }
   }
 
+  // Tagi do zapisania w CV: znormalizowane (normalizeTags), a tag równy bez względu na wielkość liter tagowi innego CV
+  // w bibliotece przejmuje tamtą pisownię. `exceptId` – CV, którego własna pisownia nie jest przejmowana.
+  async function libraryTags(tags: string[], exceptId?: string): Promise<string[]> {
+    const normalized = normalizeTags(tags)
+    const spellings = await existingSpellings(exceptId)
+    return normalized.map((tag) => spellings.get(tagKey(tag)) ?? tag)
+  }
+
   // Pisownia tagów pozostałych (nieuszkodzonych) CV w bibliotece, według tagu bez względu na wielkość liter.
   // Brak osobnego rejestru – istniejące tagi to suma tagów CV (zob. GLOSSARY.md).
-  async function existingSpellings(exceptId: string): Promise<Map<string, string>> {
+  async function existingSpellings(exceptId?: string): Promise<Map<string, string>> {
     const spellings = new Map<string, string>()
     for (const entry of await listEntries()) {
       if (entry.status !== 'ok' || entry.id === exceptId) continue
@@ -126,8 +134,7 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     // Nie zmienia daty ostatniej zmiany – porządkowanie biblioteki nie miesza kolejności listy.
     async setTags(id: string, tags: string[]): Promise<CvDocument> {
       const document = await get(id)
-      const spellings = await existingSpellings(id)
-      const tagged = { ...document, tags: normalizeTags(tags).map((tag) => spellings.get(tagKey(tag)) ?? tag) }
+      const tagged = { ...document, tags: await libraryTags(tags, id) }
       await save(tagged)
       return tagged
     },
@@ -147,7 +154,19 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     },
 
     // Import z pliku zawsze tworzy nowe CV – nigdy nie nadpisuje istniejącego.
-    importJson: async (content: string) => saveAsNew(parseImported(content, migrations)),
+    // Tagi z pliku są normalizowane jak przy ustawianiu tagów i przejmują pisownię istniejących tagów biblioteki.
+    // Za długi tag odrzuca cały plik.
+    async importJson(content: string): Promise<CvDocument> {
+      const document = parseImported(content, migrations)
+      let tags: string[]
+      try {
+        tags = await libraryTags(document.tags)
+      } catch (error) {
+        if (error instanceof InvalidTagError) throw new InvalidCvFileError('tag-too-long')
+        throw error
+      }
+      return saveAsNew({ ...document, tags })
+    },
 
     async delete(id: string): Promise<void> {
       await rm(filePath(id))

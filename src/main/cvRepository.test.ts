@@ -189,6 +189,16 @@ describe('duplicate', () => {
     expect(first.id).not.toBe(second.id)
     expect(await repository.list()).toHaveLength(3)
   })
+
+  test('the copy has the tags of the original', async () => {
+    await repository.save(sampleCv)
+    await repository.setTags(sampleCv.id, ['Allegro', 'frontend'])
+
+    const copy = await repository.duplicate(sampleCv.id, pl.defaultContent)
+
+    expect(copy.tags).toEqual(['Allegro', 'frontend'])
+    expect(await repository.get(copy.id)).toEqual(copy)
+  })
 })
 
 describe('rename', () => {
@@ -428,6 +438,19 @@ describe('export', () => {
     expect(JSON.parse(content)).toEqual(sampleCv)
     expect({ ...imported, id: sampleCv.id, createdAt: sampleCv.createdAt, updatedAt: sampleCv.updatedAt }).toEqual(sampleCv)
   })
+
+  test('the tags travel with the CV: they are in the file and come back on import', async () => {
+    await repository.save(sampleCv)
+    await repository.setTags(sampleCv.id, ['Allegro', 'frontend'])
+
+    const { content } = await repository.exportJson(sampleCv.id)
+    await repository.delete(sampleCv.id)
+    const imported = await repository.importJson(content)
+
+    expect(JSON.parse(content).tags).toEqual(['Allegro', 'frontend'])
+    expect(imported.tags).toEqual(['Allegro', 'frontend'])
+    expect(await repository.get(imported.id)).toEqual(imported)
+  })
 })
 
 describe('import', () => {
@@ -458,11 +481,37 @@ describe('import', () => {
     expect(await repository.list()).toHaveLength(3)
   })
 
+  test('tags from the file are normalized like set tags: spaces trimmed and collapsed, empty and repeated ones dropped', async () => {
+    const imported = await repository.importJson(JSON.stringify(cv({ tags: [' Allegro ', 'front   end', '', '   ', 'ALLEGRO'] })))
+
+    expect(imported.tags).toEqual(['Allegro', 'front end'])
+    expect(await repository.get(imported.id)).toEqual(imported)
+  })
+
+  test('a tag from the file differing from one in the library only in letter case takes the existing spelling', async () => {
+    await repository.save(cv({ tags: ['Allegro'] }))
+
+    const imported = await repository.importJson(JSON.stringify(cv({ name: 'Inne', tags: ['allegro', 'backend'] })))
+
+    expect(imported.tags).toEqual(['Allegro', 'backend'])
+  })
+
+  test('a file saved before tags existed (version 1) imports as a CV with no tags', async () => {
+    const { tags: _tags, ...version1 } = { ...sampleCv, schemaVersion: 1 }
+
+    const imported = await repository.importJson(JSON.stringify(version1))
+
+    expect(imported.schemaVersion).toBe(2)
+    expect(imported.tags).toEqual([])
+    expect(await repository.get(imported.id)).toEqual(imported)
+  })
+
   const invalidFiles: Record<string, [string, InvalidCvFileReason]> = {
     'is not JSON': ['{ "schemaVersion": 1, "name": ', 'not-json'],
     'is JSON but not a CV': ['{ "hello": "world" }', 'not-a-cv'],
     'is a CV with invalid content': [JSON.stringify({ ...sampleCv, settings: { ...sampleCv.settings, font: 'comic-sans' } }), 'not-a-cv'],
-    'comes from a newer version of the app': [JSON.stringify({ ...sampleCv, schemaVersion: 3 }), 'newer-version']
+    'comes from a newer version of the app': [JSON.stringify({ ...sampleCv, schemaVersion: 3 }), 'newer-version'],
+    'has a tag longer than 30 characters': [JSON.stringify(cv({ tags: ['Allegro', `  ${'x'.repeat(31)}  `] })), 'tag-too-long']
   }
 
   for (const [kind, [content, reason]] of Object.entries(invalidFiles)) {

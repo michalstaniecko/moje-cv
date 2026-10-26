@@ -15,7 +15,7 @@ export type PickPhotoResult =
 export type ExportCvFileResult = { status: 'saved'; filePath: string } | { status: 'canceled' }
 
 // Powód odrzucenia importowanego pliku. Renderer pokazuje go w języku interfejsu.
-export type InvalidCvFileReason = 'too-large' | 'not-json' | 'not-a-cv' | 'newer-version'
+export type InvalidCvFileReason = 'too-large' | 'not-json' | 'not-a-cv' | 'newer-version' | 'tag-too-long'
 
 // Wynik importu CV z pliku .json. Niepoprawny plik niczego nie zmienia w bibliotece.
 export type ImportCvFileResult =

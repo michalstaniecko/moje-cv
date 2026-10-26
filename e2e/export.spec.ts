@@ -1,6 +1,7 @@
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
+import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
 import type { InterfaceLanguage } from '../src/shared/i18n/languages'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 
@@ -469,7 +470,11 @@ test('importing an invalid file shows why in English and leaves the library unch
   for (const [content, message] of [
     ['{ "name": "Not a CV" }', 'Couldn’t import the CV. The file doesn’t contain a valid CV.'],
     ['{ "name": ', 'Couldn’t import the CV. The file isn’t a valid CV file (invalid JSON format).'],
-    ['{ "schemaVersion": 99 }', 'Couldn’t import the CV. The file comes from a newer version of the app. Update the app to import it.']
+    ['{ "schemaVersion": 99 }', 'Couldn’t import the CV. The file comes from a newer version of the app. Update the app to import it.'],
+    [
+      JSON.stringify({ ...sampleCvs.en, tags: ['Allegro', 'x'.repeat(31)] }),
+      'Couldn’t import the CV. The CV in the file has a tag longer than 30 characters.'
+    ]
   ]) {
     const invalidPath = join(outputDir, 'invalid.json')
     await writeFile(invalidPath, content!)
