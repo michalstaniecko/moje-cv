@@ -5,7 +5,8 @@ import { exists, writeJsonAtomic } from './atomicFile'
 import { emptyCv } from '../renderer/src/domain/emptyCv'
 import { cvMigrations, migrateCv, NewerSchemaVersionError, type CvMigrations } from '../renderer/src/domain/migrations'
 import type { Clause, CvDocument } from '../renderer/src/domain/schema'
-import type { CvListEntry, InvalidCvFileReason, InvalidTagReason } from '../shared/api'
+import { InvalidTagError, normalizeTags, tagKey } from '../renderer/src/domain/tags'
+import type { CvListEntry, InvalidCvFileReason } from '../shared/api'
 import type { DefaultContent } from '../shared/i18n/en'
 
 export type CvRepository = ReturnType<typeof createCvRepository>
@@ -17,16 +18,6 @@ export class InvalidCvFileError extends Error {
   }
 }
 
-// Tag nie spełnia reguł (np. jest za długi). Użytkownik dostaje powód (`reason`), a nie treść komunikatu.
-export class InvalidTagError extends Error {
-  constructor(readonly reason: InvalidTagReason) {
-    super(`Niepoprawny tag: ${reason}`)
-  }
-}
-
-// Najdłuższy tag – żeby chip mieścił się w wierszu listy CV.
-export const MAX_TAG_LENGTH = 30
-
 type Options = { now?: () => Date; migrations?: CvMigrations }
 
 // Repozytorium CV: jedno CV na plik `<id>.json` w podanym katalogu.
@@ -36,6 +27,14 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     if (!id || basename(id) !== id || id.startsWith('.')) throw new Error(`Niepoprawny identyfikator CV: ${id}`)
     return join(dir, `${id}.json`)
   }
+
+  // Odczyt-zmiana-zapis jednego CV (autozapis, tagi, zmiana nazwy, usunięcie) idzie po kolei, żeby żadna operacja
+  // nie nadpisała zmiany innej, która przeczytała plik wcześniej, a zapisała później.
+  const perCv = createKeyedQueue()
+  // Ustalanie pisowni tagów (ustawianie tagów, import) idzie po kolei w całej bibliotece – inaczej dwa CV oznaczone
+  // naraz mogłyby dostać pisownie tego samego tagu różniące się wielkością liter.
+  const tagSpelling = createKeyedQueue()
+  const LIBRARY = 'library'
 
   // Plik ze starszą wersją schematu jest migrowany do bieżącej (na dysk trafia przy najbliższym zapisie).
   // Niepoprawny JSON, nieudana migracja lub niezgodność ze schematem kończy się wyjątkiem – plik jest uszkodzony.
@@ -54,7 +53,8 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
 
   // Tagi do zapisania w CV: znormalizowane (normalizeTags), a tag równy bez względu na wielkość liter tagowi innego CV
   // w bibliotece przejmuje tamtą pisownię. `exceptId` – CV, którego własna pisownia nie jest przejmowana.
-  async function libraryTags(tags: string[], exceptId?: string): Promise<string[]> {
+  // Wywoływać tylko wewnątrz kolejki `tagSpelling`.
+  async function normalizeToLibrarySpelling(tags: string[], exceptId?: string): Promise<string[]> {
     const normalized = normalizeTags(tags)
     const spellings = await existingSpellings(exceptId)
     return normalized.map((tag) => spellings.get(tagKey(tag)) ?? tag)
@@ -123,29 +123,34 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
       return saveAsNew({ ...original, name: content.copyName(original.name) })
     },
 
-    async rename(id: string, name: string): Promise<CvDocument> {
-      if (!name.trim()) throw new Error('Nazwa CV nie może być pusta')
-      const renamed = { ...(await get(id)), name: name.trim(), updatedAt: now().toISOString() }
-      await save(renamed)
-      return renamed
-    },
+    rename: (id: string, name: string): Promise<CvDocument> =>
+      perCv.run(id, async () => {
+        if (!name.trim()) throw new Error('Nazwa CV nie może być pusta')
+        const renamed = { ...(await get(id)), name: name.trim(), updatedAt: now().toISOString() }
+        await save(renamed)
+        return renamed
+      }),
 
     // Zastępuje tagi CV (znormalizowanymi). Tag równy bez względu na wielkość liter tagowi innego CV przejmuje tamtą pisownię.
     // Nie zmienia daty ostatniej zmiany – porządkowanie biblioteki nie miesza kolejności listy.
-    async setTags(id: string, tags: string[]): Promise<CvDocument> {
-      const document = await get(id)
-      const tagged = { ...document, tags: await libraryTags(tags, id) }
-      await save(tagged)
-      return tagged
-    },
+    setTags: (id: string, tags: string[]): Promise<CvDocument> =>
+      tagSpelling.run(LIBRARY, () =>
+        perCv.run(id, async () => {
+          const document = await get(id)
+          const tagged = { ...document, tags: await normalizeToLibrarySpelling(tags, id) }
+          await save(tagged)
+          return tagged
+        })
+      ),
 
     // Zapis zmian z edytora (autozapis). Spóźniony zapis nie przywraca usuniętego CV.
     // Tagami zarządza wyłącznie lista CV – zostają te z dysku, więc spóźniony autozapis nie nadpisze świeżo ustawionych.
-    async update(document: CvDocument): Promise<void> {
-      if (!(await exists(filePath(document.id)))) throw new Error(`CV nie istnieje: ${document.id}`)
-      const { tags } = await get(document.id)
-      await save({ ...document, tags, updatedAt: now().toISOString() })
-    },
+    update: (document: CvDocument): Promise<void> =>
+      perCv.run(document.id, async () => {
+        if (!(await exists(filePath(document.id)))) throw new Error(`CV nie istnieje: ${document.id}`)
+        const { tags } = await get(document.id)
+        await save({ ...document, tags, updatedAt: now().toISOString() })
+      }),
 
     // Eksport do pliku: cały dokument (ze zdjęciem) w bieżącej wersji schematu, z nazwą CV do podpowiedzi nazwy pliku.
     async exportJson(id: string): Promise<{ name: string; content: string }> {
@@ -158,38 +163,35 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     // Za długi tag odrzuca cały plik.
     async importJson(content: string): Promise<CvDocument> {
       const document = parseImported(content, migrations)
-      let tags: string[]
-      try {
-        tags = await libraryTags(document.tags)
-      } catch (error) {
-        if (error instanceof InvalidTagError) throw new InvalidCvFileError('tag-too-long')
-        throw error
-      }
-      return saveAsNew({ ...document, tags })
+      return tagSpelling.run(LIBRARY, async () => {
+        let tags: string[]
+        try {
+          tags = await normalizeToLibrarySpelling(document.tags)
+        } catch (error) {
+          if (error instanceof InvalidTagError) throw new InvalidCvFileError('tag-too-long')
+          throw error
+        }
+        return saveAsNew({ ...document, tags })
+      })
     },
 
-    async delete(id: string): Promise<void> {
-      await rm(filePath(id))
+    delete: (id: string): Promise<void> => perCv.run(id, () => rm(filePath(id)))
+  }
+}
+
+// Kolejki operacji według klucza: operacja startuje dopiero, gdy skończą się (sukcesem lub błędem) wcześniejsze o tym samym kluczu.
+function createKeyedQueue() {
+  const tails = new Map<string, Promise<unknown>>()
+  return {
+    run<T>(key: string, operation: () => Promise<T>): Promise<T> {
+      const result = (tails.get(key) ?? Promise.resolve()).then(() => operation())
+      const tail = result.catch(() => undefined)
+      tails.set(key, tail)
+      void tail.then(() => tails.get(key) === tail && tails.delete(key))
+      return result
     }
   }
 }
-
-// Tagi CV: bez skrajnych spacji, z pojedynczymi spacjami w środku, bez pustych i bez powtórzeń różniących się tylko wielkością liter
-// (zostaje pierwsza pisownia). Za długi tag kończy się InvalidTagError.
-function normalizeTags(tags: string[]): string[] {
-  const normalized = new Map<string, string>()
-  for (const tag of tags) {
-    const clean = tag.replace(/\s+/g, ' ').trim()
-    if (!clean) continue
-    if (clean.length > MAX_TAG_LENGTH) throw new InvalidTagError('too-long')
-    const key = tagKey(clean)
-    if (!normalized.has(key)) normalized.set(key, clean)
-  }
-  return [...normalized.values()]
-}
-
-// Tagi równe bez względu na wielkość liter mają ten sam klucz.
-const tagKey = (tag: string) => tag.toLocaleLowerCase()
 
 const sortKey = (entry: CvListEntry) => (entry.status === 'ok' ? entry.updatedAt : '')
 

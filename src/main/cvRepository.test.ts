@@ -8,7 +8,8 @@ import type { CvDocument } from '../renderer/src/domain/schema'
 import type { InvalidCvFileReason } from '../shared/api'
 import { en } from '../shared/i18n/en'
 import { pl } from '../shared/i18n/pl'
-import { createCvRepository, InvalidCvFileError, InvalidTagError, type CvRepository } from './cvRepository'
+import { InvalidTagError } from '../renderer/src/domain/tags'
+import { createCvRepository, InvalidCvFileError, type CvRepository } from './cvRepository'
 
 const sampleCv = sampleCvs.pl
 
@@ -313,6 +314,26 @@ describe('set tags', () => {
     expect((await repository.setTags(sampleCv.id, ['x'.repeat(30)])).tags).toEqual(['x'.repeat(30)])
   })
 
+  test('two CVs tagged at the same time with spellings differing only in letter case end up with one spelling', async () => {
+    await repository.save(cv({ id: 'first' }))
+    await repository.save(cv({ id: 'second' }))
+
+    await Promise.all([repository.setTags('first', ['Frontend']), repository.setTags('second', ['frontend'])])
+
+    expect([(await repository.get('first')).tags, (await repository.get('second')).tags]).toEqual([['Frontend'], ['Frontend']])
+  })
+
+  test('a CV imported while another is tagged takes the same spelling of a tag', async () => {
+    await repository.save(cv({ id: 'tagged' }))
+
+    const [, imported] = await Promise.all([
+      repository.setTags('tagged', ['Frontend']),
+      repository.importJson(JSON.stringify(cv({ tags: ['frontend'] })))
+    ])
+
+    expect(imported.tags).toEqual(['Frontend'])
+  })
+
   test('a deleted CV cannot be tagged', async () => {
     await repository.save(sampleCv)
     await repository.delete(sampleCv.id)
@@ -349,6 +370,18 @@ describe('update', () => {
     const stored = await repository.get(sampleCv.id)
     expect(stored.tags).toEqual(['frontend', 'EN'])
     expect((await repository.list())[0]).toMatchObject({ tags: ['frontend', 'EN'] })
+  })
+
+  test('a save from the editor at the same time as setting tags keeps both the edited content and the new tags', async () => {
+    await repository.save(sampleCv)
+    const edited = cv({ header: { ...sampleCv.header, fullName: 'Ewa Nowak' } })
+
+    await Promise.all([repository.setTags(sampleCv.id, ['frontend']), repository.update(edited)])
+    await Promise.all([repository.update(cv({ header: { ...sampleCv.header, fullName: 'Jan Kowalski' } })), repository.setTags(sampleCv.id, ['EN'])])
+
+    const stored = await repository.get(sampleCv.id)
+    expect(stored.header.fullName).toBe('Jan Kowalski')
+    expect(stored.tags).toEqual(['EN'])
   })
 
   test('a deleted CV is not brought back by a late save', async () => {
