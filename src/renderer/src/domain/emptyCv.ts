@@ -22,6 +22,7 @@ export function emptyCv({
     schemaVersion: CV_SCHEMA_VERSION,
     id: newId(),
     name: content.cvName,
+    tags: [],
     createdAt: timestamp,
     updatedAt: timestamp,
     settings: defaultCvSettings,

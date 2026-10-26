@@ -1,4 +1,4 @@
-import type { InvalidCvFileReason } from '../api'
+import type { InvalidCvFileReason, InvalidTagReason } from '../api'
 import type { PluralForms } from './plural'
 
 // Odmiana „page” – zmienna z typem, a nie rzutowanie, żeby brak formy `other` był błędem kompilacji.
@@ -43,7 +43,8 @@ export const en = {
     save: 'Save',
     cancel: 'Cancel',
     delete: 'Delete',
-    confirmDelete: 'Confirm deletion'
+    confirmDelete: 'Confirm deletion',
+    done: 'Done'
   },
   library: {
     clauses: 'Consent clauses',
@@ -57,6 +58,24 @@ export const en = {
     exportFile: 'Export to file',
     rename: 'Rename',
     name: 'CV name',
+    // Tagi CV (zob. GLOSSARY.md) – tryb „Tags” w wierszu listy.
+    tags: 'Tags',
+    tagsOf: (name: string) => `Tags of “${name}”`,
+    noTags: 'No tags yet.',
+    newTag: 'New tag',
+    addTag: 'Add',
+    removeTag: (tag: string) => `Remove tag “${tag}”`,
+    // Pasek filtra nad listą CV: lista pokazuje tylko CV mające wszystkie zaznaczone tagi.
+    tagFilter: 'Filter by tag',
+    clearTagFilter: 'Clear',
+    noFilterMatches: 'No CV has all of these tags.',
+    // Podpowiedzi z tagów innych CV w bibliotece.
+    suggestedTags: 'Suggested tags',
+    addSuggestedTag: (tag: string) => `Add tag “${tag}”`,
+    // Dlaczego tag został odrzucony – pokazywane po „Couldn’t change the tags.”.
+    tagErrors: {
+      'too-long': (maxTagLength: number) => `A tag can have at most ${maxTagLength} characters.`
+    } satisfies Record<InvalidTagReason, (maxTagLength: number) => string>,
     // Nazwa wyświetlana zamiast pustej nazwy CV (np. z importowanego pliku); nie trafia do CV.
     untitled: 'Untitled CV',
     confirmDelete: (name: string) => `Delete “${name}”? This can’t be undone.`,
@@ -69,14 +88,16 @@ export const en = {
       'too-large': 'The file is too large to be a CV file.',
       'not-json': 'The file isn’t a valid CV file (invalid JSON format).',
       'not-a-cv': 'The file doesn’t contain a valid CV.',
-      'newer-version': 'The file comes from a newer version of the app. Update the app to import it.'
-    } satisfies Record<InvalidCvFileReason, string>,
+      'newer-version': 'The file comes from a newer version of the app. Update the app to import it.',
+      'tag-too-long': (maxTagLength: number) => `The CV in the file has a tag longer than ${maxTagLength} characters.`
+    } satisfies Record<InvalidCvFileReason, string | ((maxTagLength: number) => string)>,
     errors: {
       load: 'Couldn’t load the CV list.',
       open: 'Couldn’t open the CV.',
       create: 'Couldn’t create the CV.',
       duplicate: 'Couldn’t duplicate the CV.',
       rename: 'Couldn’t rename the CV.',
+      tags: 'Couldn’t change the tags.',
       delete: 'Couldn’t delete the CV.',
       export: 'Couldn’t export the CV.',
       import: 'Couldn’t import the CV.'

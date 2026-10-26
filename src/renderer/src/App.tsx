@@ -9,6 +9,9 @@ type Screen = { kind: 'library' } | { kind: 'clauses' } | { kind: 'cv'; document
 
 export function App() {
   const [screen, setScreen] = useState<Screen>({ kind: 'library' })
+  // Filtr listy CV po tagach – trzymany tutaj, bo ekran listy jest odmontowywany przy przejściu do edytora / klauzul.
+  // Żyje tylko w pamięci, więc po ponownym uruchomieniu aplikacji jest pusty.
+  const [tagFilter, setTagFilter] = useState<string[]>([])
   const showLibrary = () => setScreen({ kind: 'library' })
 
   switch (screen.kind) {
@@ -19,6 +22,8 @@ export function App() {
     case 'library':
       return (
         <Library
+          tagFilter={tagFilter}
+          onTagFilterChange={setTagFilter}
           onOpen={(document) => setScreen({ kind: 'cv', document })}
           onOpenClauses={() => setScreen({ kind: 'clauses' })}
         />

@@ -5,6 +5,7 @@ import { exists, writeJsonAtomic } from './atomicFile'
 import { emptyCv } from '../renderer/src/domain/emptyCv'
 import { cvMigrations, migrateCv, NewerSchemaVersionError, type CvMigrations } from '../renderer/src/domain/migrations'
 import type { Clause, CvDocument } from '../renderer/src/domain/schema'
+import { InvalidTagError, normalizeTags, tagKey } from '../renderer/src/domain/tags'
 import type { CvListEntry, InvalidCvFileReason } from '../shared/api'
 import type { DefaultContent } from '../shared/i18n/en'
 
@@ -27,6 +28,14 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     return join(dir, `${id}.json`)
   }
 
+  // Odczyt-zmiana-zapis jednego CV (autozapis, tagi, zmiana nazwy, usunięcie) idzie po kolei, żeby żadna operacja
+  // nie nadpisała zmiany innej, która przeczytała plik wcześniej, a zapisała później.
+  const perCv = createKeyedQueue()
+  // Ustalanie pisowni tagów (ustawianie tagów, import) idzie po kolei w całej bibliotece – inaczej dwa CV oznaczone
+  // naraz mogłyby dostać pisownie tego samego tagu różniące się wielkością liter.
+  const tagSpelling = createKeyedQueue()
+  const LIBRARY = 'library'
+
   // Plik ze starszą wersją schematu jest migrowany do bieżącej (na dysk trafia przy najbliższym zapisie).
   // Niepoprawny JSON, nieudana migracja lub niezgodność ze schematem kończy się wyjątkiem – plik jest uszkodzony.
   async function get(id: string): Promise<CvDocument> {
@@ -35,11 +44,41 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
 
   async function listEntry(id: string): Promise<CvListEntry> {
     try {
-      const { name, updatedAt } = await get(id)
-      return { status: 'ok', id, name, updatedAt }
+      const { name, updatedAt, tags } = await get(id)
+      return { status: 'ok', id, name, updatedAt, tags }
     } catch {
       return { status: 'damaged', id }
     }
+  }
+
+  // Tagi do zapisania w CV: znormalizowane (normalizeTags), a tag równy bez względu na wielkość liter tagowi innego CV
+  // w bibliotece przejmuje tamtą pisownię. `exceptId` – CV, którego własna pisownia nie jest przejmowana.
+  // Wywoływać tylko wewnątrz kolejki `tagSpelling`.
+  async function normalizeToLibrarySpelling(tags: string[], exceptId?: string): Promise<string[]> {
+    const normalized = normalizeTags(tags)
+    const spellings = await existingSpellings(exceptId)
+    return normalized.map((tag) => spellings.get(tagKey(tag)) ?? tag)
+  }
+
+  // Pisownia tagów pozostałych (nieuszkodzonych) CV w bibliotece, według tagu bez względu na wielkość liter.
+  // Brak osobnego rejestru – istniejące tagi to suma tagów CV (zob. GLOSSARY.md).
+  async function existingSpellings(exceptId?: string): Promise<Map<string, string>> {
+    const spellings = new Map<string, string>()
+    for (const entry of await listEntries()) {
+      if (entry.status !== 'ok' || entry.id === exceptId) continue
+      for (const tag of entry.tags) if (!spellings.has(tagKey(tag))) spellings.set(tagKey(tag), tag)
+    }
+    return spellings
+  }
+
+  async function listEntries(): Promise<CvListEntry[]> {
+    if (!(await exists(dir))) return []
+    const fileNames = await readdir(dir)
+    return Promise.all(
+      fileNames
+        .filter((fileName) => fileName.endsWith('.json') && !fileName.startsWith('.'))
+        .map((fileName) => listEntry(fileName.slice(0, -'.json'.length)))
+    )
   }
 
   // Zapis atomowy (patrz writeJsonAtomic). Uszkodzonego pliku nie nadpisujemy – może dać się go jeszcze odzyskać ręcznie.
@@ -62,14 +101,7 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
   return {
     // Najpierw CV od ostatnio zmienionego, uszkodzone pliki na końcu.
     async list(): Promise<CvListEntry[]> {
-      if (!(await exists(dir))) return []
-      const fileNames = await readdir(dir)
-      const entries = await Promise.all(
-        fileNames
-          .filter((fileName) => fileName.endsWith('.json') && !fileName.startsWith('.'))
-          .map((fileName) => listEntry(fileName.slice(0, -'.json'.length)))
-      )
-      return entries.sort((a, b) => sortKey(b).localeCompare(sortKey(a)))
+      return (await listEntries()).sort((a, b) => sortKey(b).localeCompare(sortKey(a)))
     },
 
     get,
@@ -91,18 +123,34 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
       return saveAsNew({ ...original, name: content.copyName(original.name) })
     },
 
-    async rename(id: string, name: string): Promise<CvDocument> {
-      if (!name.trim()) throw new Error('Nazwa CV nie może być pusta')
-      const renamed = { ...(await get(id)), name: name.trim(), updatedAt: now().toISOString() }
-      await save(renamed)
-      return renamed
-    },
+    rename: (id: string, name: string): Promise<CvDocument> =>
+      perCv.run(id, async () => {
+        if (!name.trim()) throw new Error('Nazwa CV nie może być pusta')
+        const renamed = { ...(await get(id)), name: name.trim(), updatedAt: now().toISOString() }
+        await save(renamed)
+        return renamed
+      }),
+
+    // Zastępuje tagi CV (znormalizowanymi). Tag równy bez względu na wielkość liter tagowi innego CV przejmuje tamtą pisownię.
+    // Nie zmienia daty ostatniej zmiany – porządkowanie biblioteki nie miesza kolejności listy.
+    setTags: (id: string, tags: string[]): Promise<CvDocument> =>
+      tagSpelling.run(LIBRARY, () =>
+        perCv.run(id, async () => {
+          const document = await get(id)
+          const tagged = { ...document, tags: await normalizeToLibrarySpelling(tags, id) }
+          await save(tagged)
+          return tagged
+        })
+      ),
 
     // Zapis zmian z edytora (autozapis). Spóźniony zapis nie przywraca usuniętego CV.
-    async update(document: CvDocument): Promise<void> {
-      if (!(await exists(filePath(document.id)))) throw new Error(`CV nie istnieje: ${document.id}`)
-      await save({ ...document, updatedAt: now().toISOString() })
-    },
+    // Tagami zarządza wyłącznie lista CV – zostają te z dysku, więc spóźniony autozapis nie nadpisze świeżo ustawionych.
+    update: (document: CvDocument): Promise<void> =>
+      perCv.run(document.id, async () => {
+        if (!(await exists(filePath(document.id)))) throw new Error(`CV nie istnieje: ${document.id}`)
+        const { tags } = await get(document.id)
+        await save({ ...document, tags, updatedAt: now().toISOString() })
+      }),
 
     // Eksport do pliku: cały dokument (ze zdjęciem) w bieżącej wersji schematu, z nazwą CV do podpowiedzi nazwy pliku.
     async exportJson(id: string): Promise<{ name: string; content: string }> {
@@ -111,10 +159,36 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     },
 
     // Import z pliku zawsze tworzy nowe CV – nigdy nie nadpisuje istniejącego.
-    importJson: async (content: string) => saveAsNew(parseImported(content, migrations)),
+    // Tagi z pliku są normalizowane jak przy ustawianiu tagów i przejmują pisownię istniejących tagów biblioteki.
+    // Za długi tag odrzuca cały plik.
+    async importJson(content: string): Promise<CvDocument> {
+      const document = parseImported(content, migrations)
+      return tagSpelling.run(LIBRARY, async () => {
+        let tags: string[]
+        try {
+          tags = await normalizeToLibrarySpelling(document.tags)
+        } catch (error) {
+          if (error instanceof InvalidTagError) throw new InvalidCvFileError('tag-too-long')
+          throw error
+        }
+        return saveAsNew({ ...document, tags })
+      })
+    },
 
-    async delete(id: string): Promise<void> {
-      await rm(filePath(id))
+    delete: (id: string): Promise<void> => perCv.run(id, () => rm(filePath(id)))
+  }
+}
+
+// Kolejki operacji według klucza: operacja startuje dopiero, gdy skończą się (sukcesem lub błędem) wcześniejsze o tym samym kluczu.
+function createKeyedQueue() {
+  const tails = new Map<string, Promise<unknown>>()
+  return {
+    run<T>(key: string, operation: () => Promise<T>): Promise<T> {
+      const result = (tails.get(key) ?? Promise.resolve()).then(() => operation())
+      const tail = result.catch(() => undefined)
+      tails.set(key, tail)
+      void tail.then(() => tails.get(key) === tail && tails.delete(key))
+      return result
     }
   }
 }

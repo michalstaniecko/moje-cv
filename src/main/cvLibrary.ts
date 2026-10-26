@@ -2,10 +2,11 @@ import { readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { cvDocumentSchema } from '../renderer/src/domain/schema'
-import type { ExportCvFileResult, ImportCvFileResult } from '../shared/api'
+import { InvalidTagError } from '../renderer/src/domain/tags'
+import type { ExportCvFileResult, ImportCvFileResult, SetCvTagsResult } from '../shared/api'
 import { InvalidCvFileError, type CvRepository } from './cvRepository'
 import type { InterfaceLanguageState } from './interfaceLanguage'
-import { requireString } from './ipcArgs'
+import { requireString, requireStringArray } from './ipcArgs'
 import type { SettingsRepository } from './settingsRepository'
 
 // CV ze zdjęciem to kilkaset kB – limit chroni przed wczytaniem ogromnego pliku wybranego przez pomyłkę.
@@ -41,6 +42,14 @@ export function registerCvLibrary(
   ipcMain.handle('cv:create', async () => repository.create(defaultContent(), await settings.defaultClause()))
   ipcMain.handle('cv:duplicate', (_event, id: unknown) => repository.duplicate(requireString(id), defaultContent()))
   ipcMain.handle('cv:rename', (_event, id: unknown, name: unknown) => repository.rename(requireString(id), requireString(name)))
+  ipcMain.handle('cv:set-tags', async (_event, id: unknown, tags: unknown): Promise<SetCvTagsResult> => {
+    try {
+      return { status: 'saved', document: await repository.setTags(requireString(id), requireStringArray(tags)) }
+    } catch (error) {
+      if (error instanceof InvalidTagError) return { status: 'invalid', reason: error.reason }
+      throw error
+    }
+  })
   ipcMain.handle('cv:update', (_event, document: unknown) => {
     const update = repository.update(cvDocumentSchema.parse(document))
     pendingUpdates.add(update)

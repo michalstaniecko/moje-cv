@@ -3,11 +3,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { sampleCvs } from '../renderer/src/domain/sampleCv'
-import type { CvMigrations } from '../renderer/src/domain/migrations'
+import { cvMigrations, type CvMigrations } from '../renderer/src/domain/migrations'
 import type { CvDocument } from '../renderer/src/domain/schema'
 import type { InvalidCvFileReason } from '../shared/api'
 import { en } from '../shared/i18n/en'
 import { pl } from '../shared/i18n/pl'
+import { InvalidTagError } from '../renderer/src/domain/tags'
 import { createCvRepository, InvalidCvFileError, type CvRepository } from './cvRepository'
 
 const sampleCv = sampleCvs.pl
@@ -68,8 +69,8 @@ describe('list', () => {
     await repository.save(cv({ id: 'newer', name: 'CV – Talent Partners', updatedAt: '2026-05-01T10:00:00.000Z' }))
 
     expect(await repository.list()).toEqual([
-      { status: 'ok', id: 'newer', name: 'CV – Talent Partners', updatedAt: '2026-05-01T10:00:00.000Z' },
-      { status: 'ok', id: 'older', name: 'CV – Bank', updatedAt: '2026-03-01T10:00:00.000Z' }
+      { status: 'ok', id: 'newer', name: 'CV – Talent Partners', updatedAt: '2026-05-01T10:00:00.000Z', tags: [] },
+      { status: 'ok', id: 'older', name: 'CV – Bank', updatedAt: '2026-03-01T10:00:00.000Z', tags: [] }
     ])
   })
 })
@@ -82,7 +83,7 @@ describe('first run', () => {
 
     const [entry, ...rest] = await repository.list()
     expect(rest).toEqual([])
-    expect(entry).toMatchObject({ status: 'ok', name: 'Przykładowe CV', updatedAt: '2026-10-21T08:30:00.000Z' })
+    expect(entry).toMatchObject({ status: 'ok', name: 'Przykładowe CV', updatedAt: '2026-10-21T08:30:00.000Z', tags: [] })
     const stored = await repository.get(entry!.id)
     expect(stored.header).toEqual(sampleCv.header)
     expect(stored.sections).toEqual(sampleCv.sections)
@@ -104,7 +105,7 @@ describe('first run', () => {
     await repository.addSampleOnFirstRun(sampleCv)
 
     expect(await repository.list()).toEqual([
-      { status: 'ok', id: 'mine', name: 'Moje', updatedAt: sampleCv.updatedAt }
+      { status: 'ok', id: 'mine', name: 'Moje', updatedAt: sampleCv.updatedAt, tags: [] }
     ])
   })
 })
@@ -116,7 +117,7 @@ describe('create', () => {
     const created = await repository.create(pl.defaultContent)
 
     expect(await repository.list()).toEqual([
-      { status: 'ok', id: created.id, name: 'Nowe CV', updatedAt: '2026-10-21T08:30:00.000Z' }
+      { status: 'ok', id: created.id, name: 'Nowe CV', updatedAt: '2026-10-21T08:30:00.000Z', tags: [] }
     ])
     const stored = await repository.get(created.id)
     expect(stored.header.fullName).toBe('')
@@ -189,6 +190,16 @@ describe('duplicate', () => {
     expect(first.id).not.toBe(second.id)
     expect(await repository.list()).toHaveLength(3)
   })
+
+  test('the copy has the tags of the original', async () => {
+    await repository.save(sampleCv)
+    await repository.setTags(sampleCv.id, ['Allegro', 'frontend'])
+
+    const copy = await repository.duplicate(sampleCv.id, pl.defaultContent)
+
+    expect(copy.tags).toEqual(['Allegro', 'frontend'])
+    expect(await repository.get(copy.id)).toEqual(copy)
+  })
 })
 
 describe('rename', () => {
@@ -199,7 +210,7 @@ describe('rename', () => {
     await repository.rename(sampleCv.id, 'CV – Talent Partners')
 
     expect(await repository.list()).toEqual([
-      { status: 'ok', id: sampleCv.id, name: 'CV – Talent Partners', updatedAt: '2026-10-21T08:30:00.000Z' }
+      { status: 'ok', id: sampleCv.id, name: 'CV – Talent Partners', updatedAt: '2026-10-21T08:30:00.000Z', tags: [] }
     ])
     expect((await repository.get(sampleCv.id)).sections).toEqual(sampleCv.sections)
   })
@@ -209,6 +220,126 @@ describe('rename', () => {
 
     await expect(repository.rename(sampleCv.id, '   ')).rejects.toThrow()
     expect((await repository.get(sampleCv.id)).name).toBe('Przykładowe CV')
+  })
+})
+
+describe('set tags', () => {
+  test('the tags are stored with the CV and shown on the list, without changing its last change or position', async () => {
+    repository = createCvRepository(cvDir, { now: () => new Date('2026-10-21T08:30:00.000Z') })
+    await repository.save(cv({ id: 'older', updatedAt: '2026-03-01T10:00:00.000Z' }))
+    await repository.save(cv({ id: 'newer', updatedAt: '2026-05-01T10:00:00.000Z' }))
+
+    const tagged = await repository.setTags('older', ['frontend', 'EN'])
+
+    expect(tagged.tags).toEqual(['frontend', 'EN'])
+    expect(await repository.get('older')).toEqual(tagged)
+    expect(await repository.list()).toEqual([
+      { status: 'ok', id: 'newer', name: sampleCv.name, updatedAt: '2026-05-01T10:00:00.000Z', tags: [] },
+      { status: 'ok', id: 'older', name: sampleCv.name, updatedAt: '2026-03-01T10:00:00.000Z', tags: ['frontend', 'EN'] }
+    ])
+  })
+
+  test('replaces the previous tags, so a tag can be removed', async () => {
+    await repository.save(sampleCv)
+    await repository.setTags(sampleCv.id, ['frontend', 'EN'])
+
+    await repository.setTags(sampleCv.id, ['EN'])
+
+    expect((await repository.get(sampleCv.id)).tags).toEqual(['EN'])
+  })
+
+  test('" Allegro " and "Allegro" are the same tag, and repeated spaces inside a tag are collapsed', async () => {
+    await repository.save(sampleCv)
+
+    const tagged = await repository.setTags(sampleCv.id, [' Allegro ', 'Allegro', 'Senior   Frontend\tDev'])
+
+    expect(tagged.tags).toEqual(['Allegro', 'Senior Frontend Dev'])
+  })
+
+  test('two tags differing only in letter case end up as one, keeping the first spelling', async () => {
+    await repository.save(sampleCv)
+
+    expect((await repository.setTags(sampleCv.id, ['Frontend', 'frontend', 'FRONTEND'])).tags).toEqual(['Frontend'])
+  })
+
+  test('a tag differing from one on another CV only in letter case takes the existing spelling', async () => {
+    await repository.save(cv({ id: 'tagged' }))
+    await repository.save(cv({ id: 'other' }))
+    await repository.setTags('tagged', ['Frontend', 'EN'])
+
+    expect((await repository.setTags('other', ['frontend', 'en', 'Allegro'])).tags).toEqual(['Frontend', 'EN', 'Allegro'])
+    expect((await repository.get('other')).tags).toEqual(['Frontend', 'EN', 'Allegro'])
+  })
+
+  test('the spelling on the CV being tagged is not taken over: its own tag can change letter case', async () => {
+    await repository.save(sampleCv)
+    await repository.setTags(sampleCv.id, ['frontend'])
+
+    expect((await repository.setTags(sampleCv.id, ['Frontend'])).tags).toEqual(['Frontend'])
+  })
+
+  test('a spelling no CV has any more is not taken over', async () => {
+    await repository.save(cv({ id: 'tagged' }))
+    await repository.save(cv({ id: 'other' }))
+    await repository.setTags('tagged', ['Frontend'])
+    await repository.setTags('tagged', [])
+
+    expect((await repository.setTags('other', ['frontend'])).tags).toEqual(['frontend'])
+  })
+
+  test('damaged files next to the CV do not get in the way of taking an existing spelling', async () => {
+    await repository.save(cv({ id: 'tagged' }))
+    await repository.save(cv({ id: 'other' }))
+    await repository.setTags('tagged', ['Frontend'])
+    await writeFile(join(cvDir, 'broken.json'), '{ not json')
+
+    expect((await repository.setTags('other', ['frontend'])).tags).toEqual(['Frontend'])
+  })
+
+  test('empty tags are dropped', async () => {
+    await repository.save(sampleCv)
+
+    expect((await repository.setTags(sampleCv.id, ['', '   ', 'EN'])).tags).toEqual(['EN'])
+  })
+
+  test('a tag longer than 30 characters is rejected with the reason "too-long" and the tags stay as they were', async () => {
+    await repository.save(sampleCv)
+    await repository.setTags(sampleCv.id, ['EN'])
+
+    const error = await repository.setTags(sampleCv.id, ['EN', 'x'.repeat(31)]).catch((error: unknown) => error)
+
+    expect(error).toBeInstanceOf(InvalidTagError)
+    expect((error as InvalidTagError).reason).toBe('too-long')
+    expect((await repository.get(sampleCv.id)).tags).toEqual(['EN'])
+    expect((await repository.setTags(sampleCv.id, ['x'.repeat(30)])).tags).toEqual(['x'.repeat(30)])
+  })
+
+  test('two CVs tagged at the same time with spellings differing only in letter case end up with one spelling', async () => {
+    await repository.save(cv({ id: 'first' }))
+    await repository.save(cv({ id: 'second' }))
+
+    await Promise.all([repository.setTags('first', ['Frontend']), repository.setTags('second', ['frontend'])])
+
+    expect([(await repository.get('first')).tags, (await repository.get('second')).tags]).toEqual([['Frontend'], ['Frontend']])
+  })
+
+  test('a CV imported while another is tagged takes the same spelling of a tag', async () => {
+    await repository.save(cv({ id: 'tagged' }))
+
+    const [, imported] = await Promise.all([
+      repository.setTags('tagged', ['Frontend']),
+      repository.importJson(JSON.stringify(cv({ tags: ['frontend'] })))
+    ])
+
+    expect(imported.tags).toEqual(['Frontend'])
+  })
+
+  test('a deleted CV cannot be tagged', async () => {
+    await repository.save(sampleCv)
+    await repository.delete(sampleCv.id)
+
+    await expect(repository.setTags(sampleCv.id, ['EN'])).rejects.toThrow()
+    expect(await repository.list()).toEqual([])
   })
 })
 
@@ -224,8 +355,33 @@ describe('update', () => {
     expect(stored.header.fullName).toBe('Ewa Nowak')
     expect(stored.createdAt).toBe(sampleCv.createdAt)
     expect(await repository.list()).toEqual([
-      { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: '2026-10-21T08:30:00.000Z' }
+      { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: '2026-10-21T08:30:00.000Z', tags: [] }
     ])
+  })
+
+  test('a late save from the editor with other or no tags keeps the tags just set on the list', async () => {
+    await repository.save(sampleCv)
+    const openedInEditor = await repository.get(sampleCv.id)
+    await repository.setTags(sampleCv.id, ['frontend', 'EN'])
+
+    await repository.update({ ...openedInEditor, header: { ...sampleCv.header, fullName: 'Ewa Nowak' } })
+    await repository.update({ ...openedInEditor, tags: ['Inny'] })
+
+    const stored = await repository.get(sampleCv.id)
+    expect(stored.tags).toEqual(['frontend', 'EN'])
+    expect((await repository.list())[0]).toMatchObject({ tags: ['frontend', 'EN'] })
+  })
+
+  test('a save from the editor at the same time as setting tags keeps both the edited content and the new tags', async () => {
+    await repository.save(sampleCv)
+    const edited = cv({ header: { ...sampleCv.header, fullName: 'Ewa Nowak' } })
+
+    await Promise.all([repository.setTags(sampleCv.id, ['frontend']), repository.update(edited)])
+    await Promise.all([repository.update(cv({ header: { ...sampleCv.header, fullName: 'Jan Kowalski' } })), repository.setTags(sampleCv.id, ['EN'])])
+
+    const stored = await repository.get(sampleCv.id)
+    expect(stored.header.fullName).toBe('Jan Kowalski')
+    expect(stored.tags).toEqual(['EN'])
   })
 
   test('a deleted CV is not brought back by a late save', async () => {
@@ -261,7 +417,7 @@ describe('damaged files', () => {
       await writeFile(join(cvDir, 'broken.json'), content)
 
       expect(await repository.list()).toEqual([
-        { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt },
+        { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt, tags: [] },
         { status: 'damaged', id: 'broken' }
       ])
     })
@@ -273,6 +429,7 @@ describe('damaged files', () => {
       await expect(repository.get('broken')).rejects.toThrow()
       await expect(repository.duplicate('broken', pl.defaultContent)).rejects.toThrow()
       await expect(repository.rename('broken', 'Nowa nazwa')).rejects.toThrow()
+      await expect(repository.setTags('broken', ['EN'])).rejects.toThrow()
       await expect(repository.save(cv({ id: 'broken' }))).rejects.toThrow()
       await repository.list()
 
@@ -314,6 +471,19 @@ describe('export', () => {
     expect(JSON.parse(content)).toEqual(sampleCv)
     expect({ ...imported, id: sampleCv.id, createdAt: sampleCv.createdAt, updatedAt: sampleCv.updatedAt }).toEqual(sampleCv)
   })
+
+  test('the tags travel with the CV: they are in the file and come back on import', async () => {
+    await repository.save(sampleCv)
+    await repository.setTags(sampleCv.id, ['Allegro', 'frontend'])
+
+    const { content } = await repository.exportJson(sampleCv.id)
+    await repository.delete(sampleCv.id)
+    const imported = await repository.importJson(content)
+
+    expect(JSON.parse(content).tags).toEqual(['Allegro', 'frontend'])
+    expect(imported.tags).toEqual(['Allegro', 'frontend'])
+    expect(await repository.get(imported.id)).toEqual(imported)
+  })
 })
 
 describe('import', () => {
@@ -328,7 +498,7 @@ describe('import', () => {
     expect(imported.sections).toEqual(sampleCv.sections)
     expect(await repository.get(imported.id)).toEqual(imported)
     expect(await repository.list()).toEqual([
-      { status: 'ok', id: imported.id, name: sampleCv.name, updatedAt: '2026-10-21T08:30:00.000Z' }
+      { status: 'ok', id: imported.id, name: sampleCv.name, updatedAt: '2026-10-21T08:30:00.000Z', tags: [] }
     ])
   })
 
@@ -344,11 +514,37 @@ describe('import', () => {
     expect(await repository.list()).toHaveLength(3)
   })
 
+  test('tags from the file are normalized like set tags: spaces trimmed and collapsed, empty and repeated ones dropped', async () => {
+    const imported = await repository.importJson(JSON.stringify(cv({ tags: [' Allegro ', 'front   end', '', '   ', 'ALLEGRO'] })))
+
+    expect(imported.tags).toEqual(['Allegro', 'front end'])
+    expect(await repository.get(imported.id)).toEqual(imported)
+  })
+
+  test('a tag from the file differing from one in the library only in letter case takes the existing spelling', async () => {
+    await repository.save(cv({ tags: ['Allegro'] }))
+
+    const imported = await repository.importJson(JSON.stringify(cv({ name: 'Inne', tags: ['allegro', 'backend'] })))
+
+    expect(imported.tags).toEqual(['Allegro', 'backend'])
+  })
+
+  test('a file saved before tags existed (version 1) imports as a CV with no tags', async () => {
+    const { tags: _tags, ...version1 } = { ...sampleCv, schemaVersion: 1 }
+
+    const imported = await repository.importJson(JSON.stringify(version1))
+
+    expect(imported.schemaVersion).toBe(2)
+    expect(imported.tags).toEqual([])
+    expect(await repository.get(imported.id)).toEqual(imported)
+  })
+
   const invalidFiles: Record<string, [string, InvalidCvFileReason]> = {
     'is not JSON': ['{ "schemaVersion": 1, "name": ', 'not-json'],
     'is JSON but not a CV': ['{ "hello": "world" }', 'not-a-cv'],
     'is a CV with invalid content': [JSON.stringify({ ...sampleCv, settings: { ...sampleCv.settings, font: 'comic-sans' } }), 'not-a-cv'],
-    'comes from a newer version of the app': [JSON.stringify({ ...sampleCv, schemaVersion: 2 }), 'newer-version']
+    'comes from a newer version of the app': [JSON.stringify({ ...sampleCv, schemaVersion: 3 }), 'newer-version'],
+    'has a tag longer than 30 characters': [JSON.stringify(cv({ tags: ['Allegro', `  ${'x'.repeat(31)}  `] })), 'tag-too-long']
   }
 
   for (const [kind, [content, reason]] of Object.entries(invalidFiles)) {
@@ -360,7 +556,7 @@ describe('import', () => {
       expect(error).toBeInstanceOf(InvalidCvFileError)
       expect((error as InvalidCvFileError).reason).toBe(reason)
       expect(await repository.list()).toEqual([
-        { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt }
+        { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt, tags: [] }
       ])
     })
   }
@@ -368,8 +564,9 @@ describe('import', () => {
 
 describe('schema migrations', () => {
   // Testowa historia schematu: w wersji -1 imię i nazwisko było polem `owner` dokumentu,
-  // w wersji 0 trafiło do nagłówka jako `name`, a w bieżącej (1) nazywa się `fullName`.
+  // w wersji 0 trafiło do nagłówka jako `name`, a w wersji 1 nazywa się `fullName`. Dalej – prawdziwe migracje.
   const migrations: CvMigrations = {
+    ...cvMigrations,
     [-1]: ({ owner, header, ...rest }) => ({ ...rest, header: { ...(header as object), name: owner } }),
     0: ({ header, ...rest }) => {
       const { name, ...headerRest } = header as { name: string }
@@ -377,8 +574,9 @@ describe('schema migrations', () => {
     }
   }
   const { fullName, ...headerWithoutName } = sampleCv.header
-  const version0 = { ...sampleCv, schemaVersion: 0, header: { ...headerWithoutName, name: fullName } }
-  const versionMinus1 = { ...sampleCv, schemaVersion: -1, owner: fullName, header: headerWithoutName }
+  const { tags: _tags, ...version1 } = { ...sampleCv, schemaVersion: 1 }
+  const version0 = { ...version1, schemaVersion: 0, header: { ...headerWithoutName, name: fullName } }
+  const versionMinus1 = { ...version1, schemaVersion: -1, owner: fullName, header: headerWithoutName }
 
   beforeEach(() => {
     repository = createCvRepository(cvDir, { migrations })
@@ -390,7 +588,17 @@ describe('schema migrations', () => {
 
     expect(await repository.get(sampleCv.id)).toEqual(sampleCv)
     expect(await repository.list()).toEqual([
-      { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt }
+      { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt, tags: [] }
+    ])
+  })
+
+  test('a CV saved before tags existed (version 1) opens normally, with no tags', async () => {
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, `${sampleCv.id}.json`), JSON.stringify(version1))
+
+    expect(await repository.get(sampleCv.id)).toEqual({ ...sampleCv, schemaVersion: 2, tags: [] })
+    expect(await repository.list()).toEqual([
+      { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt, tags: [] }
     ])
   })
 
@@ -404,7 +612,7 @@ describe('schema migrations', () => {
   test('an imported file with an older schema version is migrated', async () => {
     const imported = await repository.importJson(JSON.stringify(versionMinus1))
 
-    expect(imported.schemaVersion).toBe(1)
+    expect(imported.schemaVersion).toBe(2)
     expect(imported.header).toEqual(sampleCv.header)
     expect(await repository.get(imported.id)).toEqual(imported)
   })
@@ -416,8 +624,9 @@ describe('schema migrations', () => {
     await repository.rename(sampleCv.id, 'Nowa nazwa')
 
     const stored = JSON.parse(await readFile(join(cvDir, `${sampleCv.id}.json`), 'utf8'))
-    expect(stored.schemaVersion).toBe(1)
+    expect(stored.schemaVersion).toBe(2)
     expect(stored.header.fullName).toBe(fullName)
+    expect(stored.tags).toEqual([])
   })
 
   test('a file with a version that has no migration is damaged and left untouched', async () => {

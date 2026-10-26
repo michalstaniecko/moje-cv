@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import type { CvListEntry } from '../../shared/api'
+import type { CvListEntry, InvalidCvFileReason } from '../../shared/api'
 import type { Dictionary } from '../../shared/i18n/en'
 import type { InterfaceLanguage } from '../../shared/i18n/languages'
 import { cvDisplayName, type CvDocument } from './domain/schema'
+import { cleanTag, MAX_TAG_LENGTH, sortTags, tagKey } from './domain/tags'
 import { useDictionary, useInterfaceLanguage } from './i18n'
 
 type OkEntry = Extract<CvListEntry, { status: 'ok' }>
 type DamagedEntry = Extract<CvListEntry, { status: 'damaged' }>
 
-// Tryb pojedynczego wiersza: zwykły, zmiana nazwy albo potwierdzenie usunięcia.
-type RowMode = { id: string; kind: 'rename' | 'confirm-delete' } | null
+// Tryb pojedynczego wiersza: zwykły, zmiana nazwy, edycja tagów albo potwierdzenie usunięcia.
+type RowMode = { id: string; kind: 'rename' | 'tags' | 'confirm-delete' } | null
 
 // Komunikat tłumaczony przy wyświetlaniu, więc zmiana języka obejmuje także widoczny już komunikat.
 type Message = (dictionary: Dictionary) => string
@@ -19,11 +20,16 @@ const failureMessage =
   ({ library }) =>
     library.errors[failure]
 
-// Ekran startowy: lista CV z akcjami Nowe / Importuj / Otwórz / Duplikuj / Eksportuj / Zmień nazwę / Usuń i wejście do biblioteki klauzul.
+// Ekran startowy: lista CV z akcjami Nowe / Importuj / Otwórz / Duplikuj / Eksportuj / Tagi / Zmień nazwę / Usuń i wejście do biblioteki klauzul.
 export function Library({
+  tagFilter,
+  onTagFilterChange,
   onOpen,
   onOpenClauses
 }: {
+  // Zaznaczone tagi filtra; lista pokazuje tylko CV mające wszystkie z nich.
+  tagFilter: string[]
+  onTagFilterChange: (tags: string[]) => void
   onOpen: (document: CvDocument) => void
   onOpenClauses: () => void
 }) {
@@ -37,11 +43,29 @@ export function Library({
   const { appName, common, library: t } = dictionary
   const language = useInterfaceLanguage()
 
+  // Wszystkie istniejące tagi (suma tagów poprawnych CV).
+  const allTags = sortTags([...new Set(tagsOf(entries ?? []))])
+  // Zaznaczony tag, którego nie ma już żadne CV, przestaje filtrować od razu, a z filtra znika w efekcie poniżej.
+  const selectedTags = tagFilter.filter((tag) => allTags.includes(tag))
+  const toggleTag = (tag: string) =>
+    onTagFilterChange(selectedTags.includes(tag) ? selectedTags.filter((other) => other !== tag) : [...selectedTags, tag])
+  // Przy aktywnym filtrze uszkodzone pliki są ukryte – nie mają tagów.
+  const visibleEntries = entries?.filter(
+    (entry) => selectedTags.length === 0 || (entry.status === 'ok' && selectedTags.every((tag) => entry.tags.includes(tag)))
+  )
+
   const refresh = useCallback(async () => setEntries(await window.api.cv.list()), [])
 
   useEffect(() => {
     refresh().catch(() => showError(failureMessage('load')))
   }, [refresh])
+
+  // Tag, którego nie ma już żadne CV, wypada z filtra – gdy później wróci, nie jest zaznaczony.
+  useEffect(() => {
+    if (!entries) return
+    const existing = new Set(tagsOf(entries))
+    if (tagFilter.some((tag) => !existing.has(tag))) onTagFilterChange(tagFilter.filter((tag) => existing.has(tag)))
+  }, [entries, tagFilter, onTagFilterChange])
 
   // Wykonuje operację, odświeża listę i zamyka edycję wiersza; błąd pokazuje jako komunikat.
   const runAndRefresh = async (action: () => Promise<unknown>, failure: Failure) => {
@@ -53,6 +77,26 @@ export function Library({
       await refresh()
     } catch {
       showError(failureMessage(failure))
+    }
+  }
+
+  // Zapisuje tagi CV, nie zamykając trybu „Tagi”. Zwraca, czy się udało; odrzucony tag kończy się komunikatem z powodem.
+  const saveTags = async (id: string, tags: string[]): Promise<boolean> => {
+    setError(null)
+    setNotice(null)
+    try {
+      const result = await window.api.cv.setTags(id, tags)
+      if (result.status === 'invalid') {
+        const { reason } = result
+        showError(({ library }) => `${library.errors.tags} ${library.tagErrors[reason](MAX_TAG_LENGTH)}`)
+        return false
+      }
+      await refresh()
+      return true
+    } catch {
+      showError(failureMessage('tags'))
+      await refresh()
+      return false
     }
   }
 
@@ -74,10 +118,11 @@ export function Library({
       const result = await window.api.cv.importFile()
       if (result.status === 'invalid') {
         const { reason } = result
-        showError(({ library }) => `${library.errors.import} ${library.importErrors[reason]}`)
+        showError(({ library }) => `${library.errors.import} ${importErrorText(library, reason)}`)
       }
       if (result.status !== 'imported') return
       const { name } = result.document
+      onTagFilterChange([])
       showNotice(({ library }) => library.imported(cvDisplayName(name, library.untitled)))
       await refresh()
     } catch {
@@ -110,7 +155,7 @@ export function Library({
         <button type="button" onClick={importFile}>
           {t.importFile}
         </button>
-        <button type="button" onClick={() => runAndRefresh(() => window.api.cv.create(), 'create')}>
+        <button type="button" onClick={() => runAndRefresh(() => window.api.cv.create().then(() => onTagFilterChange([])), 'create')}>
           {t.newCv}
         </button>
       </header>
@@ -126,8 +171,12 @@ export function Library({
           </p>
         )}
         {entries?.length === 0 && <p className="library-empty">{t.empty}</p>}
+        {allTags.length > 0 && (
+          <TagFilterBar tags={allTags} selected={selectedTags} onToggle={toggleTag} onClear={() => onTagFilterChange([])} />
+        )}
+        {entries && entries.length > 0 && visibleEntries?.length === 0 && <p className="library-empty">{t.noFilterMatches}</p>}
         <ul className="library-list" aria-label={t.list}>
-          {entries?.map((entry) => {
+          {visibleEntries?.map((entry) => {
             const mode = rowMode?.id === entry.id ? rowMode.kind : null
             const askDelete = () => setRowMode({ id: entry.id, kind: 'confirm-delete' })
             return (
@@ -148,11 +197,19 @@ export function Library({
                     onSubmit={(name) => runAndRefresh(() => window.api.cv.rename(entry.id, name), 'rename')}
                     onCancel={() => setRowMode(null)}
                   />
+                ) : mode === 'tags' ? (
+                  <TagsEditor
+                    entry={entry}
+                    otherTags={tagsOf((entries ?? []).filter((other) => other.id !== entry.id))}
+                    onChange={(tags) => saveTags(entry.id, tags)}
+                    onDone={() => setRowMode(null)}
+                  />
                 ) : (
                   <>
                     <div className="library-item-info">
                       <span className="library-item-name">{cvDisplayName(entry.name, t.untitled)}</span>
                       <span className="library-item-date">{t.modified(formatDateTime(entry.updatedAt, language))}</span>
+                      {entry.tags.length > 0 && <TagChips tags={entry.tags} />}
                     </div>
                     <div className="library-item-actions">
                       <button type="button" onClick={() => open(entry.id)}>
@@ -163,6 +220,9 @@ export function Library({
                       </button>
                       <button type="button" onClick={() => exportFile(entry.id)}>
                         {t.exportFile}
+                      </button>
+                      <button type="button" onClick={() => setRowMode({ id: entry.id, kind: 'tags' })}>
+                        {t.tags}
                       </button>
                       <button type="button" onClick={() => setRowMode({ id: entry.id, kind: 'rename' })}>
                         {t.rename}
@@ -179,6 +239,42 @@ export function Library({
         </ul>
       </main>
     </>
+  )
+}
+
+// Pasek filtra nad listą: wszystkie istniejące tagi alfabetycznie, wielokrotny wybór (przełączniki) i „Wyczyść”.
+function TagFilterBar({
+  tags,
+  selected,
+  onToggle,
+  onClear
+}: {
+  tags: string[]
+  selected: string[]
+  onToggle: (tag: string) => void
+  onClear: () => void
+}) {
+  const { library } = useDictionary()
+  return (
+    <div className="tag-filter" role="group" aria-label={library.tagFilter}>
+      <span className="tag-filter-label">{library.tagFilter}</span>
+      {tags.map((tag) => (
+        <button
+          key={tag}
+          type="button"
+          className="tag-filter-tag"
+          aria-pressed={selected.includes(tag)}
+          onClick={() => onToggle(tag)}
+        >
+          {tag}
+        </button>
+      ))}
+      {selected.length > 0 && (
+        <button type="button" className="tag-filter-clear" onClick={onClear}>
+          {library.clearTagFilter}
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -208,6 +304,98 @@ function RenameForm({ entry, onSubmit, onCancel }: { entry: OkEntry; onSubmit: (
         </button>
       </div>
     </form>
+  )
+}
+
+// Tagi CV jako chipy, alfabetycznie. Z `onRemove` każdy chip ma przycisk usunięcia.
+function TagChips({ tags, onRemove }: { tags: string[]; onRemove?: (tag: string) => void }) {
+  const { library } = useDictionary()
+  return (
+    <ul className="tag-chips" aria-label={library.tags}>
+      {sortTags(tags).map((tag) => (
+        <li key={tag} className="tag-chip">
+          {tag}
+          {onRemove && (
+            <button type="button" className="tag-chip-remove" aria-label={library.removeTag(tag)} onClick={() => onRemove(tag)}>
+              ×
+            </button>
+          )}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// Tryb „Tagi” wiersza: dodawanie tagu z klawiatury (Enter) i usuwanie pojedynczych tagów. Każda zmiana zapisuje się od razu.
+// Podpowiedzi to tagi innych CV (`otherTags`), których to CV jeszcze nie ma, zawężone do zawierających wpisany tekst.
+function TagsEditor({
+  entry,
+  otherTags,
+  onChange,
+  onDone
+}: {
+  entry: OkEntry
+  otherTags: string[]
+  onChange: (tags: string[]) => Promise<boolean>
+  onDone: () => void
+}) {
+  const [newTag, setNewTag] = useState('')
+  const { common, library } = useDictionary()
+  const addTag = async (tag: string) => {
+    if (await onChange([...entry.tags, tag])) setNewTag('')
+  }
+  const add = async (event: FormEvent) => {
+    event.preventDefault()
+    if (newTag.trim()) await addTag(newTag)
+  }
+  const ownTags = new Set(entry.tags.map(tagKey))
+  const typed = tagKey(cleanTag(newTag))
+  const suggestions = sortTags([...new Set(otherTags)]).filter((tag) => !ownTags.has(tagKey(tag)) && tagKey(tag).includes(typed))
+
+  return (
+    <div className="library-item-form tags-editor" role="group" aria-label={library.tagsOf(cvDisplayName(entry.name, library.untitled))}>
+      <div className="tags-editor-content">
+        {entry.tags.length > 0 ? (
+          <TagChips tags={entry.tags} onRemove={(tag) => void onChange(entry.tags.filter((other) => other !== tag))} />
+        ) : (
+          <span className="library-item-date">{library.noTags}</span>
+        )}
+        <form className="tags-editor-add" onSubmit={add}>
+          <input
+            aria-label={library.newTag}
+            placeholder={library.newTag}
+            value={newTag}
+            autoFocus
+            onChange={(event) => setNewTag(event.target.value)}
+            onKeyDown={(event) => event.key === 'Escape' && onDone()}
+          />
+          <button type="submit" disabled={!newTag.trim()}>
+            {library.addTag}
+          </button>
+        </form>
+        {suggestions.length > 0 && (
+          <ul className="tag-chips tag-suggestions" aria-label={library.suggestedTags}>
+            {suggestions.map((tag) => (
+              <li key={tag}>
+                <button
+                  type="button"
+                  className="tag-chip tag-suggestion"
+                  aria-label={library.addSuggestedTag(tag)}
+                  onClick={() => void addTag(tag)}
+                >
+                  {tag}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="library-item-actions">
+        <button type="button" onClick={onDone}>
+          {common.done}
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -243,6 +431,15 @@ function DamagedRow({ entry, onDelete }: { entry: DamagedEntry; onDelete: () => 
       </div>
     </>
   )
+}
+
+// Tagi wszystkich poprawnych CV (z powtórzeniami); uszkodzone pliki nie mają tagów.
+const tagsOf = (entries: readonly CvListEntry[]) => entries.flatMap((entry) => (entry.status === 'ok' ? entry.tags : []))
+
+// Powód odrzucenia importu jako tekst; komunikat o za długim tagu podaje limit długości.
+const importErrorText = (library: Dictionary['library'], reason: InvalidCvFileReason) => {
+  const message = library.importErrors[reason]
+  return typeof message === 'function' ? message(MAX_TAG_LENGTH) : message
 }
 
 const formatDateTime = (iso: string, language: InterfaceLanguage) =>

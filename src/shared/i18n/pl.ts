@@ -36,7 +36,8 @@ export const pl: Dictionary = {
     save: 'Zapisz',
     cancel: 'Anuluj',
     delete: 'Usuń',
-    confirmDelete: 'Potwierdź usunięcie'
+    confirmDelete: 'Potwierdź usunięcie',
+    done: 'Gotowe'
   },
   library: {
     clauses: 'Klauzule zgody',
@@ -50,6 +51,20 @@ export const pl: Dictionary = {
     exportFile: 'Eksportuj do pliku',
     rename: 'Zmień nazwę',
     name: 'Nazwa CV',
+    tags: 'Tagi',
+    tagsOf: (name) => `Tagi „${name}”`,
+    noTags: 'Brak tagów.',
+    newTag: 'Nowy tag',
+    addTag: 'Dodaj',
+    removeTag: (tag) => `Usuń tag „${tag}”`,
+    tagFilter: 'Filtruj po tagach',
+    clearTagFilter: 'Wyczyść',
+    noFilterMatches: 'Żadne CV nie ma tych tagów.',
+    suggestedTags: 'Podpowiedzi tagów',
+    addSuggestedTag: (tag) => `Dodaj tag „${tag}”`,
+    tagErrors: {
+      'too-long': (maxTagLength) => `Tag może mieć najwyżej ${maxTagLength} znaków.`
+    },
     untitled: 'CV bez nazwy',
     confirmDelete: (name) => `Usunąć „${name}”? Tej operacji nie można cofnąć.`,
     confirmDeleteDamaged: (fileName) => `Usunąć uszkodzony plik „${fileName}”? Tej operacji nie można cofnąć.`,
@@ -60,7 +75,8 @@ export const pl: Dictionary = {
       'too-large': 'Plik jest za duży, żeby był plikiem CV.',
       'not-json': 'Plik nie jest poprawnym plikiem CV (niepoprawny format JSON).',
       'not-a-cv': 'Plik nie zawiera poprawnego CV.',
-      'newer-version': 'Plik pochodzi z nowszej wersji aplikacji. Zaktualizuj aplikację, żeby go zaimportować.'
+      'newer-version': 'Plik pochodzi z nowszej wersji aplikacji. Zaktualizuj aplikację, żeby go zaimportować.',
+      'tag-too-long': (maxTagLength) => `CV w pliku ma tag dłuższy niż ${maxTagLength} znaków.`
     },
     errors: {
       load: 'Nie udało się wczytać listy CV.',
@@ -68,6 +84,7 @@ export const pl: Dictionary = {
       create: 'Nie udało się utworzyć CV.',
       duplicate: 'Nie udało się zduplikować CV.',
       rename: 'Nie udało się zmienić nazwy.',
+      tags: 'Nie udało się zmienić tagów.',
       delete: 'Nie udało się usunąć CV.',
       export: 'Nie udało się wyeksportować CV.',
       import: 'Nie udało się zaimportować CV.'

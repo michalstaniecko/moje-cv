@@ -50,12 +50,15 @@ export const sectionSchema = z.discriminatedUnion('type', [
 export type Section = z.infer<typeof sectionSchema>
 
 // Bieżąca wersja schematu CV. Zmiana schematu = podbicie wersji i migracja ze starej (patrz migrations.ts).
-export const CV_SCHEMA_VERSION = 1
+export const CV_SCHEMA_VERSION = 2
 
 export const cvDocumentSchema = z.object({
   schemaVersion: z.literal(CV_SCHEMA_VERSION),
   id: idSchema,
   name: z.string(),
+  // Tagi CV (zob. GLOSSARY.md): prywatne etykiety do porządkowania biblioteki, nigdy nie trafiają do dokumentu.
+  // Zarządza nimi wyłącznie lista CV (repozytorium normalizuje je przy ustawianiu).
+  tags: z.array(z.string()),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
   settings: z.object({

@@ -15,7 +15,7 @@ export type PickPhotoResult =
 export type ExportCvFileResult = { status: 'saved'; filePath: string } | { status: 'canceled' }
 
 // Powód odrzucenia importowanego pliku. Renderer pokazuje go w języku interfejsu.
-export type InvalidCvFileReason = 'too-large' | 'not-json' | 'not-a-cv' | 'newer-version'
+export type InvalidCvFileReason = 'too-large' | 'not-json' | 'not-a-cv' | 'newer-version' | 'tag-too-long'
 
 // Wynik importu CV z pliku .json. Niepoprawny plik niczego nie zmienia w bibliotece.
 export type ImportCvFileResult =
@@ -23,12 +23,18 @@ export type ImportCvFileResult =
   | { status: 'canceled' }
   | { status: 'invalid'; reason: InvalidCvFileReason }
 
+// Powód odrzucenia tagu CV. Renderer pokazuje go w języku interfejsu.
+export type InvalidTagReason = 'too-long'
+
+// Wynik ustawienia tagów CV. Odrzucone tagi niczego nie zmieniają.
+export type SetCvTagsResult = { status: 'saved'; document: CvDocument } | { status: 'invalid'; reason: InvalidTagReason }
+
 // Polecenie historii CV wysyłane z menu Edycja do otwartego edytora.
 export type HistoryCommand = 'undo' | 'redo'
 
 // Pozycja na liście CV. Uszkodzony plik (niepoprawny JSON lub niezgodny ze schematem) jest widoczny, ale nie da się go otworzyć.
 export type CvListEntry =
-  | { status: 'ok'; id: string; name: string; updatedAt: string }
+  | { status: 'ok'; id: string; name: string; updatedAt: string; tags: string[] }
   | { status: 'damaged'; id: string }
 
 export type Api = {
@@ -38,6 +44,8 @@ export type Api = {
     create: () => Promise<CvDocument>
     duplicate: (id: string) => Promise<CvDocument>
     rename: (id: string, name: string) => Promise<CvDocument>
+    // Zastępuje tagi CV; repozytorium je normalizuje. Nie zmienia daty ostatniej zmiany.
+    setTags: (id: string, tags: string[]) => Promise<SetCvTagsResult>
     update: (document: CvDocument) => Promise<void>
     delete: (id: string) => Promise<void>
     exportFile: (id: string) => Promise<ExportCvFileResult>

@@ -1,6 +1,7 @@
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
+import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
 import type { InterfaceLanguage } from '../src/shared/i18n/languages'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 
@@ -469,7 +470,11 @@ test('importing an invalid file shows why in English and leaves the library unch
   for (const [content, message] of [
     ['{ "name": "Not a CV" }', 'Couldn’t import the CV. The file doesn’t contain a valid CV.'],
     ['{ "name": ', 'Couldn’t import the CV. The file isn’t a valid CV file (invalid JSON format).'],
-    ['{ "schemaVersion": 99 }', 'Couldn’t import the CV. The file comes from a newer version of the app. Update the app to import it.']
+    ['{ "schemaVersion": 99 }', 'Couldn’t import the CV. The file comes from a newer version of the app. Update the app to import it.'],
+    [
+      JSON.stringify({ ...sampleCvs.en, tags: ['Allegro', 'x'.repeat(31)] }),
+      'Couldn’t import the CV. The CV in the file has a tag longer than 30 characters.'
+    ]
   ]) {
     const invalidPath = join(outputDir, 'invalid.json')
     await writeFile(invalidPath, content!)
@@ -1060,6 +1065,224 @@ test('Edit → Select All, Cut, Copy and Paste in the menu work in a form field'
   await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Jane ExampleJane Example')
 })
 
+test('tags a CV from the list: chips sorted with Polish letters, invalid tags rejected, nothing in the preview or PDF', async () => {
+  const library = window.getByRole('list', { name: 'CV list' })
+  const rows = library.getByRole('listitem').filter({ has: window.getByRole('button', { name: 'Open' }) })
+  await window.getByRole('button', { name: 'New CV' }).click()
+  await expect(rows).toHaveCount(2)
+  const sample = rows.filter({ hasText: 'Sample CV' })
+  await expect(rows.first()).toContainText('New CV')
+  const modifiedBefore = await sample.locator('.library-item-date').textContent()
+
+  // Tryb „Tags”: dodawanie z klawiatury (Enter) i usuwanie pojedynczych tagów.
+  await sample.getByRole('button', { name: 'Tags' }).click()
+  const editor = library.getByRole('group', { name: 'Tags of “Sample CV”' })
+  const newTag = editor.getByLabel('New tag')
+  for (const tag of ['Zakopane', '  Senior   Frontend ', 'Ząbki', 'Łódź', 'Lublin', 'Allegro', 'allegro']) {
+    await newTag.fill(tag)
+    await newTag.press('Enter')
+    await expect(newTag).toHaveValue('')
+  }
+  const chips = editor.getByRole('list', { name: 'Tags' }).getByRole('listitem')
+  await expect(chips).toHaveText(['Allegro', 'Lublin', 'Łódź', 'Senior Frontend', 'Zakopane', 'Ząbki'].map((tag) => new RegExp(`^${tag}`)))
+  await editor.getByRole('button', { name: 'Remove tag “Allegro”' }).click()
+  await expect(chips).toHaveCount(5)
+
+  // Za długi tag – komunikat w języku interfejsu, tagi bez zmian.
+  await newTag.fill('x'.repeat(31))
+  await newTag.press('Enter')
+  await expect(window.getByRole('alert')).toHaveText('Couldn’t change the tags. A tag can have at most 30 characters.')
+  await expect(chips).toHaveCount(5)
+  await editor.getByRole('button', { name: 'Done' }).click()
+
+  // Chipy w wierszu, alfabetycznie z polskimi znakami; data „Modified” i kolejność listy bez zmian.
+  await expect(sample.getByRole('list', { name: 'Tags' }).getByRole('listitem')).toHaveText([
+    'Lublin',
+    'Łódź',
+    'Senior Frontend',
+    'Zakopane',
+    'Ząbki'
+  ])
+  await expect(sample.locator('.library-item-date')).toHaveText(modifiedBefore!)
+  await expect(rows.first()).toContainText('New CV')
+  await expect(rows.filter({ hasText: 'New CV' }).getByRole('list', { name: 'Tags' })).toHaveCount(0)
+
+  // Tagi nie trafiają do podglądu ani do PDF, a autozapis z edytora ich nie usuwa.
+  await sample.getByRole('button', { name: 'Open' }).click()
+  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await expect(window.getByText('Changes saved')).toBeVisible()
+  await expect(window.locator('.preview')).not.toContainText('Zakopane')
+  const pdfPath = join(outputDir, 'tagged.pdf')
+  await stubSaveDialog(pdfPath)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: tagged.pdf')).toBeVisible()
+  const pdf = (await readPdf(await readFile(pdfPath))).pages.join('')
+  expect(pdf).toContain('Ewa Nowak')
+  for (const tag of ['Lublin', 'Łódź', 'Senior Frontend', 'Zakopane', 'Ząbki']) expect(pdf).not.toContain(tag)
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  await expect(rows.first().getByRole('list', { name: 'Tags' }).getByRole('listitem')).toHaveText([
+    'Lublin',
+    'Łódź',
+    'Senior Frontend',
+    'Zakopane',
+    'Ząbki'
+  ])
+
+  // Podpowiedzi z tagów innych CV: wybór podpowiedzi dodaje tag, wpisanie innej wielkości liter przejmuje istniejącą pisownię.
+  const newCv = rows.filter({ hasText: 'New CV' })
+  await newCv.getByRole('button', { name: 'Tags' }).click()
+  const newCvEditor = library.getByRole('group', { name: 'Tags of “New CV”' })
+  const suggestions = newCvEditor.getByRole('list', { name: 'Suggested tags' }).getByRole('listitem')
+  await expect(suggestions).toHaveText(['Lublin', 'Łódź', 'Senior Frontend', 'Zakopane', 'Ząbki'])
+  await newCvEditor.getByLabel('New tag').fill('fro')
+  await expect(suggestions).toHaveText(['Senior Frontend'])
+  await newCvEditor.getByRole('button', { name: 'Add tag “Senior Frontend”' }).click()
+  const newCvChips = newCvEditor.getByRole('list', { name: 'Tags' }).getByRole('listitem')
+  await expect(newCvChips).toHaveText([/^Senior Frontend/])
+  await expect(newCvEditor.getByLabel('New tag')).toHaveValue('')
+  await newCvEditor.getByLabel('New tag').fill('zakopane')
+  await newCvEditor.getByLabel('New tag').press('Enter')
+  await expect(newCvChips).toHaveText([/^Senior Frontend/, /^Zakopane/])
+  await expect(suggestions).toHaveText(['Lublin', 'Łódź', 'Ząbki'])
+  await newCvEditor.getByRole('button', { name: 'Done' }).click()
+
+  // Tag usunięty z ostatniego CV, które go miało, znika z podpowiedzi.
+  await sample.getByRole('button', { name: 'Tags' }).click()
+  await editor.getByRole('button', { name: 'Remove tag “Lublin”' }).click()
+  await editor.getByRole('button', { name: 'Done' }).click()
+  await newCv.getByRole('button', { name: 'Tags' }).click()
+  await expect(suggestions).toHaveText(['Łódź', 'Ząbki'])
+})
+
+test('filters the CV list by tags (all selected tags), keeps the filter for the session and clears it on New CV and import', async () => {
+  const library = window.getByRole('list', { name: 'CV list' })
+  const rows = library.getByRole('listitem').filter({ has: window.getByRole('button', { name: 'Open' }) })
+  const filterBar = window.getByRole('group', { name: 'Filter by tag' })
+  const cvNames = () => rows.locator('.library-item-name')
+  const tagButton = (tag: string) => filterBar.getByRole('button', { name: tag, exact: true })
+
+  // Bez żadnego tagu w bibliotece paska nie ma.
+  await expect(rows).toHaveCount(1)
+  await expect(filterBar).toHaveCount(0)
+
+  // Trzy CV z tagami: „Sample CV” (frontend, EN), „Backend PL” (backend, PL), „Frontend PL” (frontend, Łódź, PL).
+  const tagRow = async (name: string, tags: string[]) => {
+    await rows.filter({ hasText: name }).getByRole('button', { name: 'Tags' }).click()
+    const newTag = library.getByRole('group', { name: `Tags of “${name}”` }).getByLabel('New tag')
+    for (const tag of tags) {
+      await newTag.fill(tag)
+      await newTag.press('Enter')
+      await expect(newTag).toHaveValue('')
+    }
+    await library.getByRole('button', { name: 'Done' }).click()
+  }
+  const createCv = async (name: string) => {
+    await window.getByRole('button', { name: 'New CV' }).click()
+    await rows.filter({ hasText: 'New CV' }).getByRole('button', { name: 'Rename' }).click()
+    await library.getByLabel('CV name').fill(name)
+    await library.getByRole('button', { name: 'Save' }).click()
+    await expect(rows.filter({ hasText: name })).toHaveCount(1)
+  }
+  await tagRow('Sample CV', ['frontend', 'EN'])
+  await createCv('Backend PL')
+  await tagRow('Backend PL', ['backend', 'PL'])
+  await createCv('Frontend PL')
+  await tagRow('Frontend PL', ['frontend', 'Łódź', 'PL'])
+
+  // Pasek: wszystkie tagi alfabetycznie z polskimi znakami, nic nie zaznaczone.
+  await expect(filterBar.getByRole('button', { pressed: false })).toHaveText(['backend', 'EN', 'frontend', 'Łódź', 'PL'])
+  await expect(filterBar.getByRole('button', { name: 'Clear' })).toHaveCount(0)
+
+  // Kilka zaznaczonych tagów – tylko CV mające wszystkie (AND).
+  await tagButton('frontend').click()
+  await expect(tagButton('frontend')).toHaveAttribute('aria-pressed', 'true')
+  await expect(cvNames()).toHaveText(['Frontend PL', 'Sample CV'])
+  await tagButton('PL').click()
+  await expect(cvNames()).toHaveText(['Frontend PL'])
+
+  // Ponowne kliknięcie odznacza tag.
+  await tagButton('frontend').click()
+  await expect(tagButton('frontend')).toHaveAttribute('aria-pressed', 'false')
+  await expect(cvNames()).toHaveText(['Frontend PL', 'Backend PL'])
+
+  // Pusty wynik – komunikat zamiast listy.
+  await tagButton('EN').click()
+  await expect(rows).toHaveCount(0)
+  await expect(window.getByText('No CV has all of these tags.')).toBeVisible()
+
+  // „Clear” wraca do pełnej listy.
+  await filterBar.getByRole('button', { name: 'Clear' }).click()
+  await expect(filterBar.getByRole('button', { pressed: true })).toHaveCount(0)
+  await expect(cvNames()).toHaveText(['Frontend PL', 'Backend PL', 'Sample CV'])
+  await expect(window.getByText('No CV has all of these tags.')).toHaveCount(0)
+
+  // Zaznaczony tag, którego nie ma już żadne CV, znika z paska i z filtra – gdy wróci, nie jest zaznaczony.
+  await tagButton('backend').click()
+  await expect(cvNames()).toHaveText(['Backend PL'])
+  await rows.filter({ hasText: 'Backend PL' }).getByRole('button', { name: 'Tags' }).click()
+  await library.getByRole('button', { name: 'Remove tag “backend”' }).click()
+  await library.getByRole('button', { name: 'Done' }).click()
+  await expect(filterBar.getByRole('button', { pressed: false })).toHaveText(['EN', 'frontend', 'Łódź', 'PL'])
+  await expect(cvNames()).toHaveText(['Frontend PL', 'Backend PL', 'Sample CV'])
+  await tagRow('Backend PL', ['backend'])
+  await expect(filterBar.getByRole('button', { pressed: false })).toHaveText(['backend', 'EN', 'frontend', 'Łódź', 'PL'])
+  await expect(cvNames()).toHaveText(['Frontend PL', 'Backend PL', 'Sample CV'])
+  await rows.filter({ hasText: 'Backend PL' }).getByRole('button', { name: 'Tags' }).click()
+  await library.getByRole('button', { name: 'Remove tag “backend”' }).click()
+  await library.getByRole('button', { name: 'Done' }).click()
+  await expect(filterBar.getByRole('button', { pressed: false })).toHaveText(['EN', 'frontend', 'Łódź', 'PL'])
+
+  // Uszkodzony plik CV: ukryty przy aktywnym filtrze, widoczny bez filtra. Filtr przetrwa wejście do biblioteki klauzul.
+  await writeFile(join(outputDir, 'user-data', 'cvs', 'broken.json'), '{ not json')
+  const damaged = library.getByRole('listitem').filter({ hasText: 'broken.json' })
+  await tagButton('frontend').click()
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  await expect(tagButton('frontend')).toHaveAttribute('aria-pressed', 'true')
+  await expect(cvNames()).toHaveText(['Frontend PL', 'Sample CV'])
+  await expect(damaged).toHaveCount(0)
+
+  // Filtr przetrwa otwarcie CV w edytorze i powrót do listy.
+  await rows.filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Open' }).click()
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Jane Example')
+  await window.getByRole('button', { name: '← Moje CV' }).click()
+  await expect(tagButton('frontend')).toHaveAttribute('aria-pressed', 'true')
+  await expect(cvNames()).toHaveText(['Frontend PL', 'Sample CV'])
+
+  await filterBar.getByRole('button', { name: 'Clear' }).click()
+  await expect(damaged).toHaveCount(1)
+  await expect(damaged).toContainText('Damaged file')
+
+  // „New CV” przy aktywnym filtrze czyści filtr, żeby nowe CV było widoczne.
+  await tagButton('PL').click()
+  await expect(rows).toHaveCount(2)
+  await window.getByRole('button', { name: 'New CV' }).click()
+  await expect(filterBar.getByRole('button', { pressed: true })).toHaveCount(0)
+  await expect(cvNames()).toHaveText(['New CV', 'Frontend PL', 'Backend PL', 'Sample CV'])
+
+  // „Import from file” przy aktywnym filtrze też czyści filtr.
+  const jsonPath = join(outputDir, 'sample.json')
+  await stubSaveDialog(jsonPath)
+  await rows.filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Export to file' }).click()
+  await expect(window.getByRole('status')).toHaveText('Saved file: sample.json')
+  await tagButton('Łódź').click()
+  await expect(cvNames()).toHaveText(['Frontend PL'])
+  await stubOpenDialog(jsonPath)
+  await window.getByRole('button', { name: 'Import from file' }).click()
+  await expect(window.getByRole('status')).toHaveText('Imported “Sample CV”.')
+  await expect(filterBar.getByRole('button', { pressed: true })).toHaveCount(0)
+  await expect(rows).toHaveCount(5)
+
+  // Po ponownym uruchomieniu filtr jest pusty.
+  await tagButton('PL').click()
+  await expect(rows).toHaveCount(2)
+  await app.close()
+  await launch()
+  const rowsAfterRestart = window.getByRole('list', { name: 'CV list' }).getByRole('listitem').filter({ has: window.getByRole('button', { name: 'Open' }) })
+  await expect(rowsAfterRestart).toHaveCount(5)
+  await expect(window.getByRole('group', { name: 'Filter by tag' }).getByRole('button', { pressed: true })).toHaveCount(0)
+})
+
 test('exports a CV to a JSON file and imports it back as a new CV; an invalid file leaves the library unchanged', async () => {
   const library = window.getByRole('list', { name: 'CV list' })
   const rows = library.getByRole('listitem')
@@ -1079,7 +1302,7 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   )
   expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV – Talent Partners.json')
   const exported = JSON.parse(await readFile(jsonPath, 'utf8'))
-  expect(exported).toMatchObject({ schemaVersion: 1, name: 'CV – Talent Partners', header: { fullName: 'Jane Example' } })
+  expect(exported).toMatchObject({ schemaVersion: 2, name: 'CV – Talent Partners', header: { fullName: 'Jane Example' } })
 
   // Import tego samego pliku dodaje nowe CV obok istniejącego – niczego nie nadpisuje.
   await stubOpenDialog(jsonPath)
