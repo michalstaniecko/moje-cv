@@ -60,6 +60,8 @@ export const pl: Dictionary = {
     tagFilter: 'Filtruj po tagach',
     clearTagFilter: 'Wyczyść',
     noFilterMatches: 'Żadne CV nie ma tych tagów.',
+    suggestedTags: 'Podpowiedzi tagów',
+    addSuggestedTag: (tag) => `Dodaj tag „${tag}”`,
     tagErrors: {
       'too-long': 'Tag może mieć najwyżej 30 znaków.'
     },
@@ -73,7 +75,8 @@ export const pl: Dictionary = {
       'too-large': 'Plik jest za duży, żeby był plikiem CV.',
       'not-json': 'Plik nie jest poprawnym plikiem CV (niepoprawny format JSON).',
       'not-a-cv': 'Plik nie zawiera poprawnego CV.',
-      'newer-version': 'Plik pochodzi z nowszej wersji aplikacji. Zaktualizuj aplikację, żeby go zaimportować.'
+      'newer-version': 'Plik pochodzi z nowszej wersji aplikacji. Zaktualizuj aplikację, żeby go zaimportować.',
+      'tag-too-long': 'CV w pliku ma tag dłuższy niż 30 znaków.'
     },
     errors: {
       load: 'Nie udało się wczytać listy CV.',

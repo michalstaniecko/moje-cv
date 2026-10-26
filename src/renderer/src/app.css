@@ -494,3 +494,15 @@ body {
 .tag-filter-clear {
   font-size: 12px;
 }
+
+.tag-suggestion {
+  font: inherit;
+  font-size: 12px;
+  border: 1px dashed #9cc4c6;
+  background: transparent;
+  cursor: pointer;
+}
+
+.tag-suggestion::before {
+  content: '+ ';
+}

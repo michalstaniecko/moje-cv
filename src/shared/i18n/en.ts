@@ -69,6 +69,9 @@ export const en = {
     tagFilter: 'Filter by tag',
     clearTagFilter: 'Clear',
     noFilterMatches: 'No CV has all of these tags.',
+    // Podpowiedzi z tagów innych CV w bibliotece.
+    suggestedTags: 'Suggested tags',
+    addSuggestedTag: (tag: string) => `Add tag “${tag}”`,
     // Dlaczego tag został odrzucony – pokazywane po „Couldn’t change the tags.”.
     tagErrors: {
       'too-long': 'A tag can have at most 30 characters.'
@@ -85,7 +88,8 @@ export const en = {
       'too-large': 'The file is too large to be a CV file.',
       'not-json': 'The file isn’t a valid CV file (invalid JSON format).',
       'not-a-cv': 'The file doesn’t contain a valid CV.',
-      'newer-version': 'The file comes from a newer version of the app. Update the app to import it.'
+      'newer-version': 'The file comes from a newer version of the app. Update the app to import it.',
+      'tag-too-long': 'The CV in the file has a tag longer than 30 characters.'
     } satisfies Record<InvalidCvFileReason, string>,
     errors: {
       load: 'Couldn’t load the CV list.',

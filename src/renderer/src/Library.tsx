@@ -190,7 +190,10 @@ export function Library({
                     onCancel={() => setRowMode(null)}
                   />
                 ) : mode === 'tags' ? (
-                  <TagsEditor entry={entry} onChange={(tags) => saveTags(entry.id, tags)} onDone={() => setRowMode(null)} />
+                  <TagsEditor
+                    entry={entry}
+                    otherTags={(entries ?? []).flatMap((other) => (other.status === 'ok' && other.id !== entry.id ? other.tags : []))}
+                    onChange={(tags) => saveTags(entry.id, tags)} onDone={() => setRowMode(null)} />
                 ) : (
                   <>
                     <div className="library-item-info">
@@ -314,22 +317,32 @@ function TagChips({ tags, onRemove }: { tags: string[]; onRemove?: (tag: string)
 }
 
 // Tryb „Tagi” wiersza: dodawanie tagu z klawiatury (Enter) i usuwanie pojedynczych tagów. Każda zmiana zapisuje się od razu.
+// Podpowiedzi to tagi innych CV (`otherTags`), których to CV jeszcze nie ma, zawężone do zawierających wpisany tekst.
 function TagsEditor({
   entry,
+  otherTags,
   onChange,
   onDone
 }: {
   entry: OkEntry
+  otherTags: string[]
   onChange: (tags: string[]) => Promise<boolean>
   onDone: () => void
 }) {
   const [newTag, setNewTag] = useState('')
   const { library } = useDictionary()
+  const addTag = async (tag: string) => {
+    if (await onChange([...entry.tags, tag])) setNewTag('')
+  }
   const add = async (event: FormEvent) => {
     event.preventDefault()
-    if (!newTag.trim()) return
-    if (await onChange([...entry.tags, newTag])) setNewTag('')
+    if (newTag.trim()) await addTag(newTag)
   }
+  const ownTags = new Set(entry.tags.map((tag) => tag.toLocaleLowerCase()))
+  const typed = newTag.replace(/\s+/g, ' ').trim().toLocaleLowerCase()
+  const suggestions = sortTags([...new Set(otherTags)]).filter(
+    (tag) => !ownTags.has(tag.toLocaleLowerCase()) && tag.toLocaleLowerCase().includes(typed)
+  )
 
   return (
     <div className="library-item-form tags-editor" role="group" aria-label={library.tagsOf(cvDisplayName(entry.name, library.untitled))}>
@@ -352,6 +365,22 @@ function TagsEditor({
             {library.addTag}
           </button>
         </form>
+        {suggestions.length > 0 && (
+          <ul className="tag-chips tag-suggestions" aria-label={library.suggestedTags}>
+            {suggestions.map((tag) => (
+              <li key={tag}>
+                <button
+                  type="button"
+                  className="tag-chip tag-suggestion"
+                  aria-label={library.addSuggestedTag(tag)}
+                  onClick={() => void addTag(tag)}
+                >
+                  {tag}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <div className="library-item-actions">
         <button type="button" onClick={onDone}>

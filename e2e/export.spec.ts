@@ -1,6 +1,7 @@
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
+import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
 import type { InterfaceLanguage } from '../src/shared/i18n/languages'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 
@@ -469,7 +470,11 @@ test('importing an invalid file shows why in English and leaves the library unch
   for (const [content, message] of [
     ['{ "name": "Not a CV" }', 'Couldn’t import the CV. The file doesn’t contain a valid CV.'],
     ['{ "name": ', 'Couldn’t import the CV. The file isn’t a valid CV file (invalid JSON format).'],
-    ['{ "schemaVersion": 99 }', 'Couldn’t import the CV. The file comes from a newer version of the app. Update the app to import it.']
+    ['{ "schemaVersion": 99 }', 'Couldn’t import the CV. The file comes from a newer version of the app. Update the app to import it.'],
+    [
+      JSON.stringify({ ...sampleCvs.en, tags: ['Allegro', 'x'.repeat(31)] }),
+      'Couldn’t import the CV. The CV in the file has a tag longer than 30 characters.'
+    ]
   ]) {
     const invalidPath = join(outputDir, 'invalid.json')
     await writeFile(invalidPath, content!)
@@ -1122,6 +1127,31 @@ test('tags a CV from the list: chips sorted with Polish letters, invalid tags re
     'Zakopane',
     'Ząbki'
   ])
+
+  // Podpowiedzi z tagów innych CV: wybór podpowiedzi dodaje tag, wpisanie innej wielkości liter przejmuje istniejącą pisownię.
+  const newCv = rows.filter({ hasText: 'New CV' })
+  await newCv.getByRole('button', { name: 'Tags' }).click()
+  const newCvEditor = library.getByRole('group', { name: 'Tags of “New CV”' })
+  const suggestions = newCvEditor.getByRole('list', { name: 'Suggested tags' }).getByRole('listitem')
+  await expect(suggestions).toHaveText(['Lublin', 'Łódź', 'Senior Frontend', 'Zakopane', 'Ząbki'])
+  await newCvEditor.getByLabel('New tag').fill('fro')
+  await expect(suggestions).toHaveText(['Senior Frontend'])
+  await newCvEditor.getByRole('button', { name: 'Add tag “Senior Frontend”' }).click()
+  const newCvChips = newCvEditor.getByRole('list', { name: 'Tags' }).getByRole('listitem')
+  await expect(newCvChips).toHaveText([/^Senior Frontend/])
+  await expect(newCvEditor.getByLabel('New tag')).toHaveValue('')
+  await newCvEditor.getByLabel('New tag').fill('zakopane')
+  await newCvEditor.getByLabel('New tag').press('Enter')
+  await expect(newCvChips).toHaveText([/^Senior Frontend/, /^Zakopane/])
+  await expect(suggestions).toHaveText(['Lublin', 'Łódź', 'Ząbki'])
+  await newCvEditor.getByRole('button', { name: 'Done' }).click()
+
+  // Tag usunięty z ostatniego CV, które go miało, znika z podpowiedzi.
+  await sample.getByRole('button', { name: 'Tags' }).click()
+  await editor.getByRole('button', { name: 'Remove tag “Lublin”' }).click()
+  await editor.getByRole('button', { name: 'Done' }).click()
+  await newCv.getByRole('button', { name: 'Tags' }).click()
+  await expect(suggestions).toHaveText(['Łódź', 'Ząbki'])
 })
 
 test('filters the CV list by tags (all selected tags), keeps the filter for the session and clears it on New CV and import', async () => {
