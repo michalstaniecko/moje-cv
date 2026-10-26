@@ -65,6 +65,10 @@ export const en = {
     addTag: 'Add',
     removeTag: (tag: string) => `Remove tag “${tag}”`,
     doneTags: 'Done',
+    // Pasek filtra nad listą CV: lista pokazuje tylko CV mające wszystkie zaznaczone tagi.
+    tagFilter: 'Filter by tag',
+    clearTagFilter: 'Clear',
+    noFilterMatches: 'No CV has all of these tags.',
     // Dlaczego tag został odrzucony – pokazywane po „Couldn’t change the tags.”.
     tagErrors: {
       'too-long': 'A tag can have at most 30 characters.'

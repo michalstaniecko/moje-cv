@@ -22,9 +22,14 @@ const failureMessage =
 
 // Ekran startowy: lista CV z akcjami Nowe / Importuj / Otwórz / Duplikuj / Eksportuj / Tagi / Zmień nazwę / Usuń i wejście do biblioteki klauzul.
 export function Library({
+  tagFilter,
+  onTagFilterChange,
   onOpen,
   onOpenClauses
 }: {
+  // Zaznaczone tagi filtra; lista pokazuje tylko CV mające wszystkie z nich.
+  tagFilter: string[]
+  onTagFilterChange: (tags: string[]) => void
   onOpen: (document: CvDocument) => void
   onOpenClauses: () => void
 }) {
@@ -37,6 +42,16 @@ export function Library({
   const dictionary = useDictionary()
   const { appName, common, library: t } = dictionary
   const language = useInterfaceLanguage()
+
+  // Wszystkie istniejące tagi (suma tagów poprawnych CV). Zaznaczony tag, którego nie ma już żadne CV, przestaje filtrować.
+  const allTags = sortTags([...new Set(entries?.flatMap((entry) => (entry.status === 'ok' ? entry.tags : [])))])
+  const selectedTags = tagFilter.filter((tag) => allTags.includes(tag))
+  const toggleTag = (tag: string) =>
+    onTagFilterChange(selectedTags.includes(tag) ? selectedTags.filter((other) => other !== tag) : [...selectedTags, tag])
+  // Przy aktywnym filtrze uszkodzone pliki są ukryte – nie mają tagów.
+  const visibleEntries = entries?.filter(
+    (entry) => selectedTags.length === 0 || (entry.status === 'ok' && selectedTags.every((tag) => entry.tags.includes(tag)))
+  )
 
   const refresh = useCallback(async () => setEntries(await window.api.cv.list()), [])
 
@@ -99,6 +114,7 @@ export function Library({
       }
       if (result.status !== 'imported') return
       const { name } = result.document
+      onTagFilterChange([])
       showNotice(({ library }) => library.imported(cvDisplayName(name, library.untitled)))
       await refresh()
     } catch {
@@ -131,7 +147,7 @@ export function Library({
         <button type="button" onClick={importFile}>
           {t.importFile}
         </button>
-        <button type="button" onClick={() => runAndRefresh(() => window.api.cv.create(), 'create')}>
+        <button type="button" onClick={() => runAndRefresh(() => window.api.cv.create().then(() => onTagFilterChange([])), 'create')}>
           {t.newCv}
         </button>
       </header>
@@ -147,8 +163,12 @@ export function Library({
           </p>
         )}
         {entries?.length === 0 && <p className="library-empty">{t.empty}</p>}
+        {allTags.length > 0 && (
+          <TagFilterBar tags={allTags} selected={selectedTags} onToggle={toggleTag} onClear={() => onTagFilterChange([])} />
+        )}
+        {entries && entries.length > 0 && visibleEntries?.length === 0 && <p className="library-empty">{t.noFilterMatches}</p>}
         <ul className="library-list" aria-label={t.list}>
-          {entries?.map((entry) => {
+          {visibleEntries?.map((entry) => {
             const mode = rowMode?.id === entry.id ? rowMode.kind : null
             const askDelete = () => setRowMode({ id: entry.id, kind: 'confirm-delete' })
             return (
@@ -206,6 +226,42 @@ export function Library({
         </ul>
       </main>
     </>
+  )
+}
+
+// Pasek filtra nad listą: wszystkie istniejące tagi alfabetycznie, wielokrotny wybór (przełączniki) i „Wyczyść”.
+function TagFilterBar({
+  tags,
+  selected,
+  onToggle,
+  onClear
+}: {
+  tags: string[]
+  selected: string[]
+  onToggle: (tag: string) => void
+  onClear: () => void
+}) {
+  const { library } = useDictionary()
+  return (
+    <div className="tag-filter" role="group" aria-label={library.tagFilter}>
+      <span className="tag-filter-label">{library.tagFilter}</span>
+      {tags.map((tag) => (
+        <button
+          key={tag}
+          type="button"
+          className="tag-filter-tag"
+          aria-pressed={selected.includes(tag)}
+          onClick={() => onToggle(tag)}
+        >
+          {tag}
+        </button>
+      ))}
+      {selected.length > 0 && (
+        <button type="button" className="tag-filter-clear" onClick={onClear}>
+          {library.clearTagFilter}
+        </button>
+      )}
+    </div>
   )
 }
 

@@ -57,6 +57,9 @@ export const pl: Dictionary = {
     addTag: 'Dodaj',
     removeTag: (tag) => `Usuń tag „${tag}”`,
     doneTags: 'Gotowe',
+    tagFilter: 'Filtruj po tagach',
+    clearTagFilter: 'Wyczyść',
+    noFilterMatches: 'Żadne CV nie ma tych tagów.',
     tagErrors: {
       'too-long': 'Tag może mieć najwyżej 30 znaków.'
     },
