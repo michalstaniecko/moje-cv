@@ -1,5 +1,5 @@
-/* Wspólna struktura dokumentu dla wszystkich templatów: strony A4, kontener pomiarowy, bloki, klauzula
-   na dole ostatniej strony. Wymiary obszaru treści przychodzą z geometrii templatu jako zmienne CSS
+/* Wspólna struktura dokumentu dla wszystkich szablonów: strony A4, kontener pomiarowy, bloki, klauzula
+   na dole ostatniej strony. Wymiary obszaru treści przychodzą z geometrii szablonu jako zmienne CSS
    ustawiane przez CvPages (--cv-margin-*, --cv-content-width, --cv-content-height). */
 .cv {
   -webkit-print-color-adjust: exact;
@@ -41,7 +41,7 @@
   display: flow-root;
 }
 
-/* Klauzula na dole ostatniej strony; odstęp od treści zapewnia podział stron (geometria templatu). */
+/* Klauzula na dole ostatniej strony; odstęp od treści zapewnia podział stron (geometria szablonu). */
 .cv-page-content > .cv-consent {
   position: absolute;
   left: 0;

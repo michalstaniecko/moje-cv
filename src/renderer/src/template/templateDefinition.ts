@@ -1,6 +1,5 @@
 import type { ComponentType } from 'react'
 import type { CvBlock } from '../domain/blocks'
-import type { CvTemplateId } from '../domain/schema'
 import type { TemplateGeometry } from '../domain/templateGeometry'
 
 type BlockKind = CvBlock['kind']
@@ -11,10 +10,9 @@ export type BlockContentView<K extends BlockKind> = ComponentType<{ block: Extra
 // Nadpisania wspólnych komponentów bloków – rodzaj bloku bez wpisu rysuje komponent wspólny.
 export type BlockViewOverrides = { [K in BlockKind]?: BlockContentView<K> }
 
-// Definicja templatu (zob. „Template” w GLOSSARY.md): wszystko, czym template różni się od innych.
+// Definicja szablonu (zob. „Template” w GLOSSARY.md): wszystko, czym szablon różni się od innych.
 export type TemplateDefinition = {
-  id: CvTemplateId
-  // Klasa na korzeniu dokumentu, do której zawężony jest arkusz stylów templatu.
+  // Klasa na korzeniu dokumentu, do której zawężony jest arkusz stylów szablonu.
   className: string
   geometry: TemplateGeometry
   blockViews: BlockViewOverrides

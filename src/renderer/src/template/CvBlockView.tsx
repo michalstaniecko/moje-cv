@@ -2,7 +2,7 @@ import type { ComponentType, Ref } from 'react'
 import type { CvBlock } from '../domain/blocks'
 import type { BlockViewOverrides } from './templateDefinition'
 
-// Wspólne komponenty bloków – template może nadpisać dowolny rodzaj bloku (BlockViewOverrides).
+// Wspólne komponenty bloków – szablon może nadpisać dowolny rodzaj bloku (BlockViewOverrides).
 function BlockContent({ block }: { block: CvBlock }) {
   switch (block.kind) {
     case 'header':

@@ -1,6 +1,6 @@
-/* Arkusz templatu „Klasyczny” – parametry z briefu (spec #1, „Wygląd szablonu”).
-   Każda reguła jest zawężona do .cv-template-classic, żeby nie działała w dokumentach innych templatów.
-   Geometria (marginesy, odstępy) nie należy do arkusza – jest w definicji templatu (index.ts). */
+/* Arkusz szablonu „Klasyczny” – parametry z briefu (spec #1, „Wygląd szablonu”).
+   Każda reguła jest zawężona do .cv-template-classic, żeby nie działała w dokumentach innych szablonów.
+   Geometria (marginesy, odstępy) nie należy do arkusza – jest w definicji szablonu (index.ts). */
 .cv-template-classic {
   --text: #1f1f1f;
   --muted: #444;

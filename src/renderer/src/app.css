@@ -231,7 +231,7 @@ body {
   resize: vertical;
 }
 
-/* ---------- Wybór templatu ---------- */
+/* ---------- Wybór szablonu ---------- */
 /* Miniatura to CvPages w skali --thumbnail-scale: skalowane są same strony (jak w podglądzie), więc pomiar bloków
    i podział stron są takie jak w dokumencie. CvPages renderuje tylko pierwszą stronę. */
 .template-picker {

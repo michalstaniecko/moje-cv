@@ -1,12 +1,9 @@
-import { cvTemplateIds, type CvTemplateId } from '../domain/schema'
+import type { CvTemplateId } from '../domain/schema'
 import { classicTemplate } from './classic'
 import type { TemplateDefinition } from './templateDefinition'
 
-// Wszystkie templaty aplikacji, kluczowane identyfikatorami ze schematu CV.
-// Nowy template = identyfikator w `cvTemplateIds` + wpis tutaj + podbicie schematu CV (ADR 0002).
+// Wszystkie szablony aplikacji, kluczowane identyfikatorami ze schematu CV.
+// Jak dodać nowy szablon – zob. komentarz przy `cvTemplateIds` w domain/schema.ts.
 export const templates = {
   classic: classicTemplate
 } as const satisfies Record<CvTemplateId, TemplateDefinition>
-
-export type TemplateId = CvTemplateId
-export const templateIds = cvTemplateIds

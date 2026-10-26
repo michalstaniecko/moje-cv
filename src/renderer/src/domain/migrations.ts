@@ -10,7 +10,7 @@ export type CvMigrations = Record<number, CvMigration>
 export const cvMigrations: CvMigrations = {
   // 1 → 2: CV dostaje listę tagów – istniejące CV startują bez tagów.
   1: (document) => ({ ...document, tags: [] }),
-  // 2 → 3: CV zapamiętuje swój template – istniejące CV dostają „Klasyczny”, czyli wygląd sprzed templatów.
+  // 2 → 3: CV zapamiętuje swój szablon – istniejące CV dostają „Klasyczny”, czyli wygląd sprzed szablonów.
   2: (document) => ({ ...document, settings: { ...(document.settings as object), template: 'classic' } })
 }
 

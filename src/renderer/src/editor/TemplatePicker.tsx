@@ -1,12 +1,12 @@
 import { memo, useDeferredValue, useId } from 'react'
-import type { CvDocument, CvTemplateId } from '../domain/schema'
+import { cvTemplateIds, type CvDocument, type CvTemplateId } from '../domain/schema'
 import { useDictionary } from '../i18n'
 import { CvPages } from '../template/CvPages'
-import { templateIds, templates } from '../template/templates'
+import { templates } from '../template/templates'
 
-// Wybór templatu CV: każda opcja to żywa miniatura pierwszej strony bieżącego CV w danym templacie
-// (z kolorem i fontem CV) podpisana nazwą templatu. Opcje to zwykłe radio – wybór działa z klawiatury.
-// Radio jest nazwane samą nazwą templatu (aria-labelledby), a nie całą etykietą razem z tekstem miniatury.
+// Wybór szablonu CV: każda opcja to żywa miniatura pierwszej strony bieżącego CV w danym szablonie
+// (z kolorem i fontem CV) podpisana nazwą szablonu. Opcje to zwykłe radio – wybór działa z klawiatury.
+// Radio jest nazwane samą nazwą szablonu (aria-labelledby), a nie całą etykietą razem z tekstem miniatury.
 export function TemplatePicker({
   document,
   onChange
@@ -22,7 +22,7 @@ export function TemplatePicker({
 
   return (
     <div role="radiogroup" aria-label={t.template} className="template-picker">
-      {templateIds.map((id) => (
+      {cvTemplateIds.map((id) => (
         <label key={id} className="template-option">
           <input
             type="radio"
@@ -40,7 +40,7 @@ export function TemplatePicker({
   )
 }
 
-// Pomniejszona pierwsza strona CV w danym templacie. `memo` – miniatura renderuje się tylko, gdy zmieni się
+// Pomniejszona pierwsza strona CV w danym szablonie. `memo` – miniatura renderuje się tylko, gdy zmieni się
 // (odroczony) dokument, a nie przy każdym renderze formularza.
 const TemplateThumbnail = memo(function TemplateThumbnail({
   document,

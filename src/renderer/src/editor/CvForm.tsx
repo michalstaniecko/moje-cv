@@ -69,7 +69,7 @@ export function CvForm({
   )
 }
 
-// Wygląd tego CV: kolor akcentu (imię, tytuły sekcji, kropki przy datach), font i template.
+// Wygląd tego CV: kolor akcentu (imię, tytuły sekcji, kropki przy datach), font i szablon.
 function AppearanceFields({ editor, document }: { editor: CvEditor; document: CvDocument }) {
   const t = useDictionary().editor
   const { settings } = document

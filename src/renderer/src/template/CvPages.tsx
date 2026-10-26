@@ -71,8 +71,8 @@ function useReadySignal(
   }, [layout, onReady, pagesElement])
 }
 
-// Strony A4 z treścią CV w danym templacie. Ten sam komponent służy do podglądu i do eksportu PDF.
-// `template` – domyślnie template zapisany w CV; podany jawnie zastępuje go (np. miniatura innego templatu).
+// Strony A4 z treścią CV w danym szablonie. Ten sam komponent służy do podglądu i do eksportu PDF.
+// `template` – domyślnie szablon zapisany w CV; podany jawnie zastępuje go (np. miniatura innego szablonu).
 // `firstPageOnly` – renderuje tylko pierwszą stronę (miniatura); podział stron jest liczony jak dla całego dokumentu.
 // `onReady` – wywoływane, gdy fonty są załadowane, podział policzony, a zdjęcie wczytane.
 // `onLayout` – wywoływane po każdym podziale stron; `oversizedMessage` wyróżnia bloki wyższe niż strona i podpisuje je
@@ -92,15 +92,10 @@ export function CvPages({
   onLayout?: (layout: PaginateResult) => void
   oversizedMessage?: string
 }) {
-  const { geometry } = template
+  const { geometry, blockViews: views } = template
   const blocks = useMemo(() => generateBlocks(document, geometry.blockSpacingMm), [document, geometry])
   const consentText = document.consent.enabled && document.consent.text.trim() ? document.consent.text : null
-  const { layout, measureRef, consentElement } = usePagination(
-    blocks,
-    document.settings.font,
-    consentText,
-    geometry
-  )
+  const { layout, measureRef, consentElement } = usePagination(blocks, document.settings.font, consentText, geometry)
   const blocksById = useMemo(() => new Map(blocks.map((block) => [block.id, block])), [blocks])
   const pagesElement = useRef<HTMLDivElement>(null)
   useReadySignal(layout, pagesElement, onReady)
@@ -129,7 +124,7 @@ export function CvPages({
     <div ref={pagesElement} className={`cv ${template.className}`} style={style}>
       <div className="cv-measure" aria-hidden>
         {blocks.map((block) => (
-          <CvBlockView key={block.id} block={block} views={template.blockViews} ref={measureRef(block.id)} />
+          <CvBlockView key={block.id} block={block} views={views} ref={measureRef(block.id)} />
         ))}
         {consentText !== null && (
           <p ref={consentElement} className="cv-consent">
@@ -147,14 +142,7 @@ export function CvPages({
                 {/* Do czasu ponownego podziału układ może jeszcze wskazywać bloki właśnie usunięte z dokumentu. */}
                 {ids.flatMap((id) => {
                   const block = blocksById.get(id)
-                  return block ? [
-                        <CvBlockView
-                          key={id}
-                          block={block}
-                          views={template.blockViews}
-                          oversized={oversizedIds.has(id)}
-                        />
-                      ] : []
+                  return block ? [<CvBlockView key={id} block={block} views={views} oversized={oversizedIds.has(id)} />] : []
                 })}
                 {ids.some((id) => oversizedIds.has(id)) && (
                   <p className="cv-oversized-message" role="status">

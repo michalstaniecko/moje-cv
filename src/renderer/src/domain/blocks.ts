@@ -32,7 +32,7 @@ type DraftBlock = BlockContent & {
   id: string
   keepWithNext?: boolean
   breakBefore?: boolean
-  // Odstępy z geometrii templatu; odstęp między blokami to większy z nich, jak przy zapadaniu marginesów.
+  // Odstępy z geometrii szablonu; odstęp między blokami to większy z nich, jak przy zapadaniu marginesów.
   marginTopMm?: number
   marginBottomMm?: number
 }
@@ -153,7 +153,7 @@ function sectionBlocks(section: Section, spacing: BlockSpacingMm): DraftBlock[] 
 }
 
 // Zamienia dokument na płaską listę bloków do podziału na strony. Puste pola, puste sekcje
-// i sekcje ukryte są pomijane. Odstępy między blokami pochodzą z geometrii templatu.
+// i sekcje ukryte są pomijane. Odstępy między blokami pochodzą z geometrii szablonu.
 export function generateBlocks(document: CvDocument, spacing: BlockSpacingMm): CvBlock[] {
   const drafts = [
     ...headerBlocks(document.header, spacing),

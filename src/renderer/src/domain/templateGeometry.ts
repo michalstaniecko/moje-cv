@@ -1,5 +1,5 @@
-// Geometria dokumentu w templacie (zob. „Template” w GLOSSARY.md): marginesy strony, odstępy między
-// blokami i odstęp klauzuli. Wartości ma wyłącznie definicja templatu – reszta kodu je od niej bierze.
+// Geometria dokumentu w szablonie (zob. „Template” w GLOSSARY.md): marginesy strony, odstępy między
+// blokami i odstęp klauzuli. Wartości ma wyłącznie definicja szablonu – reszta kodu je od niej bierze.
 
 // Strona A4 w milimetrach i przelicznik na piksele CSS (96 px na cal).
 export const A4_MM = { width: 210, height: 297 } as const

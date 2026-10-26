@@ -1,4 +1,7 @@
-import { PAGE_WIDTH_PX } from '../template/pageSize'
+import { A4_MM, PX_PER_MM } from '../domain/templateGeometry'
+
+// Szerokość strony A4 w pikselach CSS – ta sama co w pages.css.
+const PAGE_WIDTH_PX = A4_MM.width * PX_PER_MM
 
 const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2]
 const MIN_SCALE = ZOOM_LEVELS[0]!

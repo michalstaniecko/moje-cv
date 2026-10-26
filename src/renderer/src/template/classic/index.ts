@@ -3,7 +3,6 @@ import './classic.css'
 
 // „Klasyczny” – wygląd z briefu (spec #1, „Wygląd szablonu”).
 export const classicTemplate = {
-  id: 'classic',
   className: 'cv-template-classic',
   geometry: {
     // Marginesy 12 / 16 / 10 / 12 mm → obszar treści 182 × 275 mm.

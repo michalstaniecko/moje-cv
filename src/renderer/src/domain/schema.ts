@@ -49,8 +49,12 @@ export const sectionSchema = z.discriminatedUnion('type', [
 ])
 export type Section = z.infer<typeof sectionSchema>
 
-// Identyfikatory templatów (zob. GLOSSARY.md). Definicje templatów (template/templates.ts) są kluczowane tą listą.
-// Nowy template = nowy identyfikator + podbicie CV_SCHEMA_VERSION z pustą migracją (ADR 0002).
+// Identyfikatory szablonów (zob. „Template” w GLOSSARY.md). Definicje szablonów (template/templates.ts) są kluczowane tą listą.
+// Nowy szablon (jedyne miejsce z tą listą kroków):
+// 1. identyfikator tutaj,
+// 2. definicja szablonu i wpis w `templates` (template/templates.ts),
+// 3. nazwa w `editor.templateNames` w słownikach interfejsu (shared/i18n),
+// 4. podbicie CV_SCHEMA_VERSION z pustą migracją w migrations.ts (ADR 0002).
 export const cvTemplateIds = ['classic'] as const
 export type CvTemplateId = (typeof cvTemplateIds)[number]
 
@@ -69,7 +73,7 @@ export const cvDocumentSchema = z.object({
   settings: z.object({
     accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
     font: z.enum(['lato', 'source-sans-3', 'arimo']),
-    // Template, którym CV jest renderowane. Nieznany template = niepoprawny plik (bez cichego zastępowania, ADR 0002).
+    // Szablon, którym CV jest renderowane. Nieznany szablon = niepoprawny plik (bez cichego zastępowania, ADR 0002).
     template: z.enum(cvTemplateIds)
   }),
   header: z.object({
