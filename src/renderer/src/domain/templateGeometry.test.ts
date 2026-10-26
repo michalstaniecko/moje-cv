@@ -1,28 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { paginate } from './paginate'
 import { pageMetricsPx, PX_PER_MM, type TemplateGeometry } from './templateGeometry'
-
-const testGeometry: TemplateGeometry = {
-  pageMarginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
-  blockSpacingMm: {
-    afterHeader: 6,
-    beforeSectionTitle: 6,
-    afterSectionTitle: 3,
-    betweenBullets: 0.5,
-    afterExperienceEntryWithoutBullets: 2,
-    afterExperienceItem: 5,
-    afterEducationItem: 2,
-    afterEducationSection: 6,
-    betweenListItems: 0.5,
-    afterListSection: 4
-  },
-  consentGapMm: 6
-}
-
-const withMargins = (pageMarginsMm: TemplateGeometry['pageMarginsMm']): TemplateGeometry => ({
-  ...testGeometry,
-  pageMarginsMm
-})
+import { testGeometry, withMargins } from './testGeometry'
 
 describe('template geometry', () => {
   it('derives the content area of an A4 page from the page margins', () => {

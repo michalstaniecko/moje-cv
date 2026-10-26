@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { generateBlocks } from './blocks'
 import { sampleCvs } from './sampleCv'
-import type { BlockSpacingMm } from './templateGeometry'
+import { withSpacing } from './testGeometry'
 
-const spacing: BlockSpacingMm = {
+// Odstępy sprawdzane niżej (reszta z geometrii testowej).
+const spacing = withSpacing({
   afterHeader: 10,
   beforeSectionTitle: 12,
   afterSectionTitle: 3,
   betweenBullets: 1,
-  afterExperienceEntryWithoutBullets: 2,
   afterExperienceItem: 8,
   afterEducationItem: 2,
   afterEducationSection: 7,
   betweenListItems: 0.5,
   afterListSection: 4
-}
+})
 
 const spaceAfter = (blocks: ReturnType<typeof generateBlocks>, id: string) =>
   blocks.find((block) => block.id === id)?.spaceAfterMm
