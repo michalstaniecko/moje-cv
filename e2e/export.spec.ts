@@ -727,7 +727,7 @@ test('picks the Template next to the colour and font from a live thumbnail of th
 
   // Wybór w sekcji wyglądu, za fontem, dostępny z klawiatury; przykładowe CV ma „Klasyczny”.
   const picker = window.getByRole('radiogroup', { name: 'Template' })
-  await expect(picker.getByRole('radio')).toHaveCount(2)
+  await expect(picker.getByRole('radio')).toHaveCount(3)
   const classic = picker.getByRole('radio', { name: 'Classic' })
   await expect(classic).toBeChecked()
   await window.getByLabel('Font').focus()
@@ -845,6 +845,70 @@ test('switches the CV to the Modern template and back: the preview and PDF follo
   await expect(window.getByLabel('Font')).toHaveValue('arimo')
   await expect(education.getByLabel('New page before this section')).toBeChecked()
   await expect(firstBlocks.locator('.cv-section-title')).toHaveText(['Education'])
+  await expect(preview.locator('.cv-page')).toHaveCount(classicPageCount)
+  const classicAgainPdf = await exportPdf('classic-again.pdf')
+  expect(classicAgainPdf.pages).toEqual(classicPdf.pages)
+})
+
+test('switches the CV to the Bold template and back: text on the accent follows its lightness, the PDF has the same content, and nothing else changes', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  await expect(preview.locator('.cv-page').first()).toBeVisible()
+  const exportPdf = async (fileName: string) => {
+    const pdfPath = join(outputDir, fileName)
+    await stubSaveDialog(pdfPath)
+    await window.getByRole('button', { name: 'Export to PDF' }).click()
+    await expect(window.getByText(`Saved PDF: ${fileName}`)).toBeVisible()
+    return readPdf(await readFile(pdfPath))
+  }
+
+  // Jasny akcent, font i ręczny podział strony – mają przetrwać zmianę szablonu.
+  await window.getByLabel('Accent color').fill('#e9b949')
+  await window.getByLabel('Font').selectOption('arimo')
+  const education = window.getByRole('region', { name: 'Education', exact: true })
+  await education.getByLabel('New page before this section').check()
+  const firstBlocks = preview.locator('.cv-page-content > .cv-block:first-child')
+  await expect(firstBlocks.locator('.cv-section-title')).toHaveText(['Education'])
+  const classicPageCount = await preview.locator('.cv-page').count()
+  const classicPdf = await exportPdf('classic.pdf')
+
+  const picker = window.getByRole('radiogroup', { name: 'Template' })
+  const bold = picker.getByRole('radio', { name: 'Bold' })
+  const option = (name: string) => picker.locator('label', { has: window.getByRole('radio', { name }) })
+  await expect(option('Bold').locator('.cv.cv-template-bold .cv-page .cv-name')).toHaveText('Jane Example')
+  await option('Bold').click()
+  await expect(bold).toBeChecked()
+  await expect(preview.locator('.cv.cv-template-bold')).toHaveCount(1)
+  await expect(firstBlocks.locator('.cv-section-title')).toHaveText(['Education'])
+  const pageCount = await preview.locator('.cv-page').count()
+  expect(pageCount).toBeGreaterThan(1)
+  await expect(preview.locator('.cv-page .cv-page-footer')).toHaveText(
+    Array.from({ length: pageCount }, (_, index) => `Jane Example${index + 1} / ${pageCount}`)
+  )
+  // Na jasnym akcencie tekst na pasie i w pigułkach jest czarny, na ciemnym – biały.
+  const name = preview.locator('.cv-page .cv-name')
+  await expect(name).toHaveCSS('color', 'rgb(0, 0, 0)')
+  await expect(preview.locator('.cv-page .cv-section-title').first()).toHaveCSS('color', 'rgb(0, 0, 0)')
+  await expect(name).toHaveCSS('font-family', /^"?Arimo"?,/)
+  await window.getByLabel('Accent color').fill('#1a6e72')
+  await expect(name).toHaveCSS('color', 'rgb(255, 255, 255)')
+  await window.getByLabel('Accent color').fill('#e9b949')
+  await expect(window.getByText('Changes saved')).toBeVisible()
+
+  const boldPdf = await exportPdf('bold.pdf')
+  expect(boldPdf.pages).toHaveLength(pageCount)
+  const text = boldPdf.pages.join(' ').toLowerCase()
+  for (const content of ['Jane Example', 'Senior Procurement Specialist', 'Driving licence (category B)', 'English – native']) {
+    expect(text).toContain(content.toLowerCase())
+  }
+  expect(boldPdf.embeddedFonts.some((name) => name.includes('Arimo'))).toBe(true)
+
+  // Powrót do „Klasycznego” bez strat: ten sam podgląd i ten sam PDF co przed zmianą szablonu.
+  await option('Classic').click()
+  await expect(preview.locator('.cv.cv-template-classic')).toHaveCount(1)
+  await expect(window.getByLabel('Accent color')).toHaveValue('#e9b949')
+  await expect(window.getByLabel('Font')).toHaveValue('arimo')
+  await expect(education.getByLabel('New page before this section')).toBeChecked()
   await expect(preview.locator('.cv-page')).toHaveCount(classicPageCount)
   const classicAgainPdf = await exportPdf('classic-again.pdf')
   expect(classicAgainPdf.pages).toEqual(classicPdf.pages)
@@ -1439,7 +1503,7 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV – Talent Partners.json')
   const exported = JSON.parse(await readFile(jsonPath, 'utf8'))
   expect(exported).toMatchObject({
-    schemaVersion: 4,
+    schemaVersion: 5,
     name: 'CV – Talent Partners',
     settings: { template: 'classic' },
     header: { fullName: 'Jane Example' }
