@@ -1,6 +1,7 @@
 /* Wspólna struktura dokumentu dla wszystkich szablonów: strony A4, kontener pomiarowy, bloki, klauzula
-   na dole ostatniej strony. Wymiary obszaru treści przychodzą z geometrii szablonu jako zmienne CSS
-   ustawiane przez CvPages (--cv-margin-*, --cv-content-width, --cv-content-height). */
+   na dole ostatniej strony. Stopkę strony (jeśli szablon ją ma) szablon pozycjonuje w marginesie
+   strony. Wymiary obszaru treści przychodzą z geometrii szablonu jako zmienne CSS ustawiane
+   przez CvPages (--cv-margin-*, --cv-content-width, --cv-content-height). */
 .cv {
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
@@ -13,6 +14,7 @@
 }
 
 .cv-page {
+  position: relative;
   width: 210mm;
   height: 297mm;
   padding: var(--cv-margin-top) var(--cv-margin-right) var(--cv-margin-bottom) var(--cv-margin-left);

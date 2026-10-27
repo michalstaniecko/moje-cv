@@ -4,16 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { generateBlocks } from '../../domain/blocks'
 import { sampleCvs } from '../../domain/sampleCv'
 import { pageMetricsPx, PX_PER_MM } from '../../domain/templateGeometry'
+import { selectorsOf } from '../testCss'
 import { classicTemplate } from '.'
-
-// Selektory wszystkich reguł arkusza (bez nagłówków @media itp.).
-function selectorsOf(css: string): string[] {
-  const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
-  return [...withoutComments.matchAll(/([^{}]+)\{/g)]
-    .map((match) => match[1]!.trim())
-    .filter((prelude) => !prelude.startsWith('@'))
-    .flatMap((prelude) => prelude.split(',').map((selector) => selector.trim()))
-}
 
 describe('Classic template', () => {
   it('has a 182 × 275 mm content area and a 6 mm consent gap', () => {
@@ -24,7 +16,7 @@ describe('Classic template', () => {
   })
 
   it('spaces the sample CV blocks as the brief says', () => {
-    const blocks = generateBlocks(sampleCvs.en, classicTemplate.geometry.blockSpacingMm)
+    const blocks = generateBlocks(sampleCvs.en, classicTemplate.geometry)
     expect(blocks.map((block) => [block.id, block.spaceAfterMm])).toEqual([
       ['header', 6],
       ['experience:title', 3],

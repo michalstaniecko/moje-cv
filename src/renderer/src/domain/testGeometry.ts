@@ -16,6 +16,7 @@ export const testGeometry: TemplateGeometry = {
     betweenListItems: 0.5,
     afterListSection: 4
   },
+  listSectionLayout: { title: 'beside', columns: 1 },
   consentGapMm: 6
 }
 

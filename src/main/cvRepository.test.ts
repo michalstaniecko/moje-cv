@@ -209,11 +209,12 @@ describe('duplicate', () => {
   })
 
   test('the copy has the template of the original', async () => {
-    await repository.save(sampleCv)
+    const modern = cv({ settings: { ...sampleCv.settings, template: 'modern' } })
+    await repository.save(modern)
 
-    const copy = await repository.duplicate(sampleCv.id, pl.defaultContent)
+    const copy = await repository.duplicate(modern.id, pl.defaultContent)
 
-    expect(copy.settings).toEqual(sampleCv.settings)
+    expect(copy.settings).toEqual(modern.settings)
     expect(await repository.get(copy.id)).toEqual(copy)
   })
 })
@@ -430,7 +431,7 @@ describe('damaged files', () => {
       ...sampleCv,
       schemaVersion: CV_SCHEMA_VERSION,
       id: 'broken',
-      settings: { ...sampleCv.settings, template: 'modern' }
+      settings: { ...sampleCv.settings, template: 'futuristic' }
     })
   }
 
@@ -509,13 +510,14 @@ describe('export', () => {
   })
 
   test('the template travels with the CV: it is in the file and comes back on import', async () => {
-    await repository.save(sampleCv)
+    await repository.save(cv({ settings: { ...sampleCv.settings, template: 'modern' } }))
 
     const { content } = await repository.exportJson(sampleCv.id)
     const imported = await repository.importJson(content)
 
-    expect(JSON.parse(content).settings.template).toBe('classic')
-    expect(imported.settings.template).toBe('classic')
+    expect(JSON.parse(content).settings.template).toBe('modern')
+    expect(imported.settings.template).toBe('modern')
+    expect(await repository.get(imported.id)).toEqual(imported)
   })
 })
 
@@ -577,7 +579,7 @@ describe('import', () => {
     'is JSON but not a CV': ['{ "hello": "world" }', 'not-a-cv'],
     'is a CV with invalid content': [JSON.stringify({ ...sampleCv, settings: { ...sampleCv.settings, font: 'comic-sans' } }), 'not-a-cv'],
     'names a Template this version does not know': [
-      JSON.stringify({ ...sampleCv, settings: { ...sampleCv.settings, template: 'modern' } }),
+      JSON.stringify({ ...sampleCv, settings: { ...sampleCv.settings, template: 'futuristic' } }),
       'not-a-cv'
     ],
     'comes from a newer version of the app': [JSON.stringify({ ...sampleCv, schemaVersion: CV_SCHEMA_VERSION + 1 }), 'newer-version'],
@@ -612,7 +614,8 @@ describe('schema migrations', () => {
   }
   const { fullName, ...headerWithoutName } = sampleCv.header
   const { template: _template, ...settingsWithoutTemplate } = sampleCv.settings
-  const version2 = { ...sampleCv, schemaVersion: 2, settings: settingsWithoutTemplate }
+  const version3 = { ...sampleCv, schemaVersion: 3 }
+  const version2 = { ...version3, schemaVersion: 2, settings: settingsWithoutTemplate }
   const { tags: _tags, ...version1 } = { ...version2, schemaVersion: 1 }
   const version0 = { ...version1, schemaVersion: 0, header: { ...headerWithoutName, name: fullName } }
   const versionMinus1 = { ...version1, schemaVersion: -1, owner: fullName, header: headerWithoutName }
@@ -647,9 +650,25 @@ describe('schema migrations', () => {
 
     const stored = await repository.get(sampleCv.id)
 
-    expect(stored.schemaVersion).toBe(3)
+    expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
     expect(stored.settings).toEqual({ ...settingsWithoutTemplate, template: 'classic' })
     expect({ ...stored, schemaVersion: 2, settings: settingsWithoutTemplate }).toEqual(version2)
+  })
+
+  test('a CV saved before the Modern template existed (version 3) opens unchanged, with its template', async () => {
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, `${sampleCv.id}.json`), JSON.stringify(version3))
+
+    const stored = await repository.get(sampleCv.id)
+
+    expect(stored.schemaVersion).toBe(4)
+    expect({ ...stored, schemaVersion: 3 }).toEqual(version3)
+  })
+
+  test('a file from the version after the Modern template (version 5) comes from a newer version of the app', async () => {
+    const error = await repository.importJson(JSON.stringify({ ...sampleCv, schemaVersion: 5 })).catch((error: unknown) => error)
+
+    expect((error as InvalidCvFileError).reason).toBe('newer-version')
   })
 
   test('migrations are applied one after another, from the file version up to the current one', async () => {

@@ -1,5 +1,5 @@
 // Geometria dokumentu w szablonie (zob. „Template” w GLOSSARY.md): marginesy strony, odstępy między
-// blokami i odstęp klauzuli. Wartości ma wyłącznie definicja szablonu – reszta kodu je od niej bierze.
+// blokami, układ sekcji listowych i odstęp klauzuli. Wartości ma wyłącznie definicja szablonu – reszta kodu je od niej bierze.
 
 // Strona A4 w milimetrach i przelicznik na piksele CSS (96 px na cal).
 export const A4_MM = { width: 210, height: 297 } as const
@@ -27,9 +27,14 @@ export type BlockSpacingMm = {
   afterListSection: number
 }
 
+// Układ sekcji listowych: tytuł obok listy (w pierwszym wierszu) albo nad listą (osobny blok tytułu sekcji)
+// i liczba elementów w wierszu listy.
+export type ListSectionLayout = { title: 'beside' | 'above'; columns: 1 | 2 }
+
 export type TemplateGeometry = {
   pageMarginsMm: PageMarginsMm
   blockSpacingMm: BlockSpacingMm
+  listSectionLayout: ListSectionLayout
   // Minimalny odstęp klauzuli zgody od treści na ostatniej stronie.
   consentGapMm: number
 }

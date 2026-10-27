@@ -52,14 +52,15 @@ export type Section = z.infer<typeof sectionSchema>
 // Identyfikatory szablonów (zob. „Template” w GLOSSARY.md). Definicje szablonów (template/templates.ts) są kluczowane tą listą.
 // Nowy szablon (jedyne miejsce z tą listą kroków):
 // 1. identyfikator tutaj,
-// 2. definicja szablonu i wpis w `templates` (template/templates.ts),
+// 2. definicja szablonu i wpis w `templates` (template/templates.ts) – geometria z układem sekcji listowych
+//    (tytuł obok / nad listą, 1 / 2 kolumny), nadpisania bloków i opcjonalna stopka strony,
 // 3. nazwa w `editor.templateNames` w słownikach interfejsu (shared/i18n),
 // 4. podbicie CV_SCHEMA_VERSION z pustą migracją w migrations.ts (ADR 0002).
-export const cvTemplateIds = ['classic'] as const
+export const cvTemplateIds = ['classic', 'modern'] as const
 export type CvTemplateId = (typeof cvTemplateIds)[number]
 
 // Bieżąca wersja schematu CV. Zmiana schematu = podbicie wersji i migracja ze starej (patrz migrations.ts).
-export const CV_SCHEMA_VERSION = 3
+export const CV_SCHEMA_VERSION = 4
 
 export const cvDocumentSchema = z.object({
   schemaVersion: z.literal(CV_SCHEMA_VERSION),

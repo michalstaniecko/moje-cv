@@ -11,7 +11,9 @@ export const cvMigrations: CvMigrations = {
   // 1 → 2: CV dostaje listę tagów – istniejące CV startują bez tagów.
   1: (document) => ({ ...document, tags: [] }),
   // 2 → 3: CV zapamiętuje swój szablon – istniejące CV dostają „Klasyczny”, czyli wygląd sprzed szablonów.
-  2: (document) => ({ ...document, settings: { ...(document.settings as object), template: 'classic' } })
+  2: (document) => ({ ...document, settings: { ...(document.settings as object), template: 'classic' } }),
+  // 3 → 4: nowy szablon „Nowoczesny” – treść bez zmian; starsza wersja aplikacji zgłosi „plik z nowszej wersji” (ADR 0002).
+  3: (document) => document
 }
 
 // Dokument z nowszej wersji aplikacji – tej wersji nie da się go odczytać.

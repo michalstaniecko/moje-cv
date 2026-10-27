@@ -1,0 +1,264 @@
+/* Arkusz szablonu „Nowoczesny” – parametry z projektu Claude Design (issue #37).
+   Każda reguła jest zawężona do .cv-template-modern, żeby nie działała w dokumentach innych szablonów.
+   Geometria (marginesy, odstępy) nie należy do arkusza – jest w definicji szablonu (index.tsx).
+   Akcent tylko jako znak (pasek pod imieniem, znacznik tytułu sekcji, kropki osi czasu) – nigdy kolor tekstu
+   ani tło, więc działa każdy kolor, także jasny. Bez kursywy. */
+.cv-template-modern {
+  --text: #1f1f1f;
+  --muted: #444;
+  --label: #5f5f5f;
+  --rule: #dedede;
+  --timeline: #d0d0d0;
+  /* Wcięcie treści osi czasu – także wierszy list, żeby stały w jednej linii z punktami. */
+  --timeline-indent: 5.8mm;
+  --column-gap: 6.4mm;
+  color: var(--text);
+  font-size: 10pt;
+  line-height: 1.35;
+}
+
+/* ---------- Nagłówek ---------- */
+.cv-template-modern .cv-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--column-gap);
+}
+
+.cv-template-modern .cv-header-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.cv-template-modern .cv-name {
+  margin: 0;
+  font-size: 26pt;
+  line-height: 1.1;
+  font-weight: bold;
+  letter-spacing: -0.01em;
+}
+
+.cv-template-modern .cv-name-bar {
+  width: 10.6mm;
+  height: 0.8mm;
+  margin: 3.2mm 0 4.2mm;
+  background: var(--accent);
+}
+
+.cv-template-modern .cv-name-bar:last-child {
+  margin-bottom: 0;
+}
+
+.cv-template-modern .cv-contact {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--column-gap);
+  row-gap: 2.1mm;
+  overflow-wrap: anywhere;
+}
+
+.cv-template-modern .cv-contact-label {
+  font-size: 8pt;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+
+.cv-template-modern .cv-summary {
+  margin: 4.2mm 0 0;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.cv-template-modern .cv-summary:first-child {
+  margin-top: 0;
+}
+
+/* Wysokość wynika z proporcji kadru, więc pomiar nagłówka nie czeka na wczytanie zdjęcia. */
+.cv-template-modern .cv-photo {
+  display: block;
+  flex-shrink: 0;
+  width: 32mm;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 1mm;
+}
+
+/* ---------- Tytuł sekcji ---------- */
+/* Znacznik w kolorze akcentu i linia do prawej krawędzi – pseudo-elementy na wspólnym markupie. */
+.cv-template-modern .cv-section-title {
+  display: flex;
+  align-items: center;
+  gap: 2.6mm;
+  margin: 0;
+  font-size: 10pt;
+  line-height: 1.3;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cv-template-modern .cv-section-title::before {
+  content: '';
+  flex-shrink: 0;
+  width: 3.7mm;
+  height: 0.8mm;
+  background: var(--accent);
+}
+
+.cv-template-modern .cv-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+/* ---------- Oś czasu (doświadczenie i wykształcenie) ---------- */
+/* Każdy blok wpisów rysuje swój odcinek linii na pełną wysokość bloku razem z odstępem po nim, więc linia
+   jest ciągła między blokami i przez podział strony. Zaczyna się przy kropce pierwszego bloku sekcji,
+   kończy przy pierwszej linii ostatniego; sekcja z jednym blokiem ma samą kropkę. */
+.cv-template-modern .cv-block[data-section-position] {
+  position: relative;
+  padding-left: var(--timeline-indent);
+}
+
+.cv-template-modern .cv-block[data-section-position]::before {
+  content: '';
+  position: absolute;
+  left: calc(1.2mm - 0.5px);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--timeline);
+}
+
+.cv-template-modern .cv-block[data-section-position='first']::before {
+  top: 2.7mm;
+}
+
+.cv-template-modern .cv-block[data-block='educationEntry'][data-section-position='first']::before {
+  top: 2.45mm;
+}
+
+.cv-template-modern .cv-block[data-section-position='last']::before {
+  bottom: auto;
+  height: 2.6mm;
+}
+
+.cv-template-modern .cv-block[data-section-position='only']::before {
+  display: none;
+}
+
+.cv-template-modern .cv-dot {
+  position: absolute;
+  left: 0;
+  top: 1.5mm;
+  width: 2.4mm;
+  height: 2.4mm;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.cv-template-modern .cv-block[data-block='educationEntry'] .cv-dot {
+  top: 1.25mm;
+}
+
+/* ---------- Wpisy ---------- */
+.cv-template-modern .cv-role-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4.2mm;
+}
+
+.cv-template-modern .cv-role {
+  font-size: 11.5pt;
+  line-height: 1.3;
+  font-weight: bold;
+}
+
+.cv-template-modern .cv-date {
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.cv-template-modern .cv-company {
+  color: var(--muted);
+  margin: 0.3mm 0 1.6mm;
+}
+
+.cv-template-modern .cv-company:last-child {
+  margin-bottom: 0;
+}
+
+.cv-template-modern .cv-education-level {
+  font-weight: bold;
+}
+
+/* ---------- Punkty i listy ---------- */
+/* Znacznik-kreska rysowany w CSS, bez znaków z fontu. */
+.cv-template-modern .cv-bullets,
+.cv-template-modern .cv-list-row {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cv-template-modern .cv-bullets li,
+.cv-template-modern .cv-list-row li {
+  position: relative;
+  padding-left: 3.7mm;
+}
+
+.cv-template-modern .cv-bullets li::before,
+.cv-template-modern .cv-list-row li::before {
+  content: '';
+  position: absolute;
+  left: 0.3mm;
+  top: 0.66em;
+  width: 1.6mm;
+  height: 0.4mm;
+  background: var(--text);
+}
+
+/* Wiersz listy: elementy w dwóch kolumnach, wcięte jak treść osi czasu. */
+.cv-template-modern .cv-list-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--column-gap);
+  padding-left: var(--timeline-indent);
+}
+
+/* ---------- Klauzula ---------- */
+.cv-template-modern .cv-consent {
+  margin: 0;
+  padding-top: 2.6mm;
+  border-top: 1px solid var(--rule);
+  font-size: 8pt;
+  line-height: 1.3;
+  color: var(--muted);
+  white-space: pre-line;
+}
+
+/* ---------- Stopka strony ---------- */
+/* W dolnym marginesie strony, poza obszarem treści – nie wpływa na pomiar ani podział stron. */
+.cv-template-modern .cv-page-footer {
+  position: absolute;
+  left: var(--cv-margin-left);
+  right: var(--cv-margin-right);
+  bottom: 4.5mm;
+  display: flex;
+  justify-content: space-between;
+  font-size: 8pt;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+
+.cv-template-modern .cv-page-number {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}

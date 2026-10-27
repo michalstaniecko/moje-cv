@@ -19,6 +19,7 @@ export const classicTemplate = {
       betweenListItems: 0.6,
       afterListSection: 4
     },
+    listSectionLayout: { title: 'beside', columns: 1 },
     consentGapMm: 6
   },
   blockViews: {}

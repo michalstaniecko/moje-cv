@@ -140,7 +140,7 @@ export const en = {
     accentColor: 'Accent color',
     font: 'Font',
     template: 'Template',
-    templateNames: { classic: 'Classic' },
+    templateNames: { classic: 'Classic', modern: 'Modern' },
     header: 'Header',
     fullName: 'Full name',
     contact: 'Contact',

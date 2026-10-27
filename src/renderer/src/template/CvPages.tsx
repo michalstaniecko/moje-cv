@@ -73,7 +73,8 @@ function useReadySignal(
 
 // Strony A4 z treścią CV w danym szablonie. Ten sam komponent służy do podglądu i do eksportu PDF.
 // `template` – domyślnie szablon zapisany w CV; podany jawnie zastępuje go (np. miniatura innego szablonu).
-// `firstPageOnly` – renderuje tylko pierwszą stronę (miniatura); podział stron jest liczony jak dla całego dokumentu.
+// `firstPageOnly` – renderuje tylko pierwszą stronę (miniatura); podział stron i liczba stron w stopce są liczone
+// jak dla całego dokumentu.
 // `onReady` – wywoływane, gdy fonty są załadowane, podział policzony, a zdjęcie wczytane.
 // `onLayout` – wywoływane po każdym podziale stron; `oversizedMessage` wyróżnia bloki wyższe niż strona i podpisuje je
 // tym komunikatem (tylko podgląd – okno wydruku nie zna języka interfejsu i niczego nie wyróżnia).
@@ -92,8 +93,8 @@ export function CvPages({
   onLayout?: (layout: PaginateResult) => void
   oversizedMessage?: string
 }) {
-  const { geometry, blockViews: views } = template
-  const blocks = useMemo(() => generateBlocks(document, geometry.blockSpacingMm), [document, geometry])
+  const { geometry, blockViews: views, PageFooter } = template
+  const blocks = useMemo(() => generateBlocks(document, geometry), [document, geometry])
   const consentText = document.consent.enabled && document.consent.text.trim() ? document.consent.text : null
   const { layout, measureRef, consentElement } = usePagination(blocks, document.settings.font, consentText, geometry)
   const blocksById = useMemo(() => new Map(blocks.map((block) => [block.id, block])), [blocks])
@@ -153,6 +154,7 @@ export function CvPages({
                   <p className="cv-consent">{consentText}</p>
                 )}
               </div>
+              {PageFooter && <PageFooter fullName={document.header.fullName} pageNumber={index + 1} pageCount={pageCount} />}
             </section>
           ))}
         </div>

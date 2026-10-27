@@ -1,6 +1,10 @@
 import { formatDateRange } from './dates'
 import type { CvDocument, EducationItem, ExperienceItem, Section } from './schema'
-import type { BlockSpacingMm } from './templateGeometry'
+import type { BlockSpacingMm, TemplateGeometry } from './templateGeometry'
+
+// Położenie bloku wpisu wśród bloków wpisów swojej sekcji (bez tytułu sekcji) – niezależne od podziału na strony.
+// Szablon może z niego rysować dekoracje ciągnące się przez całą sekcję (np. oś czasu).
+export type SectionPosition = { first: boolean; last: boolean }
 
 type BlockContent =
   | {
@@ -12,12 +16,20 @@ type BlockContent =
     }
   | { kind: 'sectionTitle'; title: string }
   // Data + stanowisko + firma + pierwszy punkt wpisu.
-  | { kind: 'experienceEntry'; dates: string; role: string; companyLine: string; firstBullet: string | null }
-  | { kind: 'experienceBullet'; text: string }
-  | { kind: 'educationEntry'; dates: string; text: string }
-  // Tytuł sekcji listy + pierwszy element (układ dwukolumnowy).
-  | { kind: 'listFirst'; title: string; text: string }
-  | { kind: 'listItem'; text: string }
+  | {
+      kind: 'experienceEntry'
+      dates: string
+      role: string
+      companyLine: string
+      firstBullet: string | null
+      sectionPosition: SectionPosition
+    }
+  | { kind: 'experienceBullet'; text: string; sectionPosition: SectionPosition }
+  // Poziom osobno od reszty linii (kierunek, uczelnia), żeby szablon mógł go wyróżnić.
+  | { kind: 'educationEntry'; dates: string; level: string; details: string; sectionPosition: SectionPosition }
+  // Wiersz sekcji listy: kolejne elementy (tyle, ile kolumn w układzie szablonu) i – w pierwszym wierszu
+  // przy tytule obok listy – tytuł sekcji (w pozostałych wierszach pusty).
+  | { kind: 'listRow'; title: string; items: { id: string; text: string }[] }
 
 // Niepodzielny fragment dokumentu. Odstęp do następnego bloku (spaceAfterMm) jest częścią bloku
 // (padding), żeby wysokości bloków sumowały się bez zapadania marginesów.
@@ -36,6 +48,9 @@ type DraftBlock = BlockContent & {
   marginTopMm?: number
   marginBottomMm?: number
 }
+
+// Pozycja w sekcji jest ustalana dopiero dla gotowej listy bloków wpisów (markSectionPositions).
+const unplaced = (): SectionPosition => ({ first: false, last: false })
 
 const isFilled = (text: string): boolean => text.trim() !== ''
 const joinFilled = (parts: string[], separator: string): string => parts.filter(isFilled).join(separator)
@@ -85,6 +100,7 @@ function experienceItemBlocks(item: ExperienceItem, spacing: BlockSpacingMm): Dr
     role: item.role,
     companyLine,
     firstBullet: first?.text ?? null,
+    sectionPosition: unplaced(),
     breakBefore: item.pageBreakBefore,
     marginBottomMm: first ? spacing.betweenBullets : spacing.afterExperienceEntryWithoutBullets
   }
@@ -95,6 +111,7 @@ function experienceItemBlocks(item: ExperienceItem, spacing: BlockSpacingMm): Dr
         kind: 'experienceBullet',
         id: `${item.id}:${bullet.id}`,
         text: bullet.text,
+        sectionPosition: unplaced(),
         marginBottomMm: spacing.betweenBullets
       })
     )
@@ -105,47 +122,73 @@ function experienceItemBlocks(item: ExperienceItem, spacing: BlockSpacingMm): Dr
 
 function educationItemBlocks(item: EducationItem, spacing: BlockSpacingMm): DraftBlock[] {
   const dates = formatDateRange(item.start, item.end)
-  const text = joinFilled([item.level, item.field, item.institution], ', ')
-  if (!dates && !text) return []
+  const level = isFilled(item.level) ? item.level : ''
+  const details = joinFilled([item.field, item.institution], ', ')
+  if (!dates && !level && !details) return []
   return [
     {
       kind: 'educationEntry',
       id: item.id,
       dates,
-      text,
+      level,
+      details,
+      sectionPosition: unplaced(),
       breakBefore: item.pageBreakBefore,
       marginBottomMm: spacing.afterEducationItem
     }
   ]
 }
 
-function sectionBlocks(section: Section, spacing: BlockSpacingMm): DraftBlock[] {
+function markSectionPositions(entries: DraftBlock[]): DraftBlock[] {
+  entries.forEach((block, index) => {
+    if ('sectionPosition' in block) block.sectionPosition = { first: index === 0, last: index === entries.length - 1 }
+  })
+  return entries
+}
+
+// Geometria szablonu potrzebna do generowania bloków.
+export type BlockGeometry = Pick<TemplateGeometry, 'blockSpacingMm' | 'listSectionLayout'>
+
+function listSectionBlocks(section: Extract<Section, { type: 'list' }>, geometry: BlockGeometry): DraftBlock[] {
+  const { blockSpacingMm: spacing, listSectionLayout: layout } = geometry
+  const items = section.items.filter((item) => isFilled(item.text)).map(({ id, text }) => ({ id, text }))
+  if (items.length === 0) return []
+
+  const rows: DraftBlock[] = []
+  for (let index = 0; index < items.length; index += layout.columns) {
+    const rowItems = items.slice(index, index + layout.columns)
+    rows.push({
+      kind: 'listRow',
+      id: `${section.id}:${rowItems[0]!.id}`,
+      title: layout.title === 'beside' && index === 0 ? section.title : '',
+      items: rowItems,
+      marginBottomMm: spacing.betweenListItems
+    })
+  }
+  rows[rows.length - 1]!.marginBottomMm! += spacing.afterListSection
+  return layout.title === 'above' ? [...titleBlocks(section, spacing), ...rows] : rows
+}
+
+function sectionBlocks(section: Section, geometry: BlockGeometry): DraftBlock[] {
+  const spacing = geometry.blockSpacingMm
   if (section.hidden) return []
 
   let blocks: DraftBlock[]
   switch (section.type) {
     case 'experience': {
-      const items = section.items.flatMap((item) => experienceItemBlocks(item, spacing))
+      const items = markSectionPositions(section.items.flatMap((item) => experienceItemBlocks(item, spacing)))
       blocks = items.length > 0 ? [...titleBlocks(section, spacing), ...items] : []
       break
     }
     case 'education': {
-      const items = section.items.flatMap((item) => educationItemBlocks(item, spacing))
+      const items = markSectionPositions(section.items.flatMap((item) => educationItemBlocks(item, spacing)))
       if (items.length > 0) items[items.length - 1]!.marginBottomMm = spacing.afterEducationSection
       blocks = items.length > 0 ? [...titleBlocks(section, spacing), ...items] : []
       break
     }
-    case 'list': {
-      const [first, ...rest] = section.items.filter((item) => isFilled(item.text))
-      if (!first) return []
-      blocks = [
-        { kind: 'listFirst', id: `${section.id}:${first.id}`, title: section.title, text: first.text },
-        ...rest.map((item): DraftBlock => ({ kind: 'listItem', id: `${section.id}:${item.id}`, text: item.text }))
-      ]
-      for (const block of blocks) block.marginBottomMm = spacing.betweenListItems
-      blocks[blocks.length - 1]!.marginBottomMm! += spacing.afterListSection
+    case 'list':
+      blocks = listSectionBlocks(section, geometry)
       break
-    }
   }
 
   if (blocks[0] && section.pageBreakBefore) blocks[0].breakBefore = true
@@ -153,11 +196,11 @@ function sectionBlocks(section: Section, spacing: BlockSpacingMm): DraftBlock[] 
 }
 
 // Zamienia dokument na płaską listę bloków do podziału na strony. Puste pola, puste sekcje
-// i sekcje ukryte są pomijane. Odstępy między blokami pochodzą z geometrii szablonu.
-export function generateBlocks(document: CvDocument, spacing: BlockSpacingMm): CvBlock[] {
+// i sekcje ukryte są pomijane. Odstępy między blokami i układ sekcji listowych pochodzą z geometrii szablonu.
+export function generateBlocks(document: CvDocument, geometry: BlockGeometry): CvBlock[] {
   const drafts = [
-    ...headerBlocks(document.header, spacing),
-    ...document.sections.flatMap((section) => sectionBlocks(section, spacing))
+    ...headerBlocks(document.header, geometry.blockSpacingMm),
+    ...document.sections.flatMap((section) => sectionBlocks(section, geometry))
   ]
   return drafts.map(({ marginTopMm: _top, marginBottomMm, ...block }, index) => {
     const next = drafts[index + 1]
