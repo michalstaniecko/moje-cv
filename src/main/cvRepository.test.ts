@@ -672,7 +672,7 @@ describe('schema migrations', () => {
 
     const stored = await repository.get(sampleCv.id)
 
-    expect(stored.schemaVersion).toBe(5)
+    expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
     expect({ ...stored, schemaVersion: 4 }).toEqual(version4)
   })
 
