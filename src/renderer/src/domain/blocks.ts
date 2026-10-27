@@ -2,9 +2,11 @@ import { formatDateRange } from './dates'
 import type { CvDocument, EducationItem, ExperienceItem, Section } from './schema'
 import type { BlockSpacingMm, TemplateGeometry } from './templateGeometry'
 
-// Położenie bloku wpisu wśród bloków wpisów swojej sekcji (bez tytułu sekcji) – niezależne od podziału na strony.
-// Szablon może z niego rysować dekoracje ciągnące się przez całą sekcję (np. oś czasu).
-export type SectionPosition = { first: boolean; last: boolean }
+// Położenie bloku względem wpisów swojej sekcji (bez tytułu sekcji) – niezależne od podziału na strony.
+// Szablon może z niego rysować dekoracje ciągnące się od pierwszego do ostatniego wpisu (np. oś czasu):
+// first / last / only – początek pierwszego, ostatniego lub jedynego wpisu; middle – bloki pomiędzy nimi;
+// afterLast – punkty ostatniego (lub jedynego) wpisu, już za końcem dekoracji.
+export type SectionPosition = 'first' | 'middle' | 'last' | 'only' | 'afterLast'
 
 type BlockContent =
   | {
@@ -50,7 +52,7 @@ type DraftBlock = BlockContent & {
 }
 
 // Pozycja w sekcji jest ustalana dopiero dla gotowej listy bloków wpisów (markSectionPositions).
-const unplaced = (): SectionPosition => ({ first: false, last: false })
+const unplaced: SectionPosition = 'middle'
 
 const isFilled = (text: string): boolean => text.trim() !== ''
 const joinFilled = (parts: string[], separator: string): string => parts.filter(isFilled).join(separator)
@@ -100,7 +102,7 @@ function experienceItemBlocks(item: ExperienceItem, spacing: BlockSpacingMm): Dr
     role: item.role,
     companyLine,
     firstBullet: first?.text ?? null,
-    sectionPosition: unplaced(),
+    sectionPosition: unplaced,
     breakBefore: item.pageBreakBefore,
     marginBottomMm: first ? spacing.betweenBullets : spacing.afterExperienceEntryWithoutBullets
   }
@@ -111,7 +113,7 @@ function experienceItemBlocks(item: ExperienceItem, spacing: BlockSpacingMm): Dr
         kind: 'experienceBullet',
         id: `${item.id}:${bullet.id}`,
         text: bullet.text,
-        sectionPosition: unplaced(),
+        sectionPosition: unplaced,
         marginBottomMm: spacing.betweenBullets
       })
     )
@@ -132,17 +134,27 @@ function educationItemBlocks(item: EducationItem, spacing: BlockSpacingMm): Draf
       dates,
       level,
       details,
-      sectionPosition: unplaced(),
+      sectionPosition: unplaced,
       breakBefore: item.pageBreakBefore,
       marginBottomMm: spacing.afterEducationItem
     }
   ]
 }
 
+const isEntryStart = (block: DraftBlock): boolean => block.kind === 'experienceEntry' || block.kind === 'educationEntry'
+
 function markSectionPositions(entries: DraftBlock[]): DraftBlock[] {
-  entries.forEach((block, index) => {
-    if ('sectionPosition' in block) block.sectionPosition = { first: index === 0, last: index === entries.length - 1 }
-  })
+  const starts = entries.filter(isEntryStart)
+  const first = starts[0]
+  const last = starts.at(-1)
+  let afterLast = false
+  for (const block of entries) {
+    if (!('sectionPosition' in block)) continue
+    if (afterLast) block.sectionPosition = 'afterLast'
+    else if (block === first) block.sectionPosition = block === last ? 'only' : 'first'
+    else if (block === last) block.sectionPosition = 'last'
+    afterLast ||= block === last
+  }
   return entries
 }
 

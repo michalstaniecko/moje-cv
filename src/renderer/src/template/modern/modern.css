@@ -115,8 +115,8 @@
 
 /* ---------- Oś czasu (doświadczenie i wykształcenie) ---------- */
 /* Każdy blok wpisów rysuje swój odcinek linii na pełną wysokość bloku razem z odstępem po nim, więc linia
-   jest ciągła między blokami i przez podział strony. Zaczyna się przy kropce pierwszego bloku sekcji,
-   kończy przy pierwszej linii ostatniego; sekcja z jednym blokiem ma samą kropkę. */
+   jest ciągła między blokami i przez podział strony. Zaczyna się przy kropce pierwszego wpisu sekcji,
+   kończy przy kropce ostatniego; punkty ostatniego wpisu nie mają linii, a sekcja z jednym wpisem ma samą kropkę. */
 .cv-template-modern .cv-block[data-section-position] {
   position: relative;
   padding-left: var(--timeline-indent);
@@ -145,7 +145,8 @@
   height: 2.6mm;
 }
 
-.cv-template-modern .cv-block[data-section-position='only']::before {
+.cv-template-modern .cv-block[data-section-position='only']::before,
+.cv-template-modern .cv-block[data-section-position='afterLast']::before {
   display: none;
 }
 

@@ -108,28 +108,41 @@ describe('generateBlocks', () => {
       generateBlocks(document, geometry())
         .filter((block) => 'sectionPosition' in block)
         .map((block) => [block.id, 'sectionPosition' in block && block.sectionPosition])
-    const experience = sampleCvs.en.sections.find((section) => section.id === 'experience')!
+    const experience = sampleCvs.en.sections.find(
+      (section): section is Extract<Section, { type: 'experience' }> => section.type === 'experience'
+    )!
     const education = educationSection
 
-    it('marks the first and the last block of entries in experience and education, apart from the section title', () => {
+    it('marks the first and the last entry of experience and education, and the blocks after the last entry', () => {
       expect(positions(withSections(experience, education))).toEqual([
-        ['e1', { first: true, last: false }],
-        ...['e1:e1-b2', 'e1:e1-b3', 'e1:e1-b4', 'e1:e1-b5', 'e1:e1-b6', 'e1:e1-b7', 'e1:e1-b8', 'e2'].map((id) => [id, { first: false, last: false }]),
-        ...['e2:e2-b2', 'e2:e2-b3', 'e2:e2-b4', 'e2:e2-b5', 'e2:e2-b6', 'e2:e2-b7', 'e3'].map((id) => [id, { first: false, last: false }]),
-        ...['e3:e3-b2', 'e3:e3-b3', 'e3:e3-b4', 'e3:e3-b5', 'e4', 'e4:e4-b2', 'e4:e4-b3'].map((id) => [id, { first: false, last: false }]),
-        ['e4:e4-b4', { first: false, last: true }],
-        ['ed1', { first: true, last: false }],
-        ['ed2', { first: false, last: true }]
+        ['e1', 'first'],
+        ...['e1:e1-b2', 'e1:e1-b3', 'e1:e1-b4', 'e1:e1-b5', 'e1:e1-b6', 'e1:e1-b7', 'e1:e1-b8', 'e2'].map((id) => [id, 'middle']),
+        ...['e2:e2-b2', 'e2:e2-b3', 'e2:e2-b4', 'e2:e2-b5', 'e2:e2-b6', 'e2:e2-b7', 'e3'].map((id) => [id, 'middle']),
+        ...['e3:e3-b2', 'e3:e3-b3', 'e3:e3-b4', 'e3:e3-b5'].map((id) => [id, 'middle']),
+        // Linia kończy się przy kropce ostatniego wpisu, a nie przy jego ostatnim punkcie.
+        ['e4', 'last'],
+        ...['e4:e4-b2', 'e4:e4-b3', 'e4:e4-b4'].map((id) => [id, 'afterLast']),
+        ['ed1', 'first'],
+        ['ed2', 'last']
       ])
     })
 
-    it('marks the only block of a section as both first and last, skipping empty entries', () => {
+    it('marks the only entry of a section, skipping empty entries', () => {
       const oneEntry = {
         ...education,
         items: [education.items[0]!, { ...education.items[1]!, level: ' ', field: '', institution: '', start: null, end: null }]
       }
 
-      expect(positions(withSections(oneEntry))).toEqual([['ed1', { first: true, last: true }]])
+      expect(positions(withSections(oneEntry))).toEqual([['ed1', 'only']])
+    })
+
+    it('marks the points of an only entry as after it, so the section has just the dot', () => {
+      const oneEntry = { ...experience, items: [experience.items[3]!] }
+
+      expect(positions(withSections(oneEntry))).toEqual([
+        ['e4', 'only'],
+        ...['e4:e4-b2', 'e4:e4-b3', 'e4:e4-b4'].map((id) => [id, 'afterLast'])
+      ])
     })
   })
 

@@ -1,5 +1,5 @@
 import type { ComponentType, Ref } from 'react'
-import type { CvBlock, SectionPosition } from '../domain/blocks'
+import type { CvBlock } from '../domain/blocks'
 import type { BlockViewOverrides } from './templateDefinition'
 
 // Wspólne komponenty bloków – szablon może nadpisać dowolny rodzaj bloku (BlockViewOverrides).
@@ -69,9 +69,6 @@ function BlockContent({ block }: { block: CvBlock }) {
   }
 }
 
-const sectionPositionName = ({ first, last }: SectionPosition) =>
-  first && last ? 'only' : first ? 'first' : last ? 'last' : 'middle'
-
 export function CvBlockView({
   block,
   views = {},
@@ -91,7 +88,7 @@ export function CvBlockView({
       ref={ref}
       className={oversized ? 'cv-block cv-block--oversized' : 'cv-block'}
       data-block={block.kind}
-      data-section-position={'sectionPosition' in block ? sectionPositionName(block.sectionPosition) : undefined}
+      data-section-position={'sectionPosition' in block ? block.sectionPosition : undefined}
       style={{ paddingBottom: `${block.spaceAfterMm}mm` }}
     >
       <Content block={block} />
