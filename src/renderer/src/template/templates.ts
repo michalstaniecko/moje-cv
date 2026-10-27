@@ -1,4 +1,5 @@
 import type { CvTemplateId } from '../domain/schema'
+import { boldTemplate } from './bold'
 import { classicTemplate } from './classic'
 import { modernTemplate } from './modern'
 import type { TemplateDefinition } from './templateDefinition'
@@ -7,5 +8,6 @@ import type { TemplateDefinition } from './templateDefinition'
 // Jak dodać nowy szablon – zob. komentarz przy `cvTemplateIds` w domain/schema.ts.
 export const templates = {
   classic: classicTemplate,
-  modern: modernTemplate
+  modern: modernTemplate,
+  bold: boldTemplate
 } as const satisfies Record<CvTemplateId, TemplateDefinition>

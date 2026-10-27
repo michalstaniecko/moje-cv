@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { onAccentColor } from '../domain/accentColor'
 import { generateBlocks, type CvBlock } from '../domain/blocks'
 import { paginate, type PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
@@ -112,6 +113,7 @@ export function CvPages({
   const margins = geometry.pageMarginsMm
   const style = {
     '--accent': document.settings.accentColor,
+    '--on-accent': onAccentColor(document.settings.accentColor),
     '--cv-margin-top': `${margins.top}mm`,
     '--cv-margin-right': `${margins.right}mm`,
     '--cv-margin-bottom': `${margins.bottom}mm`,

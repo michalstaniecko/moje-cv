@@ -127,7 +127,7 @@ export const pl: Dictionary = {
     accentColor: 'Kolor akcentu',
     font: 'Font',
     template: 'Szablon',
-    templateNames: { classic: 'Klasyczny', modern: 'Nowoczesny' },
+    templateNames: { classic: 'Klasyczny', modern: 'Nowoczesny', bold: 'Wyrazisty' },
     header: 'Nagłówek',
     fullName: 'Imię i nazwisko',
     contact: 'Kontakt',

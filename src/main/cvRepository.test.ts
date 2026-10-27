@@ -208,13 +208,13 @@ describe('duplicate', () => {
     expect(await repository.get(copy.id)).toEqual(copy)
   })
 
-  test('the copy has the template of the original', async () => {
-    const modern = cv({ settings: { ...sampleCv.settings, template: 'modern' } })
-    await repository.save(modern)
+  test.each(['modern', 'bold'] as const)('the copy has the template of the original (%s)', async (template) => {
+    const original = cv({ settings: { ...sampleCv.settings, template } })
+    await repository.save(original)
 
-    const copy = await repository.duplicate(modern.id, pl.defaultContent)
+    const copy = await repository.duplicate(original.id, pl.defaultContent)
 
-    expect(copy.settings).toEqual(modern.settings)
+    expect(copy.settings).toEqual(original.settings)
     expect(await repository.get(copy.id)).toEqual(copy)
   })
 })
@@ -509,14 +509,14 @@ describe('export', () => {
     expect(await repository.get(imported.id)).toEqual(imported)
   })
 
-  test('the template travels with the CV: it is in the file and comes back on import', async () => {
-    await repository.save(cv({ settings: { ...sampleCv.settings, template: 'modern' } }))
+  test.each(['modern', 'bold'] as const)('the template travels with the CV: it is in the file and comes back on import (%s)', async (template) => {
+    await repository.save(cv({ settings: { ...sampleCv.settings, template } }))
 
     const { content } = await repository.exportJson(sampleCv.id)
     const imported = await repository.importJson(content)
 
-    expect(JSON.parse(content).settings.template).toBe('modern')
-    expect(imported.settings.template).toBe('modern')
+    expect(JSON.parse(content).settings.template).toBe(template)
+    expect(imported.settings.template).toBe(template)
     expect(await repository.get(imported.id)).toEqual(imported)
   })
 })
@@ -661,12 +661,23 @@ describe('schema migrations', () => {
 
     const stored = await repository.get(sampleCv.id)
 
-    expect(stored.schemaVersion).toBe(4)
+    expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
     expect({ ...stored, schemaVersion: 3 }).toEqual(version3)
   })
 
-  test('a file from the version after the Modern template (version 5) comes from a newer version of the app', async () => {
-    const error = await repository.importJson(JSON.stringify({ ...sampleCv, schemaVersion: 5 })).catch((error: unknown) => error)
+  test('a CV saved before the Bold template existed (version 4) opens unchanged, with its template', async () => {
+    const version4 = { ...sampleCv, schemaVersion: 4, settings: { ...sampleCv.settings, template: 'modern' } }
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, `${sampleCv.id}.json`), JSON.stringify(version4))
+
+    const stored = await repository.get(sampleCv.id)
+
+    expect(stored.schemaVersion).toBe(5)
+    expect({ ...stored, schemaVersion: 4 }).toEqual(version4)
+  })
+
+  test('a file from the version after the Bold template (version 6) comes from a newer version of the app', async () => {
+    const error = await repository.importJson(JSON.stringify({ ...sampleCv, schemaVersion: 6 })).catch((error: unknown) => error)
 
     expect((error as InvalidCvFileError).reason).toBe('newer-version')
   })
