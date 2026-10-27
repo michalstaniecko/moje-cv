@@ -1,0 +1,3 @@
+# Every new Template bumps the CV schema version
+
+A CV stores which Template it is rendered with, and CV files are read strictly (validated against the current schema), so an older app version would reject a file naming a Template it doesn't know as a generic "invalid file". We decided that adding a Template bumps `CV_SCHEMA_VERSION` (with a no-op migration step), so an older app reports "file from a newer version" instead. We rejected silently falling back to the default Template for unknown values: the user would see their CV in a different design without knowing why, and it would make the template field the one lenient spot in an otherwise strict schema.

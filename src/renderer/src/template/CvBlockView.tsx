@@ -1,6 +1,8 @@
-import type { Ref } from 'react'
+import type { ComponentType, Ref } from 'react'
 import type { CvBlock } from '../domain/blocks'
+import type { BlockViewOverrides } from './templateDefinition'
 
+// Wspólne komponenty bloków – szablon może nadpisać dowolny rodzaj bloku (BlockViewOverrides).
 function BlockContent({ block }: { block: CvBlock }) {
   switch (block.kind) {
     case 'header':
@@ -50,24 +52,17 @@ function BlockContent({ block }: { block: CvBlock }) {
       return (
         <div className="cv-entry">
           <div className="cv-date cv-date--dot">{block.dates}</div>
-          <div>{block.text}</div>
+          <div>{[block.level, block.details].filter((part) => part !== '').join(', ')}</div>
         </div>
       )
-    case 'listFirst':
+    case 'listRow':
       return (
         <div className="cv-two-col">
           {block.title.trim() ? <h2 className="cv-section-title">{block.title}</h2> : <div />}
           <ul className="cv-plain-list">
-            <li>{block.text}</li>
-          </ul>
-        </div>
-      )
-    case 'listItem':
-      return (
-        <div className="cv-two-col">
-          <div />
-          <ul className="cv-plain-list">
-            <li>{block.text}</li>
+            {block.items.map((item) => (
+              <li key={item.id}>{item.text}</li>
+            ))}
           </ul>
         </div>
       )
@@ -76,20 +71,27 @@ function BlockContent({ block }: { block: CvBlock }) {
 
 export function CvBlockView({
   block,
+  views = {},
   ref,
   oversized = false
 }: {
   block: CvBlock
+  views?: BlockViewOverrides
   ref?: Ref<HTMLDivElement>
   oversized?: boolean
 }) {
+  // Nadpisanie jest typowane per rodzaj bloku, a tu wybierane po block.kind.
+  const Content = (views[block.kind] as ComponentType<{ block: CvBlock }> | undefined) ?? BlockContent
+  // Rodzaj bloku i jego położenie w sekcji – dla arkusza szablonu (np. oś czasu rysowana na całej wysokości bloku).
   return (
     <div
       ref={ref}
       className={oversized ? 'cv-block cv-block--oversized' : 'cv-block'}
+      data-block={block.kind}
+      data-section-position={'sectionPosition' in block ? block.sectionPosition : undefined}
       style={{ paddingBottom: `${block.spaceAfterMm}mm` }}
     >
-      <BlockContent block={block} />
+      <Content block={block} />
     </div>
   )
 }

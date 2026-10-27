@@ -1,0 +1,131 @@
+/* Arkusz szablonu „Klasyczny” – parametry z briefu (spec #1, „Wygląd szablonu”).
+   Każda reguła jest zawężona do .cv-template-classic, żeby nie działała w dokumentach innych szablonów.
+   Geometria (marginesy, odstępy) nie należy do arkusza – jest w definicji szablonu (index.ts). */
+.cv-template-classic {
+  --text: #1f1f1f;
+  --muted: #444;
+  color: var(--text);
+  font-size: 10pt;
+  line-height: 1.3;
+}
+
+/* ---------- Nagłówek ---------- */
+.cv-template-classic .cv-header {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+.cv-template-classic .cv-header--photo {
+  grid-template-columns: 42mm 1fr;
+  gap: 8mm;
+}
+
+/* Wysokość wynika z proporcji kadru, więc pomiar nagłówka nie czeka na wczytanie zdjęcia. */
+.cv-template-classic .cv-photo {
+  display: block;
+  width: 42mm;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}
+
+.cv-template-classic .cv-name {
+  color: var(--accent);
+  font-size: 21pt;
+  margin: 2mm 0 6mm;
+}
+
+.cv-template-classic .cv-contact p {
+  margin: 0 0 1mm;
+}
+
+.cv-template-classic .cv-summary {
+  font-style: italic;
+  text-align: right;
+  margin: 8mm 0 0;
+}
+
+/* ---------- Sekcje ---------- */
+.cv-template-classic .cv-section-title {
+  color: var(--accent);
+  font-size: 13pt;
+  font-weight: bold;
+  margin: 0;
+}
+
+.cv-template-classic .cv-entry {
+  display: grid;
+  grid-template-columns: 38mm 1fr;
+  column-gap: 4mm;
+}
+
+.cv-template-classic .cv-date {
+  position: relative;
+  padding-right: 4mm;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cv-template-classic .cv-date--dot::after {
+  content: '';
+  position: absolute;
+  right: -1.5mm;
+  top: 0.55em;
+  width: 2mm;
+  height: 2mm;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.cv-template-classic .cv-role {
+  font-weight: bold;
+  font-style: italic;
+  font-size: 11.5pt;
+}
+
+.cv-template-classic .cv-company {
+  margin-bottom: 2mm;
+}
+
+.cv-template-classic .cv-bullets {
+  margin: 0 0 0 10mm;
+  padding-left: 5mm;
+}
+
+.cv-template-classic .cv-two-col {
+  display: grid;
+  grid-template-columns: 38mm 1fr;
+  column-gap: 8mm;
+}
+
+/* Wiersz z tytułem ma tę samą wysokość co kolejne elementy listy (10pt × 1.3). */
+.cv-template-classic .cv-two-col .cv-section-title {
+  line-height: 13pt;
+}
+
+.cv-template-classic .cv-plain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Trójkątny znacznik „‣” rysowany w CSS: żaden z dołączonych fontów nie ma tego znaku,
+   a zastępczy font systemowy różniłby się między komputerami. */
+.cv-template-classic .cv-plain-list li::before {
+  content: '';
+  display: inline-block;
+  width: 0.3em;
+  height: 0.36em;
+  margin-right: 0.3em;
+  vertical-align: 0.08em;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+/* ---------- Klauzula ---------- */
+.cv-template-classic .cv-consent {
+  font-size: 8pt;
+  color: var(--muted);
+  margin: 0;
+  white-space: pre-line;
+}

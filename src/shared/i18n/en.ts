@@ -139,6 +139,8 @@ export const en = {
     appearance: 'Appearance',
     accentColor: 'Accent color',
     font: 'Font',
+    template: 'Template',
+    templateNames: { classic: 'Classic', modern: 'Modern' },
     header: 'Header',
     fullName: 'Full name',
     contact: 'Contact',

@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
+import { PX_PER_MM } from '../src/renderer/src/domain/templateGeometry'
 import type { InterfaceLanguage } from '../src/shared/i18n/languages'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 
@@ -497,6 +498,7 @@ test('in a Polish run the sample CV, the editor, the menu, the exported PDF and 
   await expect(library.getByText('Przykładowe CV')).toBeVisible()
   await library.getByRole('button', { name: 'Otwórz' }).click()
   await expect(window.locator('.preview-page-count')).toHaveText('2 strony')
+  await expect(window.getByRole('radiogroup', { name: 'Szablon' }).getByRole('radio', { name: 'Klasyczny' })).toBeChecked()
   const fullName = window.getByLabel('Imię i nazwisko')
   await fullName.fill('Ewa Nowak')
   await expect(window.getByText('Zmiany zapisane')).toBeVisible()
@@ -539,6 +541,8 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   await library.getByRole('button', { name: 'Open' }).click()
 
   await expect(window.locator('.cv-page').first()).toBeVisible()
+  // Podgląd renderuje szablon zapisany w CV – przykładowe CV ma „Klasyczny”.
+  await expect(window.locator('.preview .cv.cv-template-classic')).toHaveCount(1)
 
   // Edycja w formularzu od razu zmienia podgląd; Cmd+Z / Cmd+Shift+Z cofa i ponawia zmianę.
   const fullName = window.getByLabel('Full name')
@@ -712,6 +716,138 @@ test('changes the accent colour and font of one CV in the preview and PDF, with 
   await library.getByRole('listitem').filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Open' }).click()
   await expect(window.getByLabel('Accent color')).toHaveValue('#8a2be2')
   await expect(window.getByLabel('Font')).toHaveValue('arimo')
+})
+
+test('picks the Template next to the colour and font from a live thumbnail of the CV, without changing the preview or the PDF', async () => {
+  const pdfPath = join(outputDir, 'template.pdf')
+  await stubSaveDialog(pdfPath)
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  await expect(preview.locator('.cv-page').first()).toBeVisible()
+
+  // Wybór w sekcji wyglądu, za fontem, dostępny z klawiatury; przykładowe CV ma „Klasyczny”.
+  const picker = window.getByRole('radiogroup', { name: 'Template' })
+  await expect(picker.getByRole('radio')).toHaveCount(2)
+  const classic = picker.getByRole('radio', { name: 'Classic' })
+  await expect(classic).toBeChecked()
+  await window.getByLabel('Font').focus()
+  await window.keyboard.press('Tab')
+  await expect(classic).toBeFocused()
+
+  // Miniatura: pomniejszona pierwsza strona bieżącego CV w tym szablonie, odświeżana po edycji treści, koloru i fontu.
+  const thumbnail = picker
+    .locator('label', { has: window.getByRole('radio', { name: 'Classic' }) })
+    .locator('.cv.cv-template-classic')
+  await expect(thumbnail.locator('.cv-page')).toHaveCount(1)
+  await expect(thumbnail.locator('.cv-page .cv-name')).toHaveText('Jane Example')
+  // Bloki są mierzone na szerokości obszaru treści z geometrii szablonu („Klasyczny”: 210 − 12 − 16 = 182 mm) –
+  // tej samej co treść na stronie, w podglądzie i w miniaturze (skalowane są same strony, nie pomiar).
+  for (const cv of [preview.locator('.cv'), thumbnail]) {
+    const widths = await cv.evaluate((element) => {
+      const style = (selector: string) => element.ownerDocument.defaultView!.getComputedStyle(element.querySelector(selector)!)
+      const width = (selector: string) => parseFloat(style(selector).width)
+      return { measure: width('.cv-measure'), pageContent: width('.cv-page-content') }
+    })
+    expect(widths.measure).toBeCloseTo(182 * PX_PER_MM, 1)
+    expect(widths.pageContent).toBeCloseTo(widths.measure, 1)
+  }
+  const thumbnailBox = await thumbnail.locator('.cv-page').boundingBox()
+  const previewPageBox = await preview.locator('.cv-page').first().boundingBox()
+  expect(thumbnailBox!.width).toBeLessThan(previewPageBox!.width / 2)
+
+  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await expect(thumbnail.locator('.cv-page .cv-name')).toHaveText('Ewa Nowak')
+  await window.getByLabel('Accent color').fill('#8a2be2')
+  await expect(thumbnail.locator('.cv-page .cv-name')).toHaveCSS('color', 'rgb(138, 43, 226)')
+  await window.getByLabel('Font').selectOption('arimo')
+  await expect(thumbnail.locator('.cv-page .cv-name')).toHaveCSS('font-family', /^"?Arimo"?,/)
+  await expect(window.getByText('Changes saved')).toBeVisible()
+
+  // Podgląd i PDF jak dotąd: jeden dokument „Klasyczny”, ta sama liczba stron, bez miniatur.
+  await expect(window.locator('.preview .cv')).toHaveCount(1)
+  await expect(window.locator('.preview .cv.cv-template-classic')).toHaveCount(1)
+  const previewPageCount = await preview.locator('.cv-page').count()
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: template.pdf')).toBeVisible()
+  const pdf = await readPdf(await readFile(pdfPath))
+  expect(pdf.pages).toHaveLength(previewPageCount)
+  expect(pdf.pages[0]!.match(/Ewa Nowak/g)).toHaveLength(1)
+})
+
+test('switches the CV to the Modern template and back: the preview and PDF follow, with page footers, and nothing else changes', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  await expect(preview.locator('.cv-page').first()).toBeVisible()
+  // Każdy eksport do osobnego pliku, żeby komunikat o zapisie wskazywał właśnie ten eksport.
+  const exportPdf = async (fileName: string) => {
+    const pdfPath = join(outputDir, fileName)
+    await stubSaveDialog(pdfPath)
+    await window.getByRole('button', { name: 'Export to PDF' }).click()
+    await expect(window.getByText(`Saved PDF: ${fileName}`)).toBeVisible()
+    return readPdf(await readFile(pdfPath))
+  }
+
+  // Kolor, font i ręczny podział strony – mają przetrwać zmianę szablonu.
+  await window.getByLabel('Accent color').fill('#e9b949')
+  await window.getByLabel('Font').selectOption('arimo')
+  const education = window.getByRole('region', { name: 'Education', exact: true })
+  await education.getByLabel('New page before this section').check()
+  const firstBlocks = preview.locator('.cv-page-content > .cv-block:first-child')
+  await expect(firstBlocks.locator('.cv-section-title')).toHaveText(['Education'])
+  const classicPageCount = await preview.locator('.cv-page').count()
+  const classicPdf = await exportPdf('classic.pdf')
+
+  // „Nowoczesny” z miniatury: podgląd od razu w nowym szablonie, ze stopką „imię … n / N” na każdej stronie.
+  const picker = window.getByRole('radiogroup', { name: 'Template' })
+  const modern = picker.getByRole('radio', { name: 'Modern' })
+  const option = (name: string) => picker.locator('label', { has: window.getByRole('radio', { name }) })
+  await expect(option('Modern').locator('.cv.cv-template-modern .cv-page .cv-page-footer')).toContainText('Jane Example')
+  await option('Modern').click()
+  await expect(modern).toBeChecked()
+  await expect(preview.locator('.cv.cv-template-modern')).toHaveCount(1)
+  await expect(firstBlocks.locator('.cv-section-title')).toHaveText(['Education'])
+  const pageCount = await preview.locator('.cv-page').count()
+  expect(pageCount).toBeGreaterThan(1)
+  await expect(preview.locator('.cv-page .cv-page-footer')).toHaveText(
+    Array.from({ length: pageCount }, (_, index) => `Jane Example${index + 1} / ${pageCount}`)
+  )
+  // Stopka stoi w dolnym marginesie, pod obszarem treści.
+  const contentBox = await preview.locator('.cv-page-content').first().boundingBox()
+  const footerBox = await preview.locator('.cv-page-footer').first().boundingBox()
+  expect(footerBox!.y).toBeGreaterThanOrEqual(contentBox!.y + contentBox!.height)
+  // Akcent tylko jako znak: tekst zawsze ciemny, także przy jasnym akcencie.
+  await expect(preview.locator('.cv-page .cv-name')).toHaveCSS('color', 'rgb(31, 31, 31)')
+  await expect(preview.locator('.cv-page .cv-name')).toHaveCSS('font-family', /^"?Arimo"?,/)
+  await expect(window.getByText('Changes saved')).toBeVisible()
+
+  // PDF jak podgląd: te same strony, stopka z numerem strony i ta sama treść.
+  const modernPdf = await exportPdf('modern.pdf')
+  expect(modernPdf.pages).toHaveLength(pageCount)
+  modernPdf.pages.forEach((page, index) => expect(page).toContain(`${index + 1} / ${pageCount}`))
+  const text = modernPdf.pages.join(' ').toLowerCase()
+  for (const content of ['Jane Example', 'Senior Procurement Specialist', 'Driving licence (category B)', 'English – native']) {
+    expect(text).toContain(content.toLowerCase())
+  }
+  expect(modernPdf.embeddedFonts.some((name) => name.includes('Arimo'))).toBe(true)
+
+  // Cofnij / Ponów jak przy kolorze czy foncie.
+  await window.keyboard.press('Meta+z')
+  await expect(picker.getByRole('radio', { name: 'Classic' })).toBeChecked()
+  await expect(preview.locator('.cv.cv-template-classic')).toHaveCount(1)
+  await window.keyboard.press('Meta+Shift+z')
+  await expect(modern).toBeChecked()
+
+  // Powrót do „Klasycznego” bez strat: ten sam podgląd i ten sam PDF co przed zmianą szablonu.
+  await option('Classic').click()
+  await expect(preview.locator('.cv.cv-template-classic')).toHaveCount(1)
+  await expect(preview.locator('.cv-page-footer')).toHaveCount(0)
+  await expect(window.getByLabel('Accent color')).toHaveValue('#e9b949')
+  await expect(window.getByLabel('Font')).toHaveValue('arimo')
+  await expect(education.getByLabel('New page before this section')).toBeChecked()
+  await expect(firstBlocks.locator('.cv-section-title')).toHaveText(['Education'])
+  await expect(preview.locator('.cv-page')).toHaveCount(classicPageCount)
+  const classicAgainPdf = await exportPdf('classic-again.pdf')
+  expect(classicAgainPdf.pages).toEqual(classicPdf.pages)
 })
 
 test('manages the consent clause library, uses a clause in a CV without changing the library and leaves a switched-off clause out of the PDF', async () => {
@@ -1302,7 +1438,12 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   )
   expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV – Talent Partners.json')
   const exported = JSON.parse(await readFile(jsonPath, 'utf8'))
-  expect(exported).toMatchObject({ schemaVersion: 2, name: 'CV – Talent Partners', header: { fullName: 'Jane Example' } })
+  expect(exported).toMatchObject({
+    schemaVersion: 4,
+    name: 'CV – Talent Partners',
+    settings: { template: 'classic' },
+    header: { fullName: 'Jane Example' }
+  })
 
   // Import tego samego pliku dodaje nowe CV obok istniejącego – niczego nie nadpisuje.
   await stubOpenDialog(jsonPath)

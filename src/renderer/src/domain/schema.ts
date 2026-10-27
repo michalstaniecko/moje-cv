@@ -49,8 +49,18 @@ export const sectionSchema = z.discriminatedUnion('type', [
 ])
 export type Section = z.infer<typeof sectionSchema>
 
+// Identyfikatory szablonów (zob. „Template” w GLOSSARY.md). Definicje szablonów (template/templates.ts) są kluczowane tą listą.
+// Nowy szablon (jedyne miejsce z tą listą kroków):
+// 1. identyfikator tutaj,
+// 2. definicja szablonu i wpis w `templates` (template/templates.ts) – geometria z układem sekcji listowych
+//    (tytuł obok / nad listą, 1 / 2 kolumny), nadpisania bloków i opcjonalna stopka strony,
+// 3. nazwa w `editor.templateNames` w słownikach interfejsu (shared/i18n),
+// 4. podbicie CV_SCHEMA_VERSION z pustą migracją w migrations.ts (ADR 0002).
+export const cvTemplateIds = ['classic', 'modern'] as const
+export type CvTemplateId = (typeof cvTemplateIds)[number]
+
 // Bieżąca wersja schematu CV. Zmiana schematu = podbicie wersji i migracja ze starej (patrz migrations.ts).
-export const CV_SCHEMA_VERSION = 2
+export const CV_SCHEMA_VERSION = 4
 
 export const cvDocumentSchema = z.object({
   schemaVersion: z.literal(CV_SCHEMA_VERSION),
@@ -63,7 +73,9 @@ export const cvDocumentSchema = z.object({
   updatedAt: z.iso.datetime(),
   settings: z.object({
     accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-    font: z.enum(['lato', 'source-sans-3', 'arimo'])
+    font: z.enum(['lato', 'source-sans-3', 'arimo']),
+    // Szablon, którym CV jest renderowane. Nieznany szablon = niepoprawny plik (bez cichego zastępowania, ADR 0002).
+    template: z.enum(cvTemplateIds)
   }),
   header: z.object({
     fullName: z.string(),
@@ -80,7 +92,7 @@ export const cvDocumentSchema = z.object({
 })
 export type CvDocument = z.infer<typeof cvDocumentSchema>
 
-export const defaultCvSettings: CvDocument['settings'] = { accentColor: '#1a6e72', font: 'lato' }
+export const defaultCvSettings: CvDocument['settings'] = { accentColor: '#1a6e72', font: 'lato', template: 'classic' }
 
 export const clauseSchema = z.object({ id: idSchema, name: z.string(), text: z.string() })
 export type Clause = z.infer<typeof clauseSchema>

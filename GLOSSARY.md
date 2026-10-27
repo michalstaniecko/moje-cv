@@ -16,6 +16,10 @@ _Avoid_: Document locale, PDF language
 The pre-filled values a newly created CV starts with (section titles, contact labels, CV name). Written in the Interface language at the moment of creation; once created, it is ordinary editable CV content.
 _Avoid_: Template text, placeholders
 
+**Template**:
+One of the predefined visual designs a CV document is rendered with: page arrangement, typography and decoration. Built into the app and chosen per CV; the user cannot edit templates. Concerns only the look, never the CV's content: switching templates loses nothing.
+_Avoid_: Theme, layout, skin, style (as names for the whole design)
+
 **Tag**:
 A short, user-chosen label attached to a CV to organise the CV library (e.g. "frontend", "EN", "Allegro"). Private metadata: never shown on the CV document itself. A tag exists only as long as at least one CV carries it. Independent of the CV language, even when it names a language.
 _Avoid_: Label (as a separate concept), keyword, skill, category
