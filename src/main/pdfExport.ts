@@ -102,6 +102,6 @@ async function withMetadata(pdf: Uint8Array, fullName: string): Promise<Uint8Arr
   const document = await PDFDocument.load(pdf)
   document.setTitle(fullName ? `CV – ${fullName}` : 'CV', { showInWindowTitleBar: true })
   document.setAuthor(fullName)
-  document.setCreator('Moje CV')
+  document.setCreator('CV Press')
   return document.save()
 }

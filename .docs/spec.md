@@ -1,4 +1,4 @@
-# Moje CV – specyfikacja v1
+# CV Press – specyfikacja v1
 
 Lokalna aplikacja desktopowa do tworzenia CV z podglądem stron A4 na żywo i eksportem do PDF.
 Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/brief/CV_Magdalena_Czerwinska.html`.
@@ -14,7 +14,7 @@ Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/bri
 | Q5 | Podział stron | Automatyczne reguły + przełącznik „nowa strona przed tym elementem” przy sekcji i wpisie. |
 | Q6 | Klauzula – zachowanie | Zawsze na dole ostatniej strony. Gdy się nie mieści – na dół nowej strony. Przełącznik wł./wył. Zwykły tekst. |
 | Q7 | Klauzula – treści | Globalna biblioteka zapisanych klauzul; CV wybiera jedną i może ją nadpisać lokalnie. |
-| Q8 | Język | Język interfejsu (angielski, polski) niezależny od języka CV: przy pierwszym uruchomieniu język systemu, jeśli obsługiwany, inaczej angielski; zmiana w menu Language / Język (English, Polski, System) działa od razu i jest zapamiętywana. Cały interfejs (menu, okna plików, ekrany, komunikaty, licznik stron z polską odmianą) pochodzi z własnego typowanego słownika wspólnego dla main i renderera (ADR-0001); nowy język = nowy słownik i pozycja na liście języków. Treść domyślna (nazwa nowego CV, tytuły sekcji, etykiety kontaktu, przykładowe CV, dopisek „(kopia)”) powstaje w języku interfejsu z chwili utworzenia, potem jest zwykłą, edytowalną treścią; zmiana języka nie zmienia istniejących CV. Angielskie przykładowe CV nie ma klauzuli zgody. Błędy z procesu głównego widoczne dla użytkownika (np. niepoprawny plik importu) trafiają do renderera jako kody. Nazwa aplikacji i folder danych pozostają „Moje CV”. |
+| Q8 | Język | Język interfejsu (angielski, polski) niezależny od języka CV: przy pierwszym uruchomieniu język systemu, jeśli obsługiwany, inaczej angielski; zmiana w menu Language / Język (English, Polski, System) działa od razu i jest zapamiętywana. Cały interfejs (menu, okna plików, ekrany, komunikaty, licznik stron z polską odmianą) pochodzi z własnego typowanego słownika wspólnego dla main i renderera (ADR-0001); nowy język = nowy słownik i pozycja na liście języków. Treść domyślna (nazwa nowego CV, tytuły sekcji, etykiety kontaktu, przykładowe CV, dopisek „(kopia)”) powstaje w języku interfejsu z chwili utworzenia, potem jest zwykłą, edytowalną treścią; zmiana języka nie zmienia istniejących CV. Angielskie przykładowe CV nie ma klauzuli zgody. Błędy z procesu głównego widoczne dla użytkownika (np. niepoprawny plik importu) trafiają do renderera jako kody. Nazwa aplikacji „CV Press” jest ta sama w obu językach; folder danych pozostaje „Moje CV”. |
 | Q9 | Zdjęcie | Wgranie pliku, kadrowanie do stałych proporcji, opcja „bez zdjęcia” (nagłówek bez kolumny zdjęcia). |
 | Q10 | Wygląd | Kolor akcentu (domyślnie `#1a6e72`) + wybór fontu (Q24). Reszta stała. |
 | Q11 | Formatowanie | Zwykły tekst wszędzie (bez pogrubień, linków). |
@@ -36,7 +36,7 @@ Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/bri
 | Q27 | Skalowanie | Dopasowanie do szerokości panelu + przyciski +, −, 100%. |
 | Q28 | Stos | electron-vite, pnpm, Zustand + zundo, Zod, Radix/shadcn, dnd-kit, Vitest, Playwright (Electron), pdf-lib (metadane). |
 | Q29 | Proces | Spec → akceptacja → `git init` → etapy pionowe (sekcja 7). |
-| Q30 | Nazwa | **Moje CV**: `productName` „Moje CV”, `appId` `com.michalstaniecko.mojecv`, artefakt `Moje-CV-<wersja>.dmg`, tytuł okna „Moje CV”. Repo: `github.com/michalstaniecko/moje-cv`. |
+| Q30 | Nazwa | **CV Press** (wcześniej „Moje CV”, issue #47), ta sama w PL i EN: `productName` „CV Press”, `appId` `com.michalstaniecko.mojecv` (bez zmian, ADR-0003), artefakt `CV-Press-<wersja>.dmg`, tytuł okna „CV Press”. Folder danych przypięty do `Moje CV` niezależnie od `productName`. Repo: `github.com/michalstaniecko/moje-cv`. |
 
 ## 2. Model danych
 

@@ -25,6 +25,10 @@ function createWindow(language: InterfaceLanguageState): void {
   void loadRenderer(window)
 }
 
+// Folder danych przypięty do „Moje CV” niezależnie od `productName`, żeby zmiana nazwy aplikacji nie przenosiła danych
+// (ADR-0003). `--user-data-dir` (testy e2e) ma pierwszeństwo.
+if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', join(app.getPath('appData'), 'Moje CV'))
+
 app.whenReady().then(async () => {
   const repository = createCvRepository(join(app.getPath('userData'), 'cvs'))
   const settings = createSettingsRepository(join(app.getPath('userData'), 'settings.json'))

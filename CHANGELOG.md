@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- The app is now called "CV Press" (previously "Moje CV"). Existing CVs and settings stay where they were.
+
 ## [0.3.0] – 2026-10-27
 
 ### Added
