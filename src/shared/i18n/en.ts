@@ -6,7 +6,7 @@ const pages: PluralForms = { one: (count) => `${count} page`, other: (count) => 
 
 // Słownik angielski – źródło prawdy: każdy inny język musi spełniać jego typ (ADR-0001).
 export const en = {
-  appName: 'Moje CV',
+  appName: 'CV Press',
   menu: {
     about: (appName: string) => `About ${appName}`,
     hide: (appName: string) => `Hide ${appName}`,

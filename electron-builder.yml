@@ -1,7 +1,7 @@
 # Konfiguracja pakowania aplikacji (electron-builder). Budowanie: `pnpm dist:mac`.
 # Cele Windows/Linux można dopisać obok `mac` – reszta konfiguracji jest wspólna.
 appId: com.michalstaniecko.mojecv
-artifactName: Moje-CV-${version}.${ext}
+artifactName: CV-Press-${version}.${ext}
 directories:
   output: dist
 # Do aplikacji trafia tylko zbudowany kod z `out/` (plus zależności produkcyjne dołączane automatycznie).
@@ -21,6 +21,6 @@ mac:
     - target: dmg
       arch: universal
 dmg:
-  title: Moje CV ${version}
+  title: CV Press ${version}
   # Plik .blockmap służy tylko do auto-update.
   writeUpdateInfo: false

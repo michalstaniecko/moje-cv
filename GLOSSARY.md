@@ -1,4 +1,4 @@
-# Moje CV
+# CV Press
 
 Desktop app for creating, editing and exporting CVs to PDF.
 
