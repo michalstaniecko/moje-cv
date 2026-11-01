@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, Menu, type BaseWindow, type MenuItemConstructorOptions, type WebContents } from 'electron'
 import type { HistoryCommand } from '../shared/api'
-import { interfaceLanguageCodes, interfaceLanguages, type InterfaceLanguage } from '../shared/i18n/languages'
+import { interfaceLanguageCodes, interfaceLanguages } from '../shared/i18n/languages'
 import { appearances, type Appearance } from '../shared/appearance'
 import type { AppearanceState } from './appearance'
 import type { InterfaceLanguageState } from './interfaceLanguage'
@@ -90,48 +90,61 @@ function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceSt
       { role: 'close', label: menu.closeWindow }
     ]
   }
-  // Zaznaczony jest wybór użytkownika (albo System), a nie wynik – np. System przy polskim systemie.
-  const choose = (choice: InterfaceLanguage | null) => () => {
-    language.choose(choice).catch((error: unknown) => console.error('Nie udało się zapisać języka interfejsu', error))
-  }
-  const languageMenu: MenuItemConstructorOptions = {
+  // Language / Język: zaznaczony jest wybór użytkownika (albo System), a nie wynik – np. System przy polskim systemie.
+  const languageMenu = preferenceSubmenu({
     label: menu.language,
-    submenu: [
-      ...interfaceLanguageCodes.map(
-        (code): MenuItemConstructorOptions => ({
-          label: interfaceLanguages[code].name,
-          type: 'radio',
-          checked: language.preference() === code,
-          click: choose(code)
-        })
-      ),
-      { label: menu.systemLanguage, type: 'radio', checked: language.preference() === undefined, click: choose(null) }
-    ]
-  }
-  // Wygląd / Appearance: zaznaczony jest wybór użytkownika (albo Systemowy), a nie wynik. Błąd zapisu jest logowany
-  // w `choose`, a wybór i tak zastosowany.
-  const chooseAppearance = (choice: Appearance | null) => () => void appearance.choose(choice)
+    values: interfaceLanguageCodes,
+    valueLabel: (code) => interfaceLanguages[code].name,
+    systemLabel: menu.systemLanguage,
+    preference: language.preference(),
+    choose: (choice) =>
+      language.choose(choice).catch((error: unknown) => console.error('Nie udało się zapisać języka interfejsu', error))
+  })
+  // Wygląd / Appearance: tak samo wybór użytkownika (albo Systemowy). Błąd zapisu jest logowany w `choose`,
+  // a wybór i tak zastosowany.
   const appearanceLabels: Record<Appearance, string> = { light: menu.lightAppearance, dark: menu.darkAppearance }
-  const appearanceMenu: MenuItemConstructorOptions = {
+  const appearanceMenu = preferenceSubmenu({
     label: menu.appearance,
-    submenu: [
-      ...appearances.map(
-        (value): MenuItemConstructorOptions => ({
-          label: appearanceLabels[value],
-          type: 'radio',
-          checked: appearance.preference() === value,
-          click: chooseAppearance(value)
-        })
-      ),
-      {
-        label: menu.systemAppearance,
-        type: 'radio',
-        checked: appearance.preference() === undefined,
-        click: chooseAppearance(null)
-      }
-    ]
-  }
+    values: appearances,
+    valueLabel: (value) => appearanceLabels[value],
+    systemLabel: menu.systemAppearance,
+    preference: appearance.preference(),
+    choose: (choice) => void appearance.choose(choice)
+  })
   return process.platform === 'darwin'
     ? [appMenu, editMenu, languageMenu, appearanceMenu, windowMenu]
     : [editMenu, languageMenu, appearanceMenu, windowMenu]
+}
+
+// Podmenu preferencji „wartości + System”: po jednym radio na wartość i radio System zaznaczone, gdy preferencji
+// nie ma (`undefined`). Wybór System przekazuje `null`.
+function preferenceSubmenu<Value extends string>({
+  label,
+  values,
+  valueLabel,
+  systemLabel,
+  preference,
+  choose
+}: {
+  label: string
+  values: readonly Value[]
+  valueLabel: (value: Value) => string
+  systemLabel: string
+  preference: Value | undefined
+  choose: (choice: Value | null) => void
+}): MenuItemConstructorOptions {
+  return {
+    label,
+    submenu: [
+      ...values.map(
+        (value): MenuItemConstructorOptions => ({
+          label: valueLabel(value),
+          type: 'radio',
+          checked: preference === value,
+          click: () => choose(value)
+        })
+      ),
+      { label: systemLabel, type: 'radio', checked: preference === undefined, click: () => choose(null) }
+    ]
+  }
 }
