@@ -10,14 +10,17 @@ import { registerPhotoPicker } from './photo'
 import { registerSettings } from './settings'
 import { createSettingsRepository } from './settingsRepository'
 import { loadRenderer, secureWebPreferences } from './windows'
+import { lightWindowBackground } from '../shared/interfaceLook'
 
 // Tytuł okna to nazwa aplikacji ze słownika; renderer ustawia go także w dokumencie przy zmianie języka.
+// Tło okna równe tłu aplikacji, żeby przy starcie nie było białego błysku.
 function createWindow(language: InterfaceLanguageState): void {
   const window = new BrowserWindow({
     width: 1280,
     height: 900,
     title: language.dictionary().appName,
     show: false,
+    backgroundColor: lightWindowBackground,
     webPreferences: secureWebPreferences
   })
 
