@@ -563,7 +563,7 @@ function SaveAsNewClause({ text, onSave }: { text: string; onSave: (name: string
         onChange={(event) => setName(event.target.value)}
         onKeyDown={(event) => event.key === 'Escape' && setName(null)}
       />
-      <button type="submit" disabled={!name.trim()}>
+      <button type="submit" className="button-primary" disabled={!name.trim()}>
         {common.save}
       </button>
       <button type="button" onClick={() => setName(null)}>

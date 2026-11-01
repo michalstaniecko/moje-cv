@@ -168,7 +168,7 @@ function PhotoCropper({
         <button type="button" onClick={onCancel}>
           {common.cancel}
         </button>
-        <button type="button" onClick={apply}>
+        <button type="button" className="button-primary" onClick={apply}>
           {t.apply}
         </button>
       </div>

@@ -155,7 +155,11 @@ export function Library({
         <button type="button" onClick={importFile}>
           {t.importFile}
         </button>
-        <button type="button" onClick={() => runAndRefresh(() => window.api.cv.create().then(() => onTagFilterChange([])), 'create')}>
+        <button
+          type="button"
+          className="button-primary"
+          onClick={() => runAndRefresh(() => window.api.cv.create().then(() => onTagFilterChange([])), 'create')}
+        >
           {t.newCv}
         </button>
       </header>
@@ -296,7 +300,7 @@ function RenameForm({ entry, onSubmit, onCancel }: { entry: OkEntry; onSubmit: (
         onKeyDown={(event) => event.key === 'Escape' && onCancel()}
       />
       <div className="library-item-actions">
-        <button type="submit" disabled={!name.trim()}>
+        <button type="submit" className="button-primary" disabled={!name.trim()}>
           {common.save}
         </button>
         <button type="button" onClick={onCancel}>
@@ -369,7 +373,7 @@ function TagsEditor({
             onChange={(event) => setNewTag(event.target.value)}
             onKeyDown={(event) => event.key === 'Escape' && onDone()}
           />
-          <button type="submit" disabled={!newTag.trim()}>
+          <button type="submit" className="button-primary" disabled={!newTag.trim()}>
             {library.addTag}
           </button>
         </form>
