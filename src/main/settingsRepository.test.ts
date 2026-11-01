@@ -143,6 +143,57 @@ describe('interface language preference', () => {
   })
 })
 
+describe('appearance preference', () => {
+  test('is missing until chosen, so the app follows the system', async () => {
+    expect((await repository.get()).appearance).toBeUndefined()
+  })
+
+  test('a chosen appearance is kept in the settings file', async () => {
+    await repository.setAppearance('dark')
+
+    expect((await createSettingsRepository(settingsPath).get()).appearance).toBe('dark')
+    expect(JSON.parse(await readFile(settingsPath, 'utf8')).appearance).toBe('dark')
+  })
+
+  test('choosing System removes the field and keeps the clause library and the interface language', async () => {
+    const general = await repository.addClause({ name: 'Ogólna', text: 'A' })
+    await repository.setInterfaceLanguage('pl')
+    await repository.setAppearance('light')
+
+    await repository.setAppearance(null)
+
+    const saved = JSON.parse(await readFile(settingsPath, 'utf8'))
+    expect(saved).not.toHaveProperty('appearance')
+    expect(saved.clauses).toEqual([general])
+    expect(saved.interfaceLanguage).toBe('pl')
+  })
+
+  test('choosing the interface language keeps the appearance', async () => {
+    await repository.setAppearance('dark')
+
+    await repository.setInterfaceLanguage('en')
+
+    expect(JSON.parse(await readFile(settingsPath, 'utf8'))).toMatchObject({ appearance: 'dark', interfaceLanguage: 'en' })
+  })
+
+  test('a settings file from before the appearance preference still loads', async () => {
+    const old = { schemaVersion: 1, clauses: [{ id: 'a', name: 'Ogólna', text: 'A' }], defaultClauseId: 'a', interfaceLanguage: 'pl' }
+    await writeFile(settingsPath, JSON.stringify(old))
+
+    expect(await repository.get()).toEqual(old)
+    await repository.setAppearance('dark')
+    expect(JSON.parse(await readFile(settingsPath, 'utf8'))).toEqual({ ...old, appearance: 'dark' })
+  })
+
+  test('an unsupported appearance in the file makes it unreadable like any other schema mismatch', async () => {
+    for (const appearance of ['system', 'blue']) {
+      await writeFile(settingsPath, JSON.stringify({ schemaVersion: 1, clauses: [], defaultClauseId: null, appearance }))
+
+      await expect(repository.get()).rejects.toThrow()
+    }
+  })
+})
+
 describe('damaged settings file', () => {
   const damagedFiles = {
     'invalid JSON': '{ "schemaVersion": 1, "clauses": ',
@@ -158,6 +209,9 @@ describe('damaged settings file', () => {
       await expect(repository.updateClause('a', { name: 'Ogólna', text: 'A' })).rejects.toThrow()
       await expect(repository.deleteClause('a')).rejects.toThrow()
       await expect(repository.setDefaultClause(null)).rejects.toThrow()
+      await expect(repository.setInterfaceLanguage('pl')).rejects.toThrow()
+      await expect(repository.setAppearance('dark')).rejects.toThrow()
+      await expect(repository.setAppearance(null)).rejects.toThrow()
 
       expect(await readFile(settingsPath, 'utf8')).toBe(content)
     })

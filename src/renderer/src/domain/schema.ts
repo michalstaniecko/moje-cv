@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { appearances } from '../../../shared/appearance'
 import { interfaceLanguageCodes } from '../../../shared/i18n/languages'
 
 export const yearMonthSchema = z.object({
@@ -112,6 +113,8 @@ export const appSettingsSchema = z.object({
   clauses: z.array(clauseSchema),
   defaultClauseId: idSchema.nullable(),
   // Wybrany język interfejsu. Brak pola = język systemu (bez podbijania wersji schematu).
-  interfaceLanguage: z.enum(interfaceLanguageCodes).optional()
+  interfaceLanguage: z.enum(interfaceLanguageCodes).optional(),
+  // Wybrany wygląd interfejsu (Appearance). Brak pola = Systemowy (bez podbijania wersji schematu).
+  appearance: z.enum(appearances).optional()
 })
 export type AppSettings = z.infer<typeof appSettingsSchema>
