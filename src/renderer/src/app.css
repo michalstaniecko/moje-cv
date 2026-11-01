@@ -746,18 +746,22 @@ textarea:focus-visible {
 .sponsor-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 4px 16px;
-  font-size: 12px;
-  color: var(--ui-text-muted);
-  background: var(--ui-panel-bg);
+  gap: 14px;
+  padding: 8px 16px;
+  font-size: 13px;
+  background: var(--ui-accent-glow);
   border-top: 1px solid var(--ui-border);
-  white-space: nowrap;
 }
 
+/* Jedna linia: tylko komunikat się ucina; `white-space` nie na całej belce, bo okno „Więcej” jest w niej zagnieżdżone. */
 .sponsor-bar-message {
   overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.sponsor-bar > button {
+  flex-shrink: 0;
 }
 
 /* Sponsor link wygląda jak odnośnik, ale jest przyciskiem: otwiera stronę w przeglądarce systemowej, nie w oknie. */

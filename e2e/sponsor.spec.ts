@@ -85,7 +85,7 @@ test('after opening a CV the Sponsor bar is still visible on the editor screen a
   const barBox = (await bar.boundingBox())!
   expect(previewBox.y + previewBox.height).toBeLessThanOrEqual(barBox.y)
   // Jedna linia: belka jest niska w porównaniu z oknem.
-  expect(barBox.height).toBeLessThan(40)
+  expect(barBox.height).toBeLessThan(48)
 })
 
 test('More opens the dialog explaining why the app is free; Escape, Close and a click on the backdrop close it', async () => {
