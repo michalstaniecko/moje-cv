@@ -19,26 +19,21 @@ export function App() {
   // na dole okna, a ekran kurczy się o nią – nic nie nachodzi na podgląd stron ani formularze.
   return (
     <div className="app-shell">
-      <div className="app-screen">{renderScreen()}</div>
-      <SponsorBar />
-    </div>
-  )
-
-  function renderScreen() {
-    switch (screen.kind) {
-      case 'cv':
-        return <CvScreen document={screen.document} onBack={showLibrary} />
-      case 'clauses':
-        return <ClauseLibrary onBack={showLibrary} />
-      case 'library':
-        return (
+      <div className="app-screen">
+        {screen.kind === 'cv' ? (
+          <CvScreen document={screen.document} onBack={showLibrary} />
+        ) : screen.kind === 'clauses' ? (
+          <ClauseLibrary onBack={showLibrary} />
+        ) : (
           <Library
             tagFilter={tagFilter}
             onTagFilterChange={setTagFilter}
             onOpen={(document) => setScreen({ kind: 'cv', document })}
             onOpenClauses={() => setScreen({ kind: 'clauses' })}
           />
-        )
-    }
-  }
+        )}
+      </div>
+      <SponsorBar />
+    </div>
+  )
 }

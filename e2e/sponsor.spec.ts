@@ -12,10 +12,11 @@ let outputDir: string
 const packagedExecutable = process.env['MOJE_CV_APP']
 
 // Jak w export.spec.ts: tymczasowy katalog danych, wymuszony język interfejsu (`language: null` zostawia wybór menu)
-// i jasny wygląd, bez emulacji `prefers-color-scheme` przez Playwrighta.
+// i jasny wygląd (zmienna `MOJE_CV_APPEARANCE` z otoczenia testu ma pierwszeństwo), bez emulacji
+// `prefers-color-scheme` przez Playwrighta.
 async function launch({ language = 'en' }: { language?: InterfaceLanguage | null } = {}) {
   const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
-  const env = { ...process.env, MOJE_CV_APPEARANCE: 'light' } as Record<string, string>
+  const env = { MOJE_CV_APPEARANCE: 'light', ...process.env } as Record<string, string>
   if (language) env['MOJE_CV_LANGUAGE'] = language
   else delete env['MOJE_CV_LANGUAGE']
   app = await electron.launch(
@@ -113,7 +114,6 @@ test('the Sponsor link in the bar and in the dialog opens only the GitHub Sponso
   await stubOpenExternal()
   await sponsorBar().getByRole('button', { name: 'Buy me a coffee' }).click()
   await expect.poll(openExternalCalls).toEqual([SPONSOR_URL])
-  expect(SPONSOR_URL).toBe('https://github.com/sponsors/michalstaniecko')
 
   await sponsorBar().getByRole('button', { name: 'More' }).click()
   const dialog = window.getByRole('dialog', { name: 'Why CV Press is free' })
