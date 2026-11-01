@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { appSettingsSchema, type AppSettings, type Clause, type ClauseContent } from '../renderer/src/domain/schema'
+import type { Appearance } from '../shared/appearance'
 import type { InterfaceLanguage } from '../shared/i18n/languages'
 import { exists, writeJsonAtomic } from './atomicFile'
 
@@ -8,7 +9,7 @@ export type SettingsRepository = ReturnType<typeof createSettingsRepository>
 
 const emptySettings: AppSettings = { schemaVersion: 1, clauses: [], defaultClauseId: null }
 
-// Ustawienia globalne (biblioteka klauzul zgody, język interfejsu) w jednym pliku JSON, zapisywanym atomowo.
+// Ustawienia globalne (biblioteka klauzul zgody, język interfejsu, wygląd interfejsu) w jednym pliku JSON, zapisywanym atomowo.
 // Uszkodzonego pliku (niepoprawny JSON lub niezgodność ze schematem) nie da się odczytać ani nadpisać.
 export function createSettingsRepository(path: string) {
   async function get(): Promise<AppSettings> {
@@ -64,6 +65,13 @@ export function createSettingsRepository(path: string) {
     async setInterfaceLanguage(language: InterfaceLanguage | null): Promise<AppSettings> {
       return change(({ interfaceLanguage: _previous, ...settings }) =>
         language === null ? settings : { ...settings, interfaceLanguage: language }
+      )
+    },
+
+    // `null` (Systemowy) usuwa wybór wyglądu z pliku.
+    async setAppearance(appearance: Appearance | null): Promise<AppSettings> {
+      return change(({ appearance: _previous, ...settings }) =>
+        appearance === null ? settings : { ...settings, appearance }
       )
     },
 

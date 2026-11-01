@@ -26,7 +26,12 @@ export const en = {
     closeWindow: 'Close Window',
     // Dwujęzyczne, żeby dało się wrócić po wybraniu języka, którego się nie czyta.
     language: 'Language / Język',
-    systemLanguage: 'System'
+    systemLanguage: 'System',
+    // Wygląd interfejsu (Appearance): jasny, ciemny albo za systemem.
+    appearance: 'Appearance',
+    lightAppearance: 'Light',
+    darkAppearance: 'Dark',
+    systemAppearance: 'System'
   },
   // Tytuły i filtry systemowych okien plików (przyciski w nich są w języku systemu).
   dialogs: {

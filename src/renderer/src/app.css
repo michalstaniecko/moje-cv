@@ -1,7 +1,164 @@
+/* ---------- Tokeny kolorów interfejsu (Appearance: jasny / ciemny, ADR-0004) ----------
+   Jedyne miejsce, w którym kolory interfejsu są wpisane wprost. Prefiks `--ui-` chroni przed kolizją ze zmiennymi
+   szablonów CV (--accent, --text, --muted, --rule, --label…), które dziedziczą się z :root.
+   Tło okna Electrona (src/shared/appearance.ts) musi być równe --ui-app-bg. */
+:root {
+  --ui-accent: #1f6fcf;
+  --ui-accent-dark: #174f99;
+  --ui-accent-glow: #e6f0fb;
+  --ui-text-on-accent: #ffffff;
+  --ui-app-bg: #eef3f8;
+  --ui-panel-bg: #ffffff;
+  --ui-paper: #ffffff; /* papier CV (miniatury szablonów): stały niezależnie od wyglądu interfejsu */
+  --ui-preview-bg: #dde5ee;
+  --ui-border: #c9d6e3;
+  --ui-text: #1c2733;
+  --ui-text-muted: #5b6b7c;
+  --ui-error: #b42318;
+  --ui-warning: #8a5a00;
+  --ui-focus-ring: #1f6fcf;
+  --ui-shadow: rgb(28 39 51 / 0.22);
+  --ui-backdrop: rgb(28 39 51 / 0.4);
+}
+
+/* Ciemna paleta: te same tokeny z innymi wartościami. Proces główny ustawia `nativeTheme.themeSource`, a Electron
+   przełącza `prefers-color-scheme` (ADR-0004). Reguła zmienia tylko wartości tokenów na :root, więc okno PDF
+   (ten sam bundel CSS) i strony CV, które tokenów --ui-* nie używają, wyglądają tak samo w obu wyglądach.
+   Tekst na akcencie jest ciemny (biały na #5b9cf0 ma kontrast 2.82:1, poniżej WCAG AA).
+   Tło okna Electrona (src/shared/appearance.ts) musi być równe --ui-app-bg. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ui-accent: #5b9cf0;
+    --ui-accent-dark: #7fb3f5;
+    --ui-accent-glow: #1b2f4a;
+    --ui-text-on-accent: #0f1620;
+    --ui-app-bg: #0f1620;
+    --ui-panel-bg: #18222e;
+    --ui-preview-bg: #0a1017;
+    --ui-border: #2c3a4a;
+    --ui-text: #e6edf5;
+    --ui-text-muted: #93a3b5;
+    --ui-error: #f28b82;
+    --ui-warning: #e3b341;
+    --ui-focus-ring: #5b9cf0;
+    --ui-shadow: rgb(0 0 0 / 0.5);
+    --ui-backdrop: rgb(0 0 0 / 0.6);
+  }
+}
+
+/* Reguła celowo tak samo prosta jak `html, body` w print.css: w jednym bundlu CSS wygrywa tamta (kolejność),
+   więc okno PDF zostaje białe. Kolor tekstu i czcionka są ustawiane na korzeniach interfejsu, nie na body. */
 html,
 body {
   margin: 0;
-  background: #e9ecec;
+  background: var(--ui-app-bg);
+}
+
+/* ---------- Korzenie interfejsu: czcionka, kolor tekstu i color-scheme ----------
+   `color-scheme` tylko tutaj, nigdy na html/body/:root ani na .preview (zawiera strony CV): natywne kontrolki
+   (checkbox, select, suwak, pole koloru, pasek przewijania) podążają za wyglądem, a strony CV nie (ADR-0004). */
+.toolbar,
+.library,
+.editor-form,
+.preview-bar,
+.photo-cropper {
+  color: var(--ui-text);
+  color-scheme: light dark;
+  font: 14px system-ui, sans-serif;
+}
+
+/* ---------- Przyciski ----------
+   Trzy warianty: główny (.button-primary), drugorzędny (domyślny, bez klasy) i destrukcyjny (.danger). */
+button {
+  padding: 5px 12px;
+  font: inherit;
+  color: var(--ui-text);
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: var(--ui-accent-glow);
+  border-color: var(--ui-accent);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.button-primary {
+  color: var(--ui-text-on-accent);
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+}
+
+.button-primary:hover:not(:disabled) {
+  background: var(--ui-accent-dark);
+  border-color: var(--ui-accent-dark);
+}
+
+.danger {
+  color: var(--ui-error);
+}
+
+button.danger:hover:not(:disabled) {
+  border-color: var(--ui-error);
+}
+
+/* ---------- Fokus z klawiatury ---------- */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---------- Pola formularzy ----------
+   Jeden styl dla pól w .form (edytor, formularz klauzul, dialog kadrowania) i w formularzach inline biblioteki. */
+.form input:not([type='checkbox']):not([type='range']):not([type='radio']),
+.form select,
+.form textarea,
+.library-item-form input {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 5px 7px;
+  font: inherit;
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  background: var(--ui-panel-bg);
+}
+
+.form input:not([type='checkbox']):not([type='range']):not([type='radio']):focus-visible,
+.form select:focus-visible,
+.form textarea:focus-visible,
+.library-item-form input:focus-visible {
+  border-color: var(--ui-accent);
+  outline-offset: 0;
+}
+
+.form input:not([type='checkbox']):not([type='range']):not([type='radio']),
+.form select,
+.form textarea {
+  width: 100%;
+}
+
+.form textarea {
+  resize: vertical;
+}
+
+.form input[type='color'] {
+  height: 30px;
+  padding: 2px;
+}
+
+/* ---------- Podgląd ---------- */
+.preview {
+  background: var(--ui-preview-bg);
 }
 
 /* Podgląd skaluje same strony (transform), więc pomiar bloków i podział stron nie zależą od powiększenia.
@@ -21,7 +178,7 @@ body {
 
 .preview .cv-page {
   margin-bottom: var(--page-gap);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 14px var(--ui-shadow);
 }
 
 .preview-bar {
@@ -32,13 +189,12 @@ body {
   align-items: center;
   gap: 12px;
   padding: 6px 16px;
-  background: #f7f9f9;
-  border-bottom: 1px solid #d5dbdb;
-  font: 13px system-ui, sans-serif;
+  background: var(--ui-panel-bg);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .preview-length-notice {
-  color: #5b6767;
+  color: var(--ui-text-muted);
 }
 
 .preview-zoom {
@@ -48,12 +204,17 @@ body {
   margin-left: auto;
 }
 
+.preview-zoom button {
+  padding: 2px 8px;
+}
+
 .preview-zoom-value {
   min-width: 3.5em;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Pasek narzędzi ---------- */
 .toolbar {
   position: sticky;
   top: 0;
@@ -62,9 +223,8 @@ body {
   align-items: center;
   gap: 16px;
   padding: 10px 24px;
-  background: #fff;
-  border-bottom: 1px solid #d5dbdb;
-  font: 14px system-ui, sans-serif;
+  background: var(--ui-panel-bg);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .toolbar-notice {
@@ -76,7 +236,7 @@ body {
 
 .toolbar-notice--error,
 .toolbar-status--error {
-  color: #b42318;
+  color: var(--ui-error);
 }
 
 .toolbar-title {
@@ -85,11 +245,11 @@ body {
   font-weight: 600;
 }
 
+/* ---------- Biblioteka CV ---------- */
 .library {
   max-width: 820px;
   margin: 0 auto;
   padding: 24px;
-  font: 14px system-ui, sans-serif;
 }
 
 .library-list {
@@ -109,8 +269,8 @@ body {
 .library-item {
   margin-bottom: 8px;
   padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #d5dbdb;
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
   border-radius: 6px;
 }
 
@@ -120,8 +280,6 @@ body {
 
 .library-item-form input {
   flex: 1;
-  font: inherit;
-  padding: 4px 6px;
 }
 
 .library-item-info {
@@ -135,13 +293,12 @@ body {
 }
 
 .library-item-date {
-  color: #5b6767;
+  color: var(--ui-text-muted);
 }
 
 .library-item-damaged,
-.library-error,
-.danger {
-  color: #b42318;
+.library-error {
+  color: var(--ui-error);
 }
 
 .library-item-actions {
@@ -151,11 +308,15 @@ body {
 }
 
 .library-empty {
-  color: #5b6767;
+  color: var(--ui-text-muted);
 }
 
 .library-notice {
-  color: #1a6e72;
+  display: inline-block;
+  padding: 4px 10px;
+  color: var(--ui-accent-dark);
+  background: var(--ui-accent-glow);
+  border-radius: 6px;
 }
 
 .editor-screen {
@@ -177,13 +338,13 @@ body {
 
 .toolbar-status {
   margin-left: auto;
-  color: #5b6767;
+  color: var(--ui-text-muted);
 }
 
+/* ---------- Formularz edytora ---------- */
 .editor-form {
-  background: #f7f9f9;
-  border-right: 1px solid #d5dbdb;
-  font: 14px system-ui, sans-serif;
+  background: var(--ui-app-bg);
+  border-right: 1px solid var(--ui-border);
 }
 
 .form {
@@ -210,25 +371,8 @@ body {
 
 .form-field > span,
 .form-bullets > span {
-  color: #5b6767;
+  color: var(--ui-text-muted);
   font-size: 12px;
-}
-
-.form input:not([type='checkbox']):not([type='range']):not([type='radio']),
-.form select,
-.form textarea {
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
-  padding: 5px 7px;
-  font: inherit;
-  border: 1px solid #c3cccc;
-  border-radius: 4px;
-  background: #fff;
-}
-
-.form textarea {
-  resize: vertical;
 }
 
 /* ---------- Wybór szablonu ---------- */
@@ -262,8 +406,8 @@ body {
 }
 
 .template-option:has(input:checked) {
-  border-color: #1a6e72;
-  background: #fff;
+  border-color: var(--ui-accent);
+  background: var(--ui-panel-bg);
 }
 
 .template-option:has(input:checked) .template-option-name {
@@ -271,17 +415,21 @@ body {
 }
 
 .template-option:has(input:focus-visible) {
-  outline: 2px solid #1a6e72;
+  outline: 2px solid var(--ui-focus-ring);
   outline-offset: 2px;
 }
 
+/* Miniatura to papier CV: zostaje biała niezależnie od wyglądu interfejsu. Leży w .editor-form, więc odwraca
+   odziedziczone `color-scheme` i kolor tekstu, żeby wyglądała jak strona w podglądzie i w PDF. */
 .template-thumbnail {
   position: relative;
+  color-scheme: light;
+  color: initial;
   width: calc(210mm * var(--thumbnail-scale));
   height: calc(297mm * var(--thumbnail-scale));
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-  background: #fff;
+  box-shadow: 0 1px 4px var(--ui-shadow);
+  background: var(--ui-paper);
 }
 
 .template-thumbnail .cv-pages {
@@ -290,17 +438,12 @@ body {
   transform-origin: top left;
 }
 
-.form input[type='color'] {
-  height: 30px;
-  padding: 2px;
-}
-
 .form-group {
   min-width: 0;
   margin: 0 0 12px;
   padding: 10px 12px 12px;
-  background: #fff;
-  border: 1px solid #d5dbdb;
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
   border-radius: 6px;
 }
 
@@ -324,23 +467,26 @@ body {
   width: 42px;
   aspect-ratio: 3 / 4;
   object-fit: cover;
-  border: 1px solid #d5dbdb;
+  border: 1px solid var(--ui-border);
 }
 
 .form-error {
   margin: 0;
-  color: #b42318;
+  color: var(--ui-error);
   font-size: 12px;
 }
 
+/* ---------- Kadrowanie zdjęcia ---------- */
 .photo-cropper {
   padding: 20px 24px;
-  border: 1px solid #d5dbdb;
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
   border-radius: 8px;
+  box-shadow: 0 8px 32px var(--ui-shadow);
 }
 
 .photo-cropper::backdrop {
-  background: rgb(0 0 0 / 0.35);
+  background: var(--ui-backdrop);
 }
 
 .photo-cropper-frame {
@@ -348,7 +494,7 @@ body {
   margin: 0 auto 12px;
   cursor: grab;
   touch-action: none;
-  outline: 1px solid #c3cccc;
+  outline: 1px solid var(--ui-border);
 }
 
 .form-row > input.form-contact-label {
@@ -407,6 +553,7 @@ body {
   padding-top: 0;
 }
 
+/* Kompaktowe przyciski kolejności i uchwyt przeciągania. */
 .order-controls {
   display: inline-flex;
   flex-shrink: 0;
@@ -425,9 +572,10 @@ body {
   touch-action: none;
 }
 
+/* ---------- Biblioteka klauzul ---------- */
 .library-hint {
   margin: 0 0 16px;
-  color: #5f6b6b;
+  color: var(--ui-text-muted);
 }
 
 .clause-item {
@@ -439,7 +587,7 @@ body {
 
 .clause-default {
   font-weight: normal;
-  color: #1a6e72;
+  color: var(--ui-accent-dark);
 }
 
 .clause-text {
@@ -447,15 +595,15 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  color: #5f6b6b;
+  color: var(--ui-text-muted);
   font-size: 12px;
 }
 
 .clause-form {
   margin-bottom: 8px;
   padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #d5dbdb;
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
   border-radius: 6px;
 }
 
@@ -472,11 +620,11 @@ body {
 }
 
 .consent-modified {
-  color: #8a5a00;
+  color: var(--ui-warning);
   font-size: 12px;
 }
 
-/* Tagi CV na liście – chipy i tryb „Tagi” wiersza. */
+/* ---------- Tagi CV na liście – chipy i tryb „Tagi” wiersza ---------- */
 .tag-chips {
   display: flex;
   flex-wrap: wrap;
@@ -492,8 +640,8 @@ body {
   gap: 2px;
   padding: 1px 8px;
   font-size: 12px;
-  color: #1a4f52;
-  background: #e3efef;
+  color: var(--ui-accent-dark);
+  background: var(--ui-accent-glow);
   border-radius: 999px;
 }
 
@@ -504,7 +652,12 @@ body {
   color: inherit;
   background: none;
   border: 0;
+  border-radius: 999px;
   cursor: pointer;
+}
+
+.tag-chip-remove:hover:not(:disabled) {
+  background: var(--ui-panel-bg);
 }
 
 .tags-editor-content {
@@ -532,32 +685,39 @@ body {
 .tag-filter-label {
   margin-right: 4px;
   font-size: 12px;
-  color: #666;
+  color: var(--ui-text-muted);
 }
 
 .tag-filter-tag {
   padding: 2px 10px;
   font-size: 12px;
-  color: #1a4f52;
-  background: #e3efef;
+  color: var(--ui-accent-dark);
+  background: var(--ui-accent-glow);
   border: 1px solid transparent;
   border-radius: 999px;
   cursor: pointer;
 }
 
 .tag-filter-tag[aria-pressed='true'] {
-  color: #fff;
-  background: #1a4f52;
+  color: var(--ui-text-on-accent);
+  background: var(--ui-accent);
+}
+
+.tag-filter-tag[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--ui-accent-dark);
+  border-color: var(--ui-accent-dark);
 }
 
 .tag-filter-clear {
+  padding: 2px 10px;
   font-size: 12px;
+  border-radius: 999px;
 }
 
 .tag-suggestion {
   font: inherit;
   font-size: 12px;
-  border: 1px dashed #9cc4c6;
+  border: 1px dashed var(--ui-accent);
   background: transparent;
   cursor: pointer;
 }

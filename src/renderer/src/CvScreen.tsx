@@ -51,7 +51,7 @@ export function CvScreen({ document: initial, onBack }: { document: CvDocument; 
         >
           {t.saveStatus[saveStatus]}
         </span>
-        <button type="button" onClick={exportPdf} disabled={exportState.status === 'exporting'}>
+        <button type="button" className="button-primary" onClick={exportPdf} disabled={exportState.status === 'exporting'}>
           {exportState.status === 'exporting' ? t.exporting : t.exportPdf}
         </button>
         {exportState.status === 'saved' && (

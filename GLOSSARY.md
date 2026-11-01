@@ -23,3 +23,7 @@ _Avoid_: Theme, layout, skin, style (as names for the whole design)
 **Tag**:
 A short, user-chosen label attached to a CV to organise the CV library (e.g. "frontend", "EN", "Allegro"). Private metadata: never shown on the CV document itself. A tag exists only as long as at least one CV carries it. Independent of the CV language, even when it names a language.
 _Avoid_: Label (as a separate concept), keyword, skill, category
+
+**Appearance**:
+The light or dark look of the app's own interface (panels, forms, toolbars), chosen app-wide as Light, Dark or System, where System follows the operating system. Concerns only the interface: CV pages, template thumbnails and the exported PDF always keep their own look.
+_Avoid_: Theme, dark mode (as the name of the setting), skin, color scheme (as the name of the setting)

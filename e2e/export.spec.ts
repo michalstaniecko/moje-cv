@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
 import { PX_PER_MM } from '../src/renderer/src/domain/templateGeometry'
+import { isAppearance, type Appearance } from '../src/shared/appearance'
 import type { InterfaceLanguage } from '../src/shared/i18n/languages'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 
@@ -16,15 +17,24 @@ const packagedExecutable = process.env['MOJE_CV_APP']
 // Uruchamia aplikację na tymczasowym katalogu danych testu, żeby nie dotykać danych użytkownika.
 // Język interfejsu jest wymuszony (`MOJE_CV_LANGUAGE`, domyślnie angielski), żeby testy nie zależały od języka systemu;
 // `language: null` uruchamia aplikację bez wymuszenia (wybór z menu Language / Język, a bez niego system).
-async function launch({ language = 'en' }: { language?: InterfaceLanguage | null } = {}) {
+// Wygląd tak samo (`MOJE_CV_APPEARANCE`, domyślnie jasny; zmienna z otoczenia testu ma pierwszeństwo, żeby dało się
+// przejść cały zestaw w ciemnym wyglądzie), a `appearance: null` zostawia wybór menu Wygląd / Appearance.
+// Playwright domyślnie emuluje `prefers-color-scheme: light` w każdym oknie; `colorScheme: null` wyłącza emulację
+// i zostawia to Electronowi (`nativeTheme`), bo inaczej ciemny wygląd nigdy nie dotarłby do renderera.
+async function launch({
+  language = 'en',
+  appearance = isAppearance(process.env['MOJE_CV_APPEARANCE']) ? process.env['MOJE_CV_APPEARANCE'] : 'light'
+}: { language?: InterfaceLanguage | null; appearance?: Appearance | null } = {}) {
   const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
   const env = { ...process.env } as Record<string, string>
   if (language) env['MOJE_CV_LANGUAGE'] = language
   else delete env['MOJE_CV_LANGUAGE']
+  if (appearance) env['MOJE_CV_APPEARANCE'] = appearance
+  else delete env['MOJE_CV_APPEARANCE']
   app = await electron.launch(
     packagedExecutable
-      ? { executablePath: packagedExecutable, args: [userDataDir], env }
-      : { args: ['.', userDataDir], env }
+      ? { executablePath: packagedExecutable, args: [userDataDir], env, colorScheme: null }
+      : { args: ['.', userDataDir], env, colorScheme: null }
   )
   window = await app.firstWindow()
 }
@@ -120,7 +130,7 @@ test('the whole menu and the document follow the interface language forced for t
 
   await app.close()
   await launch({ language: 'en' })
-  expect((await menuLabels('Edit')).top).toEqual(['CV Press', 'Edit', 'Language / Język', 'Window'])
+  expect((await menuLabels('Edit')).top).toEqual(['CV Press', 'Edit', 'Language / Język', 'Appearance', 'Window'])
   expect((await menuLabels('CV Press')).items).toEqual(['About CV Press', 'Hide CV Press', 'Hide Others', 'Show All', 'Quit CV Press'])
   expect((await menuLabels('Edit')).items).toEqual(['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All'])
   expect((await menuLabels('Window')).items).toEqual(['Minimize', 'Zoom', 'Close Window'])
@@ -128,7 +138,7 @@ test('the whole menu and the document follow the interface language forced for t
 
   await app.close()
   await launch({ language: 'pl' })
-  expect((await menuLabels('Edycja')).top).toEqual(['CV Press', 'Edycja', 'Language / Język', 'Okno'])
+  expect((await menuLabels('Edycja')).top).toEqual(['CV Press', 'Edycja', 'Language / Język', 'Wygląd', 'Okno'])
   expect((await menuLabels('CV Press')).items).toEqual([
     'O aplikacji CV Press',
     'Ukryj CV Press',
@@ -147,14 +157,14 @@ test('Language / Język switches the menu and the window immediately, the choice
 
   await clickMenuItem('Language / Język', 'English')
   await expect.poll(() => menuLabels('Language / Język')).toEqual({
-    top: ['CV Press', 'Edit', 'Language / Język', 'Window'],
+    top: ['CV Press', 'Edit', 'Language / Język', 'Appearance', 'Window'],
     items: ['English ✓', 'Polski', 'System']
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
 
   await clickMenuItem('Language / Język', 'Polski')
   await expect.poll(() => menuLabels('Language / Język')).toEqual({
-    top: ['CV Press', 'Edycja', 'Language / Język', 'Okno'],
+    top: ['CV Press', 'Edycja', 'Language / Język', 'Wygląd', 'Okno'],
     items: ['English', 'Polski ✓', 'System']
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'pl')
@@ -175,10 +185,61 @@ test('Language / Język switches the menu and the window immediately, the choice
   await stubSystemLanguages(['de-DE'])
   await clickMenuItem('Language / Język', 'System')
   await expect.poll(() => menuLabels('Language / Język')).toEqual({
-    top: ['CV Press', 'Edit', 'Language / Język', 'Window'],
+    top: ['CV Press', 'Edit', 'Language / Język', 'Appearance', 'Window'],
     items: ['English', 'Polski', 'System ✓']
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
+})
+
+test('Appearance switches the app immediately, the choice survives a restart and System follows the system again', async () => {
+  const themeSource = () => app.evaluate(({ nativeTheme }) => nativeTheme.themeSource)
+  const prefersDark = () =>
+    window
+      .locator('html')
+      .evaluate((element) => element.ownerDocument.defaultView!.matchMedia('(prefers-color-scheme: dark)').matches)
+  // Wybór jest stosowany od razu, a zapis do pliku ustawień kończy się chwilę później; przed zamknięciem aplikacji
+  // czekamy na zapis, żeby restart nie wyprzedził pliku.
+  const savedAppearance = async () => {
+    const settings = await readFile(join(outputDir, 'user-data', 'settings.json'), 'utf8').catch(() => '{}')
+    return (JSON.parse(settings) as { appearance?: string }).appearance
+  }
+
+  // Bez wymuszenia i bez wyboru: Systemowy.
+  await app.close()
+  await launch({ appearance: null })
+  expect((await menuLabels('Appearance')).items).toEqual(['Light', 'Dark', 'System ✓'])
+  expect(await themeSource()).toBe('system')
+
+  await clickMenuItem('Appearance', 'Dark')
+  await expect.poll(() => menuLabels('Appearance')).toMatchObject({ items: ['Light', 'Dark ✓', 'System'] })
+  expect(await themeSource()).toBe('dark')
+  await expect.poll(prefersDark).toBe(true)
+  await expect.poll(savedAppearance).toBe('dark')
+
+  await app.close()
+  await launch({ language: 'pl', appearance: null })
+  expect((await menuLabels('Wygląd')).items).toEqual(['Jasny', 'Ciemny ✓', 'Systemowy'])
+  expect(await themeSource()).toBe('dark')
+  await expect.poll(prefersDark).toBe(true)
+
+  await clickMenuItem('Wygląd', 'Jasny')
+  await expect.poll(() => menuLabels('Wygląd')).toMatchObject({ items: ['Jasny ✓', 'Ciemny', 'Systemowy'] })
+  expect(await themeSource()).toBe('light')
+  await expect.poll(prefersDark).toBe(false)
+
+  await clickMenuItem('Wygląd', 'Systemowy')
+  await expect.poll(() => menuLabels('Wygląd')).toMatchObject({ items: ['Jasny', 'Ciemny', 'Systemowy ✓'] })
+  expect(await themeSource()).toBe('system')
+
+  // Wymuszenie zmienną środowiskową wygrywa z zapisanym wyborem, ale zaznaczenie w menu pokazuje wybór użytkownika.
+  await clickMenuItem('Wygląd', 'Ciemny')
+  await expect.poll(themeSource).toBe('dark')
+  await expect.poll(savedAppearance).toBe('dark')
+  await app.close()
+  await launch({ language: 'en', appearance: 'light' })
+  expect((await menuLabels('Appearance')).items).toEqual(['Light', 'Dark ✓', 'System'])
+  expect(await themeSource()).toBe('light')
+  await expect.poll(prefersDark).toBe(false)
 })
 
 test('native file dialogs get their titles and file-type filters in the interface language', async () => {
@@ -282,7 +343,7 @@ test('switching the language in the menu immediately translates the CV library a
   await clickMenuItem('Language / Język', 'Polski')
   await expect(window.getByRole('button', { name: 'Nowe CV' })).toBeVisible()
   await expect(window.getByRole('list', { name: 'Lista CV' }).getByRole('listitem')).toContainText(
-    /Zmieniono \d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}/
+    /Zmieniono \d{1,2}\.\d{2}\.\d{4}, \d{2}:\d{2}/
   )
 
   await window.getByRole('button', { name: 'Klauzule zgody' }).click()

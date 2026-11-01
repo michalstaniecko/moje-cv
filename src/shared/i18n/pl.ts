@@ -20,7 +20,11 @@ export const pl: Dictionary = {
     zoom: 'Zoom',
     closeWindow: 'Zamknij okno',
     language: 'Language / Język',
-    systemLanguage: 'System'
+    systemLanguage: 'System',
+    appearance: 'Wygląd',
+    lightAppearance: 'Jasny',
+    darkAppearance: 'Ciemny',
+    systemAppearance: 'Systemowy'
   },
   dialogs: {
     exportPdf: 'Eksportuj do PDF',

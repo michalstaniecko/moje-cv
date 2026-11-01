@@ -157,7 +157,7 @@ function ClauseForm({
         <textarea rows={6} value={text} onChange={(event) => setText(event.target.value)} />
       </label>
       <div className="library-item-actions">
-        <button type="submit" disabled={!name.trim()}>
+        <button type="submit" className="button-primary" disabled={!name.trim()}>
           {common.save}
         </button>
         <button type="button" onClick={onCancel}>
