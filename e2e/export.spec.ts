@@ -282,7 +282,7 @@ test('switching the language in the menu immediately translates the CV library a
   await clickMenuItem('Language / Język', 'Polski')
   await expect(window.getByRole('button', { name: 'Nowe CV' })).toBeVisible()
   await expect(window.getByRole('list', { name: 'Lista CV' }).getByRole('listitem')).toContainText(
-    /Zmieniono \d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}/
+    /Zmieniono \d{1,2}\.\d{2}\.\d{4}, \d{2}:\d{2}/
   )
 
   await window.getByRole('button', { name: 'Klauzule zgody' }).click()
