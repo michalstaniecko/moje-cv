@@ -197,6 +197,12 @@ test('Appearance switches the app immediately, the choice survives a restart and
     window
       .locator('html')
       .evaluate((element) => element.ownerDocument.defaultView!.matchMedia('(prefers-color-scheme: dark)').matches)
+  // Wybór jest stosowany od razu, a zapis do pliku ustawień kończy się chwilę później; przed zamknięciem aplikacji
+  // czekamy na zapis, żeby restart nie wyprzedził pliku.
+  const savedAppearance = async () => {
+    const settings = await readFile(join(outputDir, 'user-data', 'settings.json'), 'utf8').catch(() => '{}')
+    return (JSON.parse(settings) as { appearance?: string }).appearance
+  }
 
   // Bez wymuszenia i bez wyboru: Systemowy.
   await app.close()
@@ -208,6 +214,7 @@ test('Appearance switches the app immediately, the choice survives a restart and
   await expect.poll(() => menuLabels('Appearance')).toMatchObject({ items: ['Light', 'Dark ✓', 'System'] })
   expect(await themeSource()).toBe('dark')
   await expect.poll(prefersDark).toBe(true)
+  await expect.poll(savedAppearance).toBe('dark')
 
   await app.close()
   await launch({ language: 'pl', appearance: null })
@@ -227,6 +234,7 @@ test('Appearance switches the app immediately, the choice survives a restart and
   // Wymuszenie zmienną środowiskową wygrywa z zapisanym wyborem, ale zaznaczenie w menu pokazuje wybór użytkownika.
   await clickMenuItem('Wygląd', 'Ciemny')
   await expect.poll(themeSource).toBe('dark')
+  await expect.poll(savedAppearance).toBe('dark')
   await app.close()
   await launch({ language: 'en', appearance: 'light' })
   expect((await menuLabels('Appearance')).items).toEqual(['Light', 'Dark ✓', 'System'])
