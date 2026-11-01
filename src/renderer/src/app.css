@@ -21,6 +21,31 @@
   --ui-backdrop: rgb(28 39 51 / 0.4);
 }
 
+/* Ciemna paleta: te same tokeny z innymi wartościami. Proces główny ustawia `nativeTheme.themeSource`, a Electron
+   przełącza `prefers-color-scheme` (ADR-0004). Reguła zmienia tylko wartości tokenów na :root, więc okno PDF
+   (ten sam bundel CSS) i strony CV, które tokenów --ui-* nie używają, wyglądają tak samo w obu wyglądach.
+   Tekst na akcencie jest ciemny (biały na #5b9cf0 ma kontrast 2.82:1, poniżej WCAG AA).
+   Tło okna Electrona (src/shared/interfaceLook.ts) musi być równe --ui-app-bg. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ui-accent: #5b9cf0;
+    --ui-accent-dark: #7fb3f5;
+    --ui-accent-glow: #1b2f4a;
+    --ui-text-on-accent: #0f1620;
+    --ui-app-bg: #0f1620;
+    --ui-panel-bg: #18222e;
+    --ui-preview-bg: #0a1017;
+    --ui-border: #2c3a4a;
+    --ui-text: #e6edf5;
+    --ui-text-muted: #93a3b5;
+    --ui-error: #f28b82;
+    --ui-warning: #e3b341;
+    --ui-focus-ring: #5b9cf0;
+    --ui-shadow: rgb(0 0 0 / 0.5);
+    --ui-backdrop: rgb(0 0 0 / 0.6);
+  }
+}
+
 /* Reguła celowo tak samo prosta jak `html, body` w print.css: w jednym bundlu CSS wygrywa tamta (kolejność),
    więc okno PDF zostaje białe. Kolor tekstu i czcionka są ustawiane na korzeniach interfejsu, nie na body. */
 html,
@@ -29,13 +54,16 @@ body {
   background: var(--ui-app-bg);
 }
 
-/* ---------- Korzenie interfejsu: czcionka i kolor tekstu ---------- */
+/* ---------- Korzenie interfejsu: czcionka, kolor tekstu i color-scheme ----------
+   `color-scheme` tylko tutaj, nigdy na html/body/:root ani na .preview (zawiera strony CV): natywne kontrolki
+   (checkbox, select, suwak, pole koloru, pasek przewijania) podążają za wyglądem, a strony CV nie (ADR-0004). */
 .toolbar,
 .library,
 .editor-form,
 .preview-bar,
 .photo-cropper {
   color: var(--ui-text);
+  color-scheme: light dark;
   font: 14px system-ui, sans-serif;
 }
 
@@ -391,9 +419,12 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
-/* Miniatura to papier CV: zostaje biała niezależnie od wyglądu interfejsu. */
+/* Miniatura to papier CV: zostaje biała niezależnie od wyglądu interfejsu. Leży w .editor-form, więc odwraca
+   odziedziczone `color-scheme` i kolor tekstu, żeby wyglądała jak strona w podglądzie i w PDF. */
 .template-thumbnail {
   position: relative;
+  color-scheme: light;
+  color: initial;
   width: calc(210mm * var(--thumbnail-scale));
   height: calc(297mm * var(--thumbnail-scale));
   overflow: hidden;
