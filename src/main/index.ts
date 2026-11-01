@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import { app, BrowserWindow } from 'electron'
 import { sampleCvs } from '../renderer/src/domain/sampleCv'
+import { createAppearance, windowBackground } from './appearance'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
 import { createInterfaceLanguage, registerInterfaceLanguage, type InterfaceLanguageState } from './interfaceLanguage'
@@ -10,17 +11,16 @@ import { registerPhotoPicker } from './photo'
 import { registerSettings } from './settings'
 import { createSettingsRepository } from './settingsRepository'
 import { loadRenderer, secureWebPreferences } from './windows'
-import { lightWindowBackground } from '../shared/interfaceLook'
 
 // Tytuł okna to nazwa aplikacji ze słownika; renderer ustawia go także w dokumencie przy zmianie języka.
-// Tło okna równe tłu aplikacji, żeby przy starcie nie było białego błysku.
+// Tło okna równe tłu aplikacji w bieżącym wyglądzie, żeby przy starcie nie było błysku innej barwy.
 function createWindow(language: InterfaceLanguageState): void {
   const window = new BrowserWindow({
     width: 1280,
     height: 900,
     title: language.dictionary().appName,
     show: false,
-    backgroundColor: lightWindowBackground,
+    backgroundColor: windowBackground(),
     webPreferences: secureWebPreferences
   })
 
@@ -35,6 +35,8 @@ if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', join(ap
 app.whenReady().then(async () => {
   const repository = createCvRepository(join(app.getPath('userData'), 'cvs'))
   const settings = createSettingsRepository(join(app.getPath('userData'), 'settings.json'))
+  // Wygląd przed pierwszym oknem, żeby pierwsze malowanie i tło okna były już we właściwej palecie.
+  const appearance = await createAppearance(settings)
   const language = await createInterfaceLanguage(settings)
   await repository.addSampleOnFirstRun(sampleCvs[language.current()])
   registerInterfaceLanguage(language)
@@ -42,7 +44,7 @@ app.whenReady().then(async () => {
   registerSettings(settings)
   registerPdfExport(language)
   registerPhotoPicker(language)
-  registerAppMenu(language)
+  registerAppMenu(language, appearance)
   createWindow(language)
 
   app.on('activate', () => {
