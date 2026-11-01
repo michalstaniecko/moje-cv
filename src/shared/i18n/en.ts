@@ -242,6 +242,21 @@ export const en = {
     zoomIn: 'Zoom in',
     fit: 'Fit'
   },
+  // Sponsor bar i okno „Więcej” (zob. GLOSSARY.md). Podziękowanie, nie płatność: niczego nie odblokowuje.
+  sponsor: {
+    bar: 'Sponsor',
+    message: (appName: string) => `${appName} is free. If it helped you, you can thank the author with a coffee.`,
+    link: 'Buy me a coffee',
+    more: 'More',
+    dialogTitle: (appName: string) => `Why ${appName} is free`,
+    paragraphs: (appName: string) => [
+      `${appName} is free and will stay free: no ads, no account, no paid features.`,
+      'It is built by one person in their spare time.',
+      'If a CV made here helped you get a job, or you simply find the app useful, you can say thanks by buying a coffee through GitHub Sponsors.',
+      'This is a thank-you only. It unlocks nothing: the app works exactly the same either way.'
+    ],
+    close: 'Close'
+  },
   // Treść domyślna: powstaje w języku interfejsu z chwili utworzenia, potem jest zwykłą treścią CV (zob. GLOSSARY.md).
   defaultContent: {
     cvName: 'New CV',

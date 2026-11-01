@@ -230,6 +230,20 @@ export const pl: Dictionary = {
     zoomIn: 'Powiększ',
     fit: 'Dopasuj'
   },
+  sponsor: {
+    bar: 'Sponsor',
+    message: (appName) => `${appName} jest darmowe. Jeśli Ci pomogło, możesz podziękować autorowi kawą.`,
+    link: 'Postaw mi kawę',
+    more: 'Więcej',
+    dialogTitle: (appName) => `Dlaczego ${appName} jest darmowe`,
+    paragraphs: (appName) => [
+      `${appName} jest darmowe i takie pozostanie: bez reklam, bez konta, bez płatnych funkcji.`,
+      'Tworzy je jedna osoba w wolnym czasie.',
+      'Jeśli CV zrobione tutaj pomogło Ci dostać pracę albo po prostu aplikacja Ci się przydaje, możesz podziękować, stawiając kawę przez GitHub Sponsors.',
+      'To wyłącznie podziękowanie. Niczego nie odblokowuje: aplikacja działa dokładnie tak samo w obu przypadkach.'
+    ],
+    close: 'Zamknij'
+  },
   defaultContent: {
     cvName: 'Nowe CV',
     copyName: (name) => `${name} (kopia)`,

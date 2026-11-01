@@ -10,6 +10,7 @@ import { registerPdfExport } from './pdfExport'
 import { registerPhotoPicker } from './photo'
 import { registerSettings } from './settings'
 import { createSettingsRepository } from './settingsRepository'
+import { registerSponsor } from './sponsor'
 import { loadRenderer, secureWebPreferences } from './windows'
 
 // Tytuł okna to nazwa aplikacji ze słownika; renderer ustawia go także w dokumencie przy zmianie języka.
@@ -45,6 +46,7 @@ app.whenReady().then(async () => {
   registerPdfExport(language)
   registerPhotoPicker(language)
   registerAppMenu(language, appearance)
+  registerSponsor()
   createWindow(language)
 
   app.on('activate', () => {
