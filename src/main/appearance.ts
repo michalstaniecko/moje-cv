@@ -1,6 +1,12 @@
 import { BrowserWindow, nativeTheme } from 'electron'
-import { isAppearance, resolveAppearance, type Appearance, type ResolvedAppearance } from '../shared/appearance'
-import { darkWindowBackground, lightWindowBackground } from '../shared/interfaceLook'
+import {
+  darkWindowBackground,
+  isAppearance,
+  lightWindowBackground,
+  resolveAppearance,
+  type Appearance,
+  type ResolvedAppearance
+} from '../shared/appearance'
 import type { SettingsRepository } from './settingsRepository'
 
 export type AppearanceState = Awaited<ReturnType<typeof createAppearance>>

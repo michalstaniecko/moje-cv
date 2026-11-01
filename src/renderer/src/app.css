@@ -1,7 +1,7 @@
-/* ---------- Tokeny wyglądu interfejsu (ADR-0004) ----------
+/* ---------- Tokeny kolorów interfejsu (Appearance: jasny / ciemny, ADR-0004) ----------
    Jedyne miejsce, w którym kolory interfejsu są wpisane wprost. Prefiks `--ui-` chroni przed kolizją ze zmiennymi
    szablonów CV (--accent, --text, --muted, --rule, --label…), które dziedziczą się z :root.
-   Tło okna Electrona (src/shared/interfaceLook.ts) musi być równe --ui-app-bg. */
+   Tło okna Electrona (src/shared/appearance.ts) musi być równe --ui-app-bg. */
 :root {
   --ui-accent: #1f6fcf;
   --ui-accent-dark: #174f99;
@@ -25,7 +25,7 @@
    przełącza `prefers-color-scheme` (ADR-0004). Reguła zmienia tylko wartości tokenów na :root, więc okno PDF
    (ten sam bundel CSS) i strony CV, które tokenów --ui-* nie używają, wyglądają tak samo w obu wyglądach.
    Tekst na akcencie jest ciemny (biały na #5b9cf0 ma kontrast 2.82:1, poniżej WCAG AA).
-   Tło okna Electrona (src/shared/interfaceLook.ts) musi być równe --ui-app-bg. */
+   Tło okna Electrona (src/shared/appearance.ts) musi być równe --ui-app-bg. */
 @media (prefers-color-scheme: dark) {
   :root {
     --ui-accent: #5b9cf0;
