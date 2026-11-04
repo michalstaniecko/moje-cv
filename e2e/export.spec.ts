@@ -231,7 +231,6 @@ test('the Language menu switches the menu and the window immediately, the choice
 
   // System z niemieckim systemem: niemiecki, z dwujęzyczną etykietą menu.
   await stubSystemLanguages(['de-DE', 'en-US'])
-  await chooseLanguage('Deutsch')
   await chooseLanguage('System')
   await expect.poll(() => menuLabels('Sprache / Language')).toEqual({
     top: ['CV Press', 'Bearbeiten', 'Sprache / Language', 'Erscheinungsbild', 'Fenster'],
