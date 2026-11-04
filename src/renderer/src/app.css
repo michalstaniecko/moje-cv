@@ -516,6 +516,13 @@ textarea:focus-visible {
   margin-bottom: 8px;
 }
 
+/* Przycisk w wierszu formularza zawsze w jednej linii (dłuższe tłumaczenia, np. niemieckie): ściska się pole
+   albo zawija etykieta pola wyboru obok, nie przycisk. */
+.form-row > button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .photo-field {
   align-items: center;
 }
@@ -604,6 +611,8 @@ textarea:focus-visible {
 
 .form-row--spread .form-checkbox {
   padding-top: 0;
+  /* Obok przycisku „Usuń …” etykieta może się zawinąć, żeby dłuższe tłumaczenia nie poszerzały formularza. */
+  white-space: normal;
 }
 
 .form-section > .form-row .form-checkbox {
