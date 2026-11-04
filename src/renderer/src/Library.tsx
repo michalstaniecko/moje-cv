@@ -80,6 +80,10 @@ export function Library({
     }
   }
 
+  // Nowe CV (puste lub Sample CV): filtr tagów jest czyszczony, żeby nowe CV (bez tagów) było widać na liście.
+  const createAndShow = (create: () => Promise<unknown>) =>
+    runAndRefresh(() => create().then(() => onTagFilterChange([])), 'create')
+
   // Zapisuje tagi CV, nie zamykając trybu „Tagi”. Zwraca, czy się udało; odrzucony tag kończy się komunikatem z powodem.
   const saveTags = async (id: string, tags: string[]): Promise<boolean> => {
     setError(null)
@@ -156,8 +160,8 @@ export function Library({
           {t.importFile}
         </button>
         <NewCvButton
-          onCreate={() => runAndRefresh(() => window.api.cv.create().then(() => onTagFilterChange([])), 'create')}
-          onAddSample={() => runAndRefresh(() => window.api.cv.addSample().then(() => onTagFilterChange([])), 'create')}
+          onCreate={() => createAndShow(() => window.api.cv.create())}
+          onAddSample={() => createAndShow(() => window.api.cv.addSample())}
         />
       </header>
       <main className="library">
@@ -250,7 +254,7 @@ function NewCvButton({ onCreate, onAddSample }: { onCreate: () => void; onAddSam
   const arrow = useRef<HTMLButtonElement>(null)
   const firstItem = useRef<HTMLButtonElement>(null)
   const container = useRef<HTMLDivElement>(null)
-  const { library } = useDictionary()
+  const { library: t } = useDictionary()
 
   useEffect(() => {
     if (!open) return
@@ -283,13 +287,13 @@ function NewCvButton({ onCreate, onAddSample }: { onCreate: () => void; onAddSam
       }}
     >
       <button type="button" className="button-primary split-button-main" onClick={onCreate}>
-        {library.newCv}
+        {t.newCv}
       </button>
       <button
         ref={arrow}
         type="button"
         className="button-primary split-button-arrow"
-        aria-label={library.moreCreateOptions}
+        aria-label={t.moreCreateOptions}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((wasOpen) => !wasOpen)}
@@ -297,7 +301,7 @@ function NewCvButton({ onCreate, onAddSample }: { onCreate: () => void; onAddSam
         ▾
       </button>
       {open && (
-        <ul className="split-button-menu" role="menu" aria-label={library.moreCreateOptions}>
+        <ul className="split-button-menu" role="menu" aria-label={t.moreCreateOptions}>
           <li role="none">
             <button
               ref={firstItem}
@@ -308,7 +312,7 @@ function NewCvButton({ onCreate, onAddSample }: { onCreate: () => void; onAddSam
                 onAddSample()
               }}
             >
-              {library.addSample}
+              {t.addSample}
             </button>
           </li>
         </ul>
