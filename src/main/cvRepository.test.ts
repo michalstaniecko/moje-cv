@@ -111,6 +111,53 @@ describe('first run', () => {
   })
 })
 
+describe('add sample', () => {
+  test('adds the Sample CV as a new CV dated now, with the given content', async () => {
+    repository = createCvRepository(cvDir, { now: () => new Date('2026-11-04T09:15:00.000Z') })
+
+    const added = await repository.addSample(sampleCv)
+
+    expect(added.id).not.toBe(sampleCv.id)
+    expect(await repository.list()).toEqual([
+      { status: 'ok', id: added.id, name: 'Przykładowe CV', updatedAt: '2026-11-04T09:15:00.000Z', tags: [] }
+    ])
+    const stored = await repository.get(added.id)
+    expect(stored.createdAt).toBe('2026-11-04T09:15:00.000Z')
+    expect({ ...stored, id: sampleCv.id, createdAt: sampleCv.createdAt, updatedAt: sampleCv.updatedAt }).toEqual(sampleCv)
+  })
+
+  test('works in an empty library left after the user deleted every CV', async () => {
+    await repository.addSampleOnFirstRun(sampleCv)
+    const [first] = await repository.list()
+    await repository.delete(first!.id)
+
+    await repository.addSample(sampleCv)
+
+    expect((await repository.list()).map((entry) => entry.status === 'ok' && entry.name)).toEqual(['Przykładowe CV'])
+  })
+
+  test('adding twice gives two separate CVs with the same name', async () => {
+    const first = await repository.addSample(sampleCv)
+    const second = await repository.addSample(sampleCv)
+
+    expect(first.id).not.toBe(second.id)
+    const entries = await repository.list()
+    expect(entries).toHaveLength(2)
+    expect(entries.map((entry) => entry.status === 'ok' && entry.name)).toEqual(['Przykładowe CV', 'Przykładowe CV'])
+  })
+
+  test('other CVs in the library are not touched', async () => {
+    const mine = cv({ id: 'mine', name: 'Moje', tags: ['frontend'] })
+    await repository.save(mine)
+
+    await repository.addSample(sampleCvs.en)
+
+    expect(await repository.get('mine')).toEqual(mine)
+    const names = (await repository.list()).map((entry) => entry.status === 'ok' && entry.name)
+    expect(names.sort()).toEqual(['Moje', 'Sample CV'])
+  })
+})
+
 describe('create', () => {
   test('adds an empty CV with default section titles to the library', async () => {
     repository = createCvRepository(cvDir, { now: () => new Date('2026-10-21T08:30:00.000Z') })

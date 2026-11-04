@@ -113,6 +113,9 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
       if (!(await exists(dir))) await saveAsNew(sample)
     },
 
+    // Sample CV na żądanie: zawsze nowe CV z treścią przekazanego dokumentu (bez wykrywania duplikatów).
+    addSample: (sample: CvDocument): Promise<CvDocument> => saveAsNew(sample),
+
     // Nowe CV z treścią domyślną (`content`) języka interfejsu i domyślną klauzulą z biblioteki (włączoną), o ile jest.
     create: (content: DefaultContent, defaultClause: Clause | null = null) =>
       saveAsNew(emptyCv({ content, now: now(), newId: randomUUID, defaultClause })),
