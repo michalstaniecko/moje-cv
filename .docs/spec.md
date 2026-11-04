@@ -14,7 +14,7 @@ Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/bri
 | Q5 | Podział stron | Automatyczne reguły + przełącznik „nowa strona przed tym elementem” przy sekcji i wpisie. |
 | Q6 | Klauzula – zachowanie | Zawsze na dole ostatniej strony. Gdy się nie mieści – na dół nowej strony. Przełącznik wł./wył. Zwykły tekst. |
 | Q7 | Klauzula – treści | Globalna biblioteka zapisanych klauzul; CV wybiera jedną i może ją nadpisać lokalnie. |
-| Q8 | Język | Język interfejsu (angielski, polski) niezależny od języka CV: przy pierwszym uruchomieniu język systemu, jeśli obsługiwany, inaczej angielski; zmiana w menu Language / Język (English, Polski, System) działa od razu i jest zapamiętywana. Cały interfejs (menu, okna plików, ekrany, komunikaty, licznik stron z polską odmianą) pochodzi z własnego typowanego słownika wspólnego dla main i renderera (ADR-0001); nowy język = nowy słownik i pozycja na liście języków. Treść domyślna (nazwa nowego CV, tytuły sekcji, etykiety kontaktu, przykładowe CV, dopisek „(kopia)”) powstaje w języku interfejsu z chwili utworzenia, potem jest zwykłą, edytowalną treścią; zmiana języka nie zmienia istniejących CV. Angielskie przykładowe CV nie ma klauzuli zgody. Błędy z procesu głównego widoczne dla użytkownika (np. niepoprawny plik importu) trafiają do renderera jako kody. Nazwa aplikacji „CV Press” jest ta sama w obu językach; folder danych pozostaje „Moje CV”. |
+| Q8 | Język | Język interfejsu niezależny od języka CV, 16 języków: angielski, polski, hiszpański (europejski, neutralny), francuski, niemiecki, portugalski (brazylijski), włoski, niderlandzki, rosyjski, ukraiński, turecki, indonezyjski, wietnamski, czeski, rumuński, szwedzki – jeden słownik na język, bez wariantów regionalnych. Przy pierwszym uruchomieniu język systemu, jeśli obsługiwany (wariant regionalny → język bazowy, np. `pt-PT` → `pt`), inaczej angielski; zmiana w menu Language działa od razu i jest zapamiętywana. Etykieta menu jest dwujęzyczna, „<lokalnie> / Language” (np. „Sprache / Language”, „Język / Language”), po angielsku samo „Language”; pozycje to nazwy języków w nich samych, alfabetycznie (łacinka przed cyrylicą), System na końcu. Cały interfejs (menu, okna plików, ekrany, komunikaty, licznik stron z odmianą `Intl.PluralRules`) pochodzi z własnego typowanego słownika wspólnego dla main i renderera (ADR-0001); nowy język = nowy słownik, jego przykładowe CV i pozycja na liście języków. Treść domyślna (nazwa nowego CV, tytuły sekcji, etykiety kontaktu, przykładowe CV, dopisek „(kopia)”) powstaje w języku interfejsu z chwili utworzenia, potem jest zwykłą, edytowalną treścią; zmiana języka nie zmienia istniejących CV. Przykładowe CV jest zlokalizowane (lokalne imię, fikcyjne firmy, miasta, fikcyjny telefon, lokalne nazwy stopni) przy tej samej strukturze, datach i liczbie stron co angielskie; w `ru`, `uk` i `vi` startuje z Source Sans 3. Klauzulę zgody ma tylko polskie przykładowe CV. Błędy z procesu głównego widoczne dla użytkownika (np. niepoprawny plik importu) trafiają do renderera jako kody. Nazwa aplikacji „CV Press” jest ta sama we wszystkich językach; folder danych pozostaje „Moje CV”. |
 | Q9 | Zdjęcie | Wgranie pliku, kadrowanie do stałych proporcji, opcja „bez zdjęcia” (nagłówek bez kolumny zdjęcia). |
 | Q10 | Wygląd | Kolor akcentu (domyślnie `#1a6e72`) + wybór fontu (Q24). Reszta stała. |
 | Q11 | Formatowanie | Zwykły tekst wszędzie (bez pogrubień, linków). |
@@ -104,7 +104,7 @@ type AppSettings = {
   schemaVersion: 1
   clauses: { id: Id; name: string; text: string }[]
   defaultClauseId: Id | null
-  interfaceLanguage?: 'en' | 'pl'  // brak = język systemu
+  interfaceLanguage?: InterfaceLanguage  // 'en' | 'pl' | 'es' | 'fr' | 'de' | 'pt' | 'it' | 'nl' | 'ru' | 'uk' | 'tr' | 'id' | 'vi' | 'cs' | 'ro' | 'sv'; brak = język systemu
 }
 ```
 
@@ -175,7 +175,7 @@ Każda strona to `div` 210×297 mm z paddingiem marginesów, `overflow: hidden`,
 
 ## 6. Architektura
 
-- **main**: okna, IPC, system plików (CV, ustawienia, import/eksport), eksport PDF, dialogi (tytuły i filtry w języku interfejsu), język interfejsu (wybór → system → angielski; `MOJE_CV_LANGUAGE=en|pl` wymusza go w testach) i menu aplikacji w tym języku (Edycja → Cofnij / Ponów w edytorze CV przekazywane do historii CV, Language / Język).
+- **main**: okna, IPC, system plików (CV, ustawienia, import/eksport), eksport PDF, dialogi (tytuły i filtry w języku interfejsu), język interfejsu (wybór → system → angielski; `MOJE_CV_LANGUAGE=<kod>` wymusza go w testach) i menu aplikacji w tym języku (Edycja → Cofnij / Ponów w edytorze CV przekazywane do historii CV, Language).
 - **preload**: wąskie API przez `contextBridge`: `cv.list/get/save/delete/duplicate/import/export`, `settings.get/save`, `pdf.export`, `photo.pick`, `language.get/onChange` (bieżący język interfejsu i jego zmiany), `editor.setActive/onHistoryCommand` (edytor zgłasza, że jest otwarty, i dostaje Cofnij / Ponów z menu). `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`.
 - **renderer** (React):
   - `domain/` – schematy Zod, migracje, formatowanie dat, generator bloków, `paginate` (bez Reacta, testowane w Vitest).
@@ -184,7 +184,7 @@ Każda strona to `div` 210×297 mm z paddingiem marginesów, `overflow: hidden`,
   - `preview/` – panel podglądu: licznik stron, informacja o długości CV, powiększenie (dopasowanie do szerokości, +, −, 100%).
   - `i18n.tsx` – bieżący język interfejsu z procesu głównego (`useInterfaceLanguage`, `useDictionary`); jego zmiana od razu przerysowuje okno. Słowniki w `src/shared/i18n/` (wspólne z main).
   - `store/` – Zustand + zundo, autozapis.
-- **Testy**: Vitest dla `paginate`, generatora bloków, migracji, formatowania dat. Playwright (Electron): start aplikacji → przykładowe CV → eksport PDF → plik istnieje i ma oczekiwaną liczbę stron. Testy e2e domyślnie wymuszają angielski (`MOJE_CV_LANGUAGE=en`); osobne testy sprawdzają uruchomienie po polsku i zmianę języka.
+- **Testy**: Vitest dla `paginate`, generatora bloków, migracji, formatowania dat. Playwright (Electron): start aplikacji → przykładowe CV → eksport PDF → plik istnieje i ma oczekiwaną liczbę stron. Testy e2e domyślnie wymuszają angielski (`MOJE_CV_LANGUAGE=en`); osobne testy sprawdzają uruchomienie po polsku, zmianę języka oraz w pętli po wszystkich 16 językach: start, menu, liczbę stron przykładowego CV w PDF i to, że teksty mieszczą się w przyciskach i paskach.
 
 ## 7. Plan wdrożenia (etapy pionowe)
 
