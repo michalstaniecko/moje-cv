@@ -13,8 +13,9 @@ export class InvalidTagError extends Error {
 // Tag bez skrajnych spacji, z pojedynczymi spacjami w środku (z samych spacji zostaje pusty tekst).
 export const cleanTag = (tag: string) => tag.replace(/\s+/g, ' ').trim()
 
-// Tagi równe bez względu na wielkość liter mają ten sam klucz.
-export const tagKey = (tag: string) => tag.toLocaleLowerCase()
+// Tagi równe bez względu na wielkość liter mają ten sam klucz. Zawsze po polsku, niezależnie od języka systemu
+// (po turecku „I” → „ı”) – tagi nie należą do żadnego języka (zob. GLOSSARY.md).
+export const tagKey = (tag: string) => tag.toLocaleLowerCase('pl')
 
 // Tagi CV: oczyszczone (cleanTag), bez pustych i bez powtórzeń różniących się tylko wielkością liter
 // (zostaje pierwsza pisownia). Za długi tag kończy się InvalidTagError.
