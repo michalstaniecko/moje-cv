@@ -79,6 +79,12 @@ export type Api = {
     // Zwraca funkcję wypisania.
     onHistoryCommand: (listener: (command: HistoryCommand) => void) => () => void
   }
+  // Sponsor bar: proces główny mówi, czy belkę pokazać (nie w Mac App Store), i sam otwiera jedyny znany adres
+  // Sponsor linku w systemowej przeglądarce – renderer nie przekazuje żadnego URL-a.
+  sponsor: {
+    isAvailable: () => Promise<boolean>
+    open: () => Promise<void>
+  }
   // Używane wyłącznie przez ukryte okno wydruku.
   print: {
     getDocument: () => Promise<CvDocument>

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- Sponsor bar at the bottom of the window: the app is free, with a "Buy me a coffee" link to GitHub Sponsors and a "More" dialog. Hidden in the Mac App Store build.
+
 ### Changed
 - The app is now called "CV Press" (previously "Moje CV"). Existing CVs and settings stay where they were.
 

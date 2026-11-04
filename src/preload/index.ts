@@ -54,6 +54,10 @@ const api: Api = {
       }
     }
   },
+  sponsor: {
+    isAvailable: () => ipcRenderer.invoke('sponsor:is-available'),
+    open: () => ipcRenderer.invoke('sponsor:open')
+  },
   print: {
     getDocument: () => ipcRenderer.invoke('print:document'),
     ready: () => ipcRenderer.send('print:ready')

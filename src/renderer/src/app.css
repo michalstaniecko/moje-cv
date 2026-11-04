@@ -61,7 +61,9 @@ body {
 .library,
 .editor-form,
 .preview-bar,
-.photo-cropper {
+.photo-cropper,
+.sponsor-bar,
+.sponsor-dialog {
   color: var(--ui-text);
   color-scheme: light dark;
   font: 14px system-ui, sans-serif;
@@ -319,10 +321,24 @@ textarea:focus-visible {
   border-radius: 6px;
 }
 
-.editor-screen {
+/* ---------- Powłoka aplikacji: ekran nad belką Sponsor bar ----------
+   Ekran jest jedynym obszarem przewijanym; belka ma stałą wysokość i nigdy nie nachodzi na treść. */
+.app-shell {
   display: flex;
   flex-direction: column;
   height: 100vh;
+}
+
+.app-screen {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.editor-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .editor-panes {
@@ -724,4 +740,69 @@ textarea:focus-visible {
 
 .tag-suggestion::before {
   content: '+ ';
+}
+
+/* ---------- Sponsor bar ---------- */
+.sponsor-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px;
+  font-size: 13px;
+  background: var(--ui-accent-glow);
+  border-top: 1px solid var(--ui-border);
+}
+
+/* Jedna linia: tylko komunikat się ucina; `white-space` nie na całej belce, bo okno „Więcej” jest w niej zagnieżdżone. */
+.sponsor-bar-message {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sponsor-bar > button {
+  flex-shrink: 0;
+}
+
+/* Sponsor link wygląda jak odnośnik, ale jest przyciskiem: otwiera stronę w przeglądarce systemowej, nie w oknie. */
+.sponsor-link {
+  padding: 0;
+  font-size: inherit;
+  color: var(--ui-accent);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+}
+
+.sponsor-link:hover:not(:disabled) {
+  color: var(--ui-accent-dark);
+  background: none;
+}
+
+.sponsor-more {
+  padding: 2px 10px;
+  font-size: inherit;
+}
+
+/* Okno „Więcej”: bez własnego paddingu, żeby kliknięcie w tło zawsze trafiało w sam <dialog>, a nie w treść. */
+.sponsor-dialog {
+  max-width: 460px;
+  padding: 0;
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px var(--ui-shadow);
+}
+
+.sponsor-dialog::backdrop {
+  background: var(--ui-backdrop);
+}
+
+.sponsor-dialog-content {
+  padding: 20px 24px;
+}
+
+.sponsor-dialog-paragraph {
+  margin: 0 0 10px;
+  line-height: 1.45;
 }
