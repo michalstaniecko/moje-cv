@@ -6,7 +6,7 @@ import type { SettingsRepository } from './settingsRepository'
 export type InterfaceLanguageState = Awaited<ReturnType<typeof createInterfaceLanguage>>
 
 // Proces główny ustala język interfejsu i jest jego właścicielem: buduje w nim menu i powiadamia renderer o zmianie.
-// `MOJE_CV_LANGUAGE=en|pl` wymusza język ponad wybór użytkownika i system (dla testów, także w zbudowanej aplikacji).
+// `MOJE_CV_LANGUAGE=<kod języka>` (np. `de`) wymusza język ponad wybór użytkownika i system (dla testów, także w zbudowanej aplikacji).
 export async function createInterfaceLanguage(settings: SettingsRepository) {
   const override = isInterfaceLanguage(process.env['MOJE_CV_LANGUAGE']) ? process.env['MOJE_CV_LANGUAGE'] : undefined
   // Uszkodzony plik ustawień nie blokuje startu – wtedy język systemu.
@@ -24,7 +24,7 @@ export async function createInterfaceLanguage(settings: SettingsRepository) {
   return {
     current,
     dictionary: (): Dictionary => dictionaryFor(current()),
-    // Wybór w menu Language / Język; `undefined` = język systemu.
+    // Wybór w menu Language; `undefined` = język systemu.
     preference: () => preference,
 
     // `null` wraca do języka systemu. Zmiana działa od razu – bez restartu – i jest zapamiętywana.

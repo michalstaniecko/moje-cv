@@ -19,7 +19,7 @@ export const pl: Dictionary = {
     minimize: 'Minimalizuj',
     zoom: 'Zoom',
     closeWindow: 'Zamknij okno',
-    language: 'Language / Język',
+    language: 'Język / Language',
     systemLanguage: 'System',
     appearance: 'Wygląd',
     lightAppearance: 'Jasny',

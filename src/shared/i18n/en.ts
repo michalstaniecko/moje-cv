@@ -24,8 +24,9 @@ export const en = {
     minimize: 'Minimize',
     zoom: 'Zoom',
     closeWindow: 'Close Window',
-    // Dwujęzyczne, żeby dało się wrócić po wybraniu języka, którego się nie czyta.
-    language: 'Language / Język',
+    // W innych językach dwujęzyczne („Sprache / Language”), żeby dało się wrócić po wybraniu języka,
+    // którego się nie czyta; po angielsku samo „Language”.
+    language: 'Language',
     systemLanguage: 'System',
     // Wygląd interfejsu (Appearance): jasny, ciemny albo za systemem.
     appearance: 'Appearance',

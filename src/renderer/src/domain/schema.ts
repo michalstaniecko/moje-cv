@@ -101,9 +101,8 @@ export const cvDocumentSchema = z.object({
 })
 export type CvDocument = z.infer<typeof cvDocumentSchema>
 
-// Języki, których pełnego alfabetu nie ma Lato (cyrylica, wietnamski) – CV w nich startuje z Source Sans 3.
-// Lista zawiera także języki, których jeszcze nie ma na liście CV language.
-const languagesStartingWithSourceSans: readonly string[] = ['ru', 'uk', 'vi']
+// CV language, których pełnego alfabetu nie ma Lato (cyrylica, wietnamski) – CV w nich startuje z Source Sans 3.
+const languagesStartingWithSourceSans: readonly CvLanguage[] = ['ru', 'uk', 'vi']
 
 // Ustawienia nowego CV (także Sample CV) w danym CV language.
 export const defaultCvSettings = (language: CvLanguage): CvDocument['settings'] => ({

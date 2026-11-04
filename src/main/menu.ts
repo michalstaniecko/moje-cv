@@ -90,7 +90,7 @@ function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceSt
       { role: 'close', label: menu.closeWindow }
     ]
   }
-  // Language / Język: zaznaczony jest wybór użytkownika (albo System), a nie wynik – np. System przy polskim systemie.
+  // Language (etykieta dwujęzyczna, np. „Sprache / Language”): zaznaczony jest wybór użytkownika (albo System), a nie wynik – np. System przy polskim systemie.
   const languageMenu = preferenceSubmenu({
     label: menu.language,
     values: interfaceLanguageCodes,

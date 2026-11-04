@@ -16,7 +16,7 @@ const packagedExecutable = process.env['MOJE_CV_APP']
 
 // Uruchamia aplikację na tymczasowym katalogu danych testu, żeby nie dotykać danych użytkownika.
 // Język interfejsu jest wymuszony (`MOJE_CV_LANGUAGE`, domyślnie angielski), żeby testy nie zależały od języka systemu;
-// `language: null` uruchamia aplikację bez wymuszenia (wybór z menu Language / Język, a bez niego system).
+// `language: null` uruchamia aplikację bez wymuszenia (wybór z menu Language, a bez niego system).
 // Wygląd tak samo (`MOJE_CV_APPEARANCE`, domyślnie jasny; zmienna z otoczenia testu ma pierwszeństwo, żeby dało się
 // przejść cały zestaw w ciemnym wyglądzie), a `appearance: null` zostawia wybór menu Wygląd / Appearance.
 // Playwright domyślnie emuluje `prefers-color-scheme: light` w każdym oknie; `colorScheme: null` wyłącza emulację
@@ -115,6 +115,43 @@ async function menuLabels(menuLabel: string) {
   }, menuLabel)
 }
 
+// Menu Language ma etykietę w języku interfejsu („Language”, „Język / Language”…), więc szukamy go po pozycji English.
+async function languageMenuLabel() {
+  return app.evaluate(({ Menu }) => {
+    const items = Menu.getApplicationMenu()?.items ?? []
+    const menu = items.find((item) => item.submenu?.items.some((entry) => entry.label === 'English'))
+    if (!menu) throw new Error('Brak menu Language')
+    return menu.label
+  })
+}
+
+// Wybiera język w menu Language (etykieta pozycji w jej własnym języku, np. „Polski”, albo „System” po angielsku).
+async function chooseLanguage(itemLabel: string) {
+  await clickMenuItem(await languageMenuLabel(), itemLabel)
+}
+
+// Pozycje menu Language: wszystkie języki w ich własnych nazwach, alfabetycznie, i System na końcu.
+const languageItems = (checked: string) =>
+  [
+    'Bahasa Indonesia',
+    'Čeština',
+    'Deutsch',
+    'English',
+    'Español',
+    'Français',
+    'Italiano',
+    'Nederlands',
+    'Polski',
+    'Português',
+    'Română',
+    'Svenska',
+    'Tiếng Việt',
+    'Türkçe',
+    'Русский',
+    'Українська',
+    'System'
+  ].map((label) => (label === checked ? `${label} ✓` : label))
+
 // Język systemu widziany przez aplikację, żeby wybór „System” dawał przewidywalny wynik.
 async function stubSystemLanguages(languages: string[]) {
   await app.evaluate(({ app }, languages) => {
@@ -132,15 +169,15 @@ test('the whole menu and the document follow the interface language forced for t
 
   await app.close()
   await launch({ language: 'en' })
-  expect((await menuLabels('Edit')).top).toEqual(['CV Press', 'Edit', 'Language / Język', 'Appearance', 'Window'])
+  expect((await menuLabels('Edit')).top).toEqual(['CV Press', 'Edit', 'Language', 'Appearance', 'Window'])
   expect((await menuLabels('CV Press')).items).toEqual(['About CV Press', 'Hide CV Press', 'Hide Others', 'Show All', 'Quit CV Press'])
   expect((await menuLabels('Edit')).items).toEqual(['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All'])
   expect((await menuLabels('Window')).items).toEqual(['Minimize', 'Zoom', 'Close Window'])
-  expect((await menuLabels('Language / Język')).items).toEqual(['English', 'Polski', 'System ✓'])
+  expect((await menuLabels('Language')).items).toEqual(languageItems('System'))
 
   await app.close()
   await launch({ language: 'pl' })
-  expect((await menuLabels('Edycja')).top).toEqual(['CV Press', 'Edycja', 'Language / Język', 'Wygląd', 'Okno'])
+  expect((await menuLabels('Edycja')).top).toEqual(['CV Press', 'Edycja', 'Język / Language', 'Wygląd', 'Okno'])
   expect((await menuLabels('CV Press')).items).toEqual([
     'O aplikacji CV Press',
     'Ukryj CV Press',
@@ -152,22 +189,22 @@ test('the whole menu and the document follow the interface language forced for t
   expect((await menuLabels('Okno')).items).toEqual(['Minimalizuj', 'Zoom', 'Zamknij okno'])
 })
 
-test('Language / Język switches the menu and the window immediately, the choice survives a restart and System follows the system again', async () => {
+test('the Language menu switches the menu and the window immediately, the choice survives a restart and System follows the system again', async () => {
   await app.close()
   await launch({ language: null })
-  await stubSystemLanguages(['de-DE', 'pl-PL'])
+  await stubSystemLanguages(['ja-JP', 'pl-PL'])
 
-  await clickMenuItem('Language / Język', 'English')
-  await expect.poll(() => menuLabels('Language / Język')).toEqual({
-    top: ['CV Press', 'Edit', 'Language / Język', 'Appearance', 'Window'],
-    items: ['English ✓', 'Polski', 'System']
+  await chooseLanguage('English')
+  await expect.poll(() => menuLabels('Language')).toEqual({
+    top: ['CV Press', 'Edit', 'Language', 'Appearance', 'Window'],
+    items: languageItems('English')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
 
-  await clickMenuItem('Language / Język', 'Polski')
-  await expect.poll(() => menuLabels('Language / Język')).toEqual({
-    top: ['CV Press', 'Edycja', 'Language / Język', 'Wygląd', 'Okno'],
-    items: ['English', 'Polski ✓', 'System']
+  await chooseLanguage('Polski')
+  await expect.poll(() => menuLabels('Język / Language')).toEqual({
+    top: ['CV Press', 'Edycja', 'Język / Language', 'Wygląd', 'Okno'],
+    items: languageItems('Polski')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'pl')
 
@@ -180,17 +217,27 @@ test('Language / Język switches the menu and the window immediately, the choice
 
   await app.close()
   await launch({ language: null })
-  expect((await menuLabels('Language / Język')).items).toEqual(['English', 'Polski ✓', 'System'])
+  expect((await menuLabels('Język / Language')).items).toEqual(languageItems('Polski'))
   await expect(window.locator('html')).toHaveAttribute('lang', 'pl')
 
   // System: pierwszy obsługiwany język systemu, a bez takiego angielski.
-  await stubSystemLanguages(['de-DE'])
-  await clickMenuItem('Language / Język', 'System')
-  await expect.poll(() => menuLabels('Language / Język')).toEqual({
-    top: ['CV Press', 'Edit', 'Language / Język', 'Appearance', 'Window'],
-    items: ['English', 'Polski', 'System ✓']
+  await stubSystemLanguages(['ja-JP'])
+  await chooseLanguage('System')
+  await expect.poll(() => menuLabels('Language')).toEqual({
+    top: ['CV Press', 'Edit', 'Language', 'Appearance', 'Window'],
+    items: languageItems('System')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
+
+  // System z niemieckim systemem: niemiecki, z dwujęzyczną etykietą menu.
+  await stubSystemLanguages(['de-DE', 'en-US'])
+  await chooseLanguage('Deutsch')
+  await chooseLanguage('System')
+  await expect.poll(() => menuLabels('Sprache / Language')).toEqual({
+    top: ['CV Press', 'Bearbeiten', 'Sprache / Language', 'Erscheinungsbild', 'Fenster'],
+    items: languageItems('System')
+  })
+  await expect(window.locator('html')).toHaveAttribute('lang', 'de')
 })
 
 test('Appearance switches the app immediately, the choice survives a restart and System follows the system again', async () => {
@@ -342,7 +389,7 @@ test('switching the language in the menu immediately translates the CV library a
   await expect(window.getByRole('button', { name: 'New CV' })).toBeVisible()
   await expect(window.getByRole('listitem').first()).toContainText(/Modified \d{1,2}\/\d{1,2}\/\d{2}/)
 
-  await clickMenuItem('Language / Język', 'Polski')
+  await chooseLanguage('Polski')
   await expect(window.getByRole('button', { name: 'Nowe CV' })).toBeVisible()
   await expect(window.getByRole('list', { name: 'Lista CV' }).getByRole('listitem')).toContainText(
     /Zmieniono \d{1,2}\.\d{2}\.\d{4}, \d{2}:\d{2}/
@@ -350,7 +397,7 @@ test('switching the language in the menu immediately translates the CV library a
 
   await window.getByRole('button', { name: 'Klauzule zgody' }).click()
   await expect(window.getByRole('heading', { name: 'Klauzule zgody' })).toBeVisible()
-  await clickMenuItem('Language / Język', 'English')
+  await chooseLanguage('English')
   await expect(window.getByRole('heading', { name: 'Consent clauses' })).toBeVisible()
   await expect(window.getByRole('button', { name: 'Add clause' })).toBeVisible()
 })
@@ -454,7 +501,7 @@ test('switching the language in the menu translates the open editor without losi
   const original = await window.getByLabel('Full name').inputValue()
   await window.getByLabel('Full name').fill('Ewa Nowak')
 
-  await clickMenuItem('Language / Język', 'Polski')
+  await chooseLanguage('Polski')
   const fullName = window.getByLabel('Imię i nazwisko')
   await expect(fullName).toHaveValue('Ewa Nowak')
   await expect(window.getByRole('button', { name: 'Eksportuj do PDF' })).toBeVisible()
@@ -462,7 +509,7 @@ test('switching the language in the menu translates the open editor without losi
 
   await clickMenuItem('Edycja', 'Cofnij')
   await expect(fullName).toHaveValue(original)
-  await clickMenuItem('Language / Język', 'English')
+  await chooseLanguage('English')
   await window.keyboard.press('Meta+Shift+z')
   await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
@@ -572,7 +619,7 @@ test('the arrow next to New CV adds the Sample CV again in the interface languag
   await launch({ language: null })
   await stubSystemLanguages(['en-US'])
   await expect(window.getByRole('button', { name: 'More ways to create' })).toBeVisible()
-  await clickMenuItem('Language / Język', 'Polski')
+  await chooseLanguage('Polski')
   const polishArrow = window.getByRole('button', { name: 'Więcej opcji tworzenia' })
   await polishArrow.click()
   await window.getByRole('menu').getByRole('menuitem', { name: 'Dodaj przykładowe CV' }).click()

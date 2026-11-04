@@ -52,17 +52,18 @@ async function stubOpenExternal() {
 
 const openExternalCalls = () => app.evaluate(() => (globalThis as { openExternalCalls?: string[] }).openExternalCalls)
 
-// Klika pozycję menu aplikacji w procesie głównym (jak w export.spec.ts).
-async function clickMenuItem(menuLabel: string, itemLabel: string) {
+// Wybiera język w menu Language w procesie głównym (jak w export.spec.ts). Etykieta menu jest w języku interfejsu
+// („Language”, „Język / Language”…), więc menu jest szukane po pozycji English.
+async function chooseLanguage(itemLabel: string) {
   await app.evaluate(
-    ({ BrowserWindow, Menu }, { menuLabel, itemLabel }) => {
-      const menu = Menu.getApplicationMenu()?.items.find((item) => item.label === menuLabel)
+    ({ BrowserWindow, Menu }, { itemLabel }) => {
+      const menu = Menu.getApplicationMenu()?.items.find((item) => item.submenu?.items.some((entry) => entry.label === 'English'))
       const item = menu?.submenu?.items.find((item) => item.label === itemLabel)
-      if (!item) throw new Error(`Brak pozycji menu ${menuLabel} → ${itemLabel}`)
+      if (!item) throw new Error(`Brak pozycji menu Language → ${itemLabel}`)
       const window = BrowserWindow.getAllWindows().find((window) => window.isVisible())
       item.click(undefined, window, window?.webContents)
     },
-    { menuLabel, itemLabel }
+    { itemLabel }
   )
 }
 
@@ -131,7 +132,7 @@ test('the Sponsor bar and the dialog follow the interface language switched in t
   })
   await expect(sponsorBar()).toContainText('CV Press is free')
 
-  await clickMenuItem('Language / Język', 'Polski')
+  await chooseLanguage('Polski')
   const bar = sponsorBar()
   await expect(bar).toContainText('CV Press jest darmowe')
   await expect(bar.getByRole('button', { name: 'Postaw mi kawę' })).toBeVisible()
@@ -141,6 +142,6 @@ test('the Sponsor bar and the dialog follow the interface language switched in t
   await dialog.getByRole('button', { name: 'Zamknij' }).click()
   await expect(dialog).toBeHidden()
 
-  await clickMenuItem('Language / Język', 'English')
+  await chooseLanguage('English')
   await expect(sponsorBar().getByRole('button', { name: 'Buy me a coffee' })).toBeVisible()
 })
