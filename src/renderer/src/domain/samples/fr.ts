@@ -4,6 +4,7 @@ export const fr: SampleCvText = {
   name: 'CV exemple',
   fullName: 'Camille Exemple',
   contacts: {
+    // Pula ARCEP dla dzieł audiowizualnych (06 39 98, Plan national de numérotation).
     phone: { label: 'Téléphone', value: '+33 6 39 98 00 00' },
     email: { label: 'E-mail', value: 'camille.exemple@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/camille-exemple' },
@@ -49,7 +50,7 @@ export const fr: SampleCvText = {
         bullets: [
           'Émission des bons de commande et suivi de leur exécution.',
           'Contrôle des factures et bons de livraison.',
-          'Correspondance avec les fournisseurs en anglais et en allemand.',
+          'Correspondance avec les fournisseurs en français et en anglais.',
           'Archivage de la documentation achats.',
           'Soutien à l’équipe lors des inventaires.'
         ]

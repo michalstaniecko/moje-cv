@@ -4,6 +4,7 @@ export const it: SampleCvText = {
   name: 'CV di esempio',
   fullName: 'Giulia Esempio',
   contacts: {
+    // Brak oficjalnej puli numerów fikcyjnych (AGCOM) – zastępczy numer komórkowy z samymi zerami.
     phone: { label: 'Telefono', value: '+39 333 000 0000' },
     email: { label: 'Email', value: 'giulia.esempio@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/giulia-esempio' },
@@ -49,7 +50,7 @@ export const it: SampleCvText = {
         bullets: [
           'Emissione degli ordini d’acquisto e verifica dell’evasione.',
           'Controllo di fatture e documenti di trasporto.',
-          'Corrispondenza con i fornitori in inglese e tedesco.',
+          'Corrispondenza con i fornitori in italiano e inglese.',
           'Archiviazione della documentazione acquisti.',
           'Supporto al team durante gli inventari.'
         ]

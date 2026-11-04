@@ -4,6 +4,7 @@ export const id: SampleCvText = {
   name: 'Contoh CV',
   fullName: 'Dewi Contoh',
   contacts: {
+    // Brak oficjalnej puli numerów fikcyjnych (Komdigi) – zastępczy numer komórkowy z samymi zerami.
     phone: { label: 'Telepon', value: '+62 812 0000 0000' },
     email: { label: 'Email', value: 'dewi.contoh@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/dewi-contoh' },

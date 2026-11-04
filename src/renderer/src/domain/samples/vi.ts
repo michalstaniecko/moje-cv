@@ -4,6 +4,7 @@ export const vi: SampleCvText = {
   name: 'CV mẫu',
   fullName: 'Nguyễn Thu Hà',
   contacts: {
+    // Brak oficjalnej puli numerów fikcyjnych (Cục Viễn thông) – zastępczy numer komórkowy z samymi zerami.
     phone: { label: 'Điện thoại', value: '+84 900 000 000' },
     email: { label: 'Email', value: 'thuha.nguyen@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/thuha-nguyen' },

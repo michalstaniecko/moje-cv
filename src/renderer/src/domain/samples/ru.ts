@@ -4,6 +4,7 @@ export const ru: SampleCvText = {
   name: 'Пример резюме',
   fullName: 'Анна Образцова',
   contacts: {
+    // Brak oficjalnej puli numerów fikcyjnych (Минцифры) – zastępczy numer komórkowy z samymi zerami.
     phone: { label: 'Телефон', value: '+7 900 000-00-00' },
     email: { label: 'E-mail', value: 'anna.obraztsova@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/anna-obraztsova' },

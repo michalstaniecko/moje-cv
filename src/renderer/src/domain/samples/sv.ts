@@ -4,6 +4,7 @@ export const sv: SampleCvText = {
   name: 'Exempel-cv',
   fullName: 'Emma Exempelsson',
   contacts: {
+    // Pula PTS dla książek i filmów (070-174 06 05 – 070-174 06 99).
     phone: { label: 'Telefon', value: '+46 70 174 06 05' },
     email: { label: 'E-post', value: 'emma.exempelsson@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/emma-exempelsson' },
@@ -49,7 +50,7 @@ export const sv: SampleCvText = {
         bullets: [
           'Utfärdande av inköpsorder och uppföljning av leveranser.',
           'Kontroll av fakturor och leveransdokument.',
-          'Korrespondens med leverantörer på engelska och tyska.',
+          'Korrespondens med leverantörer på svenska och engelska.',
           'Arkivering av inköpsdokumentation.',
           'Stöd till teamet vid inventering.'
         ]

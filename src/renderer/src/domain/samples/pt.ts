@@ -4,6 +4,7 @@ export const pt: SampleCvText = {
   name: 'Currículo de exemplo',
   fullName: 'Mariana Exemplo',
   contacts: {
+    // Brak oficjalnej puli numerów fikcyjnych (Anatel) – zastępczy numer komórkowy z samymi zerami.
     phone: { label: 'Telefone', value: '+55 11 90000-0000' },
     email: { label: 'E-mail', value: 'mariana.exemplo@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/mariana-exemplo' },

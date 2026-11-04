@@ -4,6 +4,7 @@ export const ro: SampleCvText = {
   name: 'CV exemplu',
   fullName: 'Ioana Exemplescu',
   contacts: {
+    // Brak oficjalnej puli numerów fikcyjnych (ANCOM) – zastępczy numer komórkowy z samymi zerami.
     phone: { label: 'Telefon', value: '+40 700 000 000' },
     email: { label: 'E-mail', value: 'ioana.exemplescu@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/ioana-exemplescu' },

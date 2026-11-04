@@ -4,7 +4,8 @@ export const de: SampleCvText = {
   name: 'Beispiel-Lebenslauf',
   fullName: 'Anna Beispiel',
   contacts: {
-    phone: { label: 'Telefon', value: '+49 170 0000000' },
+    // Drama Numbers Bundesnetzagentur (0171 39200 00–99).
+    phone: { label: 'Telefon', value: '+49 171 3920000' },
     email: { label: 'E-Mail', value: 'anna.beispiel@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/anna-beispiel' },
     city: { label: 'Wohnort', value: 'Stuttgart' }

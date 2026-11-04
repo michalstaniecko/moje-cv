@@ -4,6 +4,7 @@ export const es: SampleCvText = {
   name: 'CV de ejemplo',
   fullName: 'Lucía Ejemplo',
   contacts: {
+    // Brak oficjalnej puli numerów fikcyjnych (CNMC) – zastępczy numer komórkowy z samymi zerami.
     phone: { label: 'Teléfono', value: '+34 600 000 000' },
     email: { label: 'Email', value: 'lucia.ejemplo@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/lucia-ejemplo' },
@@ -49,7 +50,7 @@ export const es: SampleCvText = {
         bullets: [
           'Emisión de pedidos de compra y seguimiento de su cumplimiento.',
           'Verificación de facturas y albaranes.',
-          'Correspondencia con proveedores en inglés y alemán.',
+          'Correspondencia con proveedores en español e inglés.',
           'Archivo de la documentación de compras.',
           'Apoyo al equipo en los inventarios.'
         ]

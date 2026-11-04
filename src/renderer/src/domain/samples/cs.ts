@@ -4,6 +4,7 @@ export const cs: SampleCvText = {
   name: 'Ukázkové CV',
   fullName: 'Jana Ukázková',
   contacts: {
+    // Brak oficjalnej puli numerów fikcyjnych (ČTÚ) – zastępczy numer komórkowy z samymi zerami.
     phone: { label: 'Telefon', value: '+420 600 000 000' },
     email: { label: 'E-mail', value: 'jana.ukazkova@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/jana-ukazkova' },

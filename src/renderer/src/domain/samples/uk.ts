@@ -4,6 +4,7 @@ export const uk: SampleCvText = {
   name: 'Зразок резюме',
   fullName: 'Олена Зразкова',
   contacts: {
+    // Brak oficjalnej puli numerów fikcyjnych (НКЕК) – zastępczy numer komórkowy z samymi zerami.
     phone: { label: 'Телефон', value: '+380 50 000 0000' },
     email: { label: 'E-mail', value: 'olena.zrazkova@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/olena-zrazkova' },

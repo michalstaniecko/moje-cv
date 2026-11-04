@@ -4,6 +4,7 @@ export const tr: SampleCvText = {
   name: 'Örnek CV',
   fullName: 'Ayşe Örnek',
   contacts: {
+    // Brak oficjalnej puli numerów fikcyjnych (BTK) – zastępczy numer komórkowy z samymi zerami.
     phone: { label: 'Telefon', value: '+90 500 000 00 00' },
     email: { label: 'E-posta', value: 'ayse.ornek@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/ayse-ornek' },

@@ -4,6 +4,7 @@ export const nl: SampleCvText = {
   name: 'Voorbeeld-cv',
   fullName: 'Sanne Voorbeeld',
   contacts: {
+    // Brak oficjalnej puli numerów fikcyjnych (ACM) – zastępczy numer komórkowy z samymi zerami.
     phone: { label: 'Telefoon', value: '+31 6 00000000' },
     email: { label: 'E-mail', value: 'sanne.voorbeeld@example.com' },
     linkedin: { label: 'LinkedIn', value: 'linkedin.com/in/sanne-voorbeeld' },
@@ -49,7 +50,7 @@ export const nl: SampleCvText = {
         bullets: [
           'Uitzetten van inkooporders en bewaken van de levering.',
           'Controleren van facturen en leveringsdocumenten.',
-          'Correspondentie met leveranciers in het Engels en Duits.',
+          'Correspondentie met leveranciers in het Nederlands en Engels.',
           'Archiveren van inkoopdocumentatie.',
           'Ondersteunen van het team bij de inventarisatie.'
         ]
