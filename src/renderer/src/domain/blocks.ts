@@ -88,7 +88,10 @@ function titleBlocks(section: Section, spacing: BlockSpacingMm): DraftBlock[] {
   ]
 }
 
-function experienceItemBlocks(item: ExperienceItem, spacing: BlockSpacingMm, language: CvLanguage): DraftBlock[] {
+// Z czym budowane są bloki wpisów: odstępy z geometrii szablonu i CV language (stały tekst w datach).
+type EntryContext = { spacing: BlockSpacingMm; language: CvLanguage }
+
+function experienceItemBlocks(item: ExperienceItem, { spacing, language }: EntryContext): DraftBlock[] {
   const dates = formatDateRange(item.start, item.end, language)
   const companyLine = joinFilled([item.company, item.location], ' – ')
   const bullets = item.bullets.filter((bullet) => isFilled(bullet.text))
@@ -122,7 +125,7 @@ function experienceItemBlocks(item: ExperienceItem, spacing: BlockSpacingMm, lan
   return blocks
 }
 
-function educationItemBlocks(item: EducationItem, spacing: BlockSpacingMm, language: CvLanguage): DraftBlock[] {
+function educationItemBlocks(item: EducationItem, { spacing, language }: EntryContext): DraftBlock[] {
   const dates = formatDateRange(item.start, item.end, language)
   const level = isFilled(item.level) ? item.level : ''
   const details = joinFilled([item.field, item.institution], ', ')
@@ -183,17 +186,18 @@ function listSectionBlocks(section: Extract<Section, { type: 'list' }>, geometry
 
 function sectionBlocks(section: Section, geometry: BlockGeometry, language: CvLanguage): DraftBlock[] {
   const spacing = geometry.blockSpacingMm
+  const entry: EntryContext = { spacing, language }
   if (section.hidden) return []
 
   let blocks: DraftBlock[]
   switch (section.type) {
     case 'experience': {
-      const items = markSectionPositions(section.items.flatMap((item) => experienceItemBlocks(item, spacing, language)))
+      const items = markSectionPositions(section.items.flatMap((item) => experienceItemBlocks(item, entry)))
       blocks = items.length > 0 ? [...titleBlocks(section, spacing), ...items] : []
       break
     }
     case 'education': {
-      const items = markSectionPositions(section.items.flatMap((item) => educationItemBlocks(item, spacing, language)))
+      const items = markSectionPositions(section.items.flatMap((item) => educationItemBlocks(item, entry)))
       if (items.length > 0) items[items.length - 1]!.marginBottomMm = spacing.afterEducationSection
       blocks = items.length > 0 ? [...titleBlocks(section, spacing), ...items] : []
       break
