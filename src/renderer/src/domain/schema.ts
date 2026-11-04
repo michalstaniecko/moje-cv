@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { appearances } from '../../../shared/appearance'
-import { interfaceLanguageCodes } from '../../../shared/i18n/languages'
+import { cvFontIds } from '../../../shared/cvFonts'
+import { defaultCvFontFor, interfaceLanguageCodes } from '../../../shared/i18n/languages'
 
 export const yearMonthSchema = z.object({
   year: z.number().int(),
@@ -79,7 +80,7 @@ export const cvDocumentSchema = z.object({
   updatedAt: z.iso.datetime(),
   settings: z.object({
     accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-    font: z.enum(['lato', 'source-sans-3', 'arimo']),
+    font: z.enum(cvFontIds),
     // Szablon, którym CV jest renderowane. Nieznany szablon = niepoprawny plik (bez cichego zastępowania, ADR 0002).
     template: z.enum(cvTemplateIds),
     // CV language: decyduje o stałym tekście na dokumencie (np. „present”) i atrybucie `lang` stron.
@@ -101,13 +102,10 @@ export const cvDocumentSchema = z.object({
 })
 export type CvDocument = z.infer<typeof cvDocumentSchema>
 
-// CV language, których pełnego alfabetu nie ma Lato (cyrylica, wietnamski) – CV w nich startuje z Source Sans 3.
-const languagesStartingWithSourceSans: readonly CvLanguage[] = ['ru', 'uk', 'vi']
-
 // Ustawienia nowego CV (także Sample CV) w danym CV language.
 export const defaultCvSettings = (language: CvLanguage): CvDocument['settings'] => ({
   accentColor: '#1a6e72',
-  font: languagesStartingWithSourceSans.includes(language) ? 'source-sans-3' : 'lato',
+  font: defaultCvFontFor(language),
   template: 'classic',
   language
 })
