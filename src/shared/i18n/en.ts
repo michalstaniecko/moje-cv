@@ -147,6 +147,8 @@ export const en = {
     appearance: 'Appearance',
     accentColor: 'Accent color',
     font: 'Font',
+    // CV language (zob. GLOSSARY.md): język stałego tekstu na dokumencie, np. „present”.
+    cvLanguage: 'CV language',
     template: 'Template',
     templateNames: { classic: 'Classic', modern: 'Modern', bold: 'Bold' },
     header: 'Header',
@@ -267,6 +269,11 @@ export const en = {
     // Etykiety kontaktu w nowym CV i podpowiedzi w edytorze.
     contactLabels: ['Phone', 'Email', 'LinkedIn', 'City'],
     sectionTitles: { experience: 'Work experience', education: 'Education', skills: 'Skills', languages: 'Languages' }
+  },
+  // Stały tekst na dokumencie CV: pochodzi z CV language (zob. GLOSSARY.md), nie z języka interfejsu.
+  cvText: {
+    // Koniec trwającego zakresu dat, np. „03.2021 – present”.
+    present: 'present'
   }
 }
 

@@ -15,7 +15,10 @@ export const cvMigrations: CvMigrations = {
   // 3 → 4: nowy szablon „Nowoczesny” – treść bez zmian; starsza wersja aplikacji zgłosi „plik z nowszej wersji” (ADR 0002).
   3: (document) => document,
   // 4 → 5: nowy szablon „Wyrazisty” – treść bez zmian; starsza wersja aplikacji zgłosi „plik z nowszej wersji” (ADR 0002).
-  4: (document) => document
+  4: (document) => document,
+  // 5 → 6: CV dostaje CV language – istniejące i importowane stare CV są po polsku, więc drukują to samo co dotąd
+  // („obecnie”). Migracje działają przy każdym odczycie, więc nie zależą od języka interfejsu.
+  5: (document) => ({ ...document, settings: { ...(document.settings as object), language: 'pl' } })
 }
 
 // Dokument z nowszej wersji aplikacji – tej wersji nie da się go odczytać.

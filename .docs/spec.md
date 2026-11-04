@@ -23,7 +23,7 @@ Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/bri
 | Q14 | Autozapis | Debounce ~500 ms, brak przycisku „Zapisz”. Undo/redo (Cmd+Z / Cmd+Shift+Z) w sesji. |
 | Q15 | Silnik stron | Własny, blokowy (sekcja 4). Bez Paged.js. |
 | Q16 | Kontynuacja | Punkty przechodzą na kolejną stronę bez „(cd.)”. |
-| Q17 | Daty | Miesiąc + rok, format `MM.RRRR`. Doświadczenie: zakres + „obecnie”. Wykształcenie: data ukończenia, opcjonalnie początek. |
+| Q17 | Daty | Miesiąc + rok, format `MM.RRRR`. Doświadczenie: zakres + „obecnie” w CV language (np. „present” po angielsku). Wykształcenie: data ukończenia, opcjonalnie początek. |
 | Q18 | Kolejność | Ręczna: drag & drop + strzałki góra/dół (sekcje, wpisy, punkty). |
 | Q19 | Eksport PDF | Systemowe okno zapisu, nazwa `CV_Imie_Nazwisko.pdf`, potem „Pokaż w Finderze / Otwórz”. Tekst zaznaczalny, metadane Title/Author. |
 | Q20 | Liczba stron | Licznik stron w podglądzie; dyskretna informacja przy > 2 stronach. Bez limitu. |
@@ -55,6 +55,7 @@ type CvDocument = {
   settings: {
     accentColor: string         // hex
     font: 'lato' | 'source-sans-3' | 'arimo'
+    language: InterfaceLanguage  // CV language: stały tekst dokumentu („present”) i `lang` stron; stare CV → 'pl'
   }
   header: {
     fullName: string

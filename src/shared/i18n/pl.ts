@@ -132,6 +132,7 @@ export const pl: Dictionary = {
     appearance: 'Wygląd',
     accentColor: 'Kolor akcentu',
     font: 'Font',
+    cvLanguage: 'Język CV',
     template: 'Szablon',
     templateNames: { classic: 'Klasyczny', modern: 'Nowoczesny', bold: 'Wyrazisty' },
     header: 'Nagłówek',
@@ -251,5 +252,8 @@ export const pl: Dictionary = {
     copyName: (name) => `${name} (kopia)`,
     contactLabels: ['Tel', 'E-mail', 'LinkedIn', 'Miasto'],
     sectionTitles: { experience: 'Doświadczenie zawodowe', education: 'Wykształcenie', skills: 'Umiejętności', languages: 'Języki' }
+  },
+  cvText: {
+    present: 'obecnie'
   }
 }

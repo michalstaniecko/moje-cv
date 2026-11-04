@@ -23,7 +23,7 @@ const polishSample = cvDocumentSchema.parse({
   tags: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
-  settings: defaultCvSettings,
+  settings: defaultCvSettings('pl'),
   header: {
     fullName: 'Anna Przykładowa',
     photo: { dataUrl: placeholderPhoto },
@@ -194,7 +194,7 @@ const englishSample = cvDocumentSchema.parse({
   tags: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
-  settings: defaultCvSettings,
+  settings: defaultCvSettings('en'),
   header: {
     fullName: 'Jane Example',
     photo: { dataUrl: placeholderPhoto },

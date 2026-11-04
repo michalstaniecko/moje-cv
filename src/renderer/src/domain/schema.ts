@@ -61,8 +61,12 @@ export type Section = z.infer<typeof sectionSchema>
 export const cvTemplateIds = ['classic', 'modern', 'bold'] as const
 export type CvTemplateId = (typeof cvTemplateIds)[number]
 
+// CV language (zob. GLOSSARY.md): język, w którym napisane jest CV. Te same języki co Interface language.
+export const cvLanguageCodes = interfaceLanguageCodes
+export type CvLanguage = (typeof cvLanguageCodes)[number]
+
 // Bieżąca wersja schematu CV. Zmiana schematu = podbicie wersji i migracja ze starej (patrz migrations.ts).
-export const CV_SCHEMA_VERSION = 5
+export const CV_SCHEMA_VERSION = 6
 
 export const cvDocumentSchema = z.object({
   schemaVersion: z.literal(CV_SCHEMA_VERSION),
@@ -77,7 +81,10 @@ export const cvDocumentSchema = z.object({
     accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
     font: z.enum(['lato', 'source-sans-3', 'arimo']),
     // Szablon, którym CV jest renderowane. Nieznany szablon = niepoprawny plik (bez cichego zastępowania, ADR 0002).
-    template: z.enum(cvTemplateIds)
+    template: z.enum(cvTemplateIds),
+    // CV language: decyduje o stałym tekście na dokumencie (np. „present”) i atrybucie `lang` stron.
+    // Zmiana nigdy nie przepisuje treści CV (np. tytułów sekcji).
+    language: z.enum(cvLanguageCodes)
   }),
   header: z.object({
     fullName: z.string(),
@@ -94,7 +101,17 @@ export const cvDocumentSchema = z.object({
 })
 export type CvDocument = z.infer<typeof cvDocumentSchema>
 
-export const defaultCvSettings: CvDocument['settings'] = { accentColor: '#1a6e72', font: 'lato', template: 'classic' }
+// Języki, których pełnego alfabetu nie ma Lato (cyrylica, wietnamski) – CV w nich startuje z Source Sans 3.
+// Lista zawiera także języki, których jeszcze nie ma na liście CV language.
+const languagesStartingWithSourceSans: readonly string[] = ['ru', 'uk', 'vi']
+
+// Ustawienia nowego CV (także Sample CV) w danym CV language.
+export const defaultCvSettings = (language: CvLanguage): CvDocument['settings'] => ({
+  accentColor: '#1a6e72',
+  font: languagesStartingWithSourceSans.includes(language) ? 'source-sans-3' : 'lato',
+  template: 'classic',
+  language
+})
 
 export const clauseSchema = z.object({ id: idSchema, name: z.string(), text: z.string() })
 export type Clause = z.infer<typeof clauseSchema>

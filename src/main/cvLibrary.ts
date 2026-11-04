@@ -38,9 +38,9 @@ export function registerCvLibrary(
 
   ipcMain.handle('cv:list', () => repository.list())
   ipcMain.handle('cv:get', (_event, id: unknown) => repository.get(requireString(id)))
-  // Treść domyślna nowego CV i kopii powstaje w bieżącym języku interfejsu.
+  // Nowe CV startuje w bieżącym języku interfejsu (CV language i treść domyślna); dopisek kopii też jest w tym języku.
   const defaultContent = () => language.dictionary().defaultContent
-  ipcMain.handle('cv:create', async () => repository.create(defaultContent(), await settings.defaultClause()))
+  ipcMain.handle('cv:create', async () => repository.create(language.current(), await settings.defaultClause()))
   // Sample CV w bieżącym języku interfejsu, z wbudowaną klauzulą (bez domyślnej klauzuli z biblioteki).
   ipcMain.handle('cv:add-sample', () => repository.addSample(sampleCvs[language.current()]))
   ipcMain.handle('cv:duplicate', (_event, id: unknown) => repository.duplicate(requireString(id), defaultContent()))

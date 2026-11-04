@@ -146,6 +146,12 @@ describe('add sample', () => {
     expect(entries.map((entry) => entry.status === 'ok' && entry.name)).toEqual(['Przykładowe CV', 'Przykładowe CV'])
   })
 
+  test.each(['en', 'pl'] as const)('the Sample CV written in %s has that CV language', async (language) => {
+    const added = await repository.addSample(sampleCvs[language])
+
+    expect((await repository.get(added.id)).settings.language).toBe(language)
+  })
+
   test('other CVs in the library are not touched', async () => {
     const mine = cv({ id: 'mine', name: 'Moje', tags: ['frontend'] })
     await repository.save(mine)
@@ -162,7 +168,7 @@ describe('create', () => {
   test('adds an empty CV with default section titles to the library', async () => {
     repository = createCvRepository(cvDir, { now: () => new Date('2026-10-21T08:30:00.000Z') })
 
-    const created = await repository.create(pl.defaultContent)
+    const created = await repository.create('pl')
 
     expect(await repository.list()).toEqual([
       { status: 'ok', id: created.id, name: 'Nowe CV', updatedAt: '2026-10-21T08:30:00.000Z', tags: [] }
@@ -179,7 +185,7 @@ describe('create', () => {
   })
 
   test('takes its name, contact labels and section titles from the Default content of the given language', async () => {
-    const created = await repository.create(en.defaultContent)
+    const created = await repository.create('en')
 
     const stored = await repository.get(created.id)
     expect(stored.name).toBe('New CV')
@@ -188,26 +194,32 @@ describe('create', () => {
   })
 
   test('starts with the default clause from the library switched on', async () => {
-    const created = await repository.create(pl.defaultContent, { id: 'general', name: 'Ogólna', text: 'Wyrażam zgodę…' })
+    const created = await repository.create('pl', { id: 'general', name: 'Ogólna', text: 'Wyrażam zgodę…' })
 
     expect((await repository.get(created.id)).consent).toEqual({ enabled: true, clauseId: 'general', text: 'Wyrażam zgodę…' })
   })
 
   test('has the clause switched off when the library has no default', async () => {
-    const created = await repository.create(pl.defaultContent, null)
+    const created = await repository.create('pl', null)
 
     expect((await repository.get(created.id)).consent).toEqual({ enabled: false, clauseId: null, text: '' })
   })
 
+  test.each(['en', 'pl'] as const)('starts in the given Interface language as its CV language (%s)', async (language) => {
+    const created = await repository.create(language)
+
+    expect((await repository.get(created.id)).settings.language).toBe(language)
+  })
+
   test('is rendered with the Classic template', async () => {
-    const created = await repository.create(pl.defaultContent)
+    const created = await repository.create('pl')
 
     expect((await repository.get(created.id)).settings.template).toBe('classic')
   })
 
   test('every new CV gets its own id', async () => {
-    const first = await repository.create(pl.defaultContent)
-    const second = await repository.create(pl.defaultContent)
+    const first = await repository.create('pl')
+    const second = await repository.create('pl')
 
     expect(first.id).not.toBe(second.id)
     expect(await repository.list()).toHaveLength(2)
@@ -253,6 +265,16 @@ describe('duplicate', () => {
 
     expect(copy.tags).toEqual(['Allegro', 'frontend'])
     expect(await repository.get(copy.id)).toEqual(copy)
+  })
+
+  test('the copy keeps the CV language of the original, whatever the Interface language', async () => {
+    const original = cv({ settings: { ...sampleCv.settings, language: 'en' } })
+    await repository.save(original)
+
+    const copy = await repository.duplicate(original.id, pl.defaultContent)
+
+    expect(copy.settings.language).toBe('en')
+    expect((await repository.get(copy.id)).settings.language).toBe('en')
   })
 
   test.each(['modern', 'bold'] as const)('the copy has the template of the original (%s)', async (template) => {
@@ -611,6 +633,13 @@ describe('import', () => {
     expect(imported.tags).toEqual(['Allegro', 'backend'])
   })
 
+  test.each(['en', 'pl'] as const)('a file in the current version keeps its CV language (%s)', async (language) => {
+    const imported = await repository.importJson(JSON.stringify(cv({ settings: { ...sampleCv.settings, language } })))
+
+    expect(imported.settings.language).toBe(language)
+    expect((await repository.get(imported.id)).settings.language).toBe(language)
+  })
+
   test('a file saved before tags existed (version 1) imports as a CV with no tags', async () => {
     const { tags: _tags, ...version1 } = { ...sampleCv, schemaVersion: 1 }
 
@@ -660,8 +689,10 @@ describe('schema migrations', () => {
     }
   }
   const { fullName, ...headerWithoutName } = sampleCv.header
-  const { template: _template, ...settingsWithoutTemplate } = sampleCv.settings
-  const version3 = { ...sampleCv, schemaVersion: 3 }
+  const { language: _language, ...settingsWithoutLanguage } = sampleCv.settings
+  const { template: _template, ...settingsWithoutTemplate } = settingsWithoutLanguage
+  const version5 = { ...sampleCv, schemaVersion: 5, settings: settingsWithoutLanguage }
+  const version3 = { ...version5, schemaVersion: 3 }
   const version2 = { ...version3, schemaVersion: 2, settings: settingsWithoutTemplate }
   const { tags: _tags, ...version1 } = { ...version2, schemaVersion: 1 }
   const version0 = { ...version1, schemaVersion: 0, header: { ...headerWithoutName, name: fullName } }
@@ -698,7 +729,7 @@ describe('schema migrations', () => {
     const stored = await repository.get(sampleCv.id)
 
     expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
-    expect(stored.settings).toEqual({ ...settingsWithoutTemplate, template: 'classic' })
+    expect(stored.settings).toEqual({ ...settingsWithoutTemplate, template: 'classic', language: 'pl' })
     expect({ ...stored, schemaVersion: 2, settings: settingsWithoutTemplate }).toEqual(version2)
   })
 
@@ -709,22 +740,44 @@ describe('schema migrations', () => {
     const stored = await repository.get(sampleCv.id)
 
     expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
-    expect({ ...stored, schemaVersion: 3 }).toEqual(version3)
+    expect({ ...stored, schemaVersion: 3, settings: settingsWithoutLanguage }).toEqual(version3)
   })
 
   test('a CV saved before the Bold template existed (version 4) opens unchanged, with its template', async () => {
-    const version4 = { ...sampleCv, schemaVersion: 4, settings: { ...sampleCv.settings, template: 'modern' } }
+    const settings4 = { ...settingsWithoutLanguage, template: 'modern' }
+    const version4 = { ...sampleCv, schemaVersion: 4, settings: settings4 }
     await mkdir(cvDir, { recursive: true })
     await writeFile(join(cvDir, `${sampleCv.id}.json`), JSON.stringify(version4))
 
     const stored = await repository.get(sampleCv.id)
 
     expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
-    expect({ ...stored, schemaVersion: 4 }).toEqual(version4)
+    expect({ ...stored, schemaVersion: 4, settings: settings4 }).toEqual(version4)
+    expect(stored.settings.template).toBe('modern')
   })
 
-  test('a file from the version after the Bold template (version 6) comes from a newer version of the app', async () => {
-    const error = await repository.importJson(JSON.stringify({ ...sampleCv, schemaVersion: 6 })).catch((error: unknown) => error)
+  test('a CV saved before CV language existed (version 5) opens in Polish, otherwise unchanged', async () => {
+    const englishVersion5 = { ...version5, name: 'My CV', settings: { ...settingsWithoutLanguage, template: 'bold' } }
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, `${sampleCv.id}.json`), JSON.stringify(englishVersion5))
+
+    const stored = await repository.get(sampleCv.id)
+
+    expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
+    expect(stored.settings.language).toBe('pl')
+    const { language: _storedLanguage, ...storedSettings } = stored.settings
+    expect({ ...stored, schemaVersion: 5, settings: storedSettings }).toEqual(englishVersion5)
+  })
+
+  test('an imported file from before CV language existed (version 5) is in Polish', async () => {
+    const imported = await repository.importJson(JSON.stringify(version5))
+
+    expect(imported.settings.language).toBe('pl')
+    expect(await repository.get(imported.id)).toEqual(imported)
+  })
+
+  test('a file from the version after CV language (version 7) comes from a newer version of the app', async () => {
+    const error = await repository.importJson(JSON.stringify({ ...sampleCv, schemaVersion: 7 })).catch((error: unknown) => error)
 
     expect((error as InvalidCvFileError).reason).toBe('newer-version')
   })

@@ -858,6 +858,74 @@ test('changes the accent colour and font of one CV in the preview and PDF, with 
   await expect(window.getByLabel('Font')).toHaveValue('arimo')
 })
 
+test('the CV language sets the fixed text and the page language of the document, never the CV content', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  const firstDates = preview.locator('.cv-page .cv-date').first()
+  const sectionTitles = preview.locator('.cv-page .cv-section-title')
+  await expect(firstDates).toHaveText('03.2023 – present')
+
+  // Angielskie Sample CV jest w języku, w którym je napisano: „present” w podglądzie i w PDF.
+  const language = window.getByLabel('CV language')
+  await expect(language).toHaveValue('en')
+  await expect(preview.locator('.cv')).toHaveAttribute('lang', 'en')
+  const englishPdf = join(outputDir, 'english.pdf')
+  await stubSaveDialog(englishPdf)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: english.pdf')).toBeVisible()
+  const english = (await readPdf(await readFile(englishPdf))).pages.join('')
+  expect(english).toContain('03.2023 – present')
+  expect(english).not.toContain('obecnie')
+
+  // Polski jako CV language: stały tekst po polsku, tytuły sekcji i reszta treści bez zmian; wybór zostaje w CV.
+  const titlesBefore = await sectionTitles.allTextContents()
+  await language.selectOption('pl')
+  await expect(firstDates).toHaveText('03.2023 – obecnie')
+  await expect(preview.locator('.cv')).toHaveAttribute('lang', 'pl')
+  expect(await sectionTitles.allTextContents()).toEqual(titlesBefore)
+  await expect(window.getByText('Changes saved')).toBeVisible()
+  const polishPdf = join(outputDir, 'polish.pdf')
+  await stubSaveDialog(polishPdf)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: polish.pdf')).toBeVisible()
+  const polish = (await readPdf(await readFile(polishPdf))).pages.join('')
+  expect(polish).toContain('03.2023 – obecnie')
+  expect(polish).toContain('Work experience')
+
+  await window.getByRole('button', { name: '← CV Press' }).click()
+  await openFirstCv()
+  await expect(window.getByLabel('CV language')).toHaveValue('pl')
+
+  // Nowe CV startuje w języku interfejsu.
+  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: 'New CV' }).click()
+  await window
+    .getByRole('list', { name: 'CV list' })
+    .getByRole('listitem')
+    .filter({ hasText: 'New CV' })
+    .getByRole('button', { name: 'Open' })
+    .click()
+  await expect(window.getByLabel('CV language')).toHaveValue('en')
+})
+
+test('Cyrillic text in a Lato CV is rendered with the bundled Source Sans 3, not a system font', async () => {
+  const pdfPath = join(outputDir, 'cyrillic.pdf')
+  await stubSaveDialog(pdfPath)
+  await openFirstCv()
+  await expect(window.getByLabel('Font')).toHaveValue('lato')
+  await window.getByLabel('Full name').fill('Олена Шевченко')
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Олена Шевченко')
+  await expect(window.getByText('Changes saved')).toBeVisible()
+
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: cyrillic.pdf')).toBeVisible()
+  const pdf = await readPdf(await readFile(pdfPath))
+  expect(pdf.pages[0]).toContain('Олена Шевченко')
+  expect(pdf.embeddedFonts.some((name) => name.includes('SourceSans3'))).toBe(true)
+  expect(pdf.embeddedFonts.some((name) => name.includes('Lato'))).toBe(true)
+  expect(pdf.embeddedFonts.every((name) => name.includes('Lato') || name.includes('SourceSans3'))).toBe(true)
+})
+
 test('picks the Template next to the colour and font from a live thumbnail of the CV, without changing the preview or the PDF', async () => {
   const pdfPath = join(outputDir, 'template.pdf')
   await stubSaveDialog(pdfPath)
@@ -1643,9 +1711,9 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV – Talent Partners.json')
   const exported = JSON.parse(await readFile(jsonPath, 'utf8'))
   expect(exported).toMatchObject({
-    schemaVersion: 5,
+    schemaVersion: 6,
     name: 'CV – Talent Partners',
-    settings: { template: 'classic' },
+    settings: { template: 'classic', language: 'en' },
     header: { fullName: 'Jane Example' }
   })
 

@@ -5,7 +5,7 @@ import { paginate, type PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import { contentAreaMm, pageMetricsPx, type TemplateGeometry } from '../domain/templateGeometry'
 import { CvBlockView } from './CvBlockView'
-import { fontFamilies, loadTemplateFonts } from './fonts'
+import { fontStack, loadTemplateFonts } from './fonts'
 import './pages.css'
 import type { TemplateDefinition } from './templateDefinition'
 import { templates } from './templates'
@@ -120,11 +120,12 @@ export function CvPages({
     '--cv-margin-left': `${margins.left}mm`,
     '--cv-content-width': `${contentArea.width}mm`,
     '--cv-content-height': `${contentArea.height}mm`,
-    fontFamily: `"${fontFamilies[document.settings.font]}", sans-serif`
+    fontFamily: fontStack(document.settings.font)
   } as CSSProperties
 
+  // `lang` z CV language: m.in. `text-transform: uppercase` w szablonach zależy od języka (po turecku „i” → „İ”).
   return (
-    <div ref={pagesElement} className={`cv ${template.className}`} style={style}>
+    <div ref={pagesElement} className={`cv ${template.className}`} style={style} lang={document.settings.language}>
       <div className="cv-measure" aria-hidden>
         {blocks.map((block) => (
           <CvBlockView key={block.id} block={block} views={views} ref={measureRef(block.id)} />
