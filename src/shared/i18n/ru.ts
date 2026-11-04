@@ -254,6 +254,6 @@ export const ru: Dictionary = {
     sectionTitles: { experience: 'Опыт работы', education: 'Образование', skills: 'Навыки', languages: 'Языки' }
   },
   cvText: {
-    present: 'настоящее время'
+    present: 'по настоящее время'
   }
 }

@@ -5,6 +5,7 @@ describe('formatDateRange', () => {
   it('writes an ongoing range with "present" in the CV language', () => {
     expect(formatDateRange({ year: 2021, month: 3 }, 'present', 'en')).toBe('03.2021 – present')
     expect(formatDateRange({ year: 2021, month: 3 }, 'present', 'pl')).toBe('03.2021 – obecnie')
+    expect(formatDateRange({ year: 2021, month: 3 }, 'present', 'ru')).toBe('03.2021 – по настоящее время')
   })
 
   it('writes dates as numeric MM.YYYY in every CV language', () => {
