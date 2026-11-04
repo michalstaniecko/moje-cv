@@ -247,6 +247,47 @@ textarea:focus-visible {
   font-weight: 600;
 }
 
+/* ---------- Split button „Nowe CV” z menu pod strzałką ---------- */
+.split-button {
+  position: relative;
+  display: flex;
+}
+
+.split-button-main {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.split-button-arrow {
+  padding: 5px 8px;
+  border-left-color: var(--ui-text-on-accent);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.split-button-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 2;
+  min-width: 100%;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+}
+
+.split-button-menu [role='menuitem'] {
+  display: block;
+  width: 100%;
+  text-align: left;
+  white-space: nowrap;
+  border-color: transparent;
+}
+
 /* ---------- Biblioteka CV ---------- */
 .library {
   max-width: 820px;

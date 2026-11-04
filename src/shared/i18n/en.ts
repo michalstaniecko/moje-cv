@@ -55,6 +55,9 @@ export const en = {
     clauses: 'Consent clauses',
     importFile: 'Import from file',
     newCv: 'New CV',
+    // Strzałka obok „New CV” i jedyna pozycja jej menu.
+    moreCreateOptions: 'More ways to create',
+    addSample: 'Add sample CV',
     empty: 'You don’t have any CVs yet. Click “New CV”.',
     list: 'CV list',
     modified: (date: string) => `Modified ${date}`,

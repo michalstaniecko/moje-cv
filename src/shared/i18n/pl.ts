@@ -47,6 +47,8 @@ export const pl: Dictionary = {
     clauses: 'Klauzule zgody',
     importFile: 'Importuj z pliku',
     newCv: 'Nowe CV',
+    moreCreateOptions: 'Więcej opcji tworzenia',
+    addSample: 'Dodaj przykładowe CV',
     empty: 'Nie masz jeszcze żadnego CV. Kliknij „Nowe CV”.',
     list: 'Lista CV',
     modified: (date) => `Zmieniono ${date}`,

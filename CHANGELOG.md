@@ -4,6 +4,7 @@
 
 ### Added
 - Sponsor bar at the bottom of the window: the app is free, with a "Buy me a coffee" link to GitHub Sponsors and a "More" dialog. Hidden in the Mac App Store build.
+- "Add sample CV" in the menu under the arrow next to "New CV": adds the Sample CV again, in the interface language.
 
 ### Changed
 - The app is now called "CV Press" (previously "Moje CV"). Existing CVs and settings stay where they were.
