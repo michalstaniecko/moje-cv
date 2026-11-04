@@ -27,6 +27,8 @@ async function launch({
 }: { language?: InterfaceLanguage | null; appearance?: Appearance | null } = {}) {
   const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
   const env = { ...process.env } as Record<string, string>
+  // Okno w tle (bez fokusu i niewidoczne); `MOJE_CV_E2E_HEADED=1` pokazuje je normalnie do debugowania.
+  if (!process.env['MOJE_CV_E2E_HEADED']) env['MOJE_CV_E2E_HIDDEN'] = '1'
   if (language) env['MOJE_CV_LANGUAGE'] = language
   else delete env['MOJE_CV_LANGUAGE']
   if (appearance) env['MOJE_CV_APPEARANCE'] = appearance

@@ -13,6 +13,11 @@ import { createSettingsRepository } from './settingsRepository'
 import { registerSponsor } from './sponsor'
 import { loadRenderer, secureWebPreferences } from './windows'
 
+// Testy e2e (`MOJE_CV_E2E_HIDDEN=1`) uruchamiają aplikację w tle: bez ikony w Docku, z przezroczystym oknem
+// pokazanym bez fokusu i przepuszczającym kliknięcia myszy, żeby nie przeszkadzać w pracy na komputerze. Okno
+// pozostaje „widoczne” dla Electrona, więc renderer nie jest dławiony, a Playwright steruje nim przez CDP.
+const hiddenForTests = process.env['MOJE_CV_E2E_HIDDEN'] === '1'
+
 // Tytuł okna to nazwa aplikacji ze słownika; renderer ustawia go także w dokumencie przy zmianie języka.
 // Tło okna równe tłu aplikacji w bieżącym wyglądzie, żeby przy starcie nie było błysku innej barwy.
 function createWindow(language: InterfaceLanguageState): void {
@@ -22,10 +27,15 @@ function createWindow(language: InterfaceLanguageState): void {
     title: language.dictionary().appName,
     show: false,
     backgroundColor: windowBackground(),
-    webPreferences: secureWebPreferences
+    webPreferences: secureWebPreferences,
+    ...(hiddenForTests && { opacity: 0 })
   })
 
-  window.once('ready-to-show', () => window.show())
+  window.once('ready-to-show', () => {
+    if (!hiddenForTests) return window.show()
+    window.setIgnoreMouseEvents(true)
+    window.showInactive()
+  })
   void loadRenderer(window)
 }
 
@@ -34,6 +44,7 @@ function createWindow(language: InterfaceLanguageState): void {
 if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', join(app.getPath('appData'), 'Moje CV'))
 
 app.whenReady().then(async () => {
+  if (hiddenForTests) app.dock?.hide()
   const repository = createCvRepository(join(app.getPath('userData'), 'cvs'))
   const settings = createSettingsRepository(join(app.getPath('userData'), 'settings.json'))
   // Wygląd przed pierwszym oknem, żeby pierwsze malowanie i tło okna były już we właściwej palecie.

@@ -49,3 +49,5 @@ pnpm dist:mac
 Wynik: `dist/CV-Press-<wersja>.dmg` (universal: Apple Silicon + Intel). Wersja pochodzi z pola `version` w `package.json`, konfiguracja pakowania jest w `electron-builder.yml`.
 
 `pnpm test:e2e:packaged` buduje plik `.dmg` i uruchamia testy e2e na spakowanej aplikacji (w tym eksport PDF z osadzonymi fontami).
+
+Testy e2e (`pnpm test:e2e`) domyślnie uruchamiają aplikację w tle: okno jest niewidoczne, nie zabiera fokusu i nie ma ikony w Docku, więc w trakcie testów można normalnie pracować. Żeby zobaczyć okno (np. przy debugowaniu), uruchom `MOJE_CV_E2E_HEADED=1 pnpm test:e2e`.
