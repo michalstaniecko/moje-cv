@@ -6,8 +6,6 @@ import { sampleCvs } from '../renderer/src/domain/sampleCv'
 import { cvMigrations, type CvMigrations } from '../renderer/src/domain/migrations'
 import { CV_SCHEMA_VERSION, type CvDocument } from '../renderer/src/domain/schema'
 import type { InvalidCvFileReason } from '../shared/api'
-import { en } from '../shared/i18n/en'
-import { pl } from '../shared/i18n/pl'
 import { InvalidTagError } from '../renderer/src/domain/tags'
 import { createCvRepository, InvalidCvFileError, type CvRepository } from './cvRepository'
 
@@ -230,7 +228,7 @@ describe('duplicate', () => {
   test('stores a copy under a new id and leaves the original as it was', async () => {
     await repository.save(sampleCv)
 
-    const copy = await repository.duplicate(sampleCv.id, pl.defaultContent)
+    const copy = await repository.duplicate(sampleCv.id, 'pl')
 
     expect(copy.id).not.toBe(sampleCv.id)
     expect(copy.name).toBe('Przykładowe CV (kopia)')
@@ -244,14 +242,14 @@ describe('duplicate', () => {
   test('names the copy with the suffix from the Default content of the given language', async () => {
     await repository.save(sampleCv)
 
-    expect((await repository.duplicate(sampleCv.id, en.defaultContent)).name).toBe('Przykładowe CV (copy)')
+    expect((await repository.duplicate(sampleCv.id, 'en')).name).toBe('Przykładowe CV (copy)')
   })
 
   test('every copy gets its own id', async () => {
     await repository.save(sampleCv)
 
-    const first = await repository.duplicate(sampleCv.id, pl.defaultContent)
-    const second = await repository.duplicate(sampleCv.id, pl.defaultContent)
+    const first = await repository.duplicate(sampleCv.id, 'pl')
+    const second = await repository.duplicate(sampleCv.id, 'pl')
 
     expect(first.id).not.toBe(second.id)
     expect(await repository.list()).toHaveLength(3)
@@ -261,7 +259,7 @@ describe('duplicate', () => {
     await repository.save(sampleCv)
     await repository.setTags(sampleCv.id, ['Allegro', 'frontend'])
 
-    const copy = await repository.duplicate(sampleCv.id, pl.defaultContent)
+    const copy = await repository.duplicate(sampleCv.id, 'pl')
 
     expect(copy.tags).toEqual(['Allegro', 'frontend'])
     expect(await repository.get(copy.id)).toEqual(copy)
@@ -271,7 +269,7 @@ describe('duplicate', () => {
     const original = cv({ settings: { ...sampleCv.settings, language: 'en' } })
     await repository.save(original)
 
-    const copy = await repository.duplicate(original.id, pl.defaultContent)
+    const copy = await repository.duplicate(original.id, 'pl')
 
     expect(copy.settings.language).toBe('en')
     expect((await repository.get(copy.id)).settings.language).toBe('en')
@@ -281,7 +279,7 @@ describe('duplicate', () => {
     const original = cv({ settings: { ...sampleCv.settings, template } })
     await repository.save(original)
 
-    const copy = await repository.duplicate(original.id, pl.defaultContent)
+    const copy = await repository.duplicate(original.id, 'pl')
 
     expect(copy.settings).toEqual(original.settings)
     expect(await repository.get(copy.id)).toEqual(copy)
@@ -520,7 +518,7 @@ describe('damaged files', () => {
       await writeFile(join(cvDir, 'broken.json'), content)
 
       await expect(repository.get('broken')).rejects.toThrow()
-      await expect(repository.duplicate('broken', pl.defaultContent)).rejects.toThrow()
+      await expect(repository.duplicate('broken', 'pl')).rejects.toThrow()
       await expect(repository.rename('broken', 'Nowa nazwa')).rejects.toThrow()
       await expect(repository.setTags('broken', ['EN'])).rejects.toThrow()
       await expect(repository.save(cv({ id: 'broken' }))).rejects.toThrow()

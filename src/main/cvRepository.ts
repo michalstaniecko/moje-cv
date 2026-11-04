@@ -7,7 +7,7 @@ import { cvMigrations, migrateCv, NewerSchemaVersionError, type CvMigrations } f
 import type { Clause, CvDocument, CvLanguage } from '../renderer/src/domain/schema'
 import { InvalidTagError, normalizeTags, tagKey } from '../renderer/src/domain/tags'
 import type { CvListEntry, InvalidCvFileReason } from '../shared/api'
-import type { DefaultContent } from '../shared/i18n/en'
+import { dictionaryFor, type InterfaceLanguage } from '../shared/i18n/languages'
 
 export type CvRepository = ReturnType<typeof createCvRepository>
 
@@ -121,10 +121,11 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     create: (language: CvLanguage, defaultClause: Clause | null = null) =>
       saveAsNew(emptyCv({ language, now: now(), newId: randomUUID, defaultClause })),
 
-    // Dopisek przy nazwie kopii pochodzi z treści domyślnej języka interfejsu; kopia zachowuje CV language oryginału.
-    async duplicate(id: string, content: DefaultContent): Promise<CvDocument> {
+    // Dopisek przy nazwie kopii pochodzi z treści domyślnej bieżącego języka interfejsu (`language`);
+    // kopia zachowuje CV language oryginału.
+    async duplicate(id: string, language: InterfaceLanguage): Promise<CvDocument> {
       const original = await get(id)
-      return saveAsNew({ ...original, name: content.copyName(original.name) })
+      return saveAsNew({ ...original, name: dictionaryFor(language).defaultContent.copyName(original.name) })
     },
 
     rename: (id: string, name: string): Promise<CvDocument> =>

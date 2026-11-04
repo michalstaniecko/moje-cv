@@ -39,11 +39,10 @@ export function registerCvLibrary(
   ipcMain.handle('cv:list', () => repository.list())
   ipcMain.handle('cv:get', (_event, id: unknown) => repository.get(requireString(id)))
   // Nowe CV startuje w bieżącym języku interfejsu (CV language i treść domyślna); dopisek kopii też jest w tym języku.
-  const defaultContent = () => language.dictionary().defaultContent
   ipcMain.handle('cv:create', async () => repository.create(language.current(), await settings.defaultClause()))
   // Sample CV w bieżącym języku interfejsu, z wbudowaną klauzulą (bez domyślnej klauzuli z biblioteki).
   ipcMain.handle('cv:add-sample', () => repository.addSample(sampleCvs[language.current()]))
-  ipcMain.handle('cv:duplicate', (_event, id: unknown) => repository.duplicate(requireString(id), defaultContent()))
+  ipcMain.handle('cv:duplicate', (_event, id: unknown) => repository.duplicate(requireString(id), language.current()))
   ipcMain.handle('cv:rename', (_event, id: unknown, name: unknown) => repository.rename(requireString(id), requireString(name)))
   ipcMain.handle('cv:set-tags', async (_event, id: unknown, tags: unknown): Promise<SetCvTagsResult> => {
     try {
