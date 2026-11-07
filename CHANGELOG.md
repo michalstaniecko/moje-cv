@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] – 2026-11-07
+
 ### Added
 - The `.dmg` version checks GitHub once a day for a newer release and shows a notice in the CV library; Help → Check for Updates… checks right away. The Mac App Store version makes no network requests.
 - Help menu: CV Press Help, Privacy Policy and Report a Problem… open the help page, the privacy policy and a new issue in the public repository in the browser; Support CV Press… opens GitHub Sponsors (not in the Mac App Store build).
@@ -30,6 +32,7 @@
 - The Sponsor bar is announced to screen readers as "Support CV Press" instead of "Sponsor".
 
 ### Fixed
+- In the dark appearance the CV library has a dark background instead of a white one.
 - File → Export JSON… in the editor no longer exports the previous version of the CV when the latest changes couldn’t be saved; it says the export failed instead.
 - Closing the window or quitting right after an edit waits for the save, and asks before discarding changes that couldn’t be saved.
 - Keyboard focus returns to the button that opened a form in a CV library row (rename, tags, delete) when the form closes; after deleting a CV it moves to the neighbouring CV, or to "New CV" when the library is empty.

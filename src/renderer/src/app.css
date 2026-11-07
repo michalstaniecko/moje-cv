@@ -46,8 +46,8 @@
   }
 }
 
-/* Reguła celowo tak samo prosta jak `html, body` w print.css: w jednym bundlu CSS wygrywa tamta (kolejność),
-   więc okno PDF zostaje białe. Kolor tekstu i czcionka są ustawiane na korzeniach interfejsu, nie na body. */
+/* Okno PDF nadpisuje to tło bielą regułą `html.print-route` w print.css (oba pliki są w jednym bundlu CSS).
+   Kolor tekstu i czcionka są ustawiane na korzeniach interfejsu, nie na body. */
 html,
 body {
   margin: 0;
