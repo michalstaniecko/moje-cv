@@ -34,7 +34,12 @@ export const de: Dictionary = {
     appearance: 'Erscheinungsbild',
     lightAppearance: 'Hell',
     darkAppearance: 'Dunkel',
-    systemAppearance: 'System'
+    systemAppearance: 'System',
+    help: 'Hilfe',
+    helpPage: (appName) => `${appName}-Hilfe`,
+    privacyPolicy: 'Datenschutzerklärung',
+    reportIssue: 'Problem melden …',
+    supportApp: (appName) => `${appName} unterstützen …`
   },
   dialogs: {
     exportPdf: 'Als PDF exportieren',

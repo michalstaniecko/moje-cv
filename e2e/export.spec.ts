@@ -6,6 +6,7 @@ import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
 import { PX_PER_MM } from '../src/renderer/src/domain/templateGeometry'
 import { isAppearance, type Appearance } from '../src/shared/appearance'
 import type { InterfaceLanguage } from '../src/shared/i18n/languages'
+import { HELP_URL, PRIVACY_URL, REPORT_ISSUE_URL, SPONSOR_URL } from '../src/shared/links'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 
 let app: ElectronApplication
@@ -161,6 +162,24 @@ const languageItems = (checked: string) =>
     'System'
   ].map((label) => (label === checked ? `${label} ✓` : label))
 
+// Podmienia otwieranie adresów w przeglądarce systemowej i zapamiętuje, z czym je wywołano (jak w sponsor.spec.ts).
+async function stubOpenExternal() {
+  await app.evaluate(({ shell }) => {
+    const calls: string[] = []
+    ;(globalThis as { openExternalCalls?: typeof calls }).openExternalCalls = calls
+    shell.openExternal = async (url: string) => {
+      calls.push(url)
+    }
+  })
+}
+
+const openExternalCalls = () => app.evaluate(() => (globalThis as { openExternalCalls?: string[] }).openExternalCalls)
+
+const clearOpenExternalCalls = () =>
+  app.evaluate(() => {
+    ;(globalThis as { openExternalCalls?: string[] }).openExternalCalls?.splice(0)
+  })
+
 // Język systemu widziany przez aplikację, żeby wybór „System” dawał przewidywalny wynik.
 async function stubSystemLanguages(languages: string[]) {
   await app.evaluate(({ app }, languages) => {
@@ -178,7 +197,7 @@ test('the whole menu and the document follow the interface language forced for t
 
   await app.close()
   await launch({ language: 'en' })
-  expect((await menuLabels('Edit')).top).toEqual(['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window'])
+  expect((await menuLabels('Edit')).top).toEqual(['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window', 'Help'])
   expect((await menuLabels('CV Press')).items).toEqual([
     'About CV Press',
     'Services',
@@ -199,10 +218,11 @@ test('the whole menu and the document follow the interface language forced for t
   expect((await menuLabels('View')).items).toEqual(['Toggle Full Screen'])
   expect((await menuLabels('Window')).items).toEqual(['Minimize', 'Zoom', 'Bring All to Front'])
   expect((await menuLabels('Language')).items).toEqual(languageItems('System'))
+  expect((await menuLabels('Help')).items).toEqual(['CV Press Help', 'Privacy Policy', 'Report a Problem…', 'Support CV Press…'])
 
   await app.close()
   await launch({ language: 'pl' })
-  expect((await menuLabels('Edycja')).top).toEqual(['CV Press', 'Plik', 'Edycja', 'Widok', 'Język / Language', 'Wygląd', 'Okno'])
+  expect((await menuLabels('Edycja')).top).toEqual(['CV Press', 'Plik', 'Edycja', 'Widok', 'Język / Language', 'Wygląd', 'Okno', 'Pomoc'])
   expect((await menuLabels('CV Press')).items).toEqual([
     'O aplikacji CV Press',
     'Usługi',
@@ -222,6 +242,38 @@ test('the whole menu and the document follow the interface language forced for t
   ])
   expect((await menuLabels('Widok')).items).toEqual(['Przełącz pełny ekran'])
   expect((await menuLabels('Okno')).items).toEqual(['Minimalizuj', 'Zoom', 'Przenieś wszystko na wierzch'])
+  expect((await menuLabels('Pomoc')).items).toEqual([
+    'Pomoc CV Press',
+    'Polityka prywatności',
+    'Zgłoś problem…',
+    'Wesprzyj CV Press…'
+  ])
+})
+
+test('each Help menu item opens exactly its own address in the system browser, also after switching the language', async () => {
+  await app.close()
+  await launch({ language: null })
+  await chooseLanguage('English')
+  await stubOpenExternal()
+  const expected = [
+    ['CV Press Help', HELP_URL],
+    ['Privacy Policy', PRIVACY_URL],
+    ['Report a Problem…', REPORT_ISSUE_URL],
+    ['Support CV Press…', SPONSOR_URL]
+  ] as const
+  for (const [label, url] of expected) {
+    await clearOpenExternalCalls()
+    await clickMenuItem('Help', label)
+    expect(await openExternalCalls()).toEqual([url])
+  }
+
+  await chooseLanguage('Polski')
+  await expect.poll(() => menuLabels('Pomoc')).toMatchObject({
+    items: ['Pomoc CV Press', 'Polityka prywatności', 'Zgłoś problem…', 'Wesprzyj CV Press…']
+  })
+  await clearOpenExternalCalls()
+  await clickMenuItem('Pomoc', 'Zgłoś problem…')
+  expect(await openExternalCalls()).toEqual([REPORT_ISSUE_URL])
 })
 
 test('the Language menu switches the menu and the window immediately, the choice survives a restart and System follows the system again', async () => {
@@ -231,14 +283,14 @@ test('the Language menu switches the menu and the window immediately, the choice
 
   await chooseLanguage('English')
   await expect.poll(() => menuLabels('Language')).toEqual({
-    top: ['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window'],
+    top: ['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window', 'Help'],
     items: languageItems('English')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
 
   await chooseLanguage('Polski')
   await expect.poll(() => menuLabels('Język / Language')).toEqual({
-    top: ['CV Press', 'Plik', 'Edycja', 'Widok', 'Język / Language', 'Wygląd', 'Okno'],
+    top: ['CV Press', 'Plik', 'Edycja', 'Widok', 'Język / Language', 'Wygląd', 'Okno', 'Pomoc'],
     items: languageItems('Polski')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'pl')
@@ -259,7 +311,7 @@ test('the Language menu switches the menu and the window immediately, the choice
   await stubSystemLanguages(['ja-JP'])
   await chooseLanguage('System')
   await expect.poll(() => menuLabels('Language')).toEqual({
-    top: ['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window'],
+    top: ['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window', 'Help'],
     items: languageItems('System')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
@@ -268,7 +320,7 @@ test('the Language menu switches the menu and the window immediately, the choice
   await stubSystemLanguages(['de-DE', 'en-US'])
   await chooseLanguage('System')
   await expect.poll(() => menuLabels('Sprache / Language')).toEqual({
-    top: ['CV Press', 'Ablage', 'Bearbeiten', 'Darstellung', 'Sprache / Language', 'Erscheinungsbild', 'Fenster'],
+    top: ['CV Press', 'Ablage', 'Bearbeiten', 'Darstellung', 'Sprache / Language', 'Erscheinungsbild', 'Fenster', 'Hilfe'],
     items: languageItems('System')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'de')

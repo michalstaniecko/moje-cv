@@ -34,7 +34,12 @@ export const ru: Dictionary = {
     appearance: 'Оформление',
     lightAppearance: 'Светлое',
     darkAppearance: 'Темное',
-    systemAppearance: 'Системное'
+    systemAppearance: 'Системное',
+    help: 'Справка',
+    helpPage: (appName) => `Справка ${appName}`,
+    privacyPolicy: 'Политика конфиденциальности',
+    reportIssue: 'Сообщить о проблеме…',
+    supportApp: (appName) => `Поддержать ${appName}…`
   },
   dialogs: {
     exportPdf: 'Экспорт в PDF',
