@@ -38,6 +38,10 @@ export type CvListEntry =
   | { status: 'damaged'; id: string }
 
 export type Api = {
+  // Informacje o aplikacji z procesu głównego – jedyne źródło numeru wersji (`app.getVersion()`).
+  app: {
+    version: () => Promise<string>
+  }
   cv: {
     list: () => Promise<CvListEntry[]>
     get: (id: string) => Promise<CvDocument>

@@ -4,6 +4,7 @@ import type { Dictionary } from '../../shared/i18n/en'
 import type { InterfaceLanguage } from '../../shared/i18n/languages'
 import { cvDisplayName, type CvDocument } from './domain/schema'
 import { cleanTag, MAX_TAG_LENGTH, sortTags, tagKey } from './domain/tags'
+import { AppVersion } from './appVersion'
 import { useDictionary, useInterfaceLanguage } from './i18n'
 
 type OkEntry = Extract<CvListEntry, { status: 'ok' }>
@@ -242,6 +243,7 @@ export function Library({
             )
           })}
         </ul>
+        <AppVersion className="library-version" />
       </main>
     </>
   )

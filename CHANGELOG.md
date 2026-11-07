@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- The app version is shown in the "About CV Press" panel (with copyright), at the bottom of the CV library and in the Sponsor bar's "More" dialog.
 - 14 new interface languages: Spanish, French, German, Portuguese (Brazil), Italian, Dutch, Russian, Ukrainian, Turkish, Indonesian, Vietnamese, Czech, Romanian and Swedish, each with its own localized Sample CV. The Language menu is labelled in the current language and in English (e.g. "Sprache / Language").
 - Sponsor bar at the bottom of the window: the app is free, with a "Buy me a coffee" link to GitHub Sponsors and a "More" dialog. Hidden in the Mac App Store build.
 - "Add sample CV" in the menu under the arrow next to "New CV": adds the Sample CV again, in the interface language.
