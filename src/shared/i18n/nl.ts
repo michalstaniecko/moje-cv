@@ -236,7 +236,12 @@ export const nl: Dictionary = {
       position: (name) => `functie “${name}”`,
       education: (name) => `item “${name}”`,
       bullet: (number) => `punt ${number}`,
-      listItem: (number) => `item ${number}`
+      listItem: (number) => `item ${number}`,
+      pickedUp: (item) => `Je hebt ${item} opgepakt.`,
+      movedOver: (item, position, total) => `Je verplaatst ${item}: positie ${position} van ${total}.`,
+      dropped: (item, position, total) => `Je hebt ${item} neergezet op positie ${position} van ${total}.`,
+      cancelled: (item) => `Je hebt ${item} teruggezet op de oude plek.`,
+      instructions: 'Druk op Spatie of Enter om een item op te pakken. Verplaats het met de pijltjestoetsen, zet het neer met Spatie of Enter en annuleer met Escape.'
     },
     consent: {
       title: 'Toestemmingsverklaring',

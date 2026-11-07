@@ -229,7 +229,12 @@ export const tr: Dictionary = {
       position: (name) => `“${name}” pozisyonu`,
       education: (name) => `“${name}” kaydı`,
       bullet: (number) => `${number}. madde`,
-      listItem: (number) => `${number}. öğe`
+      listItem: (number) => `${number}. öğe`,
+      pickedUp: (item) => `${item} alındı.`,
+      movedOver: (item, position, total) => `${item} taşınıyor: konum ${position} / ${total}.`,
+      dropped: (item, position, total) => `${item} bırakıldı: konum ${position} / ${total}.`,
+      cancelled: (item) => `${item} eski yerine geri kondu.`,
+      instructions: 'Bir öğeyi almak için Boşluk veya Enter tuşuna basın. Ok tuşlarıyla taşıyın, Boşluk veya Enter ile bırakın, Escape ile iptal edin.'
     },
     consent: {
       title: 'Onay metni',

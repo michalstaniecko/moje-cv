@@ -251,7 +251,13 @@ export const en = {
       position: (name: string) => `position “${name}”`,
       education: (name: string) => `entry “${name}”`,
       bullet: (number: number) => `bullet ${number}`,
-      listItem: (number: number) => `item ${number}`
+      listItem: (number: number) => `item ${number}`,
+      // Ogłoszenia przeciągania dla czytnika ekranu (dnd-kit); `item` to nazwa z `section`, `position` itd.
+      pickedUp: (item: string) => `Picked up ${item}.`,
+      movedOver: (item: string, position: number, total: number) => `Moving ${item}: position ${position} of ${total}.`,
+      dropped: (item: string, position: number, total: number) => `Dropped ${item} at position ${position} of ${total}.`,
+      cancelled: (item: string) => `Put ${item} back in its place.`,
+      instructions: 'To pick up an item, press Space or Enter. Use the arrow keys to move it, Space or Enter to drop it, and Escape to cancel.'
     },
     consent: {
       title: 'Consent clause',

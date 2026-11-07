@@ -236,7 +236,12 @@ export const de: Dictionary = {
       position: (name) => `Position „${name}“`,
       education: (name) => `Eintrag „${name}“`,
       bullet: (number) => `Punkt ${number}`,
-      listItem: (number) => `Eintrag ${number}`
+      listItem: (number) => `Eintrag ${number}`,
+      pickedUp: (item) => `${item} aufgenommen.`,
+      movedOver: (item, position, total) => `${item} wird verschoben: Position ${position} von ${total}.`,
+      dropped: (item, position, total) => `${item} an Position ${position} von ${total} abgelegt.`,
+      cancelled: (item) => `${item} an den ursprünglichen Platz zurückgelegt.`,
+      instructions: 'Zum Aufnehmen eines Eintrags die Leertaste oder die Eingabetaste drücken. Mit den Pfeiltasten verschieben, mit der Leertaste oder der Eingabetaste ablegen, mit Escape abbrechen.'
     },
     consent: {
       title: 'Einwilligungserklärung',

@@ -229,7 +229,12 @@ export const pl: Dictionary = {
       position: (name) => `stanowisko „${name}”`,
       education: (name) => `wpis „${name}”`,
       bullet: (number) => `punkt ${number}`,
-      listItem: (number) => `element ${number}`
+      listItem: (number) => `element ${number}`,
+      pickedUp: (item) => `Podniesiono ${item}.`,
+      movedOver: (item, position, total) => `Przesuwasz ${item}: pozycja ${position} z ${total}.`,
+      dropped: (item, position, total) => `Upuszczono ${item} na pozycji ${position} z ${total}.`,
+      cancelled: (item) => `Odłożono ${item} na poprzednie miejsce.`,
+      instructions: 'Aby podnieść element, naciśnij Spację lub Enter. Strzałkami przesuń go, Spacją lub Enterem upuść, Escape anuluje.'
     },
     consent: {
       title: 'Klauzula zgody',

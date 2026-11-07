@@ -5,11 +5,13 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  type DragEndEvent
+  type Announcements,
+  type DragEndEvent,
+  type UniqueIdentifier
 } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { ReactNode } from 'react'
+import { useMemo, useRef, type ReactNode } from 'react'
 import { useDictionary } from '../i18n'
 
 // Lista z ręczną kolejnością: przeciąganie za uchwyt (mysz lub klawiatura) i strzałki góra/dół.
@@ -32,6 +34,42 @@ export function SortableList<T extends { id: string }>({
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
+  // Komunikaty dla czytnika ekranu w Interface language: element opisany tą samą etykietą co w przyciskach strzałek
+  // (nie identyfikatorem z dokumentu), pozycja liczona od 1 z liczby elementów listy. dnd-kit zgłasza `onDragOver`
+  // także zaraz po podniesieniu (element nad samym sobą), co zagłuszyłoby „Podniesiono…”, więc pozycja jest
+  // ogłaszana dopiero, gdy element nad którym jest przeciągany się zmieni.
+  const announcedOver = useRef<UniqueIdentifier | null>(null)
+  const accessibility = useMemo(() => {
+    const indexOf = (id: UniqueIdentifier) => items.findIndex((item) => item.id === id)
+    const name = (id: UniqueIdentifier) => {
+      const index = indexOf(id)
+      return index === -1 ? undefined : label(items[index]!, index)
+    }
+    const announcements: Announcements = {
+      onDragStart: ({ active }) => {
+        announcedOver.current = active.id
+        const item = name(active.id)
+        return item && order.pickedUp(item)
+      },
+      onDragOver: ({ active, over }) => {
+        const item = name(active.id)
+        if (!item || !over || over.id === announcedOver.current || indexOf(over.id) === -1) return undefined
+        announcedOver.current = over.id
+        return order.movedOver(item, indexOf(over.id) + 1, items.length)
+      },
+      onDragEnd: ({ active, over }) => {
+        const item = name(active.id)
+        if (!item) return undefined
+        if (!over || indexOf(over.id) === -1) return order.cancelled(item)
+        return order.dropped(item, indexOf(over.id) + 1, items.length)
+      },
+      onDragCancel: ({ active }) => {
+        const item = name(active.id)
+        return item && order.cancelled(item)
+      }
+    }
+    return { announcements, screenReaderInstructions: { draggable: order.instructions } }
+  }, [items, label, order])
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return
     const toIndex = items.findIndex((item) => item.id === over.id)
@@ -39,7 +77,7 @@ export function SortableList<T extends { id: string }>({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} accessibility={accessibility}>
       <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
         {items.map((item, index) => (
           <SortableRow key={item.id} id={item.id}>

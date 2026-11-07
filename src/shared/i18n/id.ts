@@ -229,7 +229,12 @@ export const id: Dictionary = {
       position: (name) => `posisi “${name}”`,
       education: (name) => `entri “${name}”`,
       bullet: (number) => `poin ${number}`,
-      listItem: (number) => `item ${number}`
+      listItem: (number) => `item ${number}`,
+      pickedUp: (item) => `Mengambil ${item}.`,
+      movedOver: (item, position, total) => `Memindahkan ${item}: posisi ${position} dari ${total}.`,
+      dropped: (item, position, total) => `Meletakkan ${item} di posisi ${position} dari ${total}.`,
+      cancelled: (item) => `Mengembalikan ${item} ke tempat semula.`,
+      instructions: 'Untuk mengambil item, tekan Spasi atau Enter. Gunakan tombol panah untuk memindahkannya, Spasi atau Enter untuk meletakkannya, dan Escape untuk membatalkan.'
     },
     consent: {
       title: 'Klausul persetujuan',

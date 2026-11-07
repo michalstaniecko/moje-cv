@@ -229,7 +229,12 @@ export const ru: Dictionary = {
       position: (name) => `должность «${name}»`,
       education: (name) => `запись «${name}»`,
       bullet: (number) => `пункт ${number}`,
-      listItem: (number) => `элемент ${number}`
+      listItem: (number) => `элемент ${number}`,
+      pickedUp: (item) => `Вы взяли ${item}.`,
+      movedOver: (item, position, total) => `Вы перемещаете ${item}: позиция ${position} из ${total}.`,
+      dropped: (item, position, total) => `Вы поставили ${item} на позицию ${position} из ${total}.`,
+      cancelled: (item) => `Вы вернули ${item} на прежнее место.`,
+      instructions: 'Чтобы взять элемент, нажмите Пробел или Enter. Перемещайте его клавишами со стрелками, поставьте Пробелом или Enter, Escape отменяет.'
     },
     consent: {
       title: 'Согласие на обработку данных',

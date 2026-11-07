@@ -229,7 +229,12 @@ export const cs: Dictionary = {
       position: (name) => `pozici „${name}“`,
       education: (name) => `položku „${name}“`,
       bullet: (number) => `bod ${number}`,
-      listItem: (number) => `položku ${number}`
+      listItem: (number) => `položku ${number}`,
+      pickedUp: (item) => `Zvedli jste ${item}.`,
+      movedOver: (item, position, total) => `Přesouváte ${item}: pozice ${position} z ${total}.`,
+      dropped: (item, position, total) => `Položili jste ${item} na pozici ${position} z ${total}.`,
+      cancelled: (item) => `Vrátili jste ${item} na původní místo.`,
+      instructions: 'Položku zvednete mezerníkem nebo Enterem. Šipkami ji přesunete, mezerníkem nebo Enterem ji položíte a Escape přesun zruší.'
     },
     consent: {
       title: 'Souhlas se zpracováním údajů',

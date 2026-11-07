@@ -890,6 +890,76 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
+// Ogłoszenia dnd-kit dla czytnika ekranu: regiony aria-live (po jednym na listę) poza widokiem, szukane po treści.
+const dragAnnouncement = (text: string) => window.locator('[aria-live]').filter({ hasText: text })
+
+// Podnosi element z klawiatury (Spacja na uchwycie z fokusem). dnd-kit mierzy listę i podpina obsługę strzałek
+// chwilę po podniesieniu, więc strzałka wciśnięta od razu po ogłoszeniu bywa gubiona.
+async function pickUpWithKeyboard(announcement: string) {
+  await window.keyboard.press('Space')
+  await expect(dragAnnouncement(announcement)).toHaveCount(1)
+  await window.waitForTimeout(200)
+}
+
+// Przenosi element z klawiatury o jedno miejsce w górę i sprawdza, co po kolei słyszy czytnik ekranu.
+async function moveUpWithKeyboard(expected: {
+  handle: string
+  instructions: string
+  pickedUp: string
+  moving: string
+  dropped: string
+}) {
+  const handle = window.getByRole('button', { name: expected.handle, exact: true })
+  await expect(handle).toHaveAccessibleDescription(expected.instructions)
+  await handle.focus()
+  await pickUpWithKeyboard(expected.pickedUp)
+  await window.keyboard.press('ArrowUp')
+  await expect(dragAnnouncement(expected.moving)).toHaveCount(1)
+  await window.keyboard.press('Space')
+  await expect(dragAnnouncement(expected.dropped)).toHaveCount(1)
+  // Żadne ogłoszenie nie zawiera identyfikatora elementu z dokumentu.
+  const announcements = await window.locator('[aria-live]').allTextContents()
+  expect(announcements.join(' ')).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/)
+  expect(announcements.join(' ')).not.toMatch(/draggable|droppable/i)
+}
+
+test('reordering with the keyboard tells the screen reader what was picked up, where it moves and where it was dropped, in English and in Polish', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  // Sekcje przykładowego CV: Work experience, Education, Skills, Languages, Interests.
+  await moveUpWithKeyboard({
+    handle: 'Drag section “Languages” to reorder',
+    instructions:
+      'To pick up an item, press Space or Enter. Use the arrow keys to move it, Space or Enter to drop it, and Escape to cancel.',
+    pickedUp: 'Picked up section “Languages”.',
+    moving: 'Moving section “Languages”: position 3 of 5.',
+    dropped: 'Dropped section “Languages” at position 3 of 5.'
+  })
+  await expect(preview.locator('.cv-page .cv-section-title').nth(2)).toHaveText('Languages')
+
+  // Escape odkłada element na miejsce i mówi o tym.
+  const handle = window.getByRole('button', { name: 'Drag section “Skills” to reorder', exact: true })
+  await handle.focus()
+  await pickUpWithKeyboard('Picked up section “Skills”.')
+  await window.keyboard.press('ArrowUp')
+  await expect(dragAnnouncement('Moving section “Skills”: position 3 of 5.')).toHaveCount(1)
+  await window.keyboard.press('Escape')
+  await expect(dragAnnouncement('Put section “Skills” back in its place.')).toHaveCount(1)
+
+  await app.close()
+  await rm(join(outputDir, 'user-data'), { recursive: true })
+  await launch({ language: 'pl' })
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await moveUpWithKeyboard({
+    handle: 'Przeciągnij sekcję „Języki”, aby zmienić kolejność',
+    instructions:
+      'Aby podnieść element, naciśnij Spację lub Enter. Strzałkami przesuń go, Spacją lub Enterem upuść, Escape anuluje.',
+    pickedUp: 'Podniesiono sekcję „Języki”.',
+    moving: 'Przesuwasz sekcję „Języki”: pozycja 3 z 5.',
+    dropped: 'Upuszczono sekcję „Języki” na pozycji 3 z 5.'
+  })
+})
+
 test('edits education and lists, reorders and hides sections, and forces page breaks in the preview and PDF', async () => {
   const pdfPath = join(outputDir, 'layout.pdf')
   await stubSaveDialog(pdfPath)

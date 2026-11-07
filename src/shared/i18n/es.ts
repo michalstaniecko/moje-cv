@@ -229,7 +229,12 @@ export const es: Dictionary = {
       position: (name) => `el puesto «${name}»`,
       education: (name) => `la entrada «${name}»`,
       bullet: (number) => `la viñeta ${number}`,
-      listItem: (number) => `el elemento ${number}`
+      listItem: (number) => `el elemento ${number}`,
+      pickedUp: (item) => `Has tomado ${item}.`,
+      movedOver: (item, position, total) => `Moviendo ${item}: posición ${position} de ${total}.`,
+      dropped: (item, position, total) => `Has soltado ${item} en la posición ${position} de ${total}.`,
+      cancelled: (item) => `Has devuelto ${item} a su sitio.`,
+      instructions: 'Para tomar un elemento, pulsa Espacio o Intro. Muévelo con las flechas, suéltalo con Espacio o Intro y cancela con Escape.'
     },
     consent: {
       title: 'Cláusula de consentimiento',

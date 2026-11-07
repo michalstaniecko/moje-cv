@@ -234,7 +234,12 @@ export const sv: Dictionary = {
       position: (name) => `tjänsten ”${name}”`,
       education: (name) => `posten ”${name}”`,
       bullet: (number) => `punkt ${number}`,
-      listItem: (number) => `post ${number}`
+      listItem: (number) => `post ${number}`,
+      pickedUp: (item) => `Du har lyft ${item}.`,
+      movedOver: (item, position, total) => `Du flyttar ${item}: position ${position} av ${total}.`,
+      dropped: (item, position, total) => `Du har släppt ${item} på position ${position} av ${total}.`,
+      cancelled: (item) => `Du har lagt tillbaka ${item} på sin plats.`,
+      instructions: 'Tryck på blanksteg eller Retur för att lyfta ett objekt. Flytta det med piltangenterna, släpp det med blanksteg eller Retur och avbryt med Escape.'
     },
     consent: {
       title: 'Samtyckesklausul',

@@ -229,7 +229,12 @@ export const pt: Dictionary = {
       position: (name) => `o cargo “${name}”`,
       education: (name) => `o item “${name}”`,
       bullet: (number) => `o tópico ${number}`,
-      listItem: (number) => `o item ${number}`
+      listItem: (number) => `o item ${number}`,
+      pickedUp: (item) => `Você pegou ${item}.`,
+      movedOver: (item, position, total) => `Movendo ${item}: posição ${position} de ${total}.`,
+      dropped: (item, position, total) => `Você soltou ${item} na posição ${position} de ${total}.`,
+      cancelled: (item) => `Você devolveu ${item} ao lugar original.`,
+      instructions: 'Para pegar um item, pressione Espaço ou Enter. Use as setas para movê-lo, Espaço ou Enter para soltá-lo e Esc para cancelar.'
     },
     consent: {
       title: 'Cláusula de consentimento',

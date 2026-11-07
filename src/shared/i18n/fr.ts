@@ -229,7 +229,12 @@ export const fr: Dictionary = {
       position: (name) => `le poste « ${name} »`,
       education: (name) => `l’entrée « ${name} »`,
       bullet: (number) => `la puce ${number}`,
-      listItem: (number) => `l’élément ${number}`
+      listItem: (number) => `l’élément ${number}`,
+      pickedUp: (item) => `Vous avez saisi ${item}.`,
+      movedOver: (item, position, total) => `Vous déplacez ${item} : position ${position} sur ${total}.`,
+      dropped: (item, position, total) => `Vous avez déposé ${item} en position ${position} sur ${total}.`,
+      cancelled: (item) => `Vous avez remis ${item} à sa place.`,
+      instructions: 'Pour saisir un élément, appuyez sur Espace ou Entrée. Déplacez-le avec les flèches, déposez-le avec Espace ou Entrée, ou annulez avec Échap.'
     },
     consent: {
       title: 'Clause de consentement',

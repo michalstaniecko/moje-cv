@@ -229,7 +229,12 @@ export const it: Dictionary = {
       position: (name) => `la posizione «${name}»`,
       education: (name) => `la voce «${name}»`,
       bullet: (number) => `il punto ${number}`,
-      listItem: (number) => `la voce ${number}`
+      listItem: (number) => `la voce ${number}`,
+      pickedUp: (item) => `Hai preso ${item}.`,
+      movedOver: (item, position, total) => `Stai spostando ${item}: posizione ${position} di ${total}.`,
+      dropped: (item, position, total) => `Hai rilasciato ${item} in posizione ${position} di ${total}.`,
+      cancelled: (item) => `Hai rimesso ${item} al suo posto.`,
+      instructions: 'Per prendere un elemento, premi Spazio o Invio. Spostalo con i tasti freccia, rilascialo con Spazio o Invio, oppure annulla con Esc.'
     },
     consent: {
       title: 'Clausola di consenso',
