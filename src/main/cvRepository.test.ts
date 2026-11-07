@@ -468,6 +468,23 @@ describe('update', () => {
     expect(stored.tags).toEqual(['EN'])
   })
 
+  test('reports how long reading, checking and writing the file took, in that order (performance measurement)', async () => {
+    const phases: string[] = []
+    repository = createCvRepository(cvDir, {
+      time: (phase, operation) => {
+        phases.push(phase)
+        return operation()
+      }
+    })
+    await repository.save(sampleCv)
+    phases.length = 0
+
+    await repository.update(cv({ header: { ...sampleCv.header, fullName: 'Ewa Nowak' } }))
+
+    expect(phases).toEqual(['read', 'check', 'write'])
+    expect((await repository.get(sampleCv.id)).header.fullName).toBe('Ewa Nowak')
+  })
+
   test('a deleted CV is not brought back by a late save', async () => {
     await repository.save(sampleCv)
     await repository.delete(sampleCv.id)

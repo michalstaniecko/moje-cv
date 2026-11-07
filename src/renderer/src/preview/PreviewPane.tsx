@@ -3,6 +3,7 @@ import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import { useDictionary, useInterfaceLanguage } from '../i18n'
 import { CvPages } from '../template/CvPages'
+import { afterNextPaint, markPreviewPainted } from './keystrokeTiming'
 import { pageCountLabel, RECOMMENDED_MAX_PAGES } from './pageCount'
 import { fitScale, PREVIEW_MARGIN_PX, zoomIn, zoomOut } from './zoom'
 
@@ -25,6 +26,7 @@ export function PreviewPane({
     (layout: PaginateResult) => {
       setPageCount(layout.pages.length)
       onLayoutChange?.(layout)
+      afterNextPaint(markPreviewPainted)
     },
     [onLayoutChange]
   )

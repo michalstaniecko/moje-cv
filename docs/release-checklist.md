@@ -55,6 +55,8 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | „Nadal tu pracuję” ustawia na dokumencie i w PDF „obecnie” w CV language (#69) | [ ] | [ ] |
 | Data „do” wcześniejsza niż „od” (doświadczenie i wykształcenie): ostrzeżenie pod datami, czytelne w jasnym i ciemnym wyglądzie; eksport nadal działa (#69) | [ ] | [ ] |
 | Usunięcie stanowiska: „Usunięto.” z „Cofnij” na dole kolumny formularza (nie na podglądzie); „Cofnij” przywraca stanowisko z punktami; komunikat znika sam po ok. 8 s, ale nie pod kursorem ani z fokusem; VoiceOver ogłasza „Usunięto” (#69) | [ ] | [ ] |
+| Duży CV (4+ strony, zdjęcie): podgląd nadąża za pisaniem, pisanie nie przycina się przy autozapisie (#72) | [ ] | [ ] |
+| Pomiar wydajności na M1 (#72): `MOJE_CV_PERF=1 pnpm test:e2e:packaged e2e/performance.spec.ts`; mediana i p95 „keystroke → preview painted” < 100 ms, „cv:update total” < 100 ms, brak długich zadań ≥ 100 ms | — | [ ] |
 
 ## Eksport do PDF
 
