@@ -27,13 +27,11 @@ export function loadAppWindow(window: BrowserWindow): void {
 }
 
 // Żadna treść nie otwiera nowych okien ani nie przenosi okna na inny adres (upuszczony plik, `window.open`,
-// `location.href`). Aplikacja sama nigdy nie nawiguje – ekrany to stan Reacta – a `loadURL` / `loadFile` /
-// `webContents.reload()` nie wywołują `will-navigate`. Jedyny wyjątek to ten sam adres: `location.reload()` z ekranu
-// błędu („Wczytaj ponownie”) wywołuje `will-navigate` z bieżącym adresem strony. Linki zewnętrzne idą przez
-// `shell.openExternal` w procesie głównym.
+// `location.href`, `location.reload()`) – bez wyjątków. Aplikacja sama nigdy nie nawiguje – ekrany to stan Reacta –
+// a `loadURL` / `loadFile` / `webContents.reload()` nie wywołują `will-navigate`; dlatego „Wczytaj ponownie” z ekranu
+// błędu prosi proces główny o `webContents.reload()` (`app:reload`). Linki zewnętrzne idą przez `shell.openExternal`
+// w procesie głównym.
 export function lockNavigation(contents: WebContents): void {
   contents.setWindowOpenHandler(() => ({ action: 'deny' }))
-  contents.on('will-navigate', (event) => {
-    if (event.url !== contents.getURL()) event.preventDefault()
-  })
+  contents.on('will-navigate', (event) => event.preventDefault())
 }

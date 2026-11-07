@@ -51,7 +51,7 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
       const { name, updatedAt, tags } = await get(id)
       return { status: 'ok', id, name, updatedAt, tags }
     } catch (error) {
-      return { status: 'damaged', id, reason: error instanceof NewerSchemaVersionError ? 'newer-version' : 'damaged' }
+      return { status: 'unreadable', id, reason: error instanceof NewerSchemaVersionError ? 'newer-version' : 'damaged' }
     }
   }
 

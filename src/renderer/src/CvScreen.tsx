@@ -94,12 +94,18 @@ export function CvScreen({
     backButton.current?.focus()
   }
 
-  // Eksport do .json z menu Plik: najpierw zapis oczekującej zmiany, żeby plik miał to, co właśnie wpisano.
+  // Eksport do .json z menu Plik: najpierw zapis oczekującej zmiany, żeby plik miał to, co właśnie wpisano. Eksport
+  // czyta plik CV z dysku, więc po nieudanym zapisie miałby starą wersję – wtedy błąd eksportu obok paska
+  // nieudanego zapisu, bez okna zapisu pliku.
   const exportJson = async () => {
     setExportState({ status: 'idle' })
     setJsonExport({ status: 'idle' })
     try {
       await editor.flush()
+      if (editor.store.getState().saveStatus === 'failed') {
+        setJsonExport({ status: 'failed' })
+        return
+      }
       const result = await window.api.cv.exportFile(document.id)
       if (result.status === 'saved') setJsonExport({ status: 'saved', fileName: baseName(result.filePath) })
     } catch {

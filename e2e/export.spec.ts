@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
@@ -2292,6 +2292,29 @@ test('File → New CV, Add Sample CV and Import… work like the library buttons
   await clickMenuItem('File', 'Import…')
   await expect(window.getByRole('status').filter({ hasText: 'Imported “Sample CV”.' })).toBeVisible()
   await expect(rows).toHaveCount(5)
+})
+
+test('File → Export JSON… after a failed autosave does not export the old version of the CV', async () => {
+  await openFirstCv()
+  // Zapis odrzucany, ale plik CV zostaje na dysku – eksport miałby z czego zapisać starą wersję.
+  await app.evaluate(({ ipcMain }) => {
+    ipcMain.removeHandler('cv:update')
+    ipcMain.handle('cv:update', async () => {
+      throw new Error('disk full')
+    })
+  })
+  const jsonPath = join(outputDir, 'stale.json')
+  await stubSaveDialog(jsonPath)
+
+  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await clickMenuItem('File', 'Export JSON…')
+
+  await expect(window.getByRole('alert').filter({ hasText: 'Couldn’t export the CV.' })).toBeVisible()
+  await expect(window.getByRole('alert').filter({ hasText: 'Couldn’t save changes' })).toBeVisible()
+  await expect(window.getByRole('status').filter({ hasText: 'Saved file' })).toHaveCount(0)
+  expect(await app.evaluate(() => (globalThis as { saveDialogCalls?: unknown[] }).saveDialogCalls?.length)).toBe(0)
+  await expect(access(jsonPath)).rejects.toThrow()
+  await leaveEditorAnyway()
 })
 
 test('File → New CV after a failed autosave asks before leaving the editor, like ← Back', async () => {

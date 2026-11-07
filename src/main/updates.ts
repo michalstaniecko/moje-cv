@@ -1,6 +1,7 @@
-import { app, BrowserWindow, dialog, ipcMain, net, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, net } from 'electron'
 import { releaseUrl, RELEASES_URL } from '../shared/links'
 import type { InterfaceLanguageState } from './interfaceLanguage'
+import { openExternal } from './openExternal'
 import type { SettingsRepository } from './settingsRepository'
 import { createUpdateCheck, updateCheckConfig, type UpdateCheck } from './updateCheck'
 
@@ -33,7 +34,7 @@ export function registerUpdates({
   ipcMain.handle('updates:download', async () => {
     if (!updates) return
     const version = await updates.notice()
-    await open(version ? releaseUrl(version) : RELEASES_URL)
+    await openExternal(version ? releaseUrl(version) : RELEASES_URL)
   })
   ipcMain.handle('updates:dismiss', () => updates?.dismiss())
 
@@ -72,7 +73,7 @@ export function registerUpdates({
         defaultId: 0,
         cancelId: 1
       })
-      if (response === 0) await open(releaseUrl(result.version))
+      if (response === 0) await openExternal(releaseUrl(result.version))
     } else {
       const { response } = await show({
         type: 'warning',
@@ -82,7 +83,7 @@ export function registerUpdates({
         defaultId: 0,
         cancelId: 1
       })
-      if (response === 0) await open(RELEASES_URL)
+      if (response === 0) await openExternal(RELEASES_URL)
     }
   }
 
@@ -91,8 +92,4 @@ export function registerUpdates({
     checkForUpdates: (window) =>
       void checkForUpdates(window).catch((error: unknown) => console.error('Update check failed', error))
   }
-}
-
-function open(url: string): Promise<void> {
-  return shell.openExternal(url).catch((error: unknown) => console.error('Failed to open the address', url, error))
 }

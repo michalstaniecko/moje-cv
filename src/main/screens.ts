@@ -3,7 +3,7 @@ import type { AppScreen } from '../shared/api'
 
 // Bieżący ekran okien (według id webContents) zgłaszany przez renderer – wspólne źródło prawdy dla menu (aktywność
 // pozycji Plik, Cofnij / Ponów) i strażnika zamknięcia okna. `clear` odpina nasłuchiwanie zamknięcia i przeładowania
-// okna i usuwa wpis. Kolejność wpisów to kolejność zgłoszeń – ostatni jest ekranem, na którym użytkownik właśnie jest.
+// okna i usuwa wpis.
 const screens = new Map<number, { screen: AppScreen; clear: () => void }>()
 
 // Ekran znika razem z oknem i przy przeładowaniu strony (renderer zgłosi go ponownie po starcie); wtedy wywoływane
@@ -12,8 +12,7 @@ export function trackScreen(contents: WebContents, screen: AppScreen, onClear: (
   const id = contents.id
   const tracked = screens.get(id)
   if (tracked) {
-    screens.delete(id)
-    screens.set(id, { ...tracked, screen })
+    tracked.screen = screen
     return
   }
   const onNavigation = (details: Electron.Event<Electron.WebContentsDidStartNavigationEventParams>) => {
@@ -31,12 +30,21 @@ export function trackScreen(contents: WebContents, screen: AppScreen, onClear: (
   screens.set(id, { screen, clear })
 }
 
-// Ekran, od którego zależy aktywność menu Plik: ostatnio zgłoszony; bez okien – żaden.
-export function currentScreen(): AppScreen | undefined {
-  return [...screens.values()].at(-1)?.screen
+// Ekran, od którego zależy aktywność menu Plik: ekran okna, na którym działa menu (okna z fokusem). Bez okna z fokusem
+// (np. okno pokazane bez fokusu w testach e2e) – ekran jedynego okna aplikacji; przy kilku oknach żaden, bo nie
+// wiadomo, do którego trafiłaby komenda.
+export function menuScreen(focused: Pick<WebContents, 'id'> | undefined): AppScreen | undefined {
+  if (focused) return screens.get(focused.id)?.screen
+  const [only, ...others] = screens.values()
+  return others.length === 0 ? only?.screen : undefined
+}
+
+// Ekran danego okna (np. tego, do którego trafia komenda menu); okno bez zgłoszonego ekranu – żaden.
+export function screenOf(contents: Pick<WebContents, 'id'>): AppScreen | undefined {
+  return screens.get(contents.id)?.screen
 }
 
 // Czy w oknie jest otwarty edytor CV (Cofnij / Ponów działają na historii CV, zamknięcie czeka na zapis).
 export function isEditorActive(contents: WebContents): boolean {
-  return screens.get(contents.id)?.screen === 'editor'
+  return screenOf(contents) === 'editor'
 }

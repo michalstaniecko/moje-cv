@@ -6,21 +6,26 @@
 // o nowej wersji w `.dmg` (ADR-0006); wydanie to GitHub Release z tagiem `vX.Y.Z`.
 export { SPONSOR_URL } from './sponsor'
 
-// Publiczne repo – z niego budowane są pozostałe adresy repo.
-export const REPO_URL = 'https://github.com/michalstaniecko/moje-cv'
+// Publiczne repo (właściciel i nazwa) – z niego budowane są wszystkie adresy poniżej.
+const REPO = { owner: 'michalstaniecko', name: 'moje-cv' } as const
+
+export const REPO_URL = `https://github.com/${REPO.owner}/${REPO.name}`
+
+// Strony repo na GitHub Pages.
+const PAGES_URL = `https://${REPO.owner}.github.io/${REPO.name}/`
 
 // Strona pomocy (GitHub Pages repo `moje-cv`).
-export const HELP_URL = 'https://michalstaniecko.github.io/moje-cv/'
+export const HELP_URL = PAGES_URL
 
 // Polityka prywatności (wymagana przez App Store).
-export const PRIVACY_URL = 'https://michalstaniecko.github.io/moje-cv/privacy/'
+export const PRIVACY_URL = `${PAGES_URL}privacy/`
 
 // Nowe zgłoszenie w publicznym repo, z wyborem szablonu.
 export const REPORT_ISSUE_URL = `${REPO_URL}/issues/new/choose`
 
 // Sprawdzanie nowej wersji w `.dmg` (ADR-0006). Endpoint GitHub API zwraca najnowsze opublikowane wydanie i sam pomija
 // drafty i pre-release'y.
-export const LATEST_RELEASE_API_URL = 'https://api.github.com/repos/michalstaniecko/moje-cv/releases/latest'
+export const LATEST_RELEASE_API_URL = `https://api.github.com/repos/${REPO.owner}/${REPO.name}/releases/latest`
 
 // Strona najnowszego wydania – „Otwórz stronę wydań”, gdy sprawdzenie się nie udało.
 export const RELEASES_URL = `${REPO_URL}/releases/latest`

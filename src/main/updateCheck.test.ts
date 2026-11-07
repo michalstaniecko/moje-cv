@@ -152,6 +152,20 @@ describe('checking for a new version', () => {
   })
 })
 
+test('without a feed address the check fails without asking the network', async () => {
+  const updates = createUpdateCheck({
+    currentVersion: '1.0.0',
+    feedUrl: null,
+    fetch: fakeFetch,
+    now: () => clock,
+    settings: createSettingsRepository(settingsPath)
+  })
+
+  expect(await updates.check()).toEqual({ status: 'failed' })
+  expect(fetchCalls).toHaveLength(0)
+  expect(await savedUpdateCheck()).toBeUndefined()
+})
+
 describe('checking at startup', () => {
   test('asks the network when nothing was checked before', async () => {
     expect(await service().checkIfDue()).toEqual({ status: 'newer', version: '1.1.0' })
@@ -240,9 +254,9 @@ describe('update check configuration', () => {
     })
   })
 
-  test('"off" turns off the startup check, but the menu check stays', () => {
+  test('"off" turns off the startup check and the network; the menu check stays and fails', () => {
     expect(updateCheckConfig({ macAppStore: false, override: 'off' })).toEqual({
-      feedUrl,
+      feedUrl: null,
       checkAtStartup: false,
       startupDelayMs: 10_000
     })

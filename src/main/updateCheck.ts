@@ -20,7 +20,7 @@ const startupDelayMs = 10_000
 
 // Jak działa sprawdzanie w danym buildzie. W Mac App Store nie ma go wcale (`null`: brak serwisu, timera, pozycji menu
 // i ruchu sieciowego – ADR-0005, ADR-0006). `override` to zmienna `MOJE_CV_UPDATE_URL` (testy): „off” wyłącza
-// sprawdzanie przy starcie, a adres `http://` na pętli zwrotnej zastępuje GitHuba i sprawdza od razu. Inne wartości
+// sprawdzanie przy starcie i sieć (`feedUrl: null` – sprawdzenie z menu daje `failed` bez zapytania), a adres `http://` na pętli zwrotnej zastępuje GitHuba i sprawdza od razu. Inne wartości
 // są ignorowane, więc zmienna nie przekieruje zapytania do obcego serwera.
 export function updateCheckConfig({
   macAppStore,
@@ -28,9 +28,9 @@ export function updateCheckConfig({
 }: {
   macAppStore: boolean
   override: string | undefined
-}): { feedUrl: string; checkAtStartup: boolean; startupDelayMs: number } | null {
+}): { feedUrl: string | null; checkAtStartup: boolean; startupDelayMs: number } | null {
   if (macAppStore) return null
-  if (override === 'off') return { feedUrl: LATEST_RELEASE_API_URL, checkAtStartup: false, startupDelayMs }
+  if (override === 'off') return { feedUrl: null, checkAtStartup: false, startupDelayMs }
   if (override !== undefined && isLoopbackHttpUrl(override)) {
     return { feedUrl: override, checkAtStartup: true, startupDelayMs: 0 }
   }
@@ -60,7 +60,7 @@ export function createUpdateCheck({
   timeoutMs = 10_000
 }: {
   currentVersion: string
-  feedUrl: string
+  feedUrl: string | null
   fetch: (url: string, init?: RequestInit) => Promise<Response>
   now: () => Date
   settings: Pick<SettingsRepository, 'get' | 'recordUpdateCheck' | 'dismissUpdate'>
@@ -75,8 +75,10 @@ export function createUpdateCheck({
     }
   }
 
-  // Najnowsza opublikowana wersja albo `null`, gdy repo nie ma wydań (404). Każdy inny problem to wyjątek.
+  // Najnowsza opublikowana wersja albo `null`, gdy repo nie ma wydań (404). Każdy inny problem to wyjątek – także brak
+  // adresu (sprawdzanie wyłączone), wtedy bez żadnego zapytania.
   async function latestVersion(): Promise<string | null> {
+    if (feedUrl === null) throw new Error('Update check is turned off')
     const response = await fetch(feedUrl, {
       method: 'GET',
       headers: {

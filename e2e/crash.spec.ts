@@ -75,6 +75,20 @@ test('content cannot navigate the app window away or open a new window', async (
   expect(state.text).not.toContain('Strange page')
 })
 
+test('content cannot reload the app window by itself either', async () => {
+  await expect(cvList()).toBeVisible()
+  await window.evaluate(() => {
+    ;(globalThis as unknown as { notReloaded: boolean }).notReloaded = true
+    ;(globalThis as unknown as { location: { reload: () => void } }).location.reload()
+  })
+
+  await window.waitForTimeout(1_000)
+  const notReloaded = await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0]!.webContents.executeJavaScript('globalThis.notReloaded === true')
+  )
+  expect(notReloaded).toBe(true)
+})
+
 // Formatowanie dat w bibliotece rzuca wyjątkiem przy następnym renderowaniu (podmiana żyje do przeładowania okna).
 async function breakDateFormatting() {
   await window.evaluate(() => {
