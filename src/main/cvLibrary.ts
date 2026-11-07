@@ -7,6 +7,7 @@ import { InvalidTagError } from '../renderer/src/domain/tags'
 import type { ExportCvFileResult, ImportCvFileResult, SetCvTagsResult } from '../shared/api'
 import { InvalidCvFileError, type CvRepository } from './cvRepository'
 import type { InterfaceLanguageState } from './interfaceLanguage'
+import type { PerfLog } from './perfLog'
 import { requireString, requireStringArray } from './ipcArgs'
 import type { SettingsRepository } from './settingsRepository'
 
@@ -24,8 +25,11 @@ export function cvFileName(name: string, untitled: string): string {
 export function registerCvLibrary(
   repository: CvRepository,
   settings: SettingsRepository,
-  language: InterfaceLanguageState
+  language: InterfaceLanguageState,
+  perf: PerfLog | null = null
 ): void {
+  // Pomiar autozapisu (tylko przy `MOJE_CV_PERF=1`): cały zapis i walidacja dokumentu przysłanego przez IPC.
+  const time = perf ? perf.time : <T>(_name: string, operation: () => T) => operation()
   const jsonFilters = () => [{ name: language.dictionary().dialogs.cvFilter, extensions: ['json'] }]
 
   // Autozapis wysłany przy zamykaniu okna musi trafić na dysk, zanim aplikacja się zakończy.
@@ -53,7 +57,9 @@ export function registerCvLibrary(
     }
   })
   ipcMain.handle('cv:update', (_event, document: unknown) => {
-    const update = repository.update(cvDocumentSchema.parse(document))
+    const update = time('cv:update', () =>
+      repository.update(time('cv:update/validate', () => cvDocumentSchema.parse(document)))
+    )
     pendingUpdates.add(update)
     void update.catch(() => undefined).finally(() => pendingUpdates.delete(update))
     return update

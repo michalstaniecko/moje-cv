@@ -9,6 +9,7 @@ import { guardUnsavedChanges } from './closeGuard'
 import { reloadAfterRendererCrash, reportMainProcessErrors } from './crashHandling'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
+import { createPerfLog, type PerfEntry } from './perfLog'
 import { createInterfaceLanguage, registerInterfaceLanguage, type InterfaceLanguageState } from './interfaceLanguage'
 import { registerAppInfo } from './appInfo'
 import { registerAppMenu } from './menu'
@@ -85,14 +86,20 @@ app.on('web-contents-created', (_event, contents) => lockNavigation(contents))
 app.whenReady().then(async () => {
   if (!primaryInstance) return
   if (hiddenForTests) app.dock?.hide()
-  const repository = createCvRepository(join(app.getPath('userData'), 'cvs'))
+  // `MOJE_CV_PERF=1`: pomiar autozapisu w procesie głównym (e2e/performance.spec.ts czyta `globalThis.cvPerfEntries`).
+  const perf = process.env['MOJE_CV_PERF'] === '1' ? createPerfLog() : null
+  if (perf) (globalThis as { cvPerfEntries?: PerfEntry[] }).cvPerfEntries = perf.entries
+  const repository = createCvRepository(
+    join(app.getPath('userData'), 'cvs'),
+    perf ? { time: (phase, operation) => perf.time(`cv:update/${phase}`, operation) } : {}
+  )
   const settings = createSettingsRepository(join(app.getPath('userData'), 'settings.json'))
   // Wygląd przed pierwszym oknem, żeby pierwsze malowanie i tło okna były już we właściwej palecie.
   const appearance = await createAppearance(settings)
   const language = (interfaceLanguage = await createInterfaceLanguage(settings))
   await repository.addSampleOnFirstRun(sampleCvs[language.current()])
   registerInterfaceLanguage(language)
-  registerCvLibrary(repository, settings, language)
+  registerCvLibrary(repository, settings, language, perf)
   registerSettings(settings)
   registerPdfExport(language)
   registerPhotoPicker(language)
