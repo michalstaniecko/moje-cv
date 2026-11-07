@@ -88,5 +88,5 @@ export function createSettingsRepository(path: string) {
 }
 
 function requireClause(settings: AppSettings, id: string): void {
-  if (!settings.clauses.some((clause) => clause.id === id)) throw new Error(`Klauzula nie istnieje: ${id}`)
+  if (!settings.clauses.some((clause) => clause.id === id)) throw new Error(`Clause does not exist: ${id}`)
 }

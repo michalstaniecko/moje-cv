@@ -98,7 +98,7 @@ function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceSt
     systemLabel: menu.systemLanguage,
     preference: language.preference(),
     choose: (choice) =>
-      language.choose(choice).catch((error: unknown) => console.error('Nie udało się zapisać języka interfejsu', error))
+      language.choose(choice).catch((error: unknown) => console.error('Failed to save the interface language', error))
   })
   // Wygląd / Appearance: tak samo wybór użytkownika (albo Systemowy). Błąd zapisu jest logowany w `choose`,
   // a wybór i tak zastosowany.

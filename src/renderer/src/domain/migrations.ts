@@ -30,9 +30,9 @@ export function migrateCv(input: unknown, migrations: CvMigrations): CvDocument 
   let document = input
   while (isObject(document) && typeof document.schemaVersion === 'number' && document.schemaVersion !== CV_SCHEMA_VERSION) {
     const { schemaVersion } = document
-    if (schemaVersion > CV_SCHEMA_VERSION) throw new NewerSchemaVersionError(`Nieobsługiwana wersja schematu CV: ${schemaVersion}`)
+    if (schemaVersion > CV_SCHEMA_VERSION) throw new NewerSchemaVersionError(`Unsupported CV schema version: ${schemaVersion}`)
     const migrate = migrations[schemaVersion]
-    if (!migrate) throw new Error(`Brak migracji ze schematu CV w wersji ${schemaVersion}`)
+    if (!migrate) throw new Error(`No migration from CV schema version ${schemaVersion}`)
     document = { ...migrate(document), schemaVersion: schemaVersion + 1 }
   }
   return cvDocumentSchema.parse(document)
