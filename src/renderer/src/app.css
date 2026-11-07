@@ -282,6 +282,40 @@ textarea:focus-visible {
   white-space: nowrap;
 }
 
+/* Nazwa CV jest przyciskiem zmiany nazwy: wygląda jak nagłówek, ucina się tak samo, a obrys fokusu jest w środku
+   (nagłówek obcina to, co wystaje). Po kliknięciu zamienia się w pole. */
+.toolbar-title-button {
+  display: block;
+  max-width: 100%;
+  padding: 2px 6px;
+  overflow: hidden;
+  font-weight: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border-color: transparent;
+}
+
+.toolbar-title-button:focus-visible {
+  outline-offset: -2px;
+}
+
+.toolbar-title-field {
+  width: 28ch;
+  max-width: 100%;
+  padding: 2px 6px;
+  font: inherit;
+  color: var(--ui-text);
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-accent);
+  border-radius: 6px;
+}
+
+.toolbar-title-field:focus-visible {
+  outline-offset: -2px;
+}
+
 /* ---------- Split button „Nowe CV” z menu pod strzałką ---------- */
 .split-button {
   position: relative;
@@ -777,6 +811,33 @@ textarea:focus-visible {
 .consent-modified {
   color: var(--ui-warning);
   font-size: 12px;
+}
+
+/* Ostrzeżenie o odwróconych datach pod wierszem dat – informuje, nie blokuje. */
+.form-warning {
+  margin: 0 0 8px;
+  color: var(--ui-warning);
+  font-size: 12px;
+}
+
+/* „Usunięto. Cofnij” przyklejone do dołu kolumny formularza (nad Sponsor barem), więc nie zasłania podglądu stron.
+   Pusty kontener `role="status"` zostaje w DOM bez wysokości, żeby czytnik ekranu ogłosił wstawioną treść. */
+.removal-message {
+  position: sticky;
+  bottom: 0;
+  padding: 0 20px;
+}
+
+.removal-message-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px var(--ui-shadow);
 }
 
 /* ---------- Tagi CV na liście – chipy i tryb „Tagi” wiersza ---------- */

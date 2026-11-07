@@ -4,6 +4,7 @@ import type { CvDocument } from '../domain/schema'
 import { useDictionary } from '../i18n'
 import type { CvEditor } from './cvEditor'
 import { updateHeader } from './documentEdits'
+import { useRemove } from './removalUndo'
 import { clampView, cropRect, initialView, MAX_ZOOM, outputSize, PHOTO_ASPECT, type CropView } from './photoCrop'
 
 type PickError = keyof Dictionary['editor']['photo']['errors']
@@ -16,6 +17,7 @@ export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocum
   const [source, setSource] = useState<HTMLImageElement | null>(null)
   const [error, setError] = useState<PickError | null>(null)
   const t = useDictionary().editor.photo
+  const remove = useRemove()
 
   async function pick() {
     setError(null)
@@ -37,7 +39,7 @@ export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocum
   }
 
   return (
-    <fieldset className="form-group">
+    <fieldset className="form-group" data-entry-id="photo">
       <legend>{t.legend}</legend>
       <div className="form-row photo-field">
         {photo && <img className="photo-thumbnail" src={photo.dataUrl} alt={t.thumbnail} />}
@@ -45,7 +47,7 @@ export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocum
           {photo ? t.change : t.choose}
         </button>
         {photo && (
-          <button type="button" onClick={() => editor.edit(updateHeader({ photo: null }))}>
+          <button type="button" onClick={() => remove(updateHeader({ photo: null }), { entryId: 'photo', listId: 'photo' })}>
             {t.remove}
           </button>
         )}

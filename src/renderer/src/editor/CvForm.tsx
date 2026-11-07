@@ -2,6 +2,7 @@ import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useStore } from 'zustand'
 import type { Dictionary } from '../../../shared/i18n/en'
 import { interfaceLanguages } from '../../../shared/i18n/languages'
+import { isEndBeforeStart } from '../domain/dates'
 import { clauseName, cvLanguageCodes, type Clause, type ClauseContent, type CvDocument, type CvLanguage, type EducationItem, type ExperienceItem, type Section, type TextItem } from '../domain/schema'
 import { useDictionary } from '../i18n'
 import { fontFamilies, type Font } from '../template/fonts'
@@ -33,6 +34,7 @@ import {
 } from './documentEdits'
 import { MonthField } from './MonthField'
 import { PhotoField } from './PhotoField'
+import { RemoveProvider, useRemove, type RemoveWithUndo } from './removalUndo'
 import { SortableList } from './SortableList'
 import { TemplatePicker } from './TemplatePicker'
 
@@ -41,43 +43,48 @@ type EditorText = Dictionary['editor']
 const sectionName = (section: Section, t: EditorText) => section.title.trim() || t.sectionTypes[section.type]
 
 // Formularz edycji CV: nagłówek, sekcje w kolejności z CV i klauzula zgody. Każda zmiana trafia do edytora (historia + autozapis).
-// `clauses` – biblioteka klauzul; `onSaveClause` dodaje do niej nową klauzulę.
+// `clauses` – biblioteka klauzul; `onSaveClause` dodaje do niej nową klauzulę; `onRemove` wykonuje usunięcia z formularza
+// (z komunikatem „Usunięto. Cofnij”).
 export function CvForm({
   editor,
   clauses,
-  onSaveClause
+  onSaveClause,
+  onRemove
 }: {
   editor: CvEditor
   clauses: Clause[]
   onSaveClause: (content: ClauseContent) => Promise<Clause>
+  onRemove: RemoveWithUndo
 }) {
   const document = useStore(editor.store, (state) => state.document)
   const t = useDictionary().editor
 
   return (
-    <div className="form">
-      <AppearanceFields editor={editor} document={document} />
-      <HeaderFields editor={editor} header={document.header} />
-      <SortableList
-        items={document.sections}
-        label={(section) => t.order.section(sectionName(section, t))}
-        onMove={(id, toIndex) => editor.edit(moveSection(id, toIndex))}
-      >
-        {(section, orderControls) => <SectionFields editor={editor} section={section} orderControls={orderControls} />}
-      </SortableList>
-      <ConsentFields editor={editor} consent={document.consent} clauses={clauses} onSaveClause={onSaveClause} />
-    </div>
+    <RemoveProvider value={onRemove}>
+      <div className="form">
+        <CvDesignFields editor={editor} document={document} />
+        <HeaderFields editor={editor} header={document.header} />
+        <SortableList
+          items={document.sections}
+          label={(section) => t.order.section(sectionName(section, t))}
+          onMove={(id, toIndex) => editor.edit(moveSection(id, toIndex))}
+        >
+          {(section, orderControls) => <SectionFields editor={editor} section={section} orderControls={orderControls} />}
+        </SortableList>
+        <ConsentFields editor={editor} consent={document.consent} clauses={clauses} onSaveClause={onSaveClause} />
+      </div>
+    </RemoveProvider>
   )
 }
 
-// Wygląd tego CV: kolor akcentu (imię, tytuły sekcji, kropki przy datach), font, szablon i CV language.
+// CV design (zob. GLOSSARY.md): kolor akcentu (imię, tytuły sekcji, kropki przy datach), font, szablon i CV language.
 // Zmiana CV language zmienia tylko stały tekst na dokumencie, nie treść CV.
-function AppearanceFields({ editor, document }: { editor: CvEditor; document: CvDocument }) {
+function CvDesignFields({ editor, document }: { editor: CvEditor; document: CvDocument }) {
   const t = useDictionary().editor
   const { settings } = document
   return (
     <section className="form-section">
-      <h2 className="form-section-title">{t.appearance}</h2>
+      <h2 className="form-section-title">{t.cvDesign}</h2>
       <div className="form-row">
         <label className="form-field">
           <span>{t.accentColor}</span>
@@ -126,6 +133,7 @@ function AppearanceFields({ editor, document }: { editor: CvEditor; document: Cv
 function HeaderFields({ editor, header }: { editor: CvEditor; header: CvDocument['header'] }) {
   const suggestionsId = useId()
   const { editor: t, defaultContent } = useDictionary()
+  const remove = useRemove()
 
   return (
     <section className="form-section">
@@ -148,7 +156,7 @@ function HeaderFields({ editor, header }: { editor: CvEditor; header: CvDocument
           ))}
         </datalist>
         {header.contacts.map((contact, index) => (
-          <div key={contact.id} className="form-row">
+          <div key={contact.id} className="form-row" data-entry-id={contact.id}>
             <input
               className="form-contact-label"
               aria-label={t.contactLabel(index + 1)}
@@ -167,12 +175,16 @@ function HeaderFields({ editor, header }: { editor: CvEditor; header: CvDocument
                 editor.edit(updateContact(contact.id, { value: event.target.value }), `contact:${contact.id}:value`)
               }
             />
-            <button type="button" aria-label={t.removeContact(index + 1)} onClick={() => editor.edit(removeContact(contact.id))}>
+            <button
+              type="button"
+              aria-label={t.removeContact(index + 1)}
+              onClick={() => remove(removeContact(contact.id), { entryId: contact.id, listId: 'contacts' })}
+            >
               {t.remove}
             </button>
           </div>
         ))}
-        <button type="button" onClick={() => editor.edit(addContact())}>
+        <button type="button" data-add-for="contacts" onClick={() => editor.edit(addContact())}>
           {t.addContact}
         </button>
       </fieldset>
@@ -186,6 +198,17 @@ function HeaderFields({ editor, header }: { editor: CvEditor; header: CvDocument
         />
       </label>
     </section>
+  )
+}
+
+// Ostrzeżenie (nie blokada) pod datami, gdy koniec jest wcześniej niż początek. Bez `role="alert"`, żeby nie przerywać
+// pisania; pole daty końca wskazuje je przez `aria-describedby`.
+function DateOrderWarning({ id }: { id: string }) {
+  const t = useDictionary().editor
+  return (
+    <p id={id} className="form-warning">
+      {t.endBeforeStart}
+    </p>
   )
 }
 
@@ -246,7 +269,7 @@ function SectionItems({ editor, section }: { editor: CvEditor; section: Section 
               <ExperienceItemFields editor={editor} sectionId={section.id} item={item} orderControls={orderControls} />
             )}
           </SortableList>
-          <button type="button" onClick={() => editor.edit(addExperienceItem(section.id))}>
+          <button type="button" data-add-for={section.id} onClick={() => editor.edit(addExperienceItem(section.id))}>
             {t.addPosition}
           </button>
         </>
@@ -259,7 +282,7 @@ function SectionItems({ editor, section }: { editor: CvEditor; section: Section 
               <EducationItemFields editor={editor} sectionId={section.id} item={item} orderControls={orderControls} />
             )}
           </SortableList>
-          <button type="button" onClick={() => editor.edit(addEducationItem(section.id))}>
+          <button type="button" data-add-for={section.id} onClick={() => editor.edit(addEducationItem(section.id))}>
             {t.addEducation}
           </button>
         </>
@@ -286,6 +309,9 @@ function ExperienceItemFields({
   orderControls: ReactNode
 }) {
   const t = useDictionary().editor
+  const remove = useRemove()
+  const warningId = useId()
+  const reversedDates = isEndBeforeStart(item.start, item.end)
   const mergeKey = (field: string) => `experience:${item.id}:${field}`
   const patchItem = (patch: Partial<ExperienceItem>, field?: string) =>
     editor.edit(
@@ -311,7 +337,7 @@ function ExperienceItemFields({
   }
 
   return (
-    <fieldset className="form-group">
+    <fieldset className="form-group" data-entry-id={item.id}>
       <legend>
         {orderControls}
         {entryName(item.role, t.newPosition)}
@@ -327,10 +353,12 @@ function ExperienceItemFields({
           label={t.to}
           value={item.end === 'present' ? null : item.end}
           disabled={item.end === 'present'}
+          describedBy={reversedDates ? warningId : undefined}
           onChange={(end) => patchItem({ end }, 'end')}
         />
-        <Checkbox label={t.present} checked={item.end === 'present'} onChange={togglePresent} />
+        <Checkbox label={t.currentlyWorkHere} checked={item.end === 'present'} onChange={togglePresent} />
       </div>
+      {reversedDates && <DateOrderWarning id={warningId} />}
 
       <div className="form-bullets">
         <span>{t.bullets}</span>
@@ -340,7 +368,7 @@ function ExperienceItemFields({
           onMove={(bulletId, toIndex) => editor.edit(moveBullet(sectionId, item.id, bulletId, toIndex))}
         >
           {(bullet, orderControls, index) => (
-            <div className="form-row">
+            <div className="form-row" data-entry-id={bullet.id}>
               {orderControls}
               <textarea
                 rows={2}
@@ -356,14 +384,16 @@ function ExperienceItemFields({
               <button
                 type="button"
                 aria-label={t.removeBullet(index + 1)}
-                onClick={() => editor.edit(removeBullet(sectionId, item.id, bullet.id))}
+                onClick={() =>
+                  remove(removeBullet(sectionId, item.id, bullet.id), { entryId: bullet.id, listId: `bullets:${item.id}` })
+                }
               >
                 {t.remove}
               </button>
             </div>
           )}
         </SortableList>
-        <button type="button" onClick={() => editor.edit(addBullet(sectionId, item.id))}>
+        <button type="button" data-add-for={`bullets:${item.id}`} onClick={() => editor.edit(addBullet(sectionId, item.id))}>
           {t.addBullet}
         </button>
       </div>
@@ -374,7 +404,11 @@ function ExperienceItemFields({
           checked={item.pageBreakBefore}
           onChange={(pageBreakBefore) => patchItem({ pageBreakBefore })}
         />
-        <button type="button" className="danger" onClick={() => editor.edit(removeExperienceItem(sectionId, item.id))}>
+        <button
+          type="button"
+          className="danger"
+          onClick={() => remove(removeExperienceItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
+        >
           {t.removePosition}
         </button>
       </div>
@@ -394,6 +428,9 @@ function EducationItemFields({
   orderControls: ReactNode
 }) {
   const t = useDictionary().editor
+  const remove = useRemove()
+  const warningId = useId()
+  const reversedDates = isEndBeforeStart(item.start, item.end)
   const patchItem = (patch: Partial<Omit<EducationItem, 'id'>>, field?: string) =>
     editor.edit(updateEducationItem(sectionId, item.id, patch), field ? `education:${item.id}:${field}` : undefined)
   const textField = (label: string, field: 'level' | 'field' | 'institution', placeholder: string) => (
@@ -408,7 +445,7 @@ function EducationItemFields({
   )
 
   return (
-    <fieldset className="form-group">
+    <fieldset className="form-group" data-entry-id={item.id}>
       <legend>
         {orderControls}
         {educationName(item, t)}
@@ -418,15 +455,25 @@ function EducationItemFields({
       {textField(t.institution, 'institution', t.institutionPlaceholder)}
       <div className="form-row">
         <MonthField label={t.startOptional} value={item.start} onChange={(start) => patchItem({ start }, 'start')} />
-        <MonthField label={t.graduation} value={item.end} onChange={(end) => patchItem({ end }, 'end')} />
+        <MonthField
+          label={t.graduation}
+          value={item.end}
+          describedBy={reversedDates ? warningId : undefined}
+          onChange={(end) => patchItem({ end }, 'end')}
+        />
       </div>
+      {reversedDates && <DateOrderWarning id={warningId} />}
       <div className="form-row form-row--spread">
         <Checkbox
           label={t.pageBreakBeforeEntry}
           checked={item.pageBreakBefore}
           onChange={(pageBreakBefore) => patchItem({ pageBreakBefore })}
         />
-        <button type="button" className="danger" onClick={() => editor.edit(removeEducationItem(sectionId, item.id))}>
+        <button
+          type="button"
+          className="danger"
+          onClick={() => remove(removeEducationItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
+        >
           {t.removeEducation}
         </button>
       </div>
@@ -436,6 +483,7 @@ function EducationItemFields({
 
 function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; sectionId: string; items: TextItem[] }) {
   const t = useDictionary().editor
+  const remove = useRemove()
   return (
     <div className="form-bullets">
       <SortableList
@@ -444,7 +492,7 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
         onMove={(id, toIndex) => editor.edit(moveItem(sectionId, id, toIndex))}
       >
         {(item, orderControls, index) => (
-          <div className="form-row">
+          <div className="form-row" data-entry-id={item.id}>
             {orderControls}
             <input
               aria-label={t.listItem(index + 1)}
@@ -456,14 +504,14 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
             <button
               type="button"
               aria-label={t.removeListItem(index + 1)}
-              onClick={() => editor.edit(removeListItem(sectionId, item.id))}
+              onClick={() => remove(removeListItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
             >
               {t.remove}
             </button>
           </div>
         )}
       </SortableList>
-      <button type="button" onClick={() => editor.edit(addListItem(sectionId))}>
+      <button type="button" data-add-for={sectionId} onClick={() => editor.edit(addListItem(sectionId))}>
         {t.addListItem}
       </button>
     </div>

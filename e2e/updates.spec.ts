@@ -271,7 +271,7 @@ test('a notice that arrives while the editor is open is shown after going back t
   await expect.poll(savedUpdateCheck).toMatchObject({ latestVersion: '99.0.0' })
   await expect(notice()).toHaveCount(0)
 
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
 
   await expect(notice().getByRole('status')).toHaveText('A new version of CV Press is available: 99.0.0.')
 })

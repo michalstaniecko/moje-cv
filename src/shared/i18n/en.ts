@@ -72,7 +72,7 @@ export const en = {
     }
   },
   common: {
-    back: (appName: string) => `← ${appName}`,
+    back: '← CV library',
     save: 'Save',
     cancel: 'Cancel',
     delete: 'Delete',
@@ -187,8 +187,11 @@ export const en = {
     leaveUnsaved: 'Your changes weren’t saved. Leave anyway?',
     leaveAnyway: 'Leave anyway',
     stayInEditor: 'Stay in the editor',
+    renameCv: (name: string) => `Rename CV: ${name}`,
+    removed: 'Removed.',
+    undoRemoval: 'Undo',
     remove: 'Remove',
-    appearance: 'Appearance',
+    cvDesign: 'CV design',
     accentColor: 'Accent color',
     font: 'Font',
     // CV language (zob. GLOSSARY.md): język stałego tekstu na dokumencie, np. „present”.
@@ -219,7 +222,7 @@ export const en = {
     location: 'City',
     from: 'From',
     to: 'To',
-    present: 'present',
+    currentlyWorkHere: 'I currently work here',
     bullets: 'Bullet points',
     bullet: (number: number) => `Bullet ${number}`,
     removeBullet: (number: number) => `Remove bullet ${number}`,
@@ -235,6 +238,7 @@ export const en = {
     institutionPlaceholder: 'e.g. University of Economics',
     startOptional: 'From (optional)',
     graduation: 'Graduation date',
+    endBeforeStart: 'The end date is earlier than the start date.',
     listItem: (number: number) => `Item ${number}`,
     removeListItem: (number: number) => `Remove item ${number}`,
     addListItem: 'Add item',

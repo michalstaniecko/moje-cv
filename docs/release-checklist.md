@@ -46,10 +46,15 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | Cofnij / Ponów z klawiatury (Cmd+Z, Shift+Cmd+Z) i z menu Edycja | [ ] | [ ] |
 | Autozapis: zmiany są po ponownym otwarciu CV | [ ] | [ ] |
 | Błąd autozapisu z „Spróbuj ponownie” (#67): np. chmod 555 na folderze `cvs` w danych aplikacji, edycja, pasek błędu; po przywróceniu uprawnień „Spróbuj ponownie” zapisuje i pasek znika | [ ] | [ ] |
-| Przy błędzie zapisu „← CV Press” pyta „Wyjść mimo to?”; „Zostań w edytorze” i Escape zostawiają edytor (#67) | [ ] | [ ] |
+| Przy błędzie zapisu „← Biblioteka CV” pyta „Wyjść mimo to?”; „Zostań w edytorze” i Escape zostawiają edytor (#67) | [ ] | [ ] |
 | Cmd+W i Cmd+Q tuż po wpisaniu zmiany: zmiana jest po ponownym otwarciu CV (#67) | [ ] | [ ] |
 | Cmd+W i Cmd+Q przy błędzie zapisu: natywne pytanie „Zamknij / Zakończ mimo to” / „Wróć do edytora” w Interface language; „Wróć do edytora” zostawia okno i aplikację (#67) | [ ] | [ ] |
-| Powrót do biblioteki (#69) | [ ] | [ ] |
+| „← Biblioteka CV” w edytorze i w bibliotece klauzul wraca do biblioteki CV (#69) | [ ] | [ ] |
+| Sekcja „Projekt CV” (kolor, font, Template, CV language), a nie „Wygląd” (#69) | [ ] | [ ] |
+| Zmiana nazwy CV w nagłówku edytora: kliknięcie nazwy, Enter albo kliknięcie obok zapisuje, Escape anuluje, pusta nazwa wraca do poprzedniej, ⌘Z cofa; nowa nazwa w bibliotece CV (#69) | [ ] | [ ] |
+| „Nadal tu pracuję” ustawia na dokumencie i w PDF „obecnie” w CV language (#69) | [ ] | [ ] |
+| Data „do” wcześniejsza niż „od” (doświadczenie i wykształcenie): ostrzeżenie pod datami, czytelne w jasnym i ciemnym wyglądzie; eksport nadal działa (#69) | [ ] | [ ] |
+| Usunięcie stanowiska: „Usunięto.” z „Cofnij” na dole kolumny formularza (nie na podglądzie); „Cofnij” przywraca stanowisko z punktami; komunikat znika sam po ok. 8 s, ale nie pod kursorem ani z fokusem; VoiceOver ogłasza „Usunięto” (#69) | [ ] | [ ] |
 
 ## Eksport do PDF
 
