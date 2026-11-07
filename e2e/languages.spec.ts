@@ -37,11 +37,22 @@ test.afterEach(async () => {
   await rm(outputDir, { recursive: true, force: true })
 })
 
-// Podmienia systemowe okno zapisu: zwraca podaną ścieżkę.
+// Podmienia systemowe okno zapisu: zwraca podaną ścieżkę i zapamiętuje proponowaną nazwę pliku.
 async function stubSaveDialog(filePath: string) {
   await app.evaluate(({ dialog }, filePath) => {
-    dialog.showSaveDialog = (async () => ({ canceled: false, filePath })) as typeof dialog.showSaveDialog
+    const defaultPaths: string[] = []
+    ;(globalThis as { defaultPaths?: string[] }).defaultPaths = defaultPaths
+    dialog.showSaveDialog = (async (...args: unknown[]) => {
+      defaultPaths.push((args.at(-1) as Electron.SaveDialogOptions).defaultPath ?? '')
+      return { canceled: false, filePath }
+    }) as typeof dialog.showSaveDialog
   }, filePath)
+}
+
+// Proponowane nazwy PDF Sample CV, gdzie transliteracja ma dokładny wynik (cyrylica, zasady rosyjskie i ukraińskie).
+const expectedPdfNames: Partial<Record<InterfaceLanguage, string>> = {
+  ru: 'CV_Anna_Obraztsova.pdf',
+  uk: 'CV_Olena_Zrazkova.pdf'
 }
 
 // Górny poziom menu aplikacji i pozycje menu Language (zaznaczone radio z dopiskiem „✓”).
@@ -176,7 +187,11 @@ for (const language of interfaceLanguageCodes) {
     await stubSaveDialog(pdfPath)
     await window.getByRole('button', { name: t.editor.exportPdf }).click()
     await expect(window.getByText(t.editor.savedPdf(`${language}.pdf`))).toBeVisible()
-    expect(await controlsThatDoNotFit('.toolbar')).toEqual([])
+    expect(await controlsThatDoNotFit('.toolbar, .export-notice')).toEqual([])
+    const [defaultPath] = await app.evaluate(() => (globalThis as { defaultPaths?: string[] }).defaultPaths!)
+    const fileName = defaultPath!.split('/').at(-1)
+    expect(fileName).toMatch(/^CV_[A-Za-z0-9_-]+\.pdf$/)
+    if (expectedPdfNames[language]) expect(fileName).toBe(expectedPdfNames[language])
     const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs')
     const pdf = await getDocument({ data: new Uint8Array(await readFile(pdfPath)) }).promise
     expect(pdf.numPages).toBe(SAMPLE_CV_PAGES)

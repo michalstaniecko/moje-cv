@@ -16,6 +16,7 @@
 - CV language in each CV's settings: sets the fixed text on the document ("present") and the page language. New CVs start in the interface language; existing CVs are Polish.
 - A translated "Something went wrong" screen with Reload instead of a blank window; a crashed window reloads itself, and repeated crashes ask before reloading again.
 - The window remembers its size, position and maximized state, and opens on a visible screen.
+- A warning before exporting a CV whose content doesn’t fit on a page; a progress indicator while the PDF is prepared; a separate message when preparing the PDF takes too long.
 
 ### Fixed
 - Closing the window or quitting right after an edit waits for the save, and asks before discarding changes that couldn’t be saved.
@@ -29,6 +30,7 @@
 - The app never opens new windows or navigates away from its own screens.
 - The window has a minimum size; opening the app again brings the running window to the front instead of starting a second copy.
 - A failed autosave shows an alert with Try again; leaving the editor with unsaved changes asks first instead of doing nothing.
+- PDF file names transliterate Cyrillic and other non-Latin letters (e.g. CV_Olena_Zrazkova.pdf) and fall back to the CV name; the export notice can be dismissed.
 
 ## [0.3.0] – 2026-10-27
 

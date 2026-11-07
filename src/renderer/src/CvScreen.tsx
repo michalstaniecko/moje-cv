@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from 'zustand'
 import type { MenuCommand } from '../../shared/api'
+import type { PaginateResult } from './domain/paginate'
 import { cvDisplayName, type Clause, type ClauseContent, type CvDocument } from './domain/schema'
 import { createCvEditor, type CvEditor } from './editor/cvEditor'
 import { CvForm } from './editor/CvForm'
@@ -8,11 +9,15 @@ import { useDictionary } from './i18n'
 import { useMenuCommands } from './menuCommands'
 import { PreviewPane } from './preview/PreviewPane'
 
+// `confirming` – CV ma bloki wyższe niż strona i eksport czeka na „Eksportuj mimo to”; `timed-out` – strona wydruku
+// nie zgłosiła gotowości w czasie (osobny komunikat od innych błędów).
 type ExportState =
   | { status: 'idle' }
+  | { status: 'confirming' }
   | { status: 'exporting' }
   | { status: 'saved'; filePath: string }
   | { status: 'failed' }
+  | { status: 'timed-out' }
 
 // Wynik eksportu otwartego CV do pliku .json z menu Plik.
 type JsonExportState = { status: 'idle' } | { status: 'saved'; fileName: string } | { status: 'failed' }
@@ -37,6 +42,12 @@ export function CvScreen({
   // Wyjście z edytora po nieudanym zapisie czeka na decyzję: komenda menu Plik, z którą wychodzimy (albo samo wyjście).
   const [leaving, setLeaving] = useState<{ command?: MenuCommand } | null>(null)
   const backButton = useRef<HTMLButtonElement>(null)
+  const exportButton = useRef<HTMLButtonElement>(null)
+  // Liczba bloków wyższych niż strona z ostatniego podziału stron podglądu (liczonego po każdej zmianie dokumentu).
+  const oversizedCount = useRef(0)
+  const onLayout = useCallback((layout: PaginateResult) => {
+    oversizedCount.current = layout.oversizedIds.length
+  }, [])
   useEditorLifecycle(editor)
 
   // Ponowiony albo kolejny zapis kończy pytanie o wyjście; przy następnym błędzie pasek wraca do zwykłego komunikatu.
@@ -44,15 +55,26 @@ export function CvScreen({
     if (saveStatus !== 'failed') setLeaving(null)
   }, [saveStatus])
 
-  const exportPdf = async () => {
+  // Każdy wyzwalacz eksportu (przycisk, menu Plik) przechodzi tędy: przy blokach wyższych niż strona najpierw pytanie,
+  // czy eksportować uciętą treść. Nowy eksport zastępuje poprzednie powiadomienie.
+  const exportPdf = async ({ confirmed = false } = {}) => {
     setJsonExport({ status: 'idle' })
+    if (!confirmed && oversizedCount.current > 0) {
+      setExportState({ status: 'confirming' })
+      return
+    }
     setExportState({ status: 'exporting' })
     try {
       const result = await window.api.pdf.export(document)
-      setExportState(result.status === 'saved' ? result : { status: 'idle' })
+      setExportState(result.status === 'canceled' ? { status: 'idle' } : result)
     } catch {
       setExportState({ status: 'failed' })
     }
+  }
+
+  const cancelExport = () => {
+    setExportState({ status: 'idle' })
+    exportButton.current?.focus()
   }
 
   // Przy nieudanym zapisie wyjście wymaga potwierdzenia („Wyjdź mimo to”), żeby zmiany nie przepadły przez przypadek,
@@ -85,7 +107,7 @@ export function CvScreen({
   // przycisk); tworzenie i import tą samą drogą co „← Wróć”, a wykonuje je biblioteka CV.
   useMenuCommands((command) => {
     if (command === 'export-pdf') {
-      if (exportState.status !== 'exporting') void exportPdf()
+      if (exportState.status !== 'exporting' && exportState.status !== 'confirming') void exportPdf()
     } else if (command === 'export-json') void exportJson()
     else void back(command)
   })
@@ -101,35 +123,15 @@ export function CvScreen({
         <span className="toolbar-status" role="status">
           {saveStatus === 'failed' ? '' : t.saveStatus[saveStatus]}
         </span>
-        <button type="button" className="button-primary" onClick={exportPdf} disabled={exportState.status === 'exporting'}>
+        <button
+          type="button"
+          ref={exportButton}
+          className="button-primary"
+          onClick={() => void exportPdf()}
+          disabled={exportState.status === 'exporting'}
+        >
           {exportState.status === 'exporting' ? t.exporting : t.exportPdf}
         </button>
-        {exportState.status === 'saved' && (
-          <p className="toolbar-notice" role="status">
-            {t.savedPdf(baseName(exportState.filePath))}
-            <button type="button" onClick={() => window.api.pdf.open(exportState.filePath)}>
-              {t.openPdf}
-            </button>
-            <button type="button" onClick={() => window.api.pdf.showInFolder(exportState.filePath)}>
-              {t.showInFolder}
-            </button>
-          </p>
-        )}
-        {exportState.status === 'failed' && (
-          <p className="toolbar-notice toolbar-notice--error" role="alert">
-            {t.exportFailed}
-          </p>
-        )}
-        {jsonExport.status === 'saved' && (
-          <p className="toolbar-notice" role="status">
-            {library.savedFile(jsonExport.fileName)}
-          </p>
-        )}
-        {jsonExport.status === 'failed' && (
-          <p className="toolbar-notice toolbar-notice--error" role="alert">
-            {library.errors.export}
-          </p>
-        )}
       </header>
       {saveStatus === 'failed' && (
         <SaveFailedAlert
@@ -139,11 +141,46 @@ export function CvScreen({
           onStay={stay}
         />
       )}
+      {exportState.status === 'exporting' && (
+        <div className="export-notice" role="status">
+          <progress aria-label={t.preparingPdf} />
+          <span>{t.preparingPdf}</span>
+        </div>
+      )}
+      {exportState.status === 'saved' && (
+        <ExportNotice onDismiss={() => setExportState({ status: 'idle' })}>
+          <span>{t.savedPdf(baseName(exportState.filePath))}</span>
+          <button type="button" onClick={() => window.api.pdf.open(exportState.filePath)}>
+            {t.openPdf}
+          </button>
+          <button type="button" onClick={() => window.api.pdf.showInFolder(exportState.filePath)}>
+            {t.showInFolder}
+          </button>
+        </ExportNotice>
+      )}
+      {(exportState.status === 'failed' || exportState.status === 'timed-out') && (
+        <ExportNotice error onDismiss={() => setExportState({ status: 'idle' })}>
+          <span>{exportState.status === 'failed' ? t.exportFailed : t.exportTimedOut}</span>
+        </ExportNotice>
+      )}
+      {jsonExport.status === 'saved' && (
+        <ExportNotice onDismiss={() => setJsonExport({ status: 'idle' })}>
+          <span>{library.savedFile(jsonExport.fileName)}</span>
+        </ExportNotice>
+      )}
+      {jsonExport.status === 'failed' && (
+        <ExportNotice error onDismiss={() => setJsonExport({ status: 'idle' })}>
+          <span>{library.errors.export}</span>
+        </ExportNotice>
+      )}
+      {exportState.status === 'confirming' && (
+        <ExportCutOffDialog onExport={() => void exportPdf({ confirmed: true })} onCancel={cancelExport} />
+      )}
       <div className="editor-panes">
         <aside className="editor-form">
           <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} />
         </aside>
-        <PreviewPane document={document} />
+        <PreviewPane document={document} onLayout={onLayout} />
       </div>
     </div>
   )
@@ -196,6 +233,63 @@ function SaveFailedAlert({
         </>
       )}
     </div>
+  )
+}
+
+// Powiadomienie o wyniku eksportu w pasku pod paskiem narzędzi (nie rozpycha paska narzędzi), z przyciskiem zamknięcia.
+// Sukces ogłasza `status`, błąd `alert`.
+function ExportNotice({ error = false, onDismiss, children }: { error?: boolean; onDismiss: () => void; children: ReactNode }) {
+  const { editor: t } = useDictionary()
+  return (
+    <div className={error ? 'export-notice export-notice--error' : 'export-notice'} role={error ? 'alert' : 'status'}>
+      {children}
+      <button type="button" className="export-notice-dismiss" aria-label={t.dismissNotice} onClick={onDismiss}>
+        ×
+      </button>
+    </div>
+  )
+}
+
+// Pytanie przed eksportem CV z blokami wyższymi niż strona (w PDF zostałyby ucięte). Natywny <dialog> otwarty modalnie
+// jak okno „Więcej” Sponsor bara: Escape i kliknięcie w tło działają jak „Anuluj”, na którym jest fokus.
+function ExportCutOffDialog({ onExport, onCancel }: { onExport: () => void; onCancel: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  const cancelButton = useRef<HTMLButtonElement>(null)
+  const { common, editor: t } = useDictionary()
+
+  useEffect(() => {
+    dialog.current?.showModal()
+    cancelButton.current?.focus()
+  }, [])
+
+  return (
+    <dialog
+      ref={dialog}
+      className="export-dialog"
+      aria-labelledby="export-cut-off-title"
+      onCancel={(event) => {
+        event.preventDefault()
+        onCancel()
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onCancel()
+      }}
+    >
+      <div className="export-dialog-content">
+        <h2 id="export-cut-off-title" className="form-section-title">
+          {t.exportCutOff}
+        </h2>
+        <p className="export-dialog-paragraph">{t.exportCutOffHint}</p>
+        <div className="form-row form-row--spread">
+          <button type="button" className="button-primary" onClick={onExport}>
+            {t.exportAnyway}
+          </button>
+          <button type="button" ref={cancelButton} onClick={onCancel}>
+            {common.cancel}
+          </button>
+        </div>
+      </div>
+    </dialog>
   )
 }
 

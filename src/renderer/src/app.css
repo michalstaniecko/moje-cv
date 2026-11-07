@@ -229,14 +229,6 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--ui-border);
 }
 
-.toolbar-notice {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-}
-
-.toolbar-notice--error,
 .toolbar-status--error {
   color: var(--ui-error);
 }
@@ -251,6 +243,32 @@ textarea:focus-visible {
   color: var(--ui-error);
   background: var(--ui-panel-bg);
   border-bottom: 1px solid var(--ui-error);
+}
+
+/* Postęp i wynik eksportu (PDF, .json) pod paskiem narzędzi, z przyciskiem zamknięcia po prawej. */
+.export-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 24px;
+  background: var(--ui-panel-bg);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.export-notice--error {
+  color: var(--ui-error);
+  border-bottom-color: var(--ui-error);
+}
+
+.export-notice progress {
+  width: 120px;
+  accent-color: var(--ui-accent);
+}
+
+.export-notice-dismiss {
+  margin-left: auto;
+  padding: 2px 10px;
 }
 
 /* Długa nazwa CV jest ucinana wielokropkiem, żeby nie rozpychała paska przy minimalnym rozmiarze okna. */
@@ -906,7 +924,8 @@ textarea:focus-visible {
 }
 
 /* Okno „Więcej”: bez własnego paddingu, żeby kliknięcie w tło zawsze trafiało w sam <dialog>, a nie w treść. */
-.sponsor-dialog {
+.sponsor-dialog,
+.export-dialog {
   max-width: 460px;
   padding: 0;
   background: var(--ui-panel-bg);
@@ -915,15 +934,18 @@ textarea:focus-visible {
   box-shadow: 0 8px 32px var(--ui-shadow);
 }
 
-.sponsor-dialog::backdrop {
+.sponsor-dialog::backdrop,
+.export-dialog::backdrop {
   background: var(--ui-backdrop);
 }
 
-.sponsor-dialog-content {
+.sponsor-dialog-content,
+.export-dialog-content {
   padding: 20px 24px;
 }
 
-.sponsor-dialog-paragraph {
+.sponsor-dialog-paragraph,
+.export-dialog-paragraph {
   margin: 0 0 10px;
   line-height: 1.45;
 }
