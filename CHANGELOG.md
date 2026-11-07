@@ -14,6 +14,7 @@
 - "Add sample CV" in the menu under the arrow next to "New CV": adds the Sample CV again, in the interface language.
 - CV language in each CV's settings: sets the fixed text on the document ("present") and the page language. New CVs start in the interface language; existing CVs are Polish.
 - A translated "Something went wrong" screen with Reload instead of a blank window; a crashed window reloads itself, and repeated crashes ask before reloading again.
+- The window remembers its size, position and maximized state, and opens on a visible screen.
 
 ### Fixed
 - Keyboard focus returns to the button that opened a form in a CV library row (rename, tags, delete) when the form closes; after deleting a CV it moves to the neighbouring CV, or to "New CV" when the library is empty.
@@ -24,6 +25,7 @@
 - The app is now called "CV Press" (previously "Moje CV"). Existing CVs and settings stay where they were.
 - A CV file saved by a newer version of the app is marked "Needs a newer version of CV Press" instead of "Damaged file". It is never overwritten; it can still be deleted, with a confirmation saying what will be lost.
 - The app never opens new windows or navigates away from its own screens.
+- The window has a minimum size; opening the app again brings the running window to the front instead of starting a second copy.
 
 ## [0.3.0] – 2026-10-27
 
