@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
@@ -2053,6 +2054,125 @@ async function dragOnto(handle: Locator, target: Locator) {
   // dnd-kit przez 50 ms po upuszczeniu blokuje kliknięcia (żeby upuszczenie nie było kliknięciem).
   await window.waitForTimeout(100)
 }
+
+// Prostokąt i stan okna aplikacji oraz obszar roboczy ekranu głównego.
+async function windowGeometry() {
+  return app.evaluate(({ BrowserWindow, screen }) => {
+    const [browserWindow] = BrowserWindow.getAllWindows()
+    return {
+      bounds: browserWindow!.getBounds(),
+      maximized: browserWindow!.isMaximized(),
+      minimized: browserWindow!.isMinimized(),
+      workArea: screen.getPrimaryDisplay().workArea
+    }
+  })
+}
+
+test('the window opens where it was left, maximized again if it was, and not on a screen that is gone', async () => {
+  const settingsPath = join(outputDir, 'user-data', 'settings.json')
+  const { workArea } = await windowGeometry()
+  const bounds = { x: workArea.x + 40, y: workArea.y + 30, width: 1000, height: 700 }
+  await app.evaluate(({ BrowserWindow }, bounds) => BrowserWindow.getAllWindows()[0]!.setBounds(bounds), bounds)
+  await expect.poll(async () => (await windowGeometry()).bounds).toEqual(bounds)
+
+  // Zamknięcie zapisuje stan od razu, bez czekania na opóźniony zapis.
+  await app.close()
+  await launch()
+  await expect.poll(async () => (await windowGeometry()).bounds).toEqual(bounds)
+  // Zapamiętanie okna nie zmienia biblioteki CV.
+  await expect(window.getByRole('list', { name: 'CV list' }).getByRole('listitem')).toHaveCount(1)
+
+  // Zmaksymalizowane okno wraca zmaksymalizowane, a po odmaksymalizowaniu ma wymiary sprzed maksymalizacji.
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.maximize())
+  await expect.poll(async () => (await windowGeometry()).maximized).toBe(true)
+  await app.close()
+  expect(JSON.parse(await readFile(settingsPath, 'utf8')).windowState).toEqual({ ...bounds, maximized: true })
+  await launch()
+  await expect.poll(async () => (await windowGeometry()).maximized).toBe(true)
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.unmaximize())
+  await expect.poll(async () => (await windowGeometry()).bounds).toEqual(bounds)
+
+  // Okno zostawione na odłączonym monitorze startuje w rozmiarze domyślnym, wyśrodkowane na ekranie głównym.
+  await app.close()
+  const settings = JSON.parse(await readFile(settingsPath, 'utf8'))
+  const offScreen = { x: -10000, y: 100, width: 1100, height: 800, maximized: false }
+  await writeFile(settingsPath, JSON.stringify({ ...settings, windowState: offScreen }))
+  await launch()
+  const width = Math.min(1280, workArea.width)
+  const height = Math.min(900, workArea.height)
+  await expect.poll(async () => (await windowGeometry()).bounds).toEqual({
+    x: workArea.x + Math.round((workArea.width - width) / 2),
+    y: workArea.y + Math.round((workArea.height - height) / 2),
+    width,
+    height
+  })
+})
+
+test('the window cannot be made smaller than 960×640, where a long CV name does not push the editor toolbar apart', async () => {
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setSize(400, 300))
+
+  const [width, height] = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.getSize())
+  expect(width).toBeGreaterThanOrEqual(960)
+  expect(height).toBeGreaterThanOrEqual(640)
+
+  // Długa nazwa CV jest ucinana wielokropkiem; „Eksportuj do PDF” zostaje w pasku.
+  const library = window.getByRole('list', { name: 'CV list' })
+  await library.getByRole('button', { name: 'Rename' }).click()
+  const longName = 'Sample CV for the international senior product design leadership position, version for the bank'
+  await library.getByLabel('CV name').fill(longName)
+  await library.getByLabel('CV name').press('Enter')
+  await library.getByRole('button', { name: 'Open' }).click()
+  const toolbar = window.locator('.toolbar')
+  const title = toolbar.getByRole('heading', { name: longName })
+  await expect(title).toBeVisible()
+  const titleLines = await title.evaluate((element) => {
+    const range = element.ownerDocument.createRange()
+    range.selectNodeContents(element)
+    return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size
+  })
+  expect(titleLines).toBe(1)
+  expect(await toolbar.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+  const exportButton = await toolbar.getByRole('button', { name: 'Export to PDF' }).boundingBox()
+  expect(exportButton!.x + exportButton!.width).toBeLessThanOrEqual(await window.locator('html').evaluate((html) => html.clientWidth))
+})
+
+test('starting the app again brings the running window to the front instead of a second copy; another data folder runs its own copy', async () => {
+  const executable = packagedExecutable ?? ((await import('electron')).default as unknown as string)
+  const args = (userDataDir: string) => [...(packagedExecutable ? [] : ['.']), `--user-data-dir=${userDataDir}`]
+  const env = { ...process.env, MOJE_CV_E2E_HIDDEN: '1', MOJE_CV_LANGUAGE: 'en' } as Record<string, string>
+  // Okno zminimalizowane przed pokazaniem (`ready-to-show`) zostałoby przez nie przywrócone.
+  await expect.poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isVisible())).toBe(true)
+  await app.evaluate(({ app, BrowserWindow }) => {
+    const state = { secondInstances: 0 }
+    ;(globalThis as { singleInstance?: typeof state }).singleInstance = state
+    app.on('second-instance', () => state.secondInstances++)
+    BrowserWindow.getAllWindows()[0]!.minimize()
+  })
+  await expect.poll(async () => (await windowGeometry()).minimized).toBe(true)
+
+  // Druga kopia na tym samym folderze danych kończy się od razu, a działające okno wraca.
+  const second = spawn(executable, args(join(outputDir, 'user-data')), { env, stdio: 'ignore' })
+  expect(await new Promise<number | null>((resolve) => second.on('exit', resolve))).toBe(0)
+  const secondInstances = () =>
+    app.evaluate(() => (globalThis as { singleInstance?: { secondInstances: number } }).singleInstance!.secondInstances)
+  await expect.poll(secondInstances).toBe(1)
+  await expect.poll(async () => (await windowGeometry()).minimized).toBe(false)
+  await expect(window.getByRole('list', { name: 'CV list' }).getByRole('listitem')).toHaveCount(1)
+
+  // Kopia na innym folderze danych otwiera własne okno.
+  const other = await electron.launch({
+    ...(packagedExecutable && { executablePath: packagedExecutable }),
+    args: args(join(outputDir, 'other-user-data')),
+    env,
+    colorScheme: null
+  })
+  try {
+    const otherLibrary = (await other.firstWindow()).getByRole('list', { name: 'CV list' })
+    await expect(otherLibrary.getByRole('listitem')).toHaveCount(1)
+  } finally {
+    await other.close()
+  }
+})
 
 // A4 w punktach PDF (210 × 297 mm).
 const A4_PT = { width: 595.28, height: 841.89 }

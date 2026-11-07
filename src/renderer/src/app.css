@@ -241,10 +241,15 @@ textarea:focus-visible {
   color: var(--ui-error);
 }
 
+/* Długa nazwa CV jest ucinana wielokropkiem, żeby nie rozpychała paska przy minimalnym rozmiarze okna. */
 .toolbar-title {
+  min-width: 0;
   margin: 0;
+  overflow: hidden;
   font-size: 16px;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------- Split button „Nowe CV” z menu pod strzałką ---------- */
