@@ -83,6 +83,21 @@ async function controlsThatDoNotFit(selector: string) {
   }, selector)
 }
 
+// Sprawdza, czy przyciski i paski mieszczą się także w oknie o rozmiarze minimalnym, i przywraca poprzedni rozmiar.
+async function controlsThatDoNotFitAtMinimumSize(selector: string) {
+  const windowSize = () => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.getContentSize())
+  const innerWidth = () => window.locator('html').evaluate((html) => html.clientWidth)
+  const [width, height] = await windowSize()
+  // Mniejszego rozmiaru okno nie przyjmie – zostaje na minimum.
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(400, 300))
+  const [minWidth] = await windowSize()
+  await expect.poll(innerWidth).toBe(minWidth)
+  const problems = await controlsThatDoNotFit(selector)
+  await app.evaluate(({ BrowserWindow }, [width, height]) => BrowserWindow.getAllWindows()[0]!.setContentSize(width!, height!), [width, height])
+  await expect.poll(innerWidth).toBe(width)
+  return problems
+}
+
 // Pozycje menu Language: języki w ich własnych nazwach, alfabetycznie (łacinka przed cyrylicą); po nich System.
 const languageMenuItems = [
   'Bahasa Indonesia',
@@ -132,6 +147,7 @@ for (const language of interfaceLanguageCodes) {
     await expect(window.getByRole('menuitem', { name: t.library.addSample })).toBeVisible()
     expect(await controlsThatDoNotFit('.toolbar, .library-item, .split-button-menu, .sponsor-bar')).toEqual([])
     await window.keyboard.press('Escape')
+    expect(await controlsThatDoNotFitAtMinimumSize('.toolbar, .library-item, .sponsor-bar')).toEqual([])
 
     // Biblioteka klauzul.
     await window.getByRole('button', { name: t.library.clauses }).click()
@@ -153,6 +169,7 @@ for (const language of interfaceLanguageCodes) {
     await expect(preview.locator('.cv-page .cv-date').first()).toHaveText(`03.2023 – ${t.cvText.present}`)
     await expect(window.locator('.preview-page-count')).toHaveText(plural(language, t.preview.pages, SAMPLE_CV_PAGES))
     expect(await controlsThatDoNotFit('.toolbar, .preview-bar, .editor-form, .sponsor-bar')).toEqual([])
+    expect(await controlsThatDoNotFitAtMinimumSize('.toolbar, .preview-bar, .editor-form, .sponsor-bar')).toEqual([])
 
     // PDF ma tyle stron co podgląd Sample CV.
     const pdfPath = join(outputDir, `${language}.pdf`)

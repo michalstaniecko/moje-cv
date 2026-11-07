@@ -130,6 +130,17 @@ export const appSettingsSchema = z.object({
   interfaceLanguage: z.enum(interfaceLanguageCodes).optional(),
   // Wybrany wygląd interfejsu (Appearance). Brak pola = Systemowy (bez podbijania wersji schematu).
   appearance: z.enum(appearances).optional(),
+  // Rozmiar i pozycja okna aplikacji (sprzed maksymalizacji) oraz to, czy było zmaksymalizowane. Brak pola = rozmiar
+  // domyślny (bez podbijania wersji schematu).
+  windowState: z
+    .object({
+      x: z.int(),
+      y: z.int(),
+      width: z.int().positive(),
+      height: z.int().positive(),
+      maximized: z.boolean()
+    })
+    .optional(),
   // Stan sprawdzania nowej wersji w `.dmg` (ADR-0006): kiedy ostatnio się udało, jaka wersja była wtedy najnowsza
   // i którą wersję użytkownik zamknął w pasku. Brak pola = sprawdzenie nigdy się nie odbyło (bez podbijania wersji schematu).
   updateCheck: z
@@ -140,4 +151,5 @@ export const appSettingsSchema = z.object({
     })
     .optional()
 })
+export type WindowState = NonNullable<z.infer<typeof appSettingsSchema>['windowState']>
 export type AppSettings = z.infer<typeof appSettingsSchema>

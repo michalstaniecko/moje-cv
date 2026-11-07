@@ -194,6 +194,64 @@ describe('appearance preference', () => {
   })
 })
 
+describe('window state', () => {
+  const state = { x: 120, y: 80, width: 1000, height: 700, maximized: false }
+
+  test('is missing until the window has been placed, so it opens in the default size', async () => {
+    expect((await repository.get()).windowState).toBeUndefined()
+  })
+
+  test('the saved window state is kept in the settings file', async () => {
+    await repository.setWindowState({ ...state, maximized: true })
+
+    expect((await createSettingsRepository(settingsPath).get()).windowState).toEqual({ ...state, maximized: true })
+  })
+
+  test('saving the window state keeps the clause library, the interface language and the appearance', async () => {
+    const general = await repository.addClause({ name: 'Ogólna', text: 'A' })
+    await repository.setDefaultClause(general.id)
+    await repository.setInterfaceLanguage('pl')
+    await repository.setAppearance('dark')
+
+    await repository.setWindowState(state)
+
+    expect(JSON.parse(await readFile(settingsPath, 'utf8'))).toEqual({
+      schemaVersion: 1,
+      clauses: [general],
+      defaultClauseId: general.id,
+      interfaceLanguage: 'pl',
+      appearance: 'dark',
+      windowState: state
+    })
+  })
+
+  test('a window state saved at the same time as a clause does not lose the clause', async () => {
+    const [general] = await Promise.all([repository.addClause({ name: 'Ogólna', text: 'A' }), repository.setWindowState(state)])
+
+    expect(await repository.get()).toMatchObject({ clauses: [general], windowState: state })
+  })
+
+  test('a settings file from before the window state still loads', async () => {
+    const old = { schemaVersion: 1, clauses: [], defaultClauseId: null, appearance: 'light' }
+    await writeFile(settingsPath, JSON.stringify(old))
+
+    expect(await repository.get()).toEqual(old)
+  })
+
+  test('a window state with fractional or non-positive dimensions makes the file unreadable like any other schema mismatch', async () => {
+    for (const windowState of [
+      { ...state, width: 0 },
+      { ...state, height: -5 },
+      { ...state, x: 1.5 },
+      { x: 0, y: 0, width: 100, height: 100 }
+    ]) {
+      await writeFile(settingsPath, JSON.stringify({ schemaVersion: 1, clauses: [], defaultClauseId: null, windowState }))
+
+      await expect(repository.get()).rejects.toThrow()
+    }
+  })
+})
+
 describe('update check state', () => {
   test('is missing until the first check', async () => {
     expect((await repository.get()).updateCheck).toBeUndefined()
@@ -254,6 +312,7 @@ describe('damaged settings file', () => {
       await expect(repository.setInterfaceLanguage('pl')).rejects.toThrow()
       await expect(repository.setAppearance('dark')).rejects.toThrow()
       await expect(repository.setAppearance(null)).rejects.toThrow()
+      await expect(repository.setWindowState({ x: 0, y: 0, width: 1000, height: 700, maximized: false })).rejects.toThrow()
 
       expect(await readFile(settingsPath, 'utf8')).toBe(content)
     })

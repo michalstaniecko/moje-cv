@@ -159,7 +159,12 @@ Wymuszenie „nowszej wersji” w spakowanym `.dmg` bez publikowania wydania: w 
 | Sprawdź | MAS | DMG |
 | --- | --- | --- |
 | Błąd renderera pokazuje ekran błędu z przeładowaniem (#65) | [ ] | [ ] |
-| Rozmiar i pozycja okna przetrwają restart; minimum 960×640; jedna instancja (#66) | [ ] | [ ] |
+| Zmień rozmiar i położenie okna, zamknij aplikację (⌘Q) i uruchom ponownie: okno wraca w tym samym miejscu i rozmiarze (#66) | [ ] | [ ] |
+| Zmaksymalizuj okno (dwuklik w pasek tytułu albo ⌥ + zielony przycisk), zakończ i uruchom: okno znowu zmaksymalizowane (#66) | [ ] | [ ] |
+| Z zewnętrznym monitorem: zostaw okno na monitorze, zakończ, odłącz monitor, uruchom: okno na ekranie laptopa (#66) | [ ] | [ ] |
+| Okna nie da się zmniejszyć poniżej 960×640; w tym rozmiarze edytor i biblioteka się mieszczą, długa nazwa CV jest ucięta wielokropkiem (#66) | [ ] | [ ] |
+| Zminimalizuj okno i uruchom aplikację drugi raz (`open -n` na pakiecie aplikacji): nie startuje druga kopia, okno wraca na wierzch (#66) | [ ] | [ ] |
+| Przy działającej wersji DMG uruchom wersję z MAS (lub odwrotnie): druga nie startuje, bo kanały dzielą folder danych (#66) | [ ] | [ ] |
 
 ## Trwałość danych
 
