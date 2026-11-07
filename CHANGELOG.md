@@ -21,6 +21,14 @@
 - A warning under the dates when a position or education ends before it starts; it never blocks saving or exporting.
 - "Removed. Undo" after removing a position, education entry, bullet, list item, contact or photo; it goes away by itself after a few seconds.
 
+### Accessibility
+- Reordering with the keyboard tells screen readers what was picked up, its position while moving ("position 3 of 5"), where it was dropped or that it was put back, plus how to drag with the keyboard, all in the interface language and with the item's name instead of an internal id.
+- The preview pages in the CV editor are hidden from screen readers, so the CV is no longer read twice; the page count, the length warning and the zoom buttons stay accessible.
+- Escape closes the consent clause form without saving, and the focus returns to "Add clause" or the clause's "Edit".
+- The photo crop frame can be focused and moved with the arrow keys (Shift for bigger steps); the hint says so.
+- The "longer than 2 pages" warning in the preview has the warning colour and a ⚠ icon in both appearances.
+- The Sponsor bar is announced to screen readers as "Support CV Press" instead of "Sponsor".
+
 ### Fixed
 - Closing the window or quitting right after an edit waits for the save, and asks before discarding changes that couldn’t be saved.
 - Keyboard focus returns to the button that opened a form in a CV library row (rename, tags, delete) when the form closes; after deleting a CV it moves to the neighbouring CV, or to "New CV" when the library is empty.
