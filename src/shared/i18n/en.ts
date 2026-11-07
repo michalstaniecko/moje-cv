@@ -297,7 +297,7 @@ export const en = {
   },
   // Sponsor bar i okno „Więcej” (zob. GLOSSARY.md). Podziękowanie, nie płatność: niczego nie odblokowuje.
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName: string) => `Support ${appName}`,
     message: (appName: string) => `${appName} is free. If it helped you, you can thank the author with a coffee.`,
     link: 'Buy me a coffee',
     more: 'More',

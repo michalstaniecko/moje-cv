@@ -278,7 +278,7 @@ export const ru: Dictionary = {
     fit: 'По размеру'
   },
   sponsor: {
-    bar: 'Поддержка',
+    bar: (appName) => `Поддержка ${appName}`,
     message: (appName) => `${appName} – бесплатная программа. Если она вам помогла, можете угостить автора кофе.`,
     link: 'Угостить кофе',
     more: 'Подробнее',

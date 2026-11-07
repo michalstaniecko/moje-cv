@@ -281,7 +281,7 @@ export const sv: Dictionary = {
     fit: 'Anpassa'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Stöd ${appName}`,
     message: (appName) => `${appName} är gratis. Om appen har hjälpt dig kan du tacka utvecklaren med en kaffe.`,
     link: 'Bjud på en kaffe',
     more: 'Mer',

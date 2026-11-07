@@ -51,7 +51,7 @@ test('the CV library shows the app name and version at the bottom, without a sec
 
 test('the More dialog of the Sponsor bar shows the same app name and version', async () => {
   const version = await appVersion()
-  await window.getByRole('contentinfo', { name: 'Sponsor' }).getByRole('button', { name: 'More' }).click()
+  await window.getByRole('contentinfo', { name: 'Support CV Press' }).getByRole('button', { name: 'More' }).click()
   const dialog = window.getByRole('dialog', { name: 'Why CV Press is free' })
   await expect(dialog).toContainText(`CV Press ${version}`)
 })

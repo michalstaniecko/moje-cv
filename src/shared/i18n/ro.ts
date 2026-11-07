@@ -277,7 +277,7 @@ export const ro: Dictionary = {
     fit: 'Potrivește'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Susține ${appName}`,
     message: (appName) => `${appName} este gratuit. Dacă te-a ajutat, poți să-i mulțumești autorului cu o cafea.`,
     link: 'Cumpără-mi o cafea',
     more: 'Mai mult',

@@ -275,7 +275,7 @@ export const vi: Dictionary = {
     fit: 'Vừa khít'
   },
   sponsor: {
-    bar: 'Tài trợ',
+    bar: (appName) => `Ủng hộ ${appName}`,
     message: (appName) => `${appName} miễn phí. Nếu ứng dụng giúp ích cho bạn, bạn có thể cảm ơn tác giả bằng một ly cà phê.`,
     link: 'Mời tôi cà phê',
     more: 'Thêm',

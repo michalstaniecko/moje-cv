@@ -116,7 +116,7 @@ test('a rendering error shows a translated “Something went wrong” screen who
 
   await expect(window.getByRole('alert')).toHaveText('Coś poszło nie tak')
   await expect(window.getByText('Twoje CV są bezpieczne')).toBeVisible()
-  await expect(window.getByRole('contentinfo', { name: 'Sponsor' })).toBeHidden()
+  await expect(window.getByRole('contentinfo', { name: 'Support CV Press' })).toBeHidden()
   const reload = window.getByRole('button', { name: 'Wczytaj ponownie' })
   await expect(reload).toBeFocused()
 

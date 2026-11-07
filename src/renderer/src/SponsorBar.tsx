@@ -23,7 +23,7 @@ export function SponsorBar() {
   const open = () => void window.api.sponsor.open()
 
   return (
-    <footer className="sponsor-bar" aria-label={t.bar}>
+    <footer className="sponsor-bar" aria-label={t.bar(appName)}>
       <span className="sponsor-bar-message">{t.message(appName)}</span>
       <button type="button" className="sponsor-link" onClick={open}>
         {t.link}

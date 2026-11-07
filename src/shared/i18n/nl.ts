@@ -283,7 +283,7 @@ export const nl: Dictionary = {
     fit: 'Passend'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Steun ${appName}`,
     message: (appName) => `${appName} is gratis. Heeft het je geholpen? Bedank de maker dan met een kopje koffie.`,
     link: 'Trakteer op koffie',
     more: 'Meer',

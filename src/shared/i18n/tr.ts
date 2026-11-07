@@ -276,7 +276,7 @@ export const tr: Dictionary = {
     fit: 'Sığdır'
   },
   sponsor: {
-    bar: 'Destek',
+    bar: (appName) => `${appName} uygulamasını destekleyin`,
     message: (appName) => `${appName} ücretsizdir. İşinize yaradıysa geliştiriciye bir kahve ısmarlayarak teşekkür edebilirsiniz.`,
     link: 'Bana kahve ısmarla',
     more: 'Daha fazla',

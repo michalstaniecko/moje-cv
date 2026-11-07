@@ -277,7 +277,7 @@ export const pt: Dictionary = {
     fit: 'Ajustar'
   },
   sponsor: {
-    bar: 'Patrocínio',
+    bar: (appName) => `Apoio ao ${appName}`,
     message: (appName) => `O ${appName} é gratuito. Se ele ajudou você, agradeça ao autor com um café.`,
     link: 'Me pague um café',
     more: 'Mais',

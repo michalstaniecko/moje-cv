@@ -275,7 +275,7 @@ export const id: Dictionary = {
     fit: 'Sesuaikan'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Dukung ${appName}`,
     message: (appName) => `${appName} gratis. Jika aplikasi ini membantu, Anda bisa berterima kasih kepada pembuatnya dengan secangkir kopi.`,
     link: 'Traktir saya kopi',
     more: 'Selengkapnya',
