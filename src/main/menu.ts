@@ -1,9 +1,11 @@
-import { app, BrowserWindow, ipcMain, Menu, type BaseWindow, type MenuItemConstructorOptions, type WebContents } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, shell, type BaseWindow, type MenuItemConstructorOptions, type WebContents } from 'electron'
 import type { AppScreen, HistoryCommand, MenuCommand } from '../shared/api'
 import { interfaceLanguageCodes, interfaceLanguages } from '../shared/i18n/languages'
 import { appearances, type Appearance } from '../shared/appearance'
 import { HELP_URL } from '../shared/links'
 import type { AppearanceState } from './appearance'
+import { isMacAppStore } from './channel'
+import { helpMenuItems } from './helpMenu'
 import type { InterfaceLanguageState } from './interfaceLanguage'
 import { requireAppScreen } from './ipcArgs'
 import { enabledMenuCommands } from './menuCommands'
@@ -96,7 +98,8 @@ function menuCommand(command: MenuCommand, enabled: ReadonlySet<MenuCommand>): M
 }
 
 function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceState): MenuItemConstructorOptions[] {
-  const { appName, menu } = language.dictionary()
+  const dictionary = language.dictionary()
+  const { appName, menu } = dictionary
   const appMenu: MenuItemConstructorOptions = {
     label: appName,
     submenu: [
@@ -178,9 +181,21 @@ function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceSt
     preference: appearance.preference(),
     choose: (choice) => void appearance.choose(choice)
   })
+  // Pomoc: rola `help` daje na macOS systemowe pole wyszukiwania pozycji menu. Pozycje otwierają stałe adresy
+  // w przeglądarce prosto z procesu głównego (bez IPC); Sponsor link tylko poza Mac App Store.
+  const helpMenu: MenuItemConstructorOptions = {
+    label: menu.help,
+    role: 'help',
+    submenu: helpMenuItems({
+      dictionary,
+      macAppStore: isMacAppStore(),
+      open: (url) =>
+        void shell.openExternal(url).catch((error: unknown) => console.error('Nie udało się otworzyć adresu', url, error))
+    })
+  }
   return process.platform === 'darwin'
-    ? [appMenu, fileMenu, editMenu, viewMenu, languageMenu, appearanceMenu, windowMenu]
-    : [fileMenu, editMenu, viewMenu, languageMenu, appearanceMenu, windowMenu]
+    ? [appMenu, fileMenu, editMenu, viewMenu, languageMenu, appearanceMenu, windowMenu, helpMenu]
+    : [fileMenu, editMenu, viewMenu, languageMenu, appearanceMenu, windowMenu, helpMenu]
 }
 
 // Podmenu preferencji „wartości + System”: po jednym radio na wartość i radio System zaznaczone, gdy preferencji

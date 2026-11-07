@@ -34,7 +34,12 @@ export const id: Dictionary = {
     appearance: 'Tampilan',
     lightAppearance: 'Terang',
     darkAppearance: 'Gelap',
-    systemAppearance: 'Sistem'
+    systemAppearance: 'Sistem',
+    help: 'Bantuan',
+    helpPage: (appName) => `Bantuan ${appName}`,
+    privacyPolicy: 'Kebijakan Privasi',
+    reportIssue: 'Laporkan Masalah…',
+    supportApp: (appName) => `Dukung ${appName}…`
   },
   dialogs: {
     exportPdf: 'Ekspor ke PDF',

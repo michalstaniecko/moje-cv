@@ -118,7 +118,7 @@ for (const language of interfaceLanguageCodes) {
     await expect.poll(() => window.title()).toBe('CV Press')
     expect(t.menu.language).toEqual(language === 'en' ? 'Language' : expect.stringMatching(/^\S.* \/ Language$/))
     await expect.poll(menu).toEqual({
-      top: [t.appName, t.menu.file, t.menu.edit, t.menu.view, t.menu.language, t.menu.appearance, t.menu.window],
+      top: [t.appName, t.menu.file, t.menu.edit, t.menu.view, t.menu.language, t.menu.appearance, t.menu.window, t.menu.help],
       languages: [...languageMenuItems, `${t.menu.systemLanguage} ✓`]
     })
 
