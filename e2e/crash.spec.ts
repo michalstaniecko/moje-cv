@@ -180,6 +180,21 @@ test('an unexpected error in the main process is reported once in a native error
   await expect(cvList().getByRole('listitem')).toHaveCount(2)
 })
 
+test('when the hidden print window crashes, PDF export fails right away instead of waiting 30 seconds', async () => {
+  await cvList().getByRole('button', { name: 'Open' }).click()
+  // Każde nowe (ukryte) okno wydruku pada, gdy tylko załaduje się jego dokument.
+  await app.evaluate(({ app }) => {
+    app.on('browser-window-created', (_event, printWindow) => {
+      printWindow.webContents.once('dom-ready', () => printWindow.webContents.forcefullyCrashRenderer())
+    })
+  })
+
+  const started = Date.now()
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByRole('alert')).toHaveText('Couldn’t save the PDF. Try again.', { timeout: 10_000 })
+  expect(Date.now() - started).toBeLessThan(10_000)
+})
+
 // Zabija proces renderera okna aplikacji, jak przy awarii.
 async function crashRenderer() {
   await app.evaluate(({ BrowserWindow }) => {

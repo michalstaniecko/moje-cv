@@ -83,7 +83,14 @@ async function renderPdf(document: CvDocument): Promise<Uint8Array> {
           resolve()
         }
       })
+      // Awaria renderera okna wydruku kończy eksport od razu (renderer pokazuje zwykły komunikat o nieudanym eksporcie).
+      window.webContents.once('render-process-gone', (_event, details) => {
+        clearTimeout(timeout)
+        reject(new Error(`The print window renderer process is gone (${details.reason})`))
+      })
     })
+    // Gdy ładowanie też się nie uda, jego błąd wygrywa, a odrzucenie gotowości nie może zostać nieobsłużone.
+    ready.catch(() => {})
     await loadRenderer(window, '/print')
     await ready
     return await window.webContents.printToPDF({
