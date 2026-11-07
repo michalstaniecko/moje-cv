@@ -1,10 +1,11 @@
-import { app, BrowserWindow, ipcMain, Menu, shell, type BaseWindow, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, type BaseWindow, type MenuItemConstructorOptions } from 'electron'
 import type { HistoryCommand, MenuCommand } from '../shared/api'
 import { interfaceLanguageCodes, interfaceLanguages } from '../shared/i18n/languages'
 import { appearances, type Appearance } from '../shared/appearance'
 import { HELP_URL } from '../shared/links'
 import type { AppearanceState } from './appearance'
 import { isMacAppStore } from './channel'
+import { openExternal } from './openExternal'
 import { helpMenuItems } from './helpMenu'
 import type { InterfaceLanguageState } from './interfaceLanguage'
 import { requireAppScreen } from './ipcArgs'
@@ -168,8 +169,7 @@ function menuTemplate(
     submenu: helpMenuItems({
       dictionary,
       macAppStore: isMacAppStore(),
-      open: (url) =>
-        void shell.openExternal(url).catch((error: unknown) => console.error('Nie udało się otworzyć adresu', url, error)),
+      open: (url) => void openExternal(url),
       checkForUpdates: (window) => checkForUpdates(window instanceof BrowserWindow ? window : undefined)
     })
   }
