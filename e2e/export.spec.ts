@@ -1353,6 +1353,48 @@ test('manages the consent clause library, uses a clause in a CV without changing
   await expect(row('Bank')).toContainText('I consent for the Bank.')
 })
 
+test('Escape closes the clause form without saving, and closing the form returns the focus to the button that opened it', async () => {
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
+  const clauses = window.getByRole('list', { name: 'Clause list' })
+  const row = (name: string) => clauses.getByRole('listitem').filter({ hasText: name })
+  const form = window.getByRole('form', { name: 'Clause' })
+  const addClause = window.getByRole('button', { name: 'Add clause' })
+
+  // Nowa klauzula: Escape zamyka formularz bez dodawania, fokus wraca na „Add clause”, tak samo po „Cancel” i po zapisie.
+  await addClause.click()
+  await window.getByLabel('Name').fill('Not saved')
+  await window.keyboard.press('Escape')
+  await expect(form).toHaveCount(0)
+  await expect(clauses.getByRole('listitem')).toHaveCount(0)
+  await expect(addClause).toBeFocused()
+  await addClause.click()
+  await form.getByRole('button', { name: 'Cancel' }).click()
+  await expect(addClause).toBeFocused()
+  await addClause.click()
+  await window.getByLabel('Name').fill('General')
+  await window.getByLabel('Text').fill('I consent.')
+  await window.keyboard.press('Escape')
+  await expect(clauses.getByRole('listitem')).toHaveCount(0)
+  await addClause.click()
+  await window.getByLabel('Name').fill('General')
+  await window.getByRole('button', { name: 'Save' }).click()
+  await expect(row('General')).toBeVisible()
+  await expect(addClause).toBeFocused()
+
+  // Edycja: Escape z pola treści zostawia klauzulę bez zmian, a fokus wraca na „Edit” tej klauzuli, także po zapisie.
+  const edit = row('General').getByRole('button', { name: 'Edit' })
+  await edit.click()
+  await window.getByLabel('Text').fill('Changed but not saved.')
+  await window.keyboard.press('Escape')
+  await expect(form).toHaveCount(0)
+  await expect(row('General')).not.toContainText('Changed but not saved.')
+  await expect(edit).toBeFocused()
+  await edit.click()
+  await window.getByLabel('Name').fill('General clause')
+  await window.getByRole('button', { name: 'Save' }).click()
+  await expect(row('General clause').getByRole('button', { name: 'Edit' })).toBeFocused()
+})
+
 test('picks a photo from disk, crops it to 3:4 for the header and removes it, in the preview and PDF', async () => {
   const photoPath = await writeRedBluePhoto()
   const brokenPath = join(outputDir, 'broken.jpg')
