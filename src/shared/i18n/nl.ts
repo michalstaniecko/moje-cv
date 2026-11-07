@@ -4,10 +4,17 @@ export const nl: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `Over ${appName}`,
+    services: 'Voorzieningen',
     hide: (appName) => `Verberg ${appName}`,
     hideOthers: 'Verberg andere',
     showAll: 'Toon alles',
     quit: (appName) => `Stop ${appName}`,
+    file: 'Archief',
+    newCv: 'Nieuw cv',
+    addSample: 'Voeg voorbeeld-cv toe',
+    importCv: 'Importeer…',
+    exportJson: 'Exporteer JSON…',
+    exportPdf: 'Exporteer als PDF…',
     edit: 'Wijzig',
     undo: 'Herstel',
     redo: 'Opnieuw',
@@ -15,16 +22,25 @@ export const nl: Dictionary = {
     copy: 'Kopieer',
     paste: 'Plak',
     selectAll: 'Selecteer alles',
+    view: 'Weergave',
+    toggleFullScreen: 'Schakel schermvullende weergave in/uit',
     window: 'Venster',
     minimize: 'Minimaliseer',
     zoom: 'Zoom',
     closeWindow: 'Sluit venster',
+    bringAllToFront: 'Breng alles naar voren',
     language: 'Taal / Language',
     systemLanguage: 'Systeem',
     appearance: 'Weergave',
     lightAppearance: 'Licht',
     darkAppearance: 'Donker',
-    systemAppearance: 'Systeem'
+    systemAppearance: 'Systeem',
+    help: 'Help',
+    helpPage: (appName) => `${appName}-help`,
+    privacyPolicy: 'Privacybeleid',
+    reportIssue: 'Meld een probleem…',
+    supportApp: (appName) => `Steun ${appName}…`,
+    checkForUpdates: 'Controleer op updates…'
   },
   dialogs: {
     exportPdf: 'Exporteer als PDF',
@@ -33,10 +49,19 @@ export const nl: Dictionary = {
     imagesFilter: 'Afbeeldingen',
     exportCv: 'Exporteer cv naar bestand',
     importCv: 'Importeer cv uit bestand',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Je wijzigingen in het cv zijn niet bewaard.',
+      closeDetail: 'Als je het venster nu sluit, gaan je laatste wijzigingen verloren.',
+      quitDetail: (appName) =>
+        `Als je ${appName} nu stopt, gaan je laatste wijzigingen verloren.`,
+      closeAnyway: 'Toch sluiten',
+      quitAnyway: 'Toch stoppen',
+      backToEditor: 'Terug naar editor'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← Cv-bibliotheek',
     save: 'Bewaar',
     cancel: 'Annuleer',
     delete: 'Verwijder',
@@ -76,6 +101,10 @@ export const nl: Dictionary = {
     confirmDeleteDamaged: (fileName) =>
       `Beschadigd bestand “${fileName}” verwijderen? Dit kan niet ongedaan worden gemaakt.`,
     damaged: 'Beschadigd bestand – kan niet worden geopend',
+    newerVersion: (appName) => `Vereist een nieuwere versie van ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Bestand “${fileName}” verwijderen? Het is een cv uit een nieuwere versie van ${appName} en gaat verloren. Dit kan niet ongedaan worden gemaakt.`,
+    loading: 'Laden…',
     imported: (name) => `“${name}” geïmporteerd.`,
     savedFile: (fileName) => `Bestand bewaard: ${fileName}`,
     importErrors: {
@@ -135,8 +164,22 @@ export const nl: Dictionary = {
     openPdf: 'Open',
     showInFolder: 'Toon in Finder',
     exportFailed: 'Kan de PDF niet bewaren. Probeer het opnieuw.',
+    exportCutOff: 'Een deel van de inhoud past niet op een pagina en wordt afgesneden. Toch exporteren?',
+    exportCutOffHint: 'De te lange fragmenten zijn gemarkeerd in het voorbeeld.',
+    exportAnyway: 'Toch exporteren',
+    preparingPdf: 'PDF voorbereiden…',
+    exportTimedOut: 'Het voorbereiden van de pdf duurde te lang en is gestopt. Probeer het opnieuw.',
+    dismissNotice: 'Melding sluiten',
+    saveFailed: 'Kan de wijzigingen niet bewaren. Je laatste wijzigingen staan voorlopig alleen in dit venster.',
+    retrySave: 'Probeer opnieuw',
+    leaveUnsaved: 'Je wijzigingen zijn niet bewaard. Toch verlaten?',
+    leaveAnyway: 'Toch verlaten',
+    stayInEditor: 'In de editor blijven',
+    renameCv: (name) => `Naam van cv wijzigen: ${name}`,
+    removed: 'Verwijderd.',
+    undoRemoval: 'Herstel',
     remove: 'Verwijder',
-    appearance: 'Weergave',
+    cvDesign: 'Cv-ontwerp',
     accentColor: 'Accentkleur',
     font: 'Lettertype',
     cvLanguage: 'Taal van cv',
@@ -165,7 +208,7 @@ export const nl: Dictionary = {
     location: 'Plaats',
     from: 'Van',
     to: 'Tot',
-    present: 'heden',
+    currentlyWorkHere: 'Ik werk hier nog',
     bullets: 'Opsommingspunten',
     bullet: (number) => `Punt ${number}`,
     removeBullet: (number) => `Verwijder punt ${number}`,
@@ -181,6 +224,7 @@ export const nl: Dictionary = {
     institutionPlaceholder: 'bijv. Economische Universiteit',
     startOptional: 'Van (optioneel)',
     graduation: 'Afstudeerdatum',
+    endBeforeStart: 'De einddatum ligt vóór de begindatum.',
     listItem: (number) => `Item ${number}`,
     removeListItem: (number) => `Verwijder item ${number}`,
     addListItem: 'Voeg item toe',
@@ -192,7 +236,12 @@ export const nl: Dictionary = {
       position: (name) => `functie “${name}”`,
       education: (name) => `item “${name}”`,
       bullet: (number) => `punt ${number}`,
-      listItem: (number) => `item ${number}`
+      listItem: (number) => `item ${number}`,
+      pickedUp: (item) => `Je hebt ${item} opgepakt.`,
+      movedOver: (item, position, total) => `Je verplaatst ${item}: positie ${position} van ${total}.`,
+      dropped: (item, position, total) => `Je hebt ${item} neergezet op positie ${position} van ${total}.`,
+      cancelled: (item) => `Je hebt ${item} teruggezet op de oude plek.`,
+      instructions: 'Druk op Spatie of Enter om een item op te pakken. Verplaats het met de pijltjestoetsen, zet het neer met Spatie of Enter en annuleer met Escape.'
     },
     consent: {
       title: 'Toestemmingsverklaring',
@@ -221,7 +270,7 @@ export const nl: Dictionary = {
         undecodable: 'Kan de foto niet laden – het bestand is beschadigd, niet beschikbaar of heeft een niet-ondersteunde indeling.'
       },
       crop: 'Snijd foto bij',
-      cropHint: 'Sleep de foto om de uitsnede in te stellen.',
+      cropHint: 'Sleep de foto of gebruik de pijltjestoetsen om de uitsnede in te stellen.',
       cropPreview: 'Voorvertoning van uitsnede',
       zoom: 'Zoom',
       apply: 'Pas toe'
@@ -239,7 +288,7 @@ export const nl: Dictionary = {
     fit: 'Passend'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Steun ${appName}`,
     message: (appName) => `${appName} is gratis. Heeft het je geholpen? Bedank de maker dan met een kopje koffie.`,
     link: 'Trakteer op koffie',
     more: 'Meer',
@@ -251,6 +300,33 @@ export const nl: Dictionary = {
       'Dit is alleen een bedankje. Het ontgrendelt niets: de app werkt hoe dan ook precies hetzelfde.'
     ],
     close: 'Sluit'
+  },
+  updates: {
+    noticeLabel: 'Nieuwe versie',
+    available: (appName, version) => `Er is een nieuwe versie van ${appName} beschikbaar: ${version}.`,
+    availableDetail: (current) => `Je hebt versie ${current}. Download de nieuwe versie en vervang daarmee de app in de map Apps.`,
+    download: 'Download',
+    dismiss: 'Sluit',
+    later: 'Later',
+    upToDate: (appName, version) => `Je hebt de nieuwste versie van ${appName} (${version}).`,
+    failed: 'Kan niet controleren op updates.',
+    failedDetail: 'Controleer je internetverbinding of bekijk de nieuwste versie op de releasepagina.',
+    openReleases: 'Open releasepagina',
+    ok: 'OK'
+  },
+  crash: {
+    title: 'Er is iets misgegaan',
+    message: 'Je cv’s zijn veilig – wijzigingen worden automatisch bewaard. Laad de app opnieuw om verder te gaan.',
+    reload: 'Opnieuw laden',
+    repeated: {
+      message: (appName) => `Het venster van ${appName} is meerdere keren achter elkaar vastgelopen.`,
+      detail: 'Je bewaarde cv’s zijn veilig. Je kunt het venster opnieuw laden of de app stoppen.'
+    },
+    unexpected: {
+      title: 'Er is een onverwachte fout opgetreden',
+      message: (appName) =>
+        `${appName} heeft een probleem gehad. Je bewaarde cv’s zijn veilig. Werkt er iets niet zoals verwacht? Stop de app en open hem opnieuw.`
+    }
   },
   defaultContent: {
     cvName: 'Nieuw cv',

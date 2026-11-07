@@ -8,7 +8,7 @@ directories:
 files:
   - out/**/*
   - package.json
-# Bez auto-update.
+# Bez auto-update. Powiadomienie o nowej wersji (bez pobierania): ADR-0006.
 publish: null
 mac:
   category: public.app-category.productivity

@@ -48,7 +48,7 @@ export async function createAppearance(settings: SettingsRepository) {
       try {
         await settings.setAppearance(appearance)
       } catch (error) {
-        console.error('Nie udało się zapisać wyglądu interfejsu', error)
+        console.error('Failed to save the appearance', error)
       }
     },
 

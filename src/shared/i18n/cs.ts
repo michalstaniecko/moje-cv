@@ -4,10 +4,17 @@ export const cs: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `O aplikaci ${appName}`,
+    services: 'Služby',
     hide: (appName) => `Skrýt ${appName}`,
     hideOthers: 'Skrýt ostatní',
     showAll: 'Zobrazit vše',
     quit: (appName) => `Ukončit ${appName}`,
+    file: 'Soubor',
+    newCv: 'Nové CV',
+    addSample: 'Přidat ukázkové CV',
+    importCv: 'Importovat…',
+    exportJson: 'Exportovat JSON…',
+    exportPdf: 'Exportovat do PDF…',
     edit: 'Úpravy',
     undo: 'Odvolat',
     redo: 'Znovu',
@@ -15,16 +22,25 @@ export const cs: Dictionary = {
     copy: 'Kopírovat',
     paste: 'Vložit',
     selectAll: 'Vybrat vše',
+    view: 'Zobrazení',
+    toggleFullScreen: 'Přepnout na celou obrazovku',
     window: 'Okno',
     minimize: 'Minimalizovat',
     zoom: 'Zvětšit',
     closeWindow: 'Zavřít okno',
+    bringAllToFront: 'Převést vše do popředí',
     language: 'Jazyk / Language',
     systemLanguage: 'Systémový',
     appearance: 'Vzhled',
     lightAppearance: 'Světlý',
     darkAppearance: 'Tmavý',
-    systemAppearance: 'Systémový'
+    systemAppearance: 'Systémový',
+    help: 'Nápověda',
+    helpPage: (appName) => `Nápověda pro ${appName}`,
+    privacyPolicy: 'Zásady ochrany osobních údajů',
+    reportIssue: 'Nahlásit problém…',
+    supportApp: (appName) => `Podpořit ${appName}…`,
+    checkForUpdates: 'Vyhledat aktualizace…'
   },
   dialogs: {
     exportPdf: 'Exportovat do PDF',
@@ -33,10 +49,19 @@ export const cs: Dictionary = {
     imagesFilter: 'Obrázky',
     exportCv: 'Exportovat CV do souboru',
     importCv: 'Importovat CV ze souboru',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Změny v životopisu nebyly uloženy.',
+      closeDetail: 'Pokud teď okno zavřete, poslední změny se ztratí.',
+      quitDetail: (appName) =>
+        `Pokud teď ukončíte ${appName}, poslední změny se ztratí.`,
+      closeAnyway: 'Přesto zavřít',
+      quitAnyway: 'Přesto ukončit',
+      backToEditor: 'Zpět do editoru'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← Knihovna CV',
     save: 'Uložit',
     cancel: 'Zrušit',
     delete: 'Smazat',
@@ -75,6 +100,10 @@ export const cs: Dictionary = {
     confirmDelete: (name) => `Smazat „${name}“? Tuto akci nelze vrátit.`,
     confirmDeleteDamaged: (fileName) => `Smazat poškozený soubor „${fileName}“? Tuto akci nelze vrátit.`,
     damaged: 'Poškozený soubor – nelze ho otevřít',
+    newerVersion: (appName) => `Vyžaduje novější verzi ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Smazat soubor „${fileName}“? Je to CV z novější verze ${appName} a bude ztraceno. Tuto akci nelze vrátit.`,
+    loading: 'Načítání…',
     imported: (name) => `Importováno „${name}“.`,
     savedFile: (fileName) => `Soubor uložen: ${fileName}`,
     importErrors: {
@@ -128,8 +157,22 @@ export const cs: Dictionary = {
     openPdf: 'Otevřít',
     showInFolder: 'Zobrazit ve Finderu',
     exportFailed: 'PDF se nepodařilo uložit. Zkuste to znovu.',
+    exportCutOff: 'Část obsahu se nevejde na stránku a bude oříznuta. Přesto exportovat?',
+    exportCutOffHint: 'Příliš dlouhé části jsou v náhledu zvýrazněné.',
+    exportAnyway: 'Přesto exportovat',
+    preparingPdf: 'Připravuje se PDF…',
+    exportTimedOut: 'Příprava PDF trvala příliš dlouho a byla přerušena. Zkuste to znovu.',
+    dismissNotice: 'Zavřít zprávu',
+    saveFailed: 'Změny se nepodařilo uložit. Vaše poslední úpravy jsou zatím jen v tomto okně.',
+    retrySave: 'Zkusit znovu',
+    leaveUnsaved: 'Změny nebyly uloženy. Přesto odejít?',
+    leaveAnyway: 'Přesto odejít',
+    stayInEditor: 'Zůstat v editoru',
+    renameCv: (name) => `Přejmenovat CV: ${name}`,
+    removed: 'Odstraněno.',
+    undoRemoval: 'Odvolat',
     remove: 'Odstranit',
-    appearance: 'Vzhled',
+    cvDesign: 'Design CV',
     accentColor: 'Barva zvýraznění',
     font: 'Písmo',
     cvLanguage: 'Jazyk CV',
@@ -158,7 +201,7 @@ export const cs: Dictionary = {
     location: 'Město',
     from: 'Od',
     to: 'Do',
-    present: 'dosud',
+    currentlyWorkHere: 'Stále zde pracuji',
     bullets: 'Body',
     bullet: (number) => `Bod ${number}`,
     removeBullet: (number) => `Odstranit bod ${number}`,
@@ -174,6 +217,7 @@ export const cs: Dictionary = {
     institutionPlaceholder: 'např. Vysoká škola ekonomická',
     startOptional: 'Od (nepovinné)',
     graduation: 'Datum ukončení',
+    endBeforeStart: 'Datum ukončení je dřívější než datum zahájení.',
     listItem: (number) => `Položka ${number}`,
     removeListItem: (number) => `Odstranit položku ${number}`,
     addListItem: 'Přidat položku',
@@ -185,7 +229,12 @@ export const cs: Dictionary = {
       position: (name) => `pozici „${name}“`,
       education: (name) => `položku „${name}“`,
       bullet: (number) => `bod ${number}`,
-      listItem: (number) => `položku ${number}`
+      listItem: (number) => `položku ${number}`,
+      pickedUp: (item) => `Zvedli jste ${item}.`,
+      movedOver: (item, position, total) => `Přesouváte ${item}: pozice ${position} z ${total}.`,
+      dropped: (item, position, total) => `Položili jste ${item} na pozici ${position} z ${total}.`,
+      cancelled: (item) => `Vrátili jste ${item} na původní místo.`,
+      instructions: 'Položku zvednete mezerníkem nebo Enterem. Šipkami ji přesunete, mezerníkem nebo Enterem ji položíte a Escape přesun zruší.'
     },
     consent: {
       title: 'Souhlas se zpracováním údajů',
@@ -214,7 +263,7 @@ export const cs: Dictionary = {
         undecodable: 'Fotku se nepodařilo načíst – soubor je poškozený, nedostupný nebo v nepodporovaném formátu.'
       },
       crop: 'Oříznutí fotky',
-      cropHint: 'Přetažením fotky nastavte výřez.',
+      cropHint: 'Výřez nastavte přetažením fotky nebo šipkami.',
       cropPreview: 'Náhled výřezu',
       zoom: 'Zvětšení',
       apply: 'Použít'
@@ -234,7 +283,7 @@ export const cs: Dictionary = {
     fit: 'Přizpůsobit'
   },
   sponsor: {
-    bar: 'Podpora',
+    bar: (appName) => `Podpora ${appName}`,
     message: (appName) => `${appName} je zdarma. Pokud vám pomohla, můžete autorovi poděkovat kávou.`,
     link: 'Kupte mi kávu',
     more: 'Více',
@@ -246,6 +295,33 @@ export const cs: Dictionary = {
       'Je to jen poděkování. Nic neodemyká: aplikace funguje v obou případech úplně stejně.'
     ],
     close: 'Zavřít'
+  },
+  updates: {
+    noticeLabel: 'Nová verze',
+    available: (appName, version) => `Je k dispozici nová verze ${appName}: ${version}.`,
+    availableDetail: (current) => `Máte verzi ${current}. Stáhněte novou verzi a nahraďte jí aplikaci ve složce Aplikace.`,
+    download: 'Stáhnout',
+    dismiss: 'Zavřít',
+    later: 'Později',
+    upToDate: (appName, version) => `Máte nejnovější verzi ${appName} (${version}).`,
+    failed: 'Aktualizace se nepodařilo vyhledat.',
+    failedDetail: 'Zkontrolujte připojení k internetu nebo se podívejte na nejnovější verzi na stránce vydání.',
+    openReleases: 'Otevřít stránku vydání',
+    ok: 'OK'
+  },
+  crash: {
+    title: 'Něco se pokazilo',
+    message: 'Vaše CV jsou v bezpečí – změny se ukládají automaticky. Pokračujte opětovným načtením aplikace.',
+    reload: 'Načíst znovu',
+    repeated: {
+      message: (appName) => `Okno aplikace ${appName} několikrát za sebou přestalo fungovat.`,
+      detail: 'Uložená CV jsou v bezpečí. Okno můžete načíst znovu, nebo aplikaci ukončit.'
+    },
+    unexpected: {
+      title: 'Došlo k neočekávané chybě',
+      message: (appName) =>
+        `Aplikace ${appName} narazila na problém. Uložená CV jsou v bezpečí. Pokud něco nefunguje, jak má, ukončete aplikaci a otevřete ji znovu.`
+    }
   },
   defaultContent: {
     cvName: 'Nové CV',

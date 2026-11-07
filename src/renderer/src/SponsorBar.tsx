@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { AppVersion } from './appVersion'
 import { useDictionary } from './i18n'
 
 // Sponsor bar (zob. GLOSSARY.md): jedna linia na dole okna, na każdym ekranie. Nie da się jej zamknąć i nie ma
@@ -22,7 +23,7 @@ export function SponsorBar() {
   const open = () => void window.api.sponsor.open()
 
   return (
-    <footer className="sponsor-bar" aria-label={t.bar}>
+    <footer className="sponsor-bar" aria-label={t.bar(appName)}>
       <span className="sponsor-bar-message">{t.message(appName)}</span>
       <button type="button" className="sponsor-link" onClick={open}>
         {t.link}
@@ -66,6 +67,7 @@ function SponsorDialog({ onOpenLink, onClose }: { onOpenLink: () => void; onClos
             {paragraph}
           </p>
         ))}
+        <AppVersion className="sponsor-dialog-version" />
         <div className="form-row form-row--spread">
           <button type="button" className="sponsor-link" onClick={onOpenLink}>
             {t.link}

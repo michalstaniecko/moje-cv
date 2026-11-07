@@ -1,9 +1,21 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { Api } from '../shared/api'
+import type { Api, MenuCommand } from '../shared/api'
 import type { InterfaceLanguage } from '../shared/i18n/languages'
+
+// Prośba o zapis przed zamknięciem okna (`editor:flush-request` z identyfikatorem) dostaje zawsze odpowiedź: wynik
+// zapisu z edytora CV albo `true`, gdy żaden edytor nie słucha (nie ma czego zapisywać).
+let flushListener: (() => Promise<boolean>) | null = null
+ipcRenderer.on('editor:flush-request', async (_event, requestId: string) => {
+  const saved = flushListener ? await flushListener().catch(() => false) : true
+  ipcRenderer.send('editor:flush-result', requestId, saved === true)
+})
 
 // Wąskie API dla renderera.
 const api: Api = {
+  app: {
+    version: () => ipcRenderer.invoke('app:version'),
+    reload: () => ipcRenderer.invoke('app:reload')
+  },
   cv: {
     list: () => ipcRenderer.invoke('cv:list'),
     get: (id) => ipcRenderer.invoke('cv:get', id),
@@ -43,7 +55,6 @@ const api: Api = {
     }
   },
   editor: {
-    setActive: (active) => ipcRenderer.send('editor:active', active),
     onHistoryCommand: (listener) => {
       const undo = () => listener('undo')
       const redo = () => listener('redo')
@@ -53,11 +64,39 @@ const api: Api = {
         ipcRenderer.off('editor:undo', undo)
         ipcRenderer.off('editor:redo', redo)
       }
+    },
+    onFlushRequest: (listener) => {
+      flushListener = listener
+      return () => {
+        if (flushListener === listener) flushListener = null
+      }
+    }
+  },
+  menu: {
+    setScreen: (screen) => ipcRenderer.send('menu:screen', screen),
+    onCommand: (listener) => {
+      const command = (_event: Electron.IpcRendererEvent, value: MenuCommand) => listener(value)
+      ipcRenderer.on('menu:command', command)
+      return () => {
+        ipcRenderer.off('menu:command', command)
+      }
     }
   },
   sponsor: {
     isAvailable: () => ipcRenderer.invoke('sponsor:is-available'),
     open: () => ipcRenderer.invoke('sponsor:open')
+  },
+  updates: {
+    notice: () => ipcRenderer.invoke('updates:notice'),
+    onNotice: (listener) => {
+      const changed = (_event: Electron.IpcRendererEvent, version: string) => listener(version)
+      ipcRenderer.on('updates:notice-changed', changed)
+      return () => {
+        ipcRenderer.off('updates:notice-changed', changed)
+      }
+    },
+    download: () => ipcRenderer.invoke('updates:download'),
+    dismiss: () => ipcRenderer.invoke('updates:dismiss')
   },
   print: {
     getDocument: () => ipcRenderer.invoke('print:document'),

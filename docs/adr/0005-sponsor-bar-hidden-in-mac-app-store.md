@@ -2,6 +2,8 @@
 
 The Sponsor bar links to GitHub Sponsors, an external payment page. App Store Review Guideline 3.1.1 forbids links that lead users to purchase outside the store, and donation links have been a common rejection reason even in free apps. We decided that the main process hides the Sponsor bar whenever Electron reports a Mac App Store build (`process.mas`) and shows it in every other channel (the Developer ID `.dmg` today, any future Windows/Linux build). The renderer only receives a boolean and never decides itself. No build flag, environment variable or packaging config carries the choice, so a MAS target can be added to `electron-builder.yml` later without touching the bar.
 
+The "Support CV Press…" item in the Help menu is the same Sponsor link and follows the same `process.mas` rule: it is left out of the menu in the Mac App Store build. Both decisions go through one main-process function (`isMacAppStore()` in `src/main/channel.ts`), so they cannot drift apart.
+
 ## Considered Options
 
 - **Same bar with the link in every channel**: rejected, because a rejection in App Review costs a resubmission cycle for a feature unrelated to the app's purpose.

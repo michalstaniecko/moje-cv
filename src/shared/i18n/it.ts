@@ -4,10 +4,17 @@ export const it: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `Informazioni su ${appName}`,
+    services: 'Servizi',
     hide: (appName) => `Nascondi ${appName}`,
     hideOthers: 'Nascondi altre',
     showAll: 'Mostra tutte',
     quit: (appName) => `Esci da ${appName}`,
+    file: 'File',
+    newCv: 'Nuovo CV',
+    addSample: 'Aggiungi CV di esempio',
+    importCv: 'Importa…',
+    exportJson: 'Esporta JSON…',
+    exportPdf: 'Esporta in PDF…',
     edit: 'Composizione',
     undo: 'Annulla',
     redo: 'Ripeti',
@@ -15,16 +22,25 @@ export const it: Dictionary = {
     copy: 'Copia',
     paste: 'Incolla',
     selectAll: 'Seleziona tutto',
+    view: 'Vista',
+    toggleFullScreen: 'Attiva/disattiva modalità a tutto schermo',
     window: 'Finestra',
     minimize: 'Contrai',
     zoom: 'Ridimensiona',
     closeWindow: 'Chiudi finestra',
+    bringAllToFront: 'Porta tutto in primo piano',
     language: 'Lingua / Language',
     systemLanguage: 'Sistema',
     appearance: 'Aspetto',
     lightAppearance: 'Chiaro',
     darkAppearance: 'Scuro',
-    systemAppearance: 'Sistema'
+    systemAppearance: 'Sistema',
+    help: 'Aiuto',
+    helpPage: (appName) => `Aiuto di ${appName}`,
+    privacyPolicy: 'Informativa sulla privacy',
+    reportIssue: 'Segnala un problema…',
+    supportApp: (appName) => `Sostieni ${appName}…`,
+    checkForUpdates: 'Verifica aggiornamenti…'
   },
   dialogs: {
     exportPdf: 'Esporta in PDF',
@@ -33,10 +49,19 @@ export const it: Dictionary = {
     imagesFilter: 'Immagini',
     exportCv: 'Esporta CV in un file',
     importCv: 'Importa CV da file',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Le modifiche al CV non sono state salvate.',
+      closeDetail: 'Se chiudi ora la finestra, le ultime modifiche andranno perse.',
+      quitDetail: (appName) =>
+        `Se esci ora da ${appName}, le ultime modifiche andranno perse.`,
+      closeAnyway: 'Chiudi comunque',
+      quitAnyway: 'Esci comunque',
+      backToEditor: 'Torna all’editor'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← Libreria CV',
     save: 'Salva',
     cancel: 'Annulla',
     delete: 'Elimina',
@@ -75,6 +100,10 @@ export const it: Dictionary = {
     confirmDelete: (name) => `Eliminare «${name}»? L’operazione non può essere annullata.`,
     confirmDeleteDamaged: (fileName) => `Eliminare il file danneggiato «${fileName}»? L’operazione non può essere annullata.`,
     damaged: 'File danneggiato – impossibile aprirlo',
+    newerVersion: (appName) => `Richiede una versione più recente di ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Eliminare il file «${fileName}»? È un CV di una versione più recente di ${appName} e andrà perso. L’operazione non può essere annullata.`,
+    loading: 'Caricamento…',
     imported: (name) => `«${name}» importato.`,
     savedFile: (fileName) => `File salvato: ${fileName}`,
     importErrors: {
@@ -128,8 +157,22 @@ export const it: Dictionary = {
     openPdf: 'Apri',
     showInFolder: 'Mostra nel Finder',
     exportFailed: 'Impossibile salvare il PDF. Riprova.',
+    exportCutOff: 'Parte del contenuto non entra in una pagina e verrà tagliata. Esportare comunque?',
+    exportCutOffHint: 'I frammenti troppo lunghi sono evidenziati nell’anteprima.',
+    exportAnyway: 'Esporta comunque',
+    preparingPdf: 'Preparazione del PDF…',
+    exportTimedOut: 'La preparazione del PDF ha richiesto troppo tempo ed è stata interrotta. Riprova.',
+    dismissNotice: 'Chiudi messaggio',
+    saveFailed: 'Impossibile salvare le modifiche. Per ora le ultime modifiche sono solo in questa finestra.',
+    retrySave: 'Riprova',
+    leaveUnsaved: 'Le modifiche non sono state salvate. Uscire comunque?',
+    leaveAnyway: 'Esci comunque',
+    stayInEditor: 'Resta nell’editor',
+    renameCv: (name) => `Rinomina il CV: ${name}`,
+    removed: 'Rimosso.',
+    undoRemoval: 'Annulla',
     remove: 'Rimuovi',
-    appearance: 'Aspetto',
+    cvDesign: 'Design del CV',
     accentColor: 'Colore di evidenziazione',
     font: 'Font',
     cvLanguage: 'Lingua del CV',
@@ -158,7 +201,7 @@ export const it: Dictionary = {
     location: 'Città',
     from: 'Dal',
     to: 'Al',
-    present: 'oggi',
+    currentlyWorkHere: 'Lavoro ancora qui',
     bullets: 'Punti elenco',
     bullet: (number) => `Punto ${number}`,
     removeBullet: (number) => `Rimuovi punto ${number}`,
@@ -174,6 +217,7 @@ export const it: Dictionary = {
     institutionPlaceholder: 'es. Università di Economia',
     startOptional: 'Dal (facoltativo)',
     graduation: 'Data di conseguimento',
+    endBeforeStart: 'La data di fine è precedente alla data di inizio.',
     listItem: (number) => `Voce ${number}`,
     removeListItem: (number) => `Rimuovi voce ${number}`,
     addListItem: 'Aggiungi voce',
@@ -185,7 +229,12 @@ export const it: Dictionary = {
       position: (name) => `la posizione «${name}»`,
       education: (name) => `la voce «${name}»`,
       bullet: (number) => `il punto ${number}`,
-      listItem: (number) => `la voce ${number}`
+      listItem: (number) => `la voce ${number}`,
+      pickedUp: (item) => `Hai preso ${item}.`,
+      movedOver: (item, position, total) => `Stai spostando ${item}: posizione ${position} di ${total}.`,
+      dropped: (item, position, total) => `Hai rilasciato ${item} in posizione ${position} di ${total}.`,
+      cancelled: (item) => `Hai rimesso ${item} al suo posto.`,
+      instructions: 'Per prendere un elemento, premi Spazio o Invio. Spostalo con i tasti freccia, rilascialo con Spazio o Invio, oppure annulla con Esc.'
     },
     consent: {
       title: 'Clausola di consenso',
@@ -214,7 +263,7 @@ export const it: Dictionary = {
         undecodable: 'Impossibile caricare la foto – il file è danneggiato, non disponibile o in un formato non supportato.'
       },
       crop: 'Ritaglia foto',
-      cropHint: 'Trascina la foto per regolare l’inquadratura.',
+      cropHint: 'Trascina la foto o usa i tasti freccia per regolare l’inquadratura.',
       cropPreview: 'Anteprima inquadratura',
       zoom: 'Zoom',
       apply: 'Applica'
@@ -233,7 +282,7 @@ export const it: Dictionary = {
     fit: 'Adatta'
   },
   sponsor: {
-    bar: 'Sostieni',
+    bar: (appName) => `Sostieni ${appName}`,
     message: (appName) => `${appName} è gratuito. Se ti è stato utile, puoi ringraziare l’autore con un caffè.`,
     link: 'Offrimi un caffè',
     more: 'Altro',
@@ -245,6 +294,33 @@ export const it: Dictionary = {
       'È solo un ringraziamento. Non sblocca nulla: l’app funziona esattamente allo stesso modo in entrambi i casi.'
     ],
     close: 'Chiudi'
+  },
+  updates: {
+    noticeLabel: 'Nuova versione',
+    available: (appName, version) => `È disponibile una nuova versione di ${appName}: ${version}.`,
+    availableDetail: (current) => `Hai la versione ${current}. Scarica la nuova versione e sostituisci con essa l’app nella cartella Applicazioni.`,
+    download: 'Scarica',
+    dismiss: 'Chiudi',
+    later: 'Più tardi',
+    upToDate: (appName, version) => `Hai l’ultima versione di ${appName} (${version}).`,
+    failed: 'Impossibile verificare gli aggiornamenti.',
+    failedDetail: 'Controlla la connessione a Internet o consulta l’ultima versione nella pagina delle release.',
+    openReleases: 'Apri pagina delle release',
+    ok: 'OK'
+  },
+  crash: {
+    title: 'Si è verificato un problema',
+    message: 'I tuoi CV sono al sicuro: le modifiche vengono salvate automaticamente. Ricarica l’app per continuare.',
+    reload: 'Ricarica',
+    repeated: {
+      message: (appName) => `La finestra di ${appName} ha smesso di funzionare più volte di seguito.`,
+      detail: 'I CV salvati sono al sicuro. Puoi ricaricare la finestra o uscire dall’app.'
+    },
+    unexpected: {
+      title: 'Si è verificato un errore imprevisto',
+      message: (appName) =>
+        `${appName} ha riscontrato un problema. I CV salvati sono al sicuro. Se qualcosa non funziona come previsto, esci dall’app e riaprila.`
+    }
   },
   defaultContent: {
     cvName: 'Nuovo CV',

@@ -17,3 +17,10 @@ export function formatDateRange(
   if (startText && endText) return `${startText} – ${endText}`
   return startText || endText
 }
+
+// Odwrócony zakres dat (koniec przed początkiem) – podstawa ostrzeżenia w formularzu, nie blokady. Tylko dla dwóch
+// pełnych dat: ten sam miesiąc, „present” i brak jednej z dat nie są błędem.
+export function isEndBeforeStart(start: YearMonth | null, end: YearMonth | 'present' | null): boolean {
+  if (!start || !end || end === 'present') return false
+  return end.year < start.year || (end.year === start.year && end.month < start.month)
+}

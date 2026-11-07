@@ -4,10 +4,17 @@ export const tr: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `${appName} Hakkında`,
+    services: 'Servisler',
     hide: (appName) => `${appName}’i Gizle`,
     hideOthers: 'Diğerlerini Gizle',
     showAll: 'Tümünü Göster',
     quit: (appName) => `${appName}’ten Çık`,
+    file: 'Dosya',
+    newCv: 'Yeni CV',
+    addSample: 'Örnek CV Ekle',
+    importCv: 'İçe Aktar…',
+    exportJson: 'JSON Olarak Dışa Aktar…',
+    exportPdf: 'PDF Olarak Dışa Aktar…',
     edit: 'Düzen',
     undo: 'Geri Al',
     redo: 'Yinele',
@@ -15,16 +22,25 @@ export const tr: Dictionary = {
     copy: 'Kopyala',
     paste: 'Yapıştır',
     selectAll: 'Tümünü Seç',
+    view: 'Görüntü',
+    toggleFullScreen: 'Tam Ekranı Aç/Kapat',
     window: 'Pencere',
     minimize: 'Küçült',
     zoom: 'Büyüt/Küçült',
     closeWindow: 'Pencereyi Kapat',
+    bringAllToFront: 'Tümünü Öne Getir',
     language: 'Dil / Language',
     systemLanguage: 'Sistem',
     appearance: 'Görünüm',
     lightAppearance: 'Açık',
     darkAppearance: 'Koyu',
-    systemAppearance: 'Sistem'
+    systemAppearance: 'Sistem',
+    help: 'Yardım',
+    helpPage: (appName) => `${appName} Yardımı`,
+    privacyPolicy: 'Gizlilik Politikası',
+    reportIssue: 'Sorun Bildir…',
+    supportApp: (appName) => `${appName} Uygulamasını Destekle…`,
+    checkForUpdates: 'Güncellemeleri Denetle…'
   },
   dialogs: {
     exportPdf: 'PDF olarak dışa aktar',
@@ -33,10 +49,19 @@ export const tr: Dictionary = {
     imagesFilter: 'Görüntüler',
     exportCv: 'CV’yi dosyaya aktar',
     importCv: 'CV’yi dosyadan içe aktar',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Özgeçmişteki değişiklikleriniz kaydedilmedi.',
+      closeDetail: 'Pencereyi şimdi kapatırsanız son değişiklikleriniz kaybolur.',
+      quitDetail: (appName) =>
+        `${appName} uygulamasından şimdi çıkarsanız son değişiklikleriniz kaybolur.`,
+      closeAnyway: 'Yine de Kapat',
+      quitAnyway: 'Yine de Çık',
+      backToEditor: 'Düzenleyiciye Dön'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← CV kitaplığı',
     save: 'Kaydet',
     cancel: 'Vazgeç',
     delete: 'Sil',
@@ -75,6 +100,10 @@ export const tr: Dictionary = {
     confirmDelete: (name) => `“${name}” silinsin mi? Bu işlem geri alınamaz.`,
     confirmDeleteDamaged: (fileName) => `Hasarlı “${fileName}” dosyası silinsin mi? Bu işlem geri alınamaz.`,
     damaged: 'Hasarlı dosya – açılamıyor',
+    newerVersion: (appName) => `${appName} uygulamasının daha yeni bir sürümü gerekiyor`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `“${fileName}” dosyası silinsin mi? Bu, ${appName} uygulamasının daha yeni bir sürümünden bir CV’dir ve kaybolacak. Bu işlem geri alınamaz.`,
+    loading: 'Yükleniyor…',
     imported: (name) => `“${name}” içe aktarıldı.`,
     savedFile: (fileName) => `Dosya kaydedildi: ${fileName}`,
     importErrors: {
@@ -128,8 +157,22 @@ export const tr: Dictionary = {
     openPdf: 'Aç',
     showInFolder: 'Finder’da Göster',
     exportFailed: 'PDF kaydedilemedi. Yeniden deneyin.',
+    exportCutOff: 'İçeriğin bir kısmı sayfaya sığmıyor ve kesilecek. Yine de dışa aktarılsın mı?',
+    exportCutOffHint: 'Çok uzun bölümler önizlemede vurgulanır.',
+    exportAnyway: 'Yine de dışa aktar',
+    preparingPdf: 'PDF hazırlanıyor…',
+    exportTimedOut: 'PDF’nin hazırlanması çok uzun sürdü ve durduruldu. Tekrar deneyin.',
+    dismissNotice: 'Mesajı kapat',
+    saveFailed: 'Değişiklikler kaydedilemedi. Son değişiklikleriniz şimdilik yalnızca bu pencerede.',
+    retrySave: 'Yeniden dene',
+    leaveUnsaved: 'Değişiklikleriniz kaydedilmedi. Yine de çıkılsın mı?',
+    leaveAnyway: 'Yine de çık',
+    stayInEditor: 'Düzenleyicide kal',
+    renameCv: (name) => `CV’yi yeniden adlandır: ${name}`,
+    removed: 'Kaldırıldı.',
+    undoRemoval: 'Geri Al',
     remove: 'Kaldır',
-    appearance: 'Görünüm',
+    cvDesign: 'CV tasarımı',
     accentColor: 'Vurgu rengi',
     font: 'Yazı tipi',
     cvLanguage: 'CV dili',
@@ -158,7 +201,7 @@ export const tr: Dictionary = {
     location: 'Şehir',
     from: 'Başlangıç',
     to: 'Bitiş',
-    present: 'halen',
+    currentlyWorkHere: 'Hâlâ burada çalışıyorum',
     bullets: 'Maddeler',
     bullet: (number) => `Madde ${number}`,
     removeBullet: (number) => `${number}. maddeyi kaldır`,
@@ -174,6 +217,7 @@ export const tr: Dictionary = {
     institutionPlaceholder: 'ör. İktisat Üniversitesi',
     startOptional: 'Başlangıç (isteğe bağlı)',
     graduation: 'Mezuniyet tarihi',
+    endBeforeStart: 'Bitiş tarihi başlangıç tarihinden önce.',
     listItem: (number) => `Öğe ${number}`,
     removeListItem: (number) => `${number}. öğeyi kaldır`,
     addListItem: 'Öğe ekle',
@@ -185,7 +229,12 @@ export const tr: Dictionary = {
       position: (name) => `“${name}” pozisyonu`,
       education: (name) => `“${name}” kaydı`,
       bullet: (number) => `${number}. madde`,
-      listItem: (number) => `${number}. öğe`
+      listItem: (number) => `${number}. öğe`,
+      pickedUp: (item) => `${item} alındı.`,
+      movedOver: (item, position, total) => `${item} taşınıyor: konum ${position} / ${total}.`,
+      dropped: (item, position, total) => `${item} bırakıldı: konum ${position} / ${total}.`,
+      cancelled: (item) => `${item} eski yerine geri kondu.`,
+      instructions: 'Bir öğeyi almak için Boşluk veya Enter tuşuna basın. Ok tuşlarıyla taşıyın, Boşluk veya Enter ile bırakın, Escape ile iptal edin.'
     },
     consent: {
       title: 'Onay metni',
@@ -214,7 +263,7 @@ export const tr: Dictionary = {
         undecodable: 'Fotoğraf yüklenemedi – dosya hasarlı, erişilemez veya desteklenmeyen bir biçimde.'
       },
       crop: 'Fotoğrafı kırp',
-      cropHint: 'Kadrajı ayarlamak için fotoğrafı sürükleyin.',
+      cropHint: 'Kadrajı ayarlamak için fotoğrafı sürükleyin veya ok tuşlarını kullanın.',
       cropPreview: 'Kadraj önizlemesi',
       zoom: 'Yakınlaştırma',
       apply: 'Uygula'
@@ -232,7 +281,7 @@ export const tr: Dictionary = {
     fit: 'Sığdır'
   },
   sponsor: {
-    bar: 'Destek',
+    bar: (appName) => `${appName} uygulamasını destekleyin`,
     message: (appName) => `${appName} ücretsizdir. İşinize yaradıysa geliştiriciye bir kahve ısmarlayarak teşekkür edebilirsiniz.`,
     link: 'Bana kahve ısmarla',
     more: 'Daha fazla',
@@ -244,6 +293,33 @@ export const tr: Dictionary = {
       'Bu yalnızca bir teşekkürdür. Hiçbir şeyin kilidini açmaz: uygulama her iki durumda da tamamen aynı çalışır.'
     ],
     close: 'Kapat'
+  },
+  updates: {
+    noticeLabel: 'Yeni sürüm',
+    available: (appName, version) => `${appName} uygulamasının yeni bir sürümü var: ${version}.`,
+    availableDetail: (current) => `Sizdeki sürüm ${current}. Yeni sürümü indirin ve Uygulamalar klasöründeki uygulamayı onunla değiştirin.`,
+    download: 'İndir',
+    dismiss: 'Kapat',
+    later: 'Daha Sonra',
+    upToDate: (appName, version) => `${appName} uygulamasının en son sürümüne sahipsiniz (${version}).`,
+    failed: 'Güncellemeler denetlenemedi.',
+    failedDetail: 'İnternet bağlantınızı denetleyin veya en son sürümü sürümler sayfasında görün.',
+    openReleases: 'Sürümler Sayfasını Aç',
+    ok: 'Tamam'
+  },
+  crash: {
+    title: 'Bir sorun oluştu',
+    message: 'CV’leriniz güvende – değişiklikler otomatik olarak kaydedilir. Devam etmek için uygulamayı yeniden yükleyin.',
+    reload: 'Yeniden yükle',
+    repeated: {
+      message: (appName) => `${appName} penceresi art arda birkaç kez çalışmayı durdurdu.`,
+      detail: 'Kaydedilen CV’leriniz güvende. Pencereyi yeniden yükleyebilir veya uygulamadan çıkabilirsiniz.'
+    },
+    unexpected: {
+      title: 'Beklenmeyen bir hata oluştu',
+      message: (appName) =>
+        `${appName} bir sorunla karşılaştı. Kaydedilen CV’leriniz güvende. Bir şey beklendiği gibi çalışmazsa uygulamadan çıkıp yeniden açın.`
+    }
   },
   defaultContent: {
     cvName: 'Yeni CV',

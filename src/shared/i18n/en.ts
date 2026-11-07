@@ -9,10 +9,17 @@ export const en = {
   appName: 'CV Press',
   menu: {
     about: (appName: string) => `About ${appName}`,
+    services: 'Services',
     hide: (appName: string) => `Hide ${appName}`,
     hideOthers: 'Hide Others',
     showAll: 'Show All',
     quit: (appName: string) => `Quit ${appName}`,
+    file: 'File',
+    newCv: 'New CV',
+    addSample: 'Add Sample CV',
+    importCv: 'Import…',
+    exportJson: 'Export JSON…',
+    exportPdf: 'Export to PDF…',
     edit: 'Edit',
     undo: 'Undo',
     redo: 'Redo',
@@ -20,10 +27,13 @@ export const en = {
     copy: 'Copy',
     paste: 'Paste',
     selectAll: 'Select All',
+    view: 'View',
+    toggleFullScreen: 'Toggle Full Screen',
     window: 'Window',
     minimize: 'Minimize',
     zoom: 'Zoom',
     closeWindow: 'Close Window',
+    bringAllToFront: 'Bring All to Front',
     // W innych językach dwujęzyczne („Sprache / Language”), żeby dało się wrócić po wybraniu języka,
     // którego się nie czyta; po angielsku samo „Language”.
     language: 'Language',
@@ -32,7 +42,14 @@ export const en = {
     appearance: 'Appearance',
     lightAppearance: 'Light',
     darkAppearance: 'Dark',
-    systemAppearance: 'System'
+    systemAppearance: 'System',
+    // Menu Pomoc (role help). Pozycja „supportApp” to Sponsor link – tylko poza Mac App Store.
+    help: 'Help',
+    helpPage: (appName: string) => `${appName} Help`,
+    privacyPolicy: 'Privacy Policy',
+    reportIssue: 'Report a Problem…',
+    supportApp: (appName: string) => `Support ${appName}…`,
+    checkForUpdates: 'Check for Updates…'
   },
   // Tytuły i filtry systemowych okien plików (przyciski w nich są w języku systemu).
   dialogs: {
@@ -42,10 +59,20 @@ export const en = {
     imagesFilter: 'Images',
     exportCv: 'Export CV to File',
     importCv: 'Import CV from File',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    // Natywne pytanie przy zamykaniu okna lub aplikacji, gdy edytor CV nie zdołał zapisać zmian.
+    unsavedChanges: {
+      message: 'Your changes to the CV weren’t saved.',
+      closeDetail: 'If you close the window now, your latest changes will be lost.',
+      quitDetail: (appName: string) =>
+        `If you quit ${appName} now, your latest changes will be lost.`,
+      closeAnyway: 'Close Anyway',
+      quitAnyway: 'Quit Anyway',
+      backToEditor: 'Back to Editor'
+    }
   },
   common: {
-    back: (appName: string) => `← ${appName}`,
+    back: '← CV library',
     save: 'Save',
     cancel: 'Cancel',
     delete: 'Delete',
@@ -90,6 +117,11 @@ export const en = {
     confirmDelete: (name: string) => `Delete “${name}”? This can’t be undone.`,
     confirmDeleteDamaged: (fileName: string) => `Delete the damaged file “${fileName}”? This can’t be undone.`,
     damaged: 'Damaged file – it can’t be opened',
+    // Plik CV zapisany w nowszej wersji aplikacji: poprawny, ale ta wersja go nie zna.
+    newerVersion: (appName: string) => `Needs a newer version of ${appName}`,
+    confirmDeleteNewer: (fileName: string, appName: string) =>
+      `Delete the file “${fileName}”? It is a CV from a newer version of ${appName} and will be lost. This can’t be undone.`,
+    loading: 'Loading…',
     imported: (name: string) => `Imported “${name}”.`,
     savedFile: (fileName: string) => `Saved file: ${fileName}`,
     // Dlaczego importowany plik został odrzucony – pokazywane po „Couldn’t import the CV.”.
@@ -144,8 +176,22 @@ export const en = {
     openPdf: 'Open',
     showInFolder: 'Show in Finder',
     exportFailed: 'Couldn’t save the PDF. Try again.',
+    exportCutOff: 'Some content doesn’t fit on a page and will be cut off. Export anyway?',
+    exportCutOffHint: 'The fragments that are too long are highlighted in the preview.',
+    exportAnyway: 'Export anyway',
+    preparingPdf: 'Preparing the PDF…',
+    exportTimedOut: 'Preparing the PDF took too long and was stopped. Try again.',
+    dismissNotice: 'Dismiss message',
+    saveFailed: 'Couldn’t save changes. Your latest edits are only in this window for now.',
+    retrySave: 'Try again',
+    leaveUnsaved: 'Your changes weren’t saved. Leave anyway?',
+    leaveAnyway: 'Leave anyway',
+    stayInEditor: 'Stay in the editor',
+    renameCv: (name: string) => `Rename CV: ${name}`,
+    removed: 'Removed.',
+    undoRemoval: 'Undo',
     remove: 'Remove',
-    appearance: 'Appearance',
+    cvDesign: 'CV design',
     accentColor: 'Accent color',
     font: 'Font',
     // CV language (zob. GLOSSARY.md): język stałego tekstu na dokumencie, np. „present”.
@@ -176,7 +222,7 @@ export const en = {
     location: 'City',
     from: 'From',
     to: 'To',
-    present: 'present',
+    currentlyWorkHere: 'I currently work here',
     bullets: 'Bullet points',
     bullet: (number: number) => `Bullet ${number}`,
     removeBullet: (number: number) => `Remove bullet ${number}`,
@@ -192,6 +238,7 @@ export const en = {
     institutionPlaceholder: 'e.g. University of Economics',
     startOptional: 'From (optional)',
     graduation: 'Graduation date',
+    endBeforeStart: 'The end date is earlier than the start date.',
     listItem: (number: number) => `Item ${number}`,
     removeListItem: (number: number) => `Remove item ${number}`,
     addListItem: 'Add item',
@@ -204,7 +251,13 @@ export const en = {
       position: (name: string) => `position “${name}”`,
       education: (name: string) => `entry “${name}”`,
       bullet: (number: number) => `bullet ${number}`,
-      listItem: (number: number) => `item ${number}`
+      listItem: (number: number) => `item ${number}`,
+      // Ogłoszenia przeciągania dla czytnika ekranu (dnd-kit); `item` to nazwa z `section`, `position` itd.
+      pickedUp: (item: string) => `Picked up ${item}.`,
+      movedOver: (item: string, position: number, total: number) => `Moving ${item}: position ${position} of ${total}.`,
+      dropped: (item: string, position: number, total: number) => `Dropped ${item} at position ${position} of ${total}.`,
+      cancelled: (item: string) => `Put ${item} back in its place.`,
+      instructions: 'To pick up an item, press Space or Enter. Use the arrow keys to move it, Space or Enter to drop it, and Escape to cancel.'
     },
     consent: {
       title: 'Consent clause',
@@ -233,7 +286,7 @@ export const en = {
         undecodable: 'Couldn’t load the photo – the file is damaged, unavailable or in an unsupported format.'
       },
       crop: 'Crop photo',
-      cropHint: 'Drag the photo to set the frame.',
+      cropHint: 'Drag the photo or use the arrow keys to set the frame.',
       cropPreview: 'Frame preview',
       zoom: 'Zoom',
       apply: 'Apply'
@@ -250,7 +303,7 @@ export const en = {
   },
   // Sponsor bar i okno „Więcej” (zob. GLOSSARY.md). Podziękowanie, nie płatność: niczego nie odblokowuje.
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName: string) => `Support ${appName}`,
     message: (appName: string) => `${appName} is free. If it helped you, you can thank the author with a coffee.`,
     link: 'Buy me a coffee',
     more: 'More',
@@ -262,6 +315,37 @@ export const en = {
       'This is a thank-you only. It unlocks nothing: the app works exactly the same either way.'
     ],
     close: 'Close'
+  },
+  // Update notice i dialogi „Check for Updates…” – tylko w `.dmg` (ADR-0006). Aplikacja tylko informuje o nowej
+  // wersji; pobranie i podmiana aplikacji należą do użytkownika.
+  updates: {
+    noticeLabel: 'New version',
+    available: (appName: string, version: string) => `A new version of ${appName} is available: ${version}.`,
+    availableDetail: (current: string) => `You have version ${current}. Download the new version and replace the app in your Applications folder.`,
+    download: 'Download',
+    dismiss: 'Close',
+    later: 'Later',
+    upToDate: (appName: string, version: string) => `You have the latest version of ${appName} (${version}).`,
+    failed: 'Couldn’t check for updates.',
+    failedDetail: 'Check your internet connection or see the latest version on the releases page.',
+    openReleases: 'Open Releases Page',
+    ok: 'OK'
+  },
+  // Obsługa awarii: ekran błędu renderowania i natywne okna procesu głównego. Nie obiecują, że zachowana jest
+  // każda zmiana (autozapis ma opóźnienie), tylko że zapisane CV są bezpieczne.
+  crash: {
+    title: 'Something went wrong',
+    message: 'Your CVs are safe – changes are saved automatically. Reload the app to continue.',
+    reload: 'Reload',
+    repeated: {
+      message: (appName: string) => `The ${appName} window stopped working several times in a row.`,
+      detail: 'Your saved CVs are safe. You can reload the window or quit the app.'
+    },
+    unexpected: {
+      title: 'An unexpected error occurred',
+      message: (appName: string) =>
+        `${appName} ran into a problem. Your saved CVs are safe. If something doesn’t work as expected, quit the app and open it again.`
+    }
   },
   // Treść domyślna: powstaje w języku interfejsu z chwili utworzenia, potem jest zwykłą treścią CV (zob. GLOSSARY.md).
   defaultContent: {

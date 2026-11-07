@@ -4,10 +4,17 @@ export const id: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `Tentang ${appName}`,
+    services: 'Layanan',
     hide: (appName) => `Sembunyikan ${appName}`,
     hideOthers: 'Sembunyikan Lainnya',
     showAll: 'Tampilkan Semua',
     quit: (appName) => `Keluar dari ${appName}`,
+    file: 'Arsip',
+    newCv: 'CV Baru',
+    addSample: 'Tambah Contoh CV',
+    importCv: 'Impor…',
+    exportJson: 'Ekspor JSON…',
+    exportPdf: 'Ekspor ke PDF…',
     edit: 'Edit',
     undo: 'Urungkan',
     redo: 'Ulangi',
@@ -15,16 +22,25 @@ export const id: Dictionary = {
     copy: 'Salin',
     paste: 'Tempel',
     selectAll: 'Pilih Semua',
+    view: 'Tampilan',
+    toggleFullScreen: 'Nyalakan/Matikan Layar Penuh',
     window: 'Jendela',
     minimize: 'Minimalkan',
     zoom: 'Zoom',
     closeWindow: 'Tutup Jendela',
+    bringAllToFront: 'Bawa Semua ke Depan',
     language: 'Bahasa / Language',
     systemLanguage: 'Sistem',
     appearance: 'Tampilan',
     lightAppearance: 'Terang',
     darkAppearance: 'Gelap',
-    systemAppearance: 'Sistem'
+    systemAppearance: 'Sistem',
+    help: 'Bantuan',
+    helpPage: (appName) => `Bantuan ${appName}`,
+    privacyPolicy: 'Kebijakan Privasi',
+    reportIssue: 'Laporkan Masalah…',
+    supportApp: (appName) => `Dukung ${appName}…`,
+    checkForUpdates: 'Periksa Pembaruan…'
   },
   dialogs: {
     exportPdf: 'Ekspor ke PDF',
@@ -33,10 +49,19 @@ export const id: Dictionary = {
     imagesFilter: 'Gambar',
     exportCv: 'Ekspor CV ke File',
     importCv: 'Impor CV dari File',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Perubahan pada CV Anda belum disimpan.',
+      closeDetail: 'Jika Anda menutup jendela sekarang, perubahan terakhir Anda akan hilang.',
+      quitDetail: (appName) =>
+        `Jika Anda keluar dari ${appName} sekarang, perubahan terakhir Anda akan hilang.`,
+      closeAnyway: 'Tetap Tutup',
+      quitAnyway: 'Tetap Keluar',
+      backToEditor: 'Kembali ke Editor'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← Pustaka CV',
     save: 'Simpan',
     cancel: 'Batal',
     delete: 'Hapus',
@@ -75,6 +100,10 @@ export const id: Dictionary = {
     confirmDelete: (name) => `Hapus “${name}”? Tindakan ini tidak dapat diurungkan.`,
     confirmDeleteDamaged: (fileName) => `Hapus file rusak “${fileName}”? Tindakan ini tidak dapat diurungkan.`,
     damaged: 'File rusak – tidak dapat dibuka',
+    newerVersion: (appName) => `Memerlukan versi ${appName} yang lebih baru`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Hapus file “${fileName}”? Ini CV dari versi ${appName} yang lebih baru dan akan hilang. Tindakan ini tidak dapat diurungkan.`,
+    loading: 'Memuat…',
     imported: (name) => `“${name}” berhasil diimpor.`,
     savedFile: (fileName) => `File disimpan: ${fileName}`,
     importErrors: {
@@ -128,8 +157,22 @@ export const id: Dictionary = {
     openPdf: 'Buka',
     showInFolder: 'Tampilkan di Finder',
     exportFailed: 'Tidak dapat menyimpan PDF. Coba lagi.',
+    exportCutOff: 'Sebagian konten tidak muat di satu halaman dan akan terpotong. Tetap ekspor?',
+    exportCutOffHint: 'Bagian yang terlalu panjang ditandai di pratinjau.',
+    exportAnyway: 'Tetap ekspor',
+    preparingPdf: 'Menyiapkan PDF…',
+    exportTimedOut: 'Persiapan PDF terlalu lama dan dihentikan. Coba lagi.',
+    dismissNotice: 'Tutup pesan',
+    saveFailed: 'Tidak dapat menyimpan perubahan. Untuk saat ini, perubahan terakhir Anda hanya ada di jendela ini.',
+    retrySave: 'Coba lagi',
+    leaveUnsaved: 'Perubahan Anda belum disimpan. Tetap keluar?',
+    leaveAnyway: 'Tetap keluar',
+    stayInEditor: 'Tetap di editor',
+    renameCv: (name) => `Ganti nama CV: ${name}`,
+    removed: 'Dihapus.',
+    undoRemoval: 'Urungkan',
     remove: 'Hapus',
-    appearance: 'Tampilan',
+    cvDesign: 'Desain CV',
     accentColor: 'Warna aksen',
     font: 'Font',
     cvLanguage: 'Bahasa CV',
@@ -158,7 +201,7 @@ export const id: Dictionary = {
     location: 'Kota',
     from: 'Dari',
     to: 'Sampai',
-    present: 'sekarang',
+    currentlyWorkHere: 'Saya masih bekerja di sini',
     bullets: 'Poin',
     bullet: (number) => `Poin ${number}`,
     removeBullet: (number) => `Hapus poin ${number}`,
@@ -174,6 +217,7 @@ export const id: Dictionary = {
     institutionPlaceholder: 'mis. Universitas Ekonomi',
     startOptional: 'Dari (opsional)',
     graduation: 'Tanggal lulus',
+    endBeforeStart: 'Tanggal selesai lebih awal dari tanggal mulai.',
     listItem: (number) => `Item ${number}`,
     removeListItem: (number) => `Hapus item ${number}`,
     addListItem: 'Tambah item',
@@ -185,7 +229,12 @@ export const id: Dictionary = {
       position: (name) => `posisi “${name}”`,
       education: (name) => `entri “${name}”`,
       bullet: (number) => `poin ${number}`,
-      listItem: (number) => `item ${number}`
+      listItem: (number) => `item ${number}`,
+      pickedUp: (item) => `Mengambil ${item}.`,
+      movedOver: (item, position, total) => `Memindahkan ${item}: posisi ${position} dari ${total}.`,
+      dropped: (item, position, total) => `Meletakkan ${item} di posisi ${position} dari ${total}.`,
+      cancelled: (item) => `Mengembalikan ${item} ke tempat semula.`,
+      instructions: 'Untuk mengambil item, tekan Spasi atau Enter. Gunakan tombol panah untuk memindahkannya, Spasi atau Enter untuk meletakkannya, dan Escape untuk membatalkan.'
     },
     consent: {
       title: 'Klausul persetujuan',
@@ -214,7 +263,7 @@ export const id: Dictionary = {
         undecodable: 'Tidak dapat memuat foto – file rusak, tidak tersedia, atau formatnya tidak didukung.'
       },
       crop: 'Pangkas foto',
-      cropHint: 'Seret foto untuk mengatur bingkai.',
+      cropHint: 'Seret foto atau gunakan tombol panah untuk mengatur bingkai.',
       cropPreview: 'Pratinjau bingkai',
       zoom: 'Zoom',
       apply: 'Terapkan'
@@ -231,7 +280,7 @@ export const id: Dictionary = {
     fit: 'Sesuaikan'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Dukung ${appName}`,
     message: (appName) => `${appName} gratis. Jika aplikasi ini membantu, Anda bisa berterima kasih kepada pembuatnya dengan secangkir kopi.`,
     link: 'Traktir saya kopi',
     more: 'Selengkapnya',
@@ -243,6 +292,33 @@ export const id: Dictionary = {
       'Ini hanya ucapan terima kasih. Tidak ada yang terbuka karenanya: aplikasi bekerja sama persis apa pun pilihan Anda.'
     ],
     close: 'Tutup'
+  },
+  updates: {
+    noticeLabel: 'Versi baru',
+    available: (appName, version) => `Versi baru ${appName} tersedia: ${version}.`,
+    availableDetail: (current) => `Anda memiliki versi ${current}. Unduh versi baru dan ganti aplikasi di folder Aplikasi.`,
+    download: 'Unduh',
+    dismiss: 'Tutup',
+    later: 'Nanti',
+    upToDate: (appName, version) => `Anda memiliki versi terbaru ${appName} (${version}).`,
+    failed: 'Tidak dapat memeriksa pembaruan.',
+    failedDetail: 'Periksa koneksi internet Anda atau lihat versi terbaru di halaman rilis.',
+    openReleases: 'Buka Halaman Rilis',
+    ok: 'OK'
+  },
+  crash: {
+    title: 'Terjadi kesalahan',
+    message: 'CV Anda aman – perubahan disimpan secara otomatis. Muat ulang aplikasi untuk melanjutkan.',
+    reload: 'Muat ulang',
+    repeated: {
+      message: (appName) => `Jendela ${appName} beberapa kali berturut-turut berhenti berfungsi.`,
+      detail: 'CV yang tersimpan aman. Anda bisa memuat ulang jendela atau keluar dari aplikasi.'
+    },
+    unexpected: {
+      title: 'Terjadi kesalahan tak terduga',
+      message: (appName) =>
+        `${appName} mengalami masalah. CV yang tersimpan aman. Jika ada yang tidak berfungsi sebagaimana mestinya, keluar dari aplikasi lalu buka kembali.`
+    }
   },
   defaultContent: {
     cvName: 'CV baru',

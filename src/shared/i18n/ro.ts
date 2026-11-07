@@ -4,10 +4,17 @@ export const ro: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `Despre ${appName}`,
+    services: 'Servicii',
     hide: (appName) => `Ascunde ${appName}`,
     hideOthers: 'Ascunde altele',
     showAll: 'Afișează tot',
     quit: (appName) => `Ieși din ${appName}`,
+    file: 'Fișier',
+    newCv: 'CV nou',
+    addSample: 'Adaugă un CV exemplu',
+    importCv: 'Importă…',
+    exportJson: 'Exportă JSON…',
+    exportPdf: 'Exportă în PDF…',
     edit: 'Editare',
     undo: 'Anulează',
     redo: 'Refă',
@@ -15,16 +22,25 @@ export const ro: Dictionary = {
     copy: 'Copiază',
     paste: 'Lipește',
     selectAll: 'Selectează tot',
+    view: 'Afișare',
+    toggleFullScreen: 'Comută ecranul complet',
     window: 'Fereastră',
     minimize: 'Minimizează',
     zoom: 'Zoom',
     closeWindow: 'Închide fereastra',
+    bringAllToFront: 'Adu totul în față',
     language: 'Limbă / Language',
     systemLanguage: 'Sistem',
     appearance: 'Aspect',
     lightAppearance: 'Luminos',
     darkAppearance: 'Întunecat',
-    systemAppearance: 'Sistem'
+    systemAppearance: 'Sistem',
+    help: 'Ajutor',
+    helpPage: (appName) => `Ajutor ${appName}`,
+    privacyPolicy: 'Politica de confidențialitate',
+    reportIssue: 'Raportează o problemă…',
+    supportApp: (appName) => `Susține ${appName}…`,
+    checkForUpdates: 'Caută actualizări…'
   },
   dialogs: {
     exportPdf: 'Exportă în PDF',
@@ -33,10 +49,19 @@ export const ro: Dictionary = {
     imagesFilter: 'Imagini',
     exportCv: 'Exportă CV-ul în fișier',
     importCv: 'Importă CV din fișier',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Modificările din CV nu au fost salvate.',
+      closeDetail: 'Dacă închizi fereastra acum, ultimele modificări se vor pierde.',
+      quitDetail: (appName) =>
+        `Dacă închizi ${appName} acum, ultimele modificări se vor pierde.`,
+      closeAnyway: 'Închide oricum',
+      quitAnyway: 'Ieși oricum',
+      backToEditor: 'Înapoi la editor'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← Biblioteca de CV-uri',
     save: 'Salvează',
     cancel: 'Anulează',
     delete: 'Șterge',
@@ -75,6 +100,10 @@ export const ro: Dictionary = {
     confirmDelete: (name) => `Ștergi „${name}”? Acțiunea nu poate fi anulată.`,
     confirmDeleteDamaged: (fileName) => `Ștergi fișierul deteriorat „${fileName}”? Acțiunea nu poate fi anulată.`,
     damaged: 'Fișier deteriorat – nu poate fi deschis',
+    newerVersion: (appName) => `Necesită o versiune mai nouă de ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Ștergi fișierul „${fileName}”? Este un CV dintr-o versiune mai nouă de ${appName} și se va pierde. Acțiunea nu poate fi anulată.`,
+    loading: 'Se încarcă…',
     imported: (name) => `„${name}” a fost importat.`,
     savedFile: (fileName) => `Fișier salvat: ${fileName}`,
     importErrors: {
@@ -128,8 +157,22 @@ export const ro: Dictionary = {
     openPdf: 'Deschide',
     showInFolder: 'Afișează în Finder',
     exportFailed: 'PDF-ul nu a putut fi salvat. Încearcă din nou.',
+    exportCutOff: 'O parte din conținut nu încape pe o pagină și va fi tăiată. Exporți totuși?',
+    exportCutOffHint: 'Fragmentele prea lungi sunt evidențiate în previzualizare.',
+    exportAnyway: 'Exportă totuși',
+    preparingPdf: 'Se pregătește PDF-ul…',
+    exportTimedOut: 'Pregătirea PDF-ului a durat prea mult și a fost oprită. Încearcă din nou.',
+    dismissNotice: 'Închide mesajul',
+    saveFailed: 'Modificările nu au putut fi salvate. Deocamdată, ultimele modificări sunt doar în această fereastră.',
+    retrySave: 'Încearcă din nou',
+    leaveUnsaved: 'Modificările nu au fost salvate. Ieși oricum?',
+    leaveAnyway: 'Ieși oricum',
+    stayInEditor: 'Rămâi în editor',
+    renameCv: (name) => `Redenumește CV-ul: ${name}`,
+    removed: 'Eliminat.',
+    undoRemoval: 'Anulează',
     remove: 'Elimină',
-    appearance: 'Aspect',
+    cvDesign: 'Designul CV-ului',
     accentColor: 'Culoare de accent',
     font: 'Font',
     cvLanguage: 'Limba CV-ului',
@@ -158,7 +201,7 @@ export const ro: Dictionary = {
     location: 'Oraș',
     from: 'De la',
     to: 'Până la',
-    present: 'prezent',
+    currentlyWorkHere: 'Lucrez încă aici',
     bullets: 'Puncte',
     bullet: (number) => `Punctul ${number}`,
     removeBullet: (number) => `Elimină punctul ${number}`,
@@ -174,6 +217,7 @@ export const ro: Dictionary = {
     institutionPlaceholder: 'ex. Academia de Studii Economice',
     startOptional: 'De la (opțional)',
     graduation: 'Data absolvirii',
+    endBeforeStart: 'Data de sfârșit este anterioară datei de început.',
     listItem: (number) => `Elementul ${number}`,
     removeListItem: (number) => `Elimină elementul ${number}`,
     addListItem: 'Adaugă element',
@@ -185,7 +229,12 @@ export const ro: Dictionary = {
       position: (name) => `postul „${name}”`,
       education: (name) => `intrarea „${name}”`,
       bullet: (number) => `punctul ${number}`,
-      listItem: (number) => `elementul ${number}`
+      listItem: (number) => `elementul ${number}`,
+      pickedUp: (item) => `Ai ridicat ${item}.`,
+      movedOver: (item, position, total) => `Muți ${item}: poziția ${position} din ${total}.`,
+      dropped: (item, position, total) => `Ai plasat ${item} pe poziția ${position} din ${total}.`,
+      cancelled: (item) => `Ai pus ${item} înapoi la locul său.`,
+      instructions: 'Pentru a ridica un element, apasă Spațiu sau Enter. Mută-l cu tastele săgeți, plasează-l cu Spațiu sau Enter, iar Escape anulează.'
     },
     consent: {
       title: 'Clauză de acord',
@@ -214,7 +263,7 @@ export const ro: Dictionary = {
         undecodable: 'Fotografia nu a putut fi încărcată – fișierul este deteriorat, indisponibil sau într-un format neacceptat.'
       },
       crop: 'Decupează fotografia',
-      cropHint: 'Trage fotografia pentru a stabili cadrul.',
+      cropHint: 'Trage fotografia sau folosește tastele săgeți pentru a stabili cadrul.',
       cropPreview: 'Previzualizarea cadrului',
       zoom: 'Zoom',
       apply: 'Aplică'
@@ -233,7 +282,7 @@ export const ro: Dictionary = {
     fit: 'Potrivește'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Susține ${appName}`,
     message: (appName) => `${appName} este gratuit. Dacă te-a ajutat, poți să-i mulțumești autorului cu o cafea.`,
     link: 'Cumpără-mi o cafea',
     more: 'Mai mult',
@@ -245,6 +294,33 @@ export const ro: Dictionary = {
       'Este doar un mulțumesc. Nu deblochează nimic: aplicația funcționează exact la fel în ambele cazuri.'
     ],
     close: 'Închide'
+  },
+  updates: {
+    noticeLabel: 'Versiune nouă',
+    available: (appName, version) => `Este disponibilă o versiune nouă de ${appName}: ${version}.`,
+    availableDetail: (current) => `Ai versiunea ${current}. Descarcă versiunea nouă și înlocuiește cu ea aplicația din dosarul Aplicații.`,
+    download: 'Descarcă',
+    dismiss: 'Închide',
+    later: 'Mai târziu',
+    upToDate: (appName, version) => `Ai cea mai nouă versiune de ${appName} (${version}).`,
+    failed: 'Nu s-au putut căuta actualizări.',
+    failedDetail: 'Verifică conexiunea la internet sau vezi cea mai nouă versiune pe pagina de versiuni.',
+    openReleases: 'Deschide pagina de versiuni',
+    ok: 'OK'
+  },
+  crash: {
+    title: 'Ceva nu a mers bine',
+    message: 'CV-urile tale sunt în siguranță – modificările se salvează automat. Reîncarcă aplicația ca să continui.',
+    reload: 'Reîncarcă',
+    repeated: {
+      message: (appName) => `Fereastra ${appName} s-a oprit de mai multe ori la rând.`,
+      detail: 'CV-urile salvate sunt în siguranță. Poți reîncărca fereastra sau poți ieși din aplicație.'
+    },
+    unexpected: {
+      title: 'A apărut o eroare neașteptată',
+      message: (appName) =>
+        `${appName} a întâmpinat o problemă. CV-urile salvate sunt în siguranță. Dacă ceva nu funcționează cum trebuie, ieși din aplicație și deschide-o din nou.`
+    }
   },
   defaultContent: {
     cvName: 'CV nou',

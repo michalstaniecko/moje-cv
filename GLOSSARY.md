@@ -28,14 +28,22 @@ _Avoid_: Theme, layout, skin, style (as names for the whole design)
 A short, user-chosen label attached to a CV to organise the CV library (e.g. "frontend", "EN", "Allegro"). Private metadata: never shown on the CV document itself. A tag exists only as long as at least one CV carries it. Independent of the CV language, even when it names a language.
 _Avoid_: Label (as a separate concept), keyword, skill, category
 
+**CV design**:
+The settings for how the document of a single CV looks (accent colour, font, Template), gathered in the CV editor in a section of this name together with the CV language. A property of each CV; changing it never touches the CV's content.
+_Avoid_: Appearance (that is the app's light/dark look), look, style
+
 **Appearance**:
 The light or dark look of the app's own interface (panels, forms, toolbars), chosen app-wide as Light, Dark or System, where System follows the operating system. Concerns only the interface: CV pages, template thumbnails and the exported PDF always keep their own look.
-_Avoid_: Theme, dark mode (as the name of the setting), skin, color scheme (as the name of the setting)
+_Avoid_: Theme, dark mode (as the name of the setting), skin, color scheme (as the name of the setting); for the settings of a single CV's document, say CV design
 
 **Sponsor bar**:
 The single-line strip at the bottom of the app window, shown on every screen, telling the user that the app is free and that they may thank the author. It never covers CV pages or forms, cannot be closed and holds only a short message, the Sponsor link and a "more" button opening a longer explanation.
 _Avoid_: Banner, ad, toast (toasts are the disappearing status messages), donation bar
 
 **Sponsor link**:
-The link in the Sponsor bar that opens the author's GitHub Sponsors page in the system browser. A thank-you, never a payment for a feature: the app works identically whether or not it is used.
+The link that opens the author's GitHub Sponsors page in the system browser: in the Sponsor bar and as "Support CV Press…" in the Help menu (outside the Mac App Store, like the bar). A thank-you, never a payment for a feature: the app works identically whether or not it is used.
 _Avoid_: Donate button, buy-me-a-coffee (as the name of the concept), payment
+
+**Update notice**:
+The dismissible strip in the CV library telling a `.dmg` user that a newer version has been published, with a Download button opening its release page. Informs only: the app never downloads or installs updates itself. Never shown in the Mac App Store build.
+_Avoid_: auto-update, update banner, toast

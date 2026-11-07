@@ -4,10 +4,17 @@ export const vi: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `Giới thiệu về ${appName}`,
+    services: 'Dịch vụ',
     hide: (appName) => `Ẩn ${appName}`,
     hideOthers: 'Ẩn mục khác',
     showAll: 'Hiển thị tất cả',
     quit: (appName) => `Thoát ${appName}`,
+    file: 'Tệp',
+    newCv: 'CV mới',
+    addSample: 'Thêm CV mẫu',
+    importCv: 'Nhập…',
+    exportJson: 'Xuất JSON…',
+    exportPdf: 'Xuất ra PDF…',
     edit: 'Sửa',
     undo: 'Hoàn tác',
     redo: 'Làm lại',
@@ -15,16 +22,25 @@ export const vi: Dictionary = {
     copy: 'Sao chép',
     paste: 'Dán',
     selectAll: 'Chọn tất cả',
+    view: 'Xem',
+    toggleFullScreen: 'Bật/tắt toàn màn hình',
     window: 'Cửa sổ',
     minimize: 'Thu nhỏ',
     zoom: 'Thu/phóng',
     closeWindow: 'Đóng cửa sổ',
+    bringAllToFront: 'Đưa tất cả ra trước',
     language: 'Ngôn ngữ / Language',
     systemLanguage: 'Hệ thống',
     appearance: 'Giao diện',
     lightAppearance: 'Sáng',
     darkAppearance: 'Tối',
-    systemAppearance: 'Hệ thống'
+    systemAppearance: 'Hệ thống',
+    help: 'Trợ giúp',
+    helpPage: (appName) => `Trợ giúp ${appName}`,
+    privacyPolicy: 'Chính sách quyền riêng tư',
+    reportIssue: 'Báo cáo sự cố…',
+    supportApp: (appName) => `Ủng hộ ${appName}…`,
+    checkForUpdates: 'Kiểm tra bản cập nhật…'
   },
   dialogs: {
     exportPdf: 'Xuất ra PDF',
@@ -33,10 +49,19 @@ export const vi: Dictionary = {
     imagesFilter: 'Hình ảnh',
     exportCv: 'Xuất CV ra tệp',
     importCv: 'Nhập CV từ tệp',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Các thay đổi trong CV chưa được lưu.',
+      closeDetail: 'Nếu đóng cửa sổ bây giờ, các thay đổi mới nhất sẽ bị mất.',
+      quitDetail: (appName) =>
+        `Nếu thoát ${appName} bây giờ, các thay đổi mới nhất sẽ bị mất.`,
+      closeAnyway: 'Vẫn đóng',
+      quitAnyway: 'Vẫn thoát',
+      backToEditor: 'Quay lại trình chỉnh sửa'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← Thư viện CV',
     save: 'Lưu',
     cancel: 'Hủy',
     delete: 'Xóa',
@@ -75,6 +100,10 @@ export const vi: Dictionary = {
     confirmDelete: (name) => `Xóa “${name}”? Không thể hoàn tác thao tác này.`,
     confirmDeleteDamaged: (fileName) => `Xóa tệp bị hỏng “${fileName}”? Không thể hoàn tác thao tác này.`,
     damaged: 'Tệp bị hỏng – không thể mở',
+    newerVersion: (appName) => `Cần phiên bản ${appName} mới hơn`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Xóa tệp “${fileName}”? Đây là CV từ phiên bản ${appName} mới hơn và sẽ bị mất. Không thể hoàn tác thao tác này.`,
+    loading: 'Đang tải…',
     imported: (name) => `Đã nhập “${name}”.`,
     savedFile: (fileName) => `Đã lưu tệp: ${fileName}`,
     importErrors: {
@@ -128,8 +157,22 @@ export const vi: Dictionary = {
     openPdf: 'Mở',
     showInFolder: 'Hiển thị trong Finder',
     exportFailed: 'Không thể lưu PDF. Hãy thử lại.',
+    exportCutOff: 'Một phần nội dung không vừa trên một trang và sẽ bị cắt. Vẫn xuất?',
+    exportCutOffHint: 'Các đoạn quá dài được đánh dấu trong bản xem trước.',
+    exportAnyway: 'Vẫn xuất',
+    preparingPdf: 'Đang chuẩn bị PDF…',
+    exportTimedOut: 'Việc chuẩn bị PDF mất quá nhiều thời gian và đã bị dừng. Hãy thử lại.',
+    dismissNotice: 'Đóng thông báo',
+    saveFailed: 'Không thể lưu thay đổi. Hiện các thay đổi mới nhất chỉ có trong cửa sổ này.',
+    retrySave: 'Thử lại',
+    leaveUnsaved: 'Các thay đổi chưa được lưu. Vẫn rời đi?',
+    leaveAnyway: 'Vẫn rời đi',
+    stayInEditor: 'Ở lại trình chỉnh sửa',
+    renameCv: (name) => `Đổi tên CV: ${name}`,
+    removed: 'Đã xóa.',
+    undoRemoval: 'Hoàn tác',
     remove: 'Xóa',
-    appearance: 'Giao diện',
+    cvDesign: 'Thiết kế CV',
     accentColor: 'Màu nhấn',
     font: 'Phông chữ',
     cvLanguage: 'Ngôn ngữ CV',
@@ -158,7 +201,7 @@ export const vi: Dictionary = {
     location: 'Thành phố',
     from: 'Từ',
     to: 'Đến',
-    present: 'hiện tại',
+    currentlyWorkHere: 'Tôi vẫn đang làm việc ở đây',
     bullets: 'Các ý chính',
     bullet: (number) => `Ý ${number}`,
     removeBullet: (number) => `Xóa ý ${number}`,
@@ -174,6 +217,7 @@ export const vi: Dictionary = {
     institutionPlaceholder: 'vd. Trường Đại học Kinh tế',
     startOptional: 'Từ (không bắt buộc)',
     graduation: 'Ngày tốt nghiệp',
+    endBeforeStart: 'Ngày kết thúc sớm hơn ngày bắt đầu.',
     listItem: (number) => `Mục ${number}`,
     removeListItem: (number) => `Xóa mục ${number}`,
     addListItem: 'Thêm mục',
@@ -185,7 +229,12 @@ export const vi: Dictionary = {
       position: (name) => `vị trí “${name}”`,
       education: (name) => `mục nhập “${name}”`,
       bullet: (number) => `ý ${number}`,
-      listItem: (number) => `mục ${number}`
+      listItem: (number) => `mục ${number}`,
+      pickedUp: (item) => `Đã nhấc ${item}.`,
+      movedOver: (item, position, total) => `Đang di chuyển ${item}: vị trí ${position} trên ${total}.`,
+      dropped: (item, position, total) => `Đã thả ${item} tại vị trí ${position} trên ${total}.`,
+      cancelled: (item) => `Đã đặt ${item} về chỗ cũ.`,
+      instructions: 'Để nhấc một mục, nhấn Phím cách hoặc Enter. Dùng các phím mũi tên để di chuyển, Phím cách hoặc Enter để thả và Escape để hủy.'
     },
     consent: {
       title: 'Điều khoản đồng ý',
@@ -214,7 +263,7 @@ export const vi: Dictionary = {
         undecodable: 'Không thể tải ảnh – tệp bị hỏng, không truy cập được hoặc có định dạng không được hỗ trợ.'
       },
       crop: 'Cắt ảnh',
-      cropHint: 'Kéo ảnh để chỉnh khung.',
+      cropHint: 'Kéo ảnh hoặc dùng các phím mũi tên để chỉnh khung.',
       cropPreview: 'Xem trước khung',
       zoom: 'Thu phóng',
       apply: 'Áp dụng'
@@ -231,7 +280,7 @@ export const vi: Dictionary = {
     fit: 'Vừa khít'
   },
   sponsor: {
-    bar: 'Tài trợ',
+    bar: (appName) => `Ủng hộ ${appName}`,
     message: (appName) => `${appName} miễn phí. Nếu ứng dụng giúp ích cho bạn, bạn có thể cảm ơn tác giả bằng một ly cà phê.`,
     link: 'Mời tôi cà phê',
     more: 'Thêm',
@@ -243,6 +292,33 @@ export const vi: Dictionary = {
       'Đây chỉ là lời cảm ơn. Nó không mở khóa gì cả: ứng dụng hoạt động hoàn toàn như nhau trong cả hai trường hợp.'
     ],
     close: 'Đóng'
+  },
+  updates: {
+    noticeLabel: 'Phiên bản mới',
+    available: (appName, version) => `Đã có phiên bản mới của ${appName}: ${version}.`,
+    availableDetail: (current) => `Bạn đang dùng phiên bản ${current}. Hãy tải phiên bản mới và thay thế ứng dụng trong thư mục Ứng dụng.`,
+    download: 'Tải về',
+    dismiss: 'Đóng',
+    later: 'Để sau',
+    upToDate: (appName, version) => `Bạn đang dùng phiên bản mới nhất của ${appName} (${version}).`,
+    failed: 'Không thể kiểm tra bản cập nhật.',
+    failedDetail: 'Hãy kiểm tra kết nối internet hoặc xem phiên bản mới nhất trên trang phát hành.',
+    openReleases: 'Mở trang phát hành',
+    ok: 'OK'
+  },
+  crash: {
+    title: 'Đã xảy ra sự cố',
+    message: 'CV của bạn vẫn an toàn – các thay đổi được lưu tự động. Hãy tải lại ứng dụng để tiếp tục.',
+    reload: 'Tải lại',
+    repeated: {
+      message: (appName) => `Cửa sổ ${appName} đã ngừng hoạt động nhiều lần liên tiếp.`,
+      detail: 'Các CV đã lưu vẫn an toàn. Bạn có thể tải lại cửa sổ hoặc thoát ứng dụng.'
+    },
+    unexpected: {
+      title: 'Đã xảy ra lỗi không mong muốn',
+      message: (appName) =>
+        `${appName} gặp sự cố. Các CV đã lưu vẫn an toàn. Nếu có gì không hoạt động như mong đợi, hãy thoát ứng dụng rồi mở lại.`
+    }
   },
   defaultContent: {
     cvName: 'CV mới',

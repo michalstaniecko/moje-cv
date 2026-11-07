@@ -3,18 +3,34 @@ import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import { useDictionary, useInterfaceLanguage } from '../i18n'
 import { CvPages } from '../template/CvPages'
+import { afterNextPaint, markPreviewPainted } from './keystrokeTiming'
 import { pageCountLabel, RECOMMENDED_MAX_PAGES } from './pageCount'
 import { fitScale, PREVIEW_MARGIN_PX, zoomIn, zoomOut } from './zoom'
 
-// Podgląd stron CV z licznikiem stron i powiększeniem. Domyślnie strony dopasowane są do szerokości panelu;
-// po użyciu +, − lub 100% obowiązuje wybrana skala, a „Dopasuj” wraca do dopasowania.
-export function PreviewPane({ document }: { document: CvDocument }) {
+// Podgląd stron CV z licznikiem stron i powiększeniem; same strony są ukryte przed czytnikiem ekranu.
+// Domyślnie strony dopasowane są do szerokości panelu; po użyciu +, − lub 100% obowiązuje wybrana skala,
+// a „Dopasuj” wraca do dopasowania.
+// `onLayout` dostaje każdy nowy podział stron (np. edytor sprawdza przed eksportem, czy są za długie bloki).
+export function PreviewPane({
+  document,
+  onLayout: onLayoutChange
+}: {
+  document: CvDocument
+  onLayout?: (layout: PaginateResult) => void
+}) {
   const panel = useRef<HTMLElement>(null)
   const panelWidth = usePanelWidth(panel)
   const [chosenScale, setChosenScale] = useState<number | null>(null)
   const scale = chosenScale ?? fitScale(panelWidth)
   const [pageCount, setPageCount] = useState<number | null>(null)
-  const onLayout = useCallback((layout: PaginateResult) => setPageCount(layout.pages.length), [])
+  const onLayout = useCallback(
+    (layout: PaginateResult) => {
+      setPageCount(layout.pages.length)
+      onLayoutChange?.(layout)
+      afterNextPaint(markPreviewPainted)
+    },
+    [onLayoutChange]
+  )
   const t = useDictionary().preview
   const language = useInterfaceLanguage()
 
@@ -27,7 +43,9 @@ export function PreviewPane({ document }: { document: CvDocument }) {
           </span>
         )}
         {pageCount !== null && pageCount > RECOMMENDED_MAX_PAGES && (
-          <span className="preview-length-notice">{t.lengthNotice(pageCountLabel(RECOMMENDED_MAX_PAGES, language))}</span>
+          <span className="preview-length-notice">
+            <span aria-hidden="true">⚠</span> {t.lengthNotice(pageCountLabel(RECOMMENDED_MAX_PAGES, language))}
+          </span>
         )}
         <div className="preview-zoom">
           <button type="button" aria-label={t.zoomOut} onClick={() => setChosenScale(zoomOut(scale))}>
@@ -45,7 +63,11 @@ export function PreviewPane({ document }: { document: CvDocument }) {
           </button>
         </div>
       </div>
-      <CvPages document={document} onLayout={onLayout} oversizedMessage={t.oversized} />
+      {/* Strony są dla czytnika ekranu ukryte: to druga kopia CV, którego źródłem i miejscem edycji jest formularz.
+          Pasek podglądu (licznik stron, ostrzeżenie o długości, powiększenie) zostaje dostępny. */}
+      <div className="preview-pages" aria-hidden>
+        <CvPages document={document} onLayout={onLayout} oversizedMessage={t.oversized} />
+      </div>
     </main>
   )
 }

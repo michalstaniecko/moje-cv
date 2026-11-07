@@ -2,7 +2,12 @@ import type { AppSettings, Clause, ClauseContent, CvDocument } from '../renderer
 import type { InterfaceLanguage } from './i18n/languages'
 
 // Kontrakt API wystawianego przez preload (window.api) – wspólny dla procesu głównego i renderera.
-export type ExportPdfResult = { status: 'saved'; filePath: string } | { status: 'canceled' }
+
+// `timed-out` – strona wydruku nie zgłosiła gotowości w czasie (osobny komunikat); inne błędy odrzucają obietnicę.
+export type ExportPdfResult =
+  | { status: 'saved'; filePath: string }
+  | { status: 'canceled' }
+  | { status: 'timed-out' }
 
 // Wynik wyboru zdjęcia z dysku: oryginał pliku jako data URL (przed kadrowaniem).
 export type PickPhotoResult =
@@ -32,12 +37,31 @@ export type SetCvTagsResult = { status: 'saved'; document: CvDocument } | { stat
 // Polecenie historii CV wysyłane z menu Edycja do otwartego edytora.
 export type HistoryCommand = 'undo' | 'redo'
 
-// Pozycja na liście CV. Uszkodzony plik (niepoprawny JSON lub niezgodny ze schematem) jest widoczny, ale nie da się go otworzyć.
+// Polecenie z menu Plik wysyłane do okna; wykonuje je zamontowany ekran (biblioteka CV albo edytor).
+export type MenuCommand = 'new-cv' | 'add-sample' | 'import' | 'export-json' | 'export-pdf'
+
+// Bieżący ekran okna zgłaszany procesowi głównemu: od niego zależy aktywność pozycji menu Plik i Cofnij / Ponów.
+// Jedna lista: z niej typ i weryfikacja argumentu IPC (`requireAppScreen`).
+export const appScreens = ['library', 'clauses', 'editor'] as const
+
+export type AppScreen = (typeof appScreens)[number]
+
+// Dlaczego pliku CV nie da się otworzyć: uszkodzony (niepoprawny JSON, niezgodność ze schematem) albo zapisany
+// w nowszej wersji aplikacji (poprawny, ale ta wersja go nie zna). Renderer pokazuje kod w języku interfejsu.
+export type UnreadableCvReason = 'damaged' | 'newer-version'
+
+// Pozycja na liście CV. Plik, którego nie da się odczytać, jest widoczny (z powodem), ale nie da się go otworzyć.
 export type CvListEntry =
   | { status: 'ok'; id: string; name: string; updatedAt: string; tags: string[] }
-  | { status: 'damaged'; id: string }
+  | { status: 'unreadable'; id: string; reason: UnreadableCvReason }
 
 export type Api = {
+  // Informacje o aplikacji z procesu głównego – jedyne źródło numeru wersji (`app.getVersion()`) – i przeładowanie
+  // bieżącego okna (ekran błędu; treść sama nie może nawigować).
+  app: {
+    version: () => Promise<string>
+    reload: () => Promise<void>
+  }
   cv: {
     list: () => Promise<CvListEntry[]>
     get: (id: string) => Promise<CvDocument>
@@ -75,17 +99,35 @@ export type Api = {
     // Zwraca funkcję wypisania.
     onChange: (listener: (language: InterfaceLanguage) => void) => () => void
   }
-  // Edytor CV zgłasza, że jest otwarty, i dostaje Cofnij / Ponów kliknięte w menu Edycja.
+  // Otwarty edytor CV dostaje Cofnij / Ponów kliknięte w menu Edycja (gdy okno zgłosiło ekran `editor`).
   editor: {
-    setActive: (active: boolean) => void
     // Zwraca funkcję wypisania.
     onHistoryCommand: (listener: (command: HistoryCommand) => void) => () => void
+    // Prośba procesu głównego o zapis przed zamknięciem okna lub zakończeniem aplikacji. Listener zapisuje oczekujące
+    // zmiany i zwraca, czy się zapisały (odrzucona obietnica to nieudany zapis). Zwraca funkcję wypisania.
+    onFlushRequest: (listener: () => Promise<boolean>) => () => void
+  }
+  // Renderer zgłasza bieżący ekran okna (od niego zależy aktywność menu Plik i Cofnij / Ponów) i dostaje
+  // komendy menu Plik. Poza zgłoszeniem ekranu nic nie wraca do procesu głównego.
+  menu: {
+    setScreen: (screen: AppScreen) => void
+    // Zwraca funkcję wypisania.
+    onCommand: (listener: (command: MenuCommand) => void) => () => void
   }
   // Sponsor bar: proces główny mówi, czy belkę pokazać (nie w Mac App Store), i sam otwiera jedyny znany adres
   // Sponsor linku w systemowej przeglądarce – renderer nie przekazuje żadnego URL-a.
   sponsor: {
     isAvailable: () => Promise<boolean>
     open: () => Promise<void>
+  }
+  // Update notice (ADR-0006): wersję do pokazania zna proces główny (w Mac App Store zawsze `null`); on też buduje
+  // adres strony wydania i zapamiętuje zamknięcie. Renderer nie przekazuje ani URL-a, ani numeru wersji.
+  updates: {
+    notice: () => Promise<string | null>
+    // Zwraca funkcję wypisania.
+    onNotice: (listener: (version: string) => void) => () => void
+    download: () => Promise<void>
+    dismiss: () => Promise<void>
   }
   // Używane wyłącznie przez ukryte okno wydruku.
   print: {

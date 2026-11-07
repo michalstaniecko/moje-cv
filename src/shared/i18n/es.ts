@@ -4,10 +4,17 @@ export const es: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `Acerca de ${appName}`,
+    services: 'Servicios',
     hide: (appName) => `Ocultar ${appName}`,
     hideOthers: 'Ocultar otros',
     showAll: 'Mostrar todo',
     quit: (appName) => `Salir de ${appName}`,
+    file: 'Archivo',
+    newCv: 'Nuevo CV',
+    addSample: 'Añadir CV de ejemplo',
+    importCv: 'Importar…',
+    exportJson: 'Exportar JSON…',
+    exportPdf: 'Exportar a PDF…',
     edit: 'Edición',
     undo: 'Deshacer',
     redo: 'Rehacer',
@@ -15,16 +22,25 @@ export const es: Dictionary = {
     copy: 'Copiar',
     paste: 'Pegar',
     selectAll: 'Seleccionar todo',
+    view: 'Visualización',
+    toggleFullScreen: 'Activar/desactivar pantalla completa',
     window: 'Ventana',
     minimize: 'Minimizar',
     zoom: 'Zoom',
     closeWindow: 'Cerrar ventana',
+    bringAllToFront: 'Traer todo al frente',
     language: 'Idioma / Language',
     systemLanguage: 'Sistema',
     appearance: 'Apariencia',
     lightAppearance: 'Claro',
     darkAppearance: 'Oscuro',
-    systemAppearance: 'Sistema'
+    systemAppearance: 'Sistema',
+    help: 'Ayuda',
+    helpPage: (appName) => `Ayuda de ${appName}`,
+    privacyPolicy: 'Política de privacidad',
+    reportIssue: 'Informar de un problema…',
+    supportApp: (appName) => `Apoyar ${appName}…`,
+    checkForUpdates: 'Buscar actualizaciones…'
   },
   dialogs: {
     exportPdf: 'Exportar a PDF',
@@ -33,10 +49,19 @@ export const es: Dictionary = {
     imagesFilter: 'Imágenes',
     exportCv: 'Exportar CV a archivo',
     importCv: 'Importar CV desde archivo',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Los cambios en el CV no se han guardado.',
+      closeDetail: 'Si cierras la ventana ahora, se perderán tus últimos cambios.',
+      quitDetail: (appName) =>
+        `Si sales de ${appName} ahora, se perderán tus últimos cambios.`,
+      closeAnyway: 'Cerrar de todos modos',
+      quitAnyway: 'Salir de todos modos',
+      backToEditor: 'Volver al editor'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← Biblioteca de CV',
     save: 'Guardar',
     cancel: 'Cancelar',
     delete: 'Eliminar',
@@ -75,6 +100,10 @@ export const es: Dictionary = {
     confirmDelete: (name) => `¿Eliminar «${name}»? Esta acción no se puede deshacer.`,
     confirmDeleteDamaged: (fileName) => `¿Eliminar el archivo dañado «${fileName}»? Esta acción no se puede deshacer.`,
     damaged: 'Archivo dañado: no se puede abrir',
+    newerVersion: (appName) => `Requiere una versión más reciente de ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `¿Eliminar el archivo «${fileName}»? Es un CV de una versión más reciente de ${appName} y se perderá. Esta acción no se puede deshacer.`,
+    loading: 'Cargando…',
     imported: (name) => `Se ha importado «${name}».`,
     savedFile: (fileName) => `Archivo guardado: ${fileName}`,
     importErrors: {
@@ -128,8 +157,22 @@ export const es: Dictionary = {
     openPdf: 'Abrir',
     showInFolder: 'Mostrar en Finder',
     exportFailed: 'No se ha podido guardar el PDF. Inténtalo de nuevo.',
+    exportCutOff: 'Parte del contenido no cabe en una página y quedará cortado. ¿Exportar de todos modos?',
+    exportCutOffHint: 'Los fragmentos demasiado largos están resaltados en la vista previa.',
+    exportAnyway: 'Exportar de todos modos',
+    preparingPdf: 'Preparando el PDF…',
+    exportTimedOut: 'La preparación del PDF ha tardado demasiado y se ha detenido. Inténtalo de nuevo.',
+    dismissNotice: 'Cerrar mensaje',
+    saveFailed: 'No se han podido guardar los cambios. Por ahora, tus últimos cambios solo están en esta ventana.',
+    retrySave: 'Reintentar',
+    leaveUnsaved: 'Tus cambios no se han guardado. ¿Salir de todos modos?',
+    leaveAnyway: 'Salir de todos modos',
+    stayInEditor: 'Quedarse en el editor',
+    renameCv: (name) => `Renombrar el CV: ${name}`,
+    removed: 'Eliminado.',
+    undoRemoval: 'Deshacer',
     remove: 'Quitar',
-    appearance: 'Apariencia',
+    cvDesign: 'Diseño del CV',
     accentColor: 'Color de acento',
     font: 'Fuente',
     cvLanguage: 'Idioma del CV',
@@ -158,7 +201,7 @@ export const es: Dictionary = {
     location: 'Ciudad',
     from: 'Desde',
     to: 'Hasta',
-    present: 'actualidad',
+    currentlyWorkHere: 'Trabajo aquí actualmente',
     bullets: 'Viñetas',
     bullet: (number) => `Viñeta ${number}`,
     removeBullet: (number) => `Quitar la viñeta ${number}`,
@@ -174,6 +217,7 @@ export const es: Dictionary = {
     institutionPlaceholder: 'p. ej., Universidad de Economía',
     startOptional: 'Desde (opcional)',
     graduation: 'Fecha de finalización',
+    endBeforeStart: 'La fecha de fin es anterior a la fecha de inicio.',
     listItem: (number) => `Elemento ${number}`,
     removeListItem: (number) => `Quitar el elemento ${number}`,
     addListItem: 'Añadir elemento',
@@ -185,7 +229,12 @@ export const es: Dictionary = {
       position: (name) => `el puesto «${name}»`,
       education: (name) => `la entrada «${name}»`,
       bullet: (number) => `la viñeta ${number}`,
-      listItem: (number) => `el elemento ${number}`
+      listItem: (number) => `el elemento ${number}`,
+      pickedUp: (item) => `Has tomado ${item}.`,
+      movedOver: (item, position, total) => `Moviendo ${item}: posición ${position} de ${total}.`,
+      dropped: (item, position, total) => `Has soltado ${item} en la posición ${position} de ${total}.`,
+      cancelled: (item) => `Has devuelto ${item} a su sitio.`,
+      instructions: 'Para tomar un elemento, pulsa Espacio o Intro. Muévelo con las flechas, suéltalo con Espacio o Intro y cancela con Escape.'
     },
     consent: {
       title: 'Cláusula de consentimiento',
@@ -214,7 +263,7 @@ export const es: Dictionary = {
         undecodable: 'No se ha podido cargar la foto: el archivo está dañado, no está disponible o tiene un formato no compatible.'
       },
       crop: 'Recortar foto',
-      cropHint: 'Arrastra la foto para ajustar el encuadre.',
+      cropHint: 'Arrastra la foto o usa las teclas de flecha para ajustar el encuadre.',
       cropPreview: 'Vista previa del encuadre',
       zoom: 'Zoom',
       apply: 'Aplicar'
@@ -233,7 +282,7 @@ export const es: Dictionary = {
     fit: 'Ajustar'
   },
   sponsor: {
-    bar: 'Patrocinio',
+    bar: (appName) => `Apoyo a ${appName}`,
     message: (appName) => `${appName} es gratuito. Si te ha sido útil, puedes darle las gracias al autor con un café.`,
     link: 'Invítame a un café',
     more: 'Más',
@@ -245,6 +294,33 @@ export const es: Dictionary = {
       'Es solo un agradecimiento. No desbloquea nada: la aplicación funciona exactamente igual en ambos casos.'
     ],
     close: 'Cerrar'
+  },
+  updates: {
+    noticeLabel: 'Nueva versión',
+    available: (appName, version) => `Hay una nueva versión de ${appName} disponible: ${version}.`,
+    availableDetail: (current) => `Tienes la versión ${current}. Descarga la nueva versión y sustituye con ella la app en la carpeta Aplicaciones.`,
+    download: 'Descargar',
+    dismiss: 'Cerrar',
+    later: 'Más tarde',
+    upToDate: (appName, version) => `Tienes la última versión de ${appName} (${version}).`,
+    failed: 'No se han podido buscar actualizaciones.',
+    failedDetail: 'Comprueba tu conexión a internet o consulta la última versión en la página de versiones.',
+    openReleases: 'Abrir página de versiones',
+    ok: 'OK'
+  },
+  crash: {
+    title: 'Algo salió mal',
+    message: 'Tus CV están a salvo: los cambios se guardan automáticamente. Vuelve a cargar la aplicación para continuar.',
+    reload: 'Volver a cargar',
+    repeated: {
+      message: (appName) => `La ventana de ${appName} ha dejado de funcionar varias veces seguidas.`,
+      detail: 'Tus CV guardados están a salvo. Puedes volver a cargar la ventana o salir de la aplicación.'
+    },
+    unexpected: {
+      title: 'Se ha producido un error inesperado',
+      message: (appName) =>
+        `${appName} ha tenido un problema. Tus CV guardados están a salvo. Si algo no funciona como debería, sal de la aplicación y vuelve a abrirla.`
+    }
   },
   defaultContent: {
     cvName: 'Nuevo CV',

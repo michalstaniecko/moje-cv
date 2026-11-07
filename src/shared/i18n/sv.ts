@@ -4,10 +4,17 @@ export const sv: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `Om ${appName}`,
+    services: 'Tjänster',
     hide: (appName) => `Göm ${appName}`,
     hideOthers: 'Göm övriga',
     showAll: 'Visa alla',
     quit: (appName) => `Avsluta ${appName}`,
+    file: 'Arkiv',
+    newCv: 'Nytt cv',
+    addSample: 'Lägg till exempel-cv',
+    importCv: 'Importera…',
+    exportJson: 'Exportera JSON…',
+    exportPdf: 'Exportera till PDF…',
     edit: 'Redigera',
     undo: 'Ångra',
     redo: 'Gör om',
@@ -15,16 +22,25 @@ export const sv: Dictionary = {
     copy: 'Kopiera',
     paste: 'Klistra in',
     selectAll: 'Markera allt',
+    view: 'Visa',
+    toggleFullScreen: 'Växla helskärmsläge',
     window: 'Fönster',
     minimize: 'Minimera',
     zoom: 'Zooma',
     closeWindow: 'Stäng fönster',
+    bringAllToFront: 'Lägg alla överst',
     language: 'Språk / Language',
     systemLanguage: 'System',
     appearance: 'Utseende',
     lightAppearance: 'Ljust',
     darkAppearance: 'Mörkt',
-    systemAppearance: 'System'
+    systemAppearance: 'System',
+    help: 'Hjälp',
+    helpPage: (appName) => `Hjälp för ${appName}`,
+    privacyPolicy: 'Integritetspolicy',
+    reportIssue: 'Rapportera ett problem…',
+    supportApp: (appName) => `Stöd ${appName}…`,
+    checkForUpdates: 'Sök efter uppdateringar…'
   },
   dialogs: {
     exportPdf: 'Exportera till PDF',
@@ -33,10 +49,19 @@ export const sv: Dictionary = {
     imagesFilter: 'Bilder',
     exportCv: 'Exportera cv till fil',
     importCv: 'Importera cv från fil',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Dina ändringar i cv:t har inte sparats.',
+      closeDetail: 'Om du stänger fönstret nu går dina senaste ändringar förlorade.',
+      quitDetail: (appName) =>
+        `Om du avslutar ${appName} nu går dina senaste ändringar förlorade.`,
+      closeAnyway: 'Stäng ändå',
+      quitAnyway: 'Avsluta ändå',
+      backToEditor: 'Tillbaka till redigeraren'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← Cv-bibliotek',
     save: 'Spara',
     cancel: 'Avbryt',
     delete: 'Radera',
@@ -75,6 +100,10 @@ export const sv: Dictionary = {
     confirmDelete: (name) => `Radera ”${name}”? Det går inte att ångra.`,
     confirmDeleteDamaged: (fileName) => `Radera den skadade filen ”${fileName}”? Det går inte att ångra.`,
     damaged: 'Skadad fil – kan inte öppnas',
+    newerVersion: (appName) => `Kräver en nyare version av ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Radera filen ”${fileName}”? Det är ett cv från en nyare version av ${appName} och går förlorat. Det går inte att ångra.`,
+    loading: 'Läser in …',
     imported: (name) => `Importerade ”${name}”.`,
     savedFile: (fileName) => `Sparade filen: ${fileName}`,
     importErrors: {
@@ -133,8 +162,22 @@ export const sv: Dictionary = {
     openPdf: 'Öppna',
     showInFolder: 'Visa i Finder',
     exportFailed: 'Det gick inte att spara PDF:en. Försök igen.',
+    exportCutOff: 'En del av innehållet får inte plats på en sida och kommer att klippas av. Exportera ändå?',
+    exportCutOffHint: 'De för långa avsnitten är markerade i förhandsvisningen.',
+    exportAnyway: 'Exportera ändå',
+    preparingPdf: 'Förbereder PDF…',
+    exportTimedOut: 'Det tog för lång tid att förbereda PDF:en och det avbröts. Försök igen.',
+    dismissNotice: 'Stäng meddelandet',
+    saveFailed: 'Det gick inte att spara ändringarna. Dina senaste ändringar finns än så länge bara i det här fönstret.',
+    retrySave: 'Försök igen',
+    leaveUnsaved: 'Dina ändringar har inte sparats. Lämna ändå?',
+    leaveAnyway: 'Lämna ändå',
+    stayInEditor: 'Stanna i redigeraren',
+    renameCv: (name) => `Byt namn på cv: ${name}`,
+    removed: 'Borttaget.',
+    undoRemoval: 'Ångra',
     remove: 'Ta bort',
-    appearance: 'Utseende',
+    cvDesign: 'Cv-design',
     accentColor: 'Accentfärg',
     font: 'Typsnitt',
     cvLanguage: 'Cv-språk',
@@ -163,7 +206,7 @@ export const sv: Dictionary = {
     location: 'Ort',
     from: 'Från',
     to: 'Till',
-    present: 'nu',
+    currentlyWorkHere: 'Jag arbetar här fortfarande',
     bullets: 'Punkter',
     bullet: (number) => `Punkt ${number}`,
     removeBullet: (number) => `Ta bort punkt ${number}`,
@@ -179,6 +222,7 @@ export const sv: Dictionary = {
     institutionPlaceholder: 't.ex. Handelshögskolan',
     startOptional: 'Från (valfritt)',
     graduation: 'Examensdatum',
+    endBeforeStart: 'Slutdatumet är tidigare än startdatumet.',
     listItem: (number) => `Post ${number}`,
     removeListItem: (number) => `Ta bort post ${number}`,
     addListItem: 'Lägg till post',
@@ -190,7 +234,12 @@ export const sv: Dictionary = {
       position: (name) => `tjänsten ”${name}”`,
       education: (name) => `posten ”${name}”`,
       bullet: (number) => `punkt ${number}`,
-      listItem: (number) => `post ${number}`
+      listItem: (number) => `post ${number}`,
+      pickedUp: (item) => `Du har lyft ${item}.`,
+      movedOver: (item, position, total) => `Du flyttar ${item}: position ${position} av ${total}.`,
+      dropped: (item, position, total) => `Du har släppt ${item} på position ${position} av ${total}.`,
+      cancelled: (item) => `Du har lagt tillbaka ${item} på sin plats.`,
+      instructions: 'Tryck på blanksteg eller Retur för att lyfta ett objekt. Flytta det med piltangenterna, släpp det med blanksteg eller Retur och avbryt med Escape.'
     },
     consent: {
       title: 'Samtyckesklausul',
@@ -219,7 +268,7 @@ export const sv: Dictionary = {
         undecodable: 'Det gick inte att läsa in fotot – filen är skadad, otillgänglig eller har ett format som inte stöds.'
       },
       crop: 'Beskär foto',
-      cropHint: 'Dra fotot för att ställa in utsnittet.',
+      cropHint: 'Dra fotot eller använd piltangenterna för att ställa in utsnittet.',
       cropPreview: 'Förhandsvisning av utsnitt',
       zoom: 'Zoom',
       apply: 'Använd'
@@ -237,7 +286,7 @@ export const sv: Dictionary = {
     fit: 'Anpassa'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Stöd ${appName}`,
     message: (appName) => `${appName} är gratis. Om appen har hjälpt dig kan du tacka utvecklaren med en kaffe.`,
     link: 'Bjud på en kaffe',
     more: 'Mer',
@@ -249,6 +298,33 @@ export const sv: Dictionary = {
       'Det här är bara ett tack. Det låser inte upp något: appen fungerar precis likadant i båda fallen.'
     ],
     close: 'Stäng'
+  },
+  updates: {
+    noticeLabel: 'Ny version',
+    available: (appName, version) => `En ny version av ${appName} finns: ${version}.`,
+    availableDetail: (current) => `Du har version ${current}. Hämta den nya versionen och ersätt appen i mappen Program med den.`,
+    download: 'Hämta',
+    dismiss: 'Stäng',
+    later: 'Senare',
+    upToDate: (appName, version) => `Du har den senaste versionen av ${appName} (${version}).`,
+    failed: 'Det gick inte att söka efter uppdateringar.',
+    failedDetail: 'Kontrollera internetanslutningen eller se den senaste versionen på sidan med versioner.',
+    openReleases: 'Öppna sidan med versioner',
+    ok: 'OK'
+  },
+  crash: {
+    title: 'Något gick fel',
+    message: 'Dina cv är säkra – ändringar sparas automatiskt. Läs in appen igen för att fortsätta.',
+    reload: 'Läs in igen',
+    repeated: {
+      message: (appName) => `Fönstret i ${appName} slutade fungera flera gånger i rad.`,
+      detail: 'Dina sparade cv är säkra. Du kan läsa in fönstret igen eller avsluta appen.'
+    },
+    unexpected: {
+      title: 'Ett oväntat fel inträffade',
+      message: (appName) =>
+        `${appName} stötte på ett problem. Dina sparade cv är säkra. Om något inte fungerar som det ska kan du avsluta appen och öppna den igen.`
+    }
   },
   defaultContent: {
     cvName: 'Nytt cv',

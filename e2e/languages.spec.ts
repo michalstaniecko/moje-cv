@@ -18,6 +18,8 @@ async function launch(language: InterfaceLanguage) {
   const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
   const env = { MOJE_CV_APPEARANCE: 'light', ...process.env, MOJE_CV_LANGUAGE: language } as Record<string, string>
   if (!process.env['MOJE_CV_E2E_HEADED']) env['MOJE_CV_E2E_HIDDEN'] = '1'
+  // Bez sprawdzania nowej wersji przy starcie: żaden test nie łączy się z GitHubem (ADR-0006).
+  env['MOJE_CV_UPDATE_URL'] = 'off'
   app = await electron.launch(
     packagedExecutable
       ? { executablePath: packagedExecutable, args: [userDataDir], env, colorScheme: null }
@@ -35,11 +37,22 @@ test.afterEach(async () => {
   await rm(outputDir, { recursive: true, force: true })
 })
 
-// Podmienia systemowe okno zapisu: zwraca podaną ścieżkę.
+// Podmienia systemowe okno zapisu: zwraca podaną ścieżkę i zapamiętuje proponowaną nazwę pliku.
 async function stubSaveDialog(filePath: string) {
   await app.evaluate(({ dialog }, filePath) => {
-    dialog.showSaveDialog = (async () => ({ canceled: false, filePath })) as typeof dialog.showSaveDialog
+    const defaultPaths: string[] = []
+    ;(globalThis as { defaultPaths?: string[] }).defaultPaths = defaultPaths
+    dialog.showSaveDialog = (async (...args: unknown[]) => {
+      defaultPaths.push((args.at(-1) as Electron.SaveDialogOptions).defaultPath ?? '')
+      return { canceled: false, filePath }
+    }) as typeof dialog.showSaveDialog
   }, filePath)
+}
+
+// Proponowane nazwy PDF Sample CV, gdzie transliteracja ma dokładny wynik (cyrylica, zasady rosyjskie i ukraińskie).
+const expectedPdfNames: Partial<Record<InterfaceLanguage, string>> = {
+  ru: 'CV_Anna_Obraztsova.pdf',
+  uk: 'CV_Olena_Zrazkova.pdf'
 }
 
 // Górny poziom menu aplikacji i pozycje menu Language (zaznaczone radio z dopiskiem „✓”).
@@ -81,6 +94,21 @@ async function controlsThatDoNotFit(selector: string) {
   }, selector)
 }
 
+// Sprawdza, czy przyciski i paski mieszczą się także w oknie o rozmiarze minimalnym, i przywraca poprzedni rozmiar.
+async function controlsThatDoNotFitAtMinimumSize(selector: string) {
+  const windowSize = () => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.getContentSize())
+  const innerWidth = () => window.locator('html').evaluate((html) => html.clientWidth)
+  const [width, height] = await windowSize()
+  // Mniejszego rozmiaru okno nie przyjmie – zostaje na minimum.
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(400, 300))
+  const [minWidth] = await windowSize()
+  await expect.poll(innerWidth).toBe(minWidth)
+  const problems = await controlsThatDoNotFit(selector)
+  await app.evaluate(({ BrowserWindow }, [width, height]) => BrowserWindow.getAllWindows()[0]!.setContentSize(width!, height!), [width, height])
+  await expect.poll(innerWidth).toBe(width)
+  return problems
+}
+
 // Pozycje menu Language: języki w ich własnych nazwach, alfabetycznie (łacinka przed cyrylicą); po nich System.
 const languageMenuItems = [
   'Bahasa Indonesia',
@@ -118,7 +146,7 @@ for (const language of interfaceLanguageCodes) {
     await expect.poll(() => window.title()).toBe('CV Press')
     expect(t.menu.language).toEqual(language === 'en' ? 'Language' : expect.stringMatching(/^\S.* \/ Language$/))
     await expect.poll(menu).toEqual({
-      top: [t.appName, t.menu.edit, t.menu.language, t.menu.appearance, t.menu.window],
+      top: [t.appName, t.menu.file, t.menu.edit, t.menu.view, t.menu.language, t.menu.appearance, t.menu.window, t.menu.help],
       languages: [...languageMenuItems, `${t.menu.systemLanguage} ✓`]
     })
 
@@ -130,12 +158,13 @@ for (const language of interfaceLanguageCodes) {
     await expect(window.getByRole('menuitem', { name: t.library.addSample })).toBeVisible()
     expect(await controlsThatDoNotFit('.toolbar, .library-item, .split-button-menu, .sponsor-bar')).toEqual([])
     await window.keyboard.press('Escape')
+    expect(await controlsThatDoNotFitAtMinimumSize('.toolbar, .library-item, .sponsor-bar')).toEqual([])
 
     // Biblioteka klauzul.
     await window.getByRole('button', { name: t.library.clauses }).click()
     await expect(window.getByRole('heading', { name: t.clauses.title })).toBeVisible()
     expect(await controlsThatDoNotFit('.toolbar, .sponsor-bar')).toEqual([])
-    await window.getByRole('button', { name: t.common.back(t.appName) }).click()
+    await window.getByRole('button', { name: t.common.back }).click()
 
     // Edytor: Sample CV w swoim CV language i foncie, licznik stron, paski i przyciski formularza się mieszczą.
     await library.getByRole('button', { name: t.library.open }).click()
@@ -151,17 +180,30 @@ for (const language of interfaceLanguageCodes) {
     await expect(preview.locator('.cv-page .cv-date').first()).toHaveText(`03.2023 – ${t.cvText.present}`)
     await expect(window.locator('.preview-page-count')).toHaveText(plural(language, t.preview.pages, SAMPLE_CV_PAGES))
     expect(await controlsThatDoNotFit('.toolbar, .preview-bar, .editor-form, .sponsor-bar')).toEqual([])
+    expect(await controlsThatDoNotFitAtMinimumSize('.toolbar, .preview-bar, .editor-form, .sponsor-bar')).toEqual([])
 
     // PDF ma tyle stron co podgląd Sample CV.
     const pdfPath = join(outputDir, `${language}.pdf`)
     await stubSaveDialog(pdfPath)
     await window.getByRole('button', { name: t.editor.exportPdf }).click()
     await expect(window.getByText(t.editor.savedPdf(`${language}.pdf`))).toBeVisible()
-    expect(await controlsThatDoNotFit('.toolbar')).toEqual([])
+    expect(await controlsThatDoNotFit('.toolbar, .export-notice')).toEqual([])
+    const [defaultPath] = await app.evaluate(() => (globalThis as { defaultPaths?: string[] }).defaultPaths!)
+    const fileName = defaultPath!.split('/').at(-1)
+    expect(fileName).toMatch(/^CV_[A-Za-z0-9_-]+\.pdf$/)
+    if (expectedPdfNames[language]) expect(fileName).toBe(expectedPdfNames[language])
     const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs')
     const pdf = await getDocument({ data: new Uint8Array(await readFile(pdfPath)) }).promise
     expect(pdf.numPages).toBe(SAMPLE_CV_PAGES)
     const firstPage = await (await pdf.getPage(1)).getTextContent()
     expect(firstPage.items.map((item) => ('str' in item ? item.str : '')).join('')).toContain(sample.header.fullName)
+
+    // Pusta biblioteka: tekst i przycisk „Dodaj przykładowe CV” się mieszczą.
+    await window.getByRole('button', { name: t.common.back }).click()
+    await library.getByRole('button', { name: t.common.delete }).click()
+    await library.getByRole('alertdialog').getByRole('button', { name: t.common.delete }).click()
+    await expect(library.getByRole('listitem')).toHaveCount(0)
+    await expect(window.locator('.library-empty-state').getByRole('button', { name: t.library.addSample })).toBeVisible()
+    expect(await controlsThatDoNotFit('.toolbar, .library-empty-state, .sponsor-bar')).toEqual([])
   })
 }

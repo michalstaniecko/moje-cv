@@ -8,24 +8,46 @@ type Mode = { kind: 'add' } | { kind: 'edit'; id: string } | { kind: 'confirm-de
 
 type Failure = keyof Dictionary['clauses']['errors']
 
+// Przycisk, na który wraca fokus po zamknięciu formularza: „Dodaj klauzulę” albo „Edytuj” danej klauzuli.
+// Szukany po `data-action` (i `data-clause-id`) dopiero po odświeżeniu listy, bo zmiana nazwy przesuwa klauzulę.
+type FocusTarget = { action: 'add' } | { action: 'edit'; id: string }
+
 // Biblioteka klauzul zgody: dodawanie, edycja, usuwanie i wybór klauzuli domyślnej dla nowych CV.
 export function ClauseLibrary({ onBack }: { onBack: () => void }) {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [mode, setMode] = useState<Mode>(null)
   // Błąd jako klucz, żeby zmiana języka tłumaczyła także widoczny już komunikat.
   const [error, setError] = useState<Failure | null>(null)
-  const { appName, common, clauses: t } = useDictionary()
+  const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null)
+  const { common, clauses: t } = useDictionary()
 
   useEffect(() => {
     window.api.settings.get().then(setSettings, () => setError('load'))
   }, [])
+
+  useEffect(() => {
+    if (!focusTarget) return
+    const selector =
+      focusTarget.action === 'add'
+        ? '[data-action="add-clause"]'
+        : `[data-clause-id="${CSS.escape(focusTarget.id)}"][data-action="edit"]`
+    document.querySelector<HTMLElement>(selector)?.focus()
+    setFocusTarget(null)
+  }, [focusTarget, settings, mode])
+
+  // Zamyka formularz (Anuluj, Escape, zapis) i oddaje fokus przyciskowi, który go otworzył.
+  const closeForm = () => {
+    if (mode?.kind === 'add') setFocusTarget({ action: 'add' })
+    else if (mode?.kind === 'edit') setFocusTarget({ action: 'edit', id: mode.id })
+    setMode(null)
+  }
 
   // Wykonuje operację, pokazuje nowy stan biblioteki i zamyka formularz; błąd pokazuje jako komunikat.
   const runAndShow = async (action: () => Promise<AppSettings>, failure: Failure) => {
     setError(null)
     try {
       setSettings(await action())
-      setMode(null)
+      closeForm()
     } catch {
       setError(failure)
     }
@@ -41,10 +63,10 @@ export function ClauseLibrary({ onBack }: { onBack: () => void }) {
     <>
       <header className="toolbar">
         <button type="button" onClick={onBack}>
-          {common.back(appName)}
+          {common.back}
         </button>
         <h1 className="toolbar-title">{t.title}</h1>
-        <button type="button" onClick={() => setMode({ kind: 'add' })} disabled={settings === null}>
+        <button type="button" data-action="add-clause" onClick={() => setMode({ kind: 'add' })} disabled={settings === null}>
           {t.add}
         </button>
       </header>
@@ -56,7 +78,7 @@ export function ClauseLibrary({ onBack }: { onBack: () => void }) {
         )}
         <p className="library-hint">{t.hint}</p>
         {mode?.kind === 'add' && (
-          <ClauseForm clause={{ name: '', text: '' }} onSubmit={add} onCancel={() => setMode(null)} />
+          <ClauseForm clause={{ name: '', text: '' }} onSubmit={add} onCancel={closeForm} />
         )}
         {settings?.clauses.length === 0 && mode?.kind !== 'add' && (
           <p className="library-empty">{t.empty}</p>
@@ -74,7 +96,7 @@ export function ClauseLibrary({ onBack }: { onBack: () => void }) {
                     onSubmit={(content) =>
                       runAndShow(() => window.api.settings.updateClause(clause.id, content), 'save')
                     }
-                    onCancel={() => setMode(null)}
+                    onCancel={closeForm}
                   />
                 ) : rowMode === 'confirm-delete' ? (
                   <div className="library-item-form" role="alertdialog" aria-label={common.confirmDelete}>
@@ -102,7 +124,12 @@ export function ClauseLibrary({ onBack }: { onBack: () => void }) {
                       <span className="clause-text">{clause.text}</span>
                     </div>
                     <div className="library-item-actions">
-                      <button type="button" onClick={() => setMode({ kind: 'edit', id: clause.id })}>
+                      <button
+                        type="button"
+                        data-clause-id={clause.id}
+                        data-action="edit"
+                        onClick={() => setMode({ kind: 'edit', id: clause.id })}
+                      >
                         {t.edit}
                       </button>
                       <button
@@ -129,6 +156,7 @@ export function ClauseLibrary({ onBack }: { onBack: () => void }) {
 }
 
 // Formularz nazwy i treści klauzuli – wspólny dla nowej i edytowanej. Nazwa jest wymagana, żeby dało się ją wybrać w CV.
+// Escape w dowolnym polu działa jak „Anuluj”, tak jak w formularzach inline biblioteki CV.
 function ClauseForm({
   clause,
   onSubmit,
@@ -147,7 +175,16 @@ function ClauseForm({
   }
 
   return (
-    <form className="form clause-form" onSubmit={submit} aria-label={t.form}>
+    <form
+      className="form clause-form"
+      onSubmit={submit}
+      aria-label={t.form}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape') return
+        event.preventDefault()
+        onCancel()
+      }}
+    >
       <label className="form-field">
         <span>{t.name}</span>
         <input value={name} autoFocus placeholder={t.namePlaceholder} onChange={(event) => setName(event.target.value)} />

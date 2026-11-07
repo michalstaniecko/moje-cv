@@ -149,7 +149,7 @@ export function CvPages({
                   return block ? [<CvBlockView key={id} block={block} views={views} oversized={oversizedIds.has(id)} />] : []
                 })}
                 {ids.some((id) => oversizedIds.has(id)) && (
-                  <p className="cv-oversized-message" role="status">
+                  <p className="cv-oversized-message">
                     {oversizedMessage}
                   </p>
                 )}

@@ -195,8 +195,10 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--ui-border);
 }
 
+/* Ostrzeżenie, nie zwykła informacja: kolor --ui-warning ma kontrast ≥ 4.5:1 z --ui-panel-bg w obu wyglądach
+   (5.93:1 jasny, 8.26:1 ciemny). */
 .preview-length-notice {
-  color: var(--ui-text-muted);
+  color: var(--ui-warning);
 }
 
 .preview-zoom {
@@ -229,22 +231,91 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--ui-border);
 }
 
-.toolbar-notice {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-}
-
-.toolbar-notice--error,
 .toolbar-status--error {
   color: var(--ui-error);
 }
 
+/* Pasek błędu autozapisu pod paskiem narzędzi (poza nim, żeby pasek narzędzi mieścił się przy minimalnym oknie). */
+.editor-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 24px;
+  color: var(--ui-error);
+  background: var(--ui-panel-bg);
+  border-bottom: 1px solid var(--ui-error);
+}
+
+/* Postęp i wynik eksportu (PDF, .json) pod paskiem narzędzi, z przyciskiem zamknięcia po prawej. */
+.export-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 24px;
+  background: var(--ui-panel-bg);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.export-notice--error {
+  color: var(--ui-error);
+  border-bottom-color: var(--ui-error);
+}
+
+.export-notice progress {
+  width: 120px;
+  accent-color: var(--ui-accent);
+}
+
+.export-notice-dismiss {
+  margin-left: auto;
+  padding: 2px 10px;
+}
+
+/* Długa nazwa CV jest ucinana wielokropkiem, żeby nie rozpychała paska przy minimalnym rozmiarze okna. */
 .toolbar-title {
+  min-width: 0;
   margin: 0;
+  overflow: hidden;
   font-size: 16px;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Nazwa CV jest przyciskiem zmiany nazwy: wygląda jak nagłówek, ucina się tak samo, a obrys fokusu jest w środku
+   (nagłówek obcina to, co wystaje). Po kliknięciu zamienia się w pole. */
+.toolbar-title-button {
+  display: block;
+  max-width: 100%;
+  padding: 2px 6px;
+  overflow: hidden;
+  font-weight: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border-color: transparent;
+}
+
+.toolbar-title-button:focus-visible {
+  outline-offset: -2px;
+}
+
+.toolbar-title-field {
+  width: 28ch;
+  max-width: 100%;
+  padding: 2px 6px;
+  font: inherit;
+  color: var(--ui-text);
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-accent);
+  border-radius: 6px;
+}
+
+.toolbar-title-field:focus-visible {
+  outline-offset: -2px;
 }
 
 /* ---------- Split button „Nowe CV” z menu pod strzałką ---------- */
@@ -350,8 +421,17 @@ textarea:focus-visible {
   flex-shrink: 0;
 }
 
-.library-empty {
+.library-empty,
+.library-loading {
   color: var(--ui-text-muted);
+}
+
+/* Pusta biblioteka: tekst z odesłaniem do „Nowe CV” i przycisk „Dodaj przykładowe CV” pod nim. */
+.library-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .library-notice {
@@ -360,6 +440,28 @@ textarea:focus-visible {
   color: var(--ui-accent-dark);
   background: var(--ui-accent-glow);
   border-radius: 6px;
+}
+
+/* Update notice (ADR-0006): dyskretny pasek nad listą CV, w kolorach akcentu jak `.library-notice`. */
+.update-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background: var(--ui-accent-glow);
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+}
+
+.update-notice-message {
+  flex: 1;
+  margin: 0;
+  color: var(--ui-text);
+}
+
+.update-notice > button {
+  flex-shrink: 0;
 }
 
 /* ---------- Powłoka aplikacji: ekran nad belką Sponsor bar ----------
@@ -374,6 +476,29 @@ textarea:focus-visible {
   flex: 1;
   min-height: 0;
   overflow: auto;
+}
+
+/* Ekran błędu renderowania (ErrorBoundary): zastępuje całą powłokę, wyśrodkowany w oknie. */
+.crash-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100vh;
+  padding: 24px;
+  text-align: center;
+}
+
+.crash-screen h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.crash-screen p {
+  max-width: 480px;
+  margin: 0 0 8px;
+  color: var(--ui-text-muted);
 }
 
 .editor-screen {
@@ -561,6 +686,11 @@ textarea:focus-visible {
   outline: 1px solid var(--ui-border);
 }
 
+.photo-cropper-frame:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
 .form-row > input.form-contact-label {
   flex: 0 0 110px;
 }
@@ -688,6 +818,33 @@ textarea:focus-visible {
 .consent-modified {
   color: var(--ui-warning);
   font-size: 12px;
+}
+
+/* Ostrzeżenie o odwróconych datach pod wierszem dat – informuje, nie blokuje. */
+.form-warning {
+  margin: 0 0 8px;
+  color: var(--ui-warning);
+  font-size: 12px;
+}
+
+/* „Usunięto. Cofnij” przyklejone do dołu kolumny formularza (nad Sponsor barem), więc nie zasłania podglądu stron.
+   Pusty kontener `role="status"` zostaje w DOM bez wysokości, żeby czytnik ekranu ogłosił wstawioną treść. */
+.removal-message {
+  position: sticky;
+  bottom: 0;
+  padding: 0 20px;
+}
+
+.removal-message-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px var(--ui-shadow);
 }
 
 /* ---------- Tagi CV na liście – chipy i tryb „Tagi” wiersza ---------- */
@@ -835,7 +992,8 @@ textarea:focus-visible {
 }
 
 /* Okno „Więcej”: bez własnego paddingu, żeby kliknięcie w tło zawsze trafiało w sam <dialog>, a nie w treść. */
-.sponsor-dialog {
+.sponsor-dialog,
+.export-dialog {
   max-width: 460px;
   padding: 0;
   background: var(--ui-panel-bg);
@@ -844,15 +1002,31 @@ textarea:focus-visible {
   box-shadow: 0 8px 32px var(--ui-shadow);
 }
 
-.sponsor-dialog::backdrop {
+.sponsor-dialog::backdrop,
+.export-dialog::backdrop {
   background: var(--ui-backdrop);
 }
 
-.sponsor-dialog-content {
+.sponsor-dialog-content,
+.export-dialog-content {
   padding: 20px 24px;
 }
 
-.sponsor-dialog-paragraph {
+.sponsor-dialog-paragraph,
+.export-dialog-paragraph {
   margin: 0 0 10px;
   line-height: 1.45;
+}
+
+.library-version {
+  margin: 24px 0 0;
+  font-size: 11px;
+  color: var(--ui-text-muted);
+  text-align: center;
+}
+
+.sponsor-dialog-version {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--ui-text-muted);
 }

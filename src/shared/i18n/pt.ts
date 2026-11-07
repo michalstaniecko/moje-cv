@@ -4,10 +4,17 @@ export const pt: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `Sobre o ${appName}`,
+    services: 'Serviços',
     hide: (appName) => `Ocultar ${appName}`,
     hideOthers: 'Ocultar Outros',
     showAll: 'Mostrar Tudo',
     quit: (appName) => `Encerrar ${appName}`,
+    file: 'Arquivo',
+    newCv: 'Novo Currículo',
+    addSample: 'Adicionar Currículo de Exemplo',
+    importCv: 'Importar…',
+    exportJson: 'Exportar JSON…',
+    exportPdf: 'Exportar para PDF…',
     edit: 'Editar',
     undo: 'Desfazer',
     redo: 'Refazer',
@@ -15,16 +22,25 @@ export const pt: Dictionary = {
     copy: 'Copiar',
     paste: 'Colar',
     selectAll: 'Selecionar Tudo',
+    view: 'Visualizar',
+    toggleFullScreen: 'Ativar/Desativar Tela Cheia',
     window: 'Janela',
     minimize: 'Minimizar',
     zoom: 'Zoom',
     closeWindow: 'Fechar Janela',
+    bringAllToFront: 'Trazer Todas para a Frente',
     language: 'Idioma / Language',
     systemLanguage: 'Sistema',
     appearance: 'Aparência',
     lightAppearance: 'Clara',
     darkAppearance: 'Escura',
-    systemAppearance: 'Sistema'
+    systemAppearance: 'Sistema',
+    help: 'Ajuda',
+    helpPage: (appName) => `Ajuda do ${appName}`,
+    privacyPolicy: 'Política de Privacidade',
+    reportIssue: 'Relatar um Problema…',
+    supportApp: (appName) => `Apoiar o ${appName}…`,
+    checkForUpdates: 'Verificar atualizações…'
   },
   dialogs: {
     exportPdf: 'Exportar para PDF',
@@ -33,10 +49,19 @@ export const pt: Dictionary = {
     imagesFilter: 'Imagens',
     exportCv: 'Exportar Currículo para Arquivo',
     importCv: 'Importar Currículo de Arquivo',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'As alterações no currículo não foram salvas.',
+      closeDetail: 'Se você fechar a janela agora, suas últimas alterações serão perdidas.',
+      quitDetail: (appName) =>
+        `Se você encerrar o ${appName} agora, suas últimas alterações serão perdidas.`,
+      closeAnyway: 'Fechar mesmo assim',
+      quitAnyway: 'Encerrar mesmo assim',
+      backToEditor: 'Voltar ao editor'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← Biblioteca de currículos',
     save: 'Salvar',
     cancel: 'Cancelar',
     delete: 'Apagar',
@@ -75,6 +100,10 @@ export const pt: Dictionary = {
     confirmDelete: (name) => `Apagar “${name}”? Não é possível desfazer.`,
     confirmDeleteDamaged: (fileName) => `Apagar o arquivo danificado “${fileName}”? Não é possível desfazer.`,
     damaged: 'Arquivo danificado – não é possível abri-lo',
+    newerVersion: (appName) => `Requer uma versão mais recente do ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Apagar o arquivo “${fileName}”? É um currículo de uma versão mais recente do ${appName} e será perdido. Não é possível desfazer.`,
+    loading: 'Carregando…',
     imported: (name) => `“${name}” importado.`,
     savedFile: (fileName) => `Arquivo salvo: ${fileName}`,
     importErrors: {
@@ -128,8 +157,22 @@ export const pt: Dictionary = {
     openPdf: 'Abrir',
     showInFolder: 'Mostrar no Finder',
     exportFailed: 'Não foi possível salvar o PDF. Tente novamente.',
+    exportCutOff: 'Parte do conteúdo não cabe em uma página e será cortada. Exportar mesmo assim?',
+    exportCutOffHint: 'Os trechos longos demais estão destacados na pré-visualização.',
+    exportAnyway: 'Exportar mesmo assim',
+    preparingPdf: 'Preparando o PDF…',
+    exportTimedOut: 'A preparação do PDF demorou demais e foi interrompida. Tente novamente.',
+    dismissNotice: 'Fechar mensagem',
+    saveFailed: 'Não foi possível salvar as alterações. Por enquanto, suas últimas alterações estão apenas nesta janela.',
+    retrySave: 'Tentar novamente',
+    leaveUnsaved: 'Suas alterações não foram salvas. Sair mesmo assim?',
+    leaveAnyway: 'Sair mesmo assim',
+    stayInEditor: 'Ficar no editor',
+    renameCv: (name) => `Renomear o currículo: ${name}`,
+    removed: 'Removido.',
+    undoRemoval: 'Desfazer',
     remove: 'Remover',
-    appearance: 'Aparência',
+    cvDesign: 'Design do currículo',
     accentColor: 'Cor de destaque',
     font: 'Fonte',
     cvLanguage: 'Idioma do currículo',
@@ -158,7 +201,7 @@ export const pt: Dictionary = {
     location: 'Cidade',
     from: 'De',
     to: 'Até',
-    present: 'atual',
+    currentlyWorkHere: 'Trabalho aqui atualmente',
     bullets: 'Tópicos',
     bullet: (number) => `Tópico ${number}`,
     removeBullet: (number) => `Remover tópico ${number}`,
@@ -174,6 +217,7 @@ export const pt: Dictionary = {
     institutionPlaceholder: 'ex.: Universidade de Economia',
     startOptional: 'De (opcional)',
     graduation: 'Data de conclusão',
+    endBeforeStart: 'A data de término é anterior à data de início.',
     listItem: (number) => `Item ${number}`,
     removeListItem: (number) => `Remover item ${number}`,
     addListItem: 'Adicionar item',
@@ -185,7 +229,12 @@ export const pt: Dictionary = {
       position: (name) => `o cargo “${name}”`,
       education: (name) => `o item “${name}”`,
       bullet: (number) => `o tópico ${number}`,
-      listItem: (number) => `o item ${number}`
+      listItem: (number) => `o item ${number}`,
+      pickedUp: (item) => `Você pegou ${item}.`,
+      movedOver: (item, position, total) => `Movendo ${item}: posição ${position} de ${total}.`,
+      dropped: (item, position, total) => `Você soltou ${item} na posição ${position} de ${total}.`,
+      cancelled: (item) => `Você devolveu ${item} ao lugar original.`,
+      instructions: 'Para pegar um item, pressione Espaço ou Enter. Use as setas para movê-lo, Espaço ou Enter para soltá-lo e Esc para cancelar.'
     },
     consent: {
       title: 'Cláusula de consentimento',
@@ -214,7 +263,7 @@ export const pt: Dictionary = {
         undecodable: 'Não foi possível carregar a foto – o arquivo está danificado, indisponível ou em formato não suportado.'
       },
       crop: 'Recortar foto',
-      cropHint: 'Arraste a foto para ajustar o enquadramento.',
+      cropHint: 'Arraste a foto ou use as teclas de seta para ajustar o enquadramento.',
       cropPreview: 'Prévia do enquadramento',
       zoom: 'Zoom',
       apply: 'Aplicar'
@@ -233,7 +282,7 @@ export const pt: Dictionary = {
     fit: 'Ajustar'
   },
   sponsor: {
-    bar: 'Patrocínio',
+    bar: (appName) => `Apoio ao ${appName}`,
     message: (appName) => `O ${appName} é gratuito. Se ele ajudou você, agradeça ao autor com um café.`,
     link: 'Me pague um café',
     more: 'Mais',
@@ -245,6 +294,33 @@ export const pt: Dictionary = {
       'É apenas um agradecimento. Não desbloqueia nada: o app funciona exatamente igual de qualquer forma.'
     ],
     close: 'Fechar'
+  },
+  updates: {
+    noticeLabel: 'Nova versão',
+    available: (appName, version) => `Está disponível uma nova versão do ${appName}: ${version}.`,
+    availableDetail: (current) => `Tem a versão ${current}. Descarregue a nova versão e substitua com ela a app na pasta Aplicações.`,
+    download: 'Descarregar',
+    dismiss: 'Fechar',
+    later: 'Mais tarde',
+    upToDate: (appName, version) => `Tem a versão mais recente do ${appName} (${version}).`,
+    failed: 'Não foi possível verificar atualizações.',
+    failedDetail: 'Verifique a ligação à internet ou veja a versão mais recente na página de versões.',
+    openReleases: 'Abrir página de versões',
+    ok: 'OK'
+  },
+  crash: {
+    title: 'Algo deu errado',
+    message: 'Seus currículos estão seguros – as alterações são salvas automaticamente. Recarregue o app para continuar.',
+    reload: 'Recarregar',
+    repeated: {
+      message: (appName) => `A janela do ${appName} parou de funcionar várias vezes seguidas.`,
+      detail: 'Seus currículos salvos estão seguros. Você pode recarregar a janela ou encerrar o app.'
+    },
+    unexpected: {
+      title: 'Ocorreu um erro inesperado',
+      message: (appName) =>
+        `O ${appName} encontrou um problema. Seus currículos salvos estão seguros. Se algo não funcionar como esperado, encerre o app e abra-o novamente.`
+    }
   },
   defaultContent: {
     cvName: 'Novo currículo',

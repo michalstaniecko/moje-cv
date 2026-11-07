@@ -4,10 +4,17 @@ export const de: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `Über ${appName}`,
+    services: 'Dienste',
     hide: (appName) => `${appName} ausblenden`,
     hideOthers: 'Andere ausblenden',
     showAll: 'Alle einblenden',
     quit: (appName) => `${appName} beenden`,
+    file: 'Ablage',
+    newCv: 'Neuer Lebenslauf',
+    addSample: 'Beispiel-Lebenslauf hinzufügen',
+    importCv: 'Importieren …',
+    exportJson: 'JSON exportieren …',
+    exportPdf: 'Als PDF exportieren …',
     edit: 'Bearbeiten',
     undo: 'Widerrufen',
     redo: 'Wiederholen',
@@ -15,16 +22,25 @@ export const de: Dictionary = {
     copy: 'Kopieren',
     paste: 'Einsetzen',
     selectAll: 'Alles auswählen',
+    view: 'Darstellung',
+    toggleFullScreen: 'Vollbildmodus ein/aus',
     window: 'Fenster',
     minimize: 'Im Dock ablegen',
     zoom: 'Zoomen',
     closeWindow: 'Fenster schließen',
+    bringAllToFront: 'Alle nach vorne bringen',
     language: 'Sprache / Language',
     systemLanguage: 'System',
     appearance: 'Erscheinungsbild',
     lightAppearance: 'Hell',
     darkAppearance: 'Dunkel',
-    systemAppearance: 'System'
+    systemAppearance: 'System',
+    help: 'Hilfe',
+    helpPage: (appName) => `${appName}-Hilfe`,
+    privacyPolicy: 'Datenschutzerklärung',
+    reportIssue: 'Problem melden …',
+    supportApp: (appName) => `${appName} unterstützen …`,
+    checkForUpdates: 'Nach Updates suchen …'
   },
   dialogs: {
     exportPdf: 'Als PDF exportieren',
@@ -33,10 +49,19 @@ export const de: Dictionary = {
     imagesFilter: 'Bilder',
     exportCv: 'Lebenslauf in Datei exportieren',
     importCv: 'Lebenslauf aus Datei importieren',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Deine Änderungen am Lebenslauf wurden nicht gesichert.',
+      closeDetail: 'Wenn du das Fenster jetzt schließt, gehen deine letzten Änderungen verloren.',
+      quitDetail: (appName) =>
+        `Wenn du ${appName} jetzt beendest, gehen deine letzten Änderungen verloren.`,
+      closeAnyway: 'Trotzdem schließen',
+      quitAnyway: 'Trotzdem beenden',
+      backToEditor: 'Zurück zum Editor'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← Lebensläufe',
     save: 'Sichern',
     cancel: 'Abbrechen',
     delete: 'Löschen',
@@ -76,6 +101,10 @@ export const de: Dictionary = {
     confirmDeleteDamaged: (fileName) =>
       `Beschädigte Datei „${fileName}“ löschen? Das kann nicht rückgängig gemacht werden.`,
     damaged: 'Beschädigte Datei – kann nicht geöffnet werden',
+    newerVersion: (appName) => `Erfordert eine neuere Version von ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Datei „${fileName}“ löschen? Es ist ein Lebenslauf aus einer neueren Version von ${appName} und geht verloren. Das kann nicht rückgängig gemacht werden.`,
+    loading: 'Wird geladen …',
     imported: (name) => `„${name}“ importiert.`,
     savedFile: (fileName) => `Datei gesichert: ${fileName}`,
     importErrors: {
@@ -135,8 +164,22 @@ export const de: Dictionary = {
     openPdf: 'Öffnen',
     showInFolder: 'Im Finder zeigen',
     exportFailed: 'Das PDF konnte nicht gesichert werden. Versuche es erneut.',
+    exportCutOff: 'Ein Teil des Inhalts passt nicht auf eine Seite und wird abgeschnitten. Trotzdem exportieren?',
+    exportCutOffHint: 'Die zu langen Abschnitte sind in der Vorschau hervorgehoben.',
+    exportAnyway: 'Trotzdem exportieren',
+    preparingPdf: 'PDF wird vorbereitet…',
+    exportTimedOut: 'Die Vorbereitung des PDFs hat zu lange gedauert und wurde abgebrochen. Versuche es erneut.',
+    dismissNotice: 'Meldung schließen',
+    saveFailed: 'Die Änderungen konnten nicht gesichert werden. Deine letzten Änderungen gibt es vorerst nur in diesem Fenster.',
+    retrySave: 'Erneut versuchen',
+    leaveUnsaved: 'Deine Änderungen wurden nicht gesichert. Trotzdem verlassen?',
+    leaveAnyway: 'Trotzdem verlassen',
+    stayInEditor: 'Im Editor bleiben',
+    renameCv: (name) => `Lebenslauf umbenennen: ${name}`,
+    removed: 'Entfernt.',
+    undoRemoval: 'Widerrufen',
     remove: 'Entfernen',
-    appearance: 'Erscheinungsbild',
+    cvDesign: 'Lebenslauf-Design',
     accentColor: 'Akzentfarbe',
     font: 'Schrift',
     cvLanguage: 'Sprache des Lebenslaufs',
@@ -165,7 +208,7 @@ export const de: Dictionary = {
     location: 'Ort',
     from: 'Von',
     to: 'Bis',
-    present: 'heute',
+    currentlyWorkHere: 'Ich arbeite noch hier',
     bullets: 'Aufzählungspunkte',
     bullet: (number) => `Punkt ${number}`,
     removeBullet: (number) => `Punkt ${number} entfernen`,
@@ -181,6 +224,7 @@ export const de: Dictionary = {
     institutionPlaceholder: 'z. B. Wirtschaftsuniversität',
     startOptional: 'Von (optional)',
     graduation: 'Abschlussdatum',
+    endBeforeStart: 'Das Enddatum liegt vor dem Startdatum.',
     listItem: (number) => `Eintrag ${number}`,
     removeListItem: (number) => `Eintrag ${number} entfernen`,
     addListItem: 'Eintrag hinzufügen',
@@ -192,7 +236,12 @@ export const de: Dictionary = {
       position: (name) => `Position „${name}“`,
       education: (name) => `Eintrag „${name}“`,
       bullet: (number) => `Punkt ${number}`,
-      listItem: (number) => `Eintrag ${number}`
+      listItem: (number) => `Eintrag ${number}`,
+      pickedUp: (item) => `${item} aufgenommen.`,
+      movedOver: (item, position, total) => `${item} wird verschoben: Position ${position} von ${total}.`,
+      dropped: (item, position, total) => `${item} an Position ${position} von ${total} abgelegt.`,
+      cancelled: (item) => `${item} an den ursprünglichen Platz zurückgelegt.`,
+      instructions: 'Zum Aufnehmen eines Eintrags die Leertaste oder die Eingabetaste drücken. Mit den Pfeiltasten verschieben, mit der Leertaste oder der Eingabetaste ablegen, mit Escape abbrechen.'
     },
     consent: {
       title: 'Einwilligungserklärung',
@@ -222,7 +271,7 @@ export const de: Dictionary = {
           'Das Foto konnte nicht geladen werden – die Datei ist beschädigt, nicht verfügbar oder hat ein nicht unterstütztes Format.'
       },
       crop: 'Foto zuschneiden',
-      cropHint: 'Ziehe das Foto, um den Ausschnitt festzulegen.',
+      cropHint: 'Ziehe das Foto oder nutze die Pfeiltasten, um den Ausschnitt festzulegen.',
       cropPreview: 'Vorschau des Ausschnitts',
       zoom: 'Zoom',
       apply: 'Anwenden'
@@ -240,7 +289,7 @@ export const de: Dictionary = {
     fit: 'Einpassen'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `${appName} unterstützen`,
     message: (appName) =>
       `${appName} ist kostenlos. Wenn dir die App geholfen hat, kannst du dem Autor mit einem Kaffee danken.`,
     link: 'Kaffee spendieren',
@@ -253,6 +302,33 @@ export const de: Dictionary = {
       'Das ist nur ein Dankeschön. Es schaltet nichts frei: Die App funktioniert so oder so genau gleich.'
     ],
     close: 'Schließen'
+  },
+  updates: {
+    noticeLabel: 'Neue Version',
+    available: (appName, version) => `Eine neue Version von ${appName} ist verfügbar: ${version}.`,
+    availableDetail: (current) => `Du hast Version ${current}. Lade die neue Version herunter und ersetze damit die App im Ordner „Programme“.`,
+    download: 'Laden',
+    dismiss: 'Schließen',
+    later: 'Später',
+    upToDate: (appName, version) => `Du hast die neueste Version von ${appName} (${version}).`,
+    failed: 'Die Suche nach Updates ist fehlgeschlagen.',
+    failedDetail: 'Prüfe deine Internetverbindung oder sieh dir die neueste Version auf der Seite mit den Releases an.',
+    openReleases: 'Release-Seite öffnen',
+    ok: 'OK'
+  },
+  crash: {
+    title: 'Etwas ist schiefgelaufen',
+    message: 'Deine Lebensläufe sind sicher – Änderungen werden automatisch gespeichert. Lade die App neu, um fortzufahren.',
+    reload: 'Neu laden',
+    repeated: {
+      message: (appName) => `Das Fenster von ${appName} hat mehrmals hintereinander nicht mehr funktioniert.`,
+      detail: 'Deine gespeicherten Lebensläufe sind sicher. Du kannst das Fenster neu laden oder die App beenden.'
+    },
+    unexpected: {
+      title: 'Ein unerwarteter Fehler ist aufgetreten',
+      message: (appName) =>
+        `${appName} ist auf ein Problem gestoßen. Deine gespeicherten Lebensläufe sind sicher. Wenn etwas nicht wie erwartet funktioniert, beende die App und öffne sie erneut.`
+    }
   },
   defaultContent: {
     cvName: 'Neuer Lebenslauf',

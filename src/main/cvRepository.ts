@@ -14,17 +14,21 @@ export type CvRepository = ReturnType<typeof createCvRepository>
 // Importowany plik nie jest poprawnym CV. Użytkownik dostaje powód (`reason`), a nie treść komunikatu.
 export class InvalidCvFileError extends Error {
   constructor(readonly reason: InvalidCvFileReason) {
-    super(`Niepoprawny plik CV: ${reason}`)
+    super(`Invalid CV file: ${reason}`)
   }
 }
 
-type Options = { now?: () => Date; migrations?: CvMigrations }
+// Pomiar czasu etapu zapisu (odczyt, sprawdzenie, zapis pliku) – zob. perfLog.ts. Domyślnie bez pomiaru.
+export type PhaseTimer = <T>(phase: 'read' | 'check' | 'write', operation: () => Promise<T>) => Promise<T>
+const untimed: PhaseTimer = (_phase, operation) => operation()
+
+type Options = { now?: () => Date; migrations?: CvMigrations; time?: PhaseTimer }
 
 // Repozytorium CV: jedno CV na plik `<id>.json` w podanym katalogu.
-export function createCvRepository(dir: string, { now = () => new Date(), migrations = cvMigrations }: Options = {}) {
+export function createCvRepository(dir: string, { now = () => new Date(), migrations = cvMigrations, time = untimed }: Options = {}) {
   // id przychodzi przez IPC – musi być zwykłą nazwą pliku w katalogu CV.
   const filePath = (id: string) => {
-    if (!id || basename(id) !== id || id.startsWith('.')) throw new Error(`Niepoprawny identyfikator CV: ${id}`)
+    if (!id || basename(id) !== id || id.startsWith('.')) throw new Error(`Invalid CV id: ${id}`)
     return join(dir, `${id}.json`)
   }
 
@@ -46,8 +50,8 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     try {
       const { name, updatedAt, tags } = await get(id)
       return { status: 'ok', id, name, updatedAt, tags }
-    } catch {
-      return { status: 'damaged', id }
+    } catch (error) {
+      return { status: 'unreadable', id, reason: error instanceof NewerSchemaVersionError ? 'newer-version' : 'damaged' }
     }
   }
 
@@ -81,13 +85,14 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     )
   }
 
-  // Zapis atomowy (patrz writeJsonAtomic). Uszkodzonego pliku nie nadpisujemy – może dać się go jeszcze odzyskać ręcznie.
+  // Zapis atomowy (patrz writeJsonAtomic). Nieczytelnego pliku nie nadpisujemy: uszkodzony może dać się jeszcze
+  // odzyskać ręcznie, a plik z nowszej wersji aplikacji straciłby dane, których ta wersja nie zna.
   async function save(document: CvDocument): Promise<void> {
     const targetPath = filePath(document.id)
-    if ((await exists(targetPath)) && (await listEntry(document.id)).status === 'damaged') {
-      throw new Error(`Plik CV jest uszkodzony i nie zostanie nadpisany: ${document.id}`)
+    if ((await exists(targetPath)) && (await time('check', () => listEntry(document.id))).status !== 'ok') {
+      throw new Error(`The CV file can’t be read, so it will not be overwritten: ${document.id}`)
     }
-    await writeJsonAtomic(targetPath, document)
+    await time('write', () => writeJsonAtomic(targetPath, document))
   }
 
   // Zapisuje dokument jako nowe CV: nowe id i daty utworzenia/zmiany.
@@ -99,7 +104,7 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
   }
 
   return {
-    // Najpierw CV od ostatnio zmienionego, uszkodzone pliki na końcu.
+    // Najpierw CV od ostatnio zmienionego, nieczytelne pliki (uszkodzone i z nowszej wersji) na końcu.
     async list(): Promise<CvListEntry[]> {
       return (await listEntries()).sort((a, b) => sortKey(b).localeCompare(sortKey(a)))
     },
@@ -130,7 +135,7 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
 
     rename: (id: string, name: string): Promise<CvDocument> =>
       perCv.run(id, async () => {
-        if (!name.trim()) throw new Error('Nazwa CV nie może być pusta')
+        if (!name.trim()) throw new Error('The CV name cannot be empty')
         const renamed = { ...(await get(id)), name: name.trim(), updatedAt: now().toISOString() }
         await save(renamed)
         return renamed
@@ -152,8 +157,8 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     // Tagami zarządza wyłącznie lista CV – zostają te z dysku, więc spóźniony autozapis nie nadpisze świeżo ustawionych.
     update: (document: CvDocument): Promise<void> =>
       perCv.run(document.id, async () => {
-        if (!(await exists(filePath(document.id)))) throw new Error(`CV nie istnieje: ${document.id}`)
-        const { tags } = await get(document.id)
+        if (!(await exists(filePath(document.id)))) throw new Error(`CV does not exist: ${document.id}`)
+        const { tags } = await time('read', () => get(document.id))
         await save({ ...document, tags, updatedAt: now().toISOString() })
       }),
 

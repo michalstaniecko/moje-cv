@@ -4,10 +4,17 @@ export const uk: Dictionary = {
   appName: 'CV Press',
   menu: {
     about: (appName) => `Про ${appName}`,
+    services: 'Послуги',
     hide: (appName) => `Сховати ${appName}`,
     hideOthers: 'Сховати інші',
     showAll: 'Показати всі',
     quit: (appName) => `Вийти з ${appName}`,
+    file: 'Файл',
+    newCv: 'Нове резюме',
+    addSample: 'Додати зразок резюме',
+    importCv: 'Імпортувати…',
+    exportJson: 'Експортувати JSON…',
+    exportPdf: 'Експортувати в PDF…',
     edit: 'Редагування',
     undo: 'Відмінити',
     redo: 'Повторити',
@@ -15,16 +22,25 @@ export const uk: Dictionary = {
     copy: 'Копіювати',
     paste: 'Вставити',
     selectAll: 'Вибрати все',
+    view: 'Перегляд',
+    toggleFullScreen: 'Увімкнути/вимкнути повноекранний режим',
     window: 'Вікно',
     minimize: 'Згорнути',
     zoom: 'Масштабувати',
     closeWindow: 'Закрити вікно',
+    bringAllToFront: 'Усі вікна на передній план',
     language: 'Мова / Language',
     systemLanguage: 'Системна',
     appearance: 'Вигляд',
     lightAppearance: 'Світлий',
     darkAppearance: 'Темний',
-    systemAppearance: 'Системний'
+    systemAppearance: 'Системний',
+    help: 'Довідка',
+    helpPage: (appName) => `Довідка ${appName}`,
+    privacyPolicy: 'Політика конфіденційності',
+    reportIssue: 'Повідомити про проблему…',
+    supportApp: (appName) => `Підтримати ${appName}…`,
+    checkForUpdates: 'Перевірити оновлення…'
   },
   dialogs: {
     exportPdf: 'Експорт у PDF',
@@ -33,10 +49,19 @@ export const uk: Dictionary = {
     imagesFilter: 'Зображення',
     exportCv: 'Експорт резюме у файл',
     importCv: 'Імпорт резюме з файлу',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Зміни в резюме не збережено.',
+      closeDetail: 'Якщо закрити вікно зараз, останні зміни буде втрачено.',
+      quitDetail: (appName) =>
+        `Якщо завершити ${appName} зараз, останні зміни буде втрачено.`,
+      closeAnyway: 'Усе одно закрити',
+      quitAnyway: 'Усе одно завершити',
+      backToEditor: 'Повернутися до редактора'
+    }
   },
   common: {
-    back: (appName) => `← ${appName}`,
+    back: '← Бібліотека резюме',
     save: 'Зберегти',
     cancel: 'Скасувати',
     delete: 'Видалити',
@@ -75,6 +100,10 @@ export const uk: Dictionary = {
     confirmDelete: (name) => `Видалити «${name}»? Цю дію не можна скасувати.`,
     confirmDeleteDamaged: (fileName) => `Видалити пошкоджений файл «${fileName}»? Цю дію не можна скасувати.`,
     damaged: 'Файл пошкоджено – його не вдається відкрити',
+    newerVersion: (appName) => `Потрібна новіша версія ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Видалити файл «${fileName}»? Це резюме з новішої версії ${appName}, його буде втрачено. Цю дію не можна скасувати.`,
+    loading: 'Завантаження…',
     imported: (name) => `Імпортовано «${name}».`,
     savedFile: (fileName) => `Файл збережено: ${fileName}`,
     importErrors: {
@@ -128,8 +157,22 @@ export const uk: Dictionary = {
     openPdf: 'Відкрити',
     showInFolder: 'Показати у Finder',
     exportFailed: 'Не вдалося зберегти PDF. Спробуйте ще раз.',
+    exportCutOff: 'Частина вмісту не вміщується на сторінку й буде обрізана. Однаково експортувати?',
+    exportCutOffHint: 'Задовгі фрагменти виділено в попередньому перегляді.',
+    exportAnyway: 'Однаково експортувати',
+    preparingPdf: 'Підготовка PDF…',
+    exportTimedOut: 'Підготовка PDF тривала надто довго й була перервана. Спробуйте ще раз.',
+    dismissNotice: 'Закрити повідомлення',
+    saveFailed: 'Не вдалося зберегти зміни. Поки що останні зміни є тільки в цьому вікні.',
+    retrySave: 'Спробувати ще раз',
+    leaveUnsaved: 'Зміни не збережено. Усе одно вийти?',
+    leaveAnyway: 'Усе одно вийти',
+    stayInEditor: 'Залишитися в редакторі',
+    renameCv: (name) => `Перейменувати резюме: ${name}`,
+    removed: 'Видалено.',
+    undoRemoval: 'Відмінити',
     remove: 'Видалити',
-    appearance: 'Вигляд',
+    cvDesign: 'Дизайн резюме',
     accentColor: 'Колір акценту',
     font: 'Шрифт',
     cvLanguage: 'Мова резюме',
@@ -158,7 +201,7 @@ export const uk: Dictionary = {
     location: 'Місто',
     from: 'З',
     to: 'По',
-    present: 'дотепер',
+    currentlyWorkHere: 'Досі тут працюю',
     bullets: 'Пункти',
     bullet: (number) => `Пункт ${number}`,
     removeBullet: (number) => `Видалити пункт ${number}`,
@@ -174,6 +217,7 @@ export const uk: Dictionary = {
     institutionPlaceholder: 'напр., Економічний університет',
     startOptional: 'З (необов’язково)',
     graduation: 'Дата закінчення',
+    endBeforeStart: 'Дата закінчення раніша за дату початку.',
     listItem: (number) => `Елемент ${number}`,
     removeListItem: (number) => `Видалити елемент ${number}`,
     addListItem: 'Додати елемент',
@@ -185,7 +229,12 @@ export const uk: Dictionary = {
       position: (name) => `посаду «${name}»`,
       education: (name) => `запис «${name}»`,
       bullet: (number) => `пункт ${number}`,
-      listItem: (number) => `елемент ${number}`
+      listItem: (number) => `елемент ${number}`,
+      pickedUp: (item) => `Ви взяли ${item}.`,
+      movedOver: (item, position, total) => `Ви переміщуєте ${item}: позиція ${position} з ${total}.`,
+      dropped: (item, position, total) => `Ви поставили ${item} на позицію ${position} з ${total}.`,
+      cancelled: (item) => `Ви повернули ${item} на попереднє місце.`,
+      instructions: 'Щоб взяти елемент, натисніть Пробіл або Enter. Переміщуйте його клавішами зі стрілками, поставте Пробілом або Enter, Escape скасовує.'
     },
     consent: {
       title: 'Згода на обробку даних',
@@ -214,7 +263,7 @@ export const uk: Dictionary = {
         undecodable: 'Не вдалося завантажити фото – файл пошкоджений, недоступний або має непідтримуваний формат.'
       },
       crop: 'Кадрування фото',
-      cropHint: 'Перетягніть фото, щоб налаштувати кадр.',
+      cropHint: 'Перетягніть фото або скористайтеся клавішами зі стрілками, щоб налаштувати кадр.',
       cropPreview: 'Попередній перегляд кадру',
       zoom: 'Масштаб',
       apply: 'Застосувати'
@@ -234,7 +283,7 @@ export const uk: Dictionary = {
     fit: 'За розміром'
   },
   sponsor: {
-    bar: 'Підтримка',
+    bar: (appName) => `Підтримка ${appName}`,
     message: (appName) => `${appName} – безкоштовна програма. Якщо вона вам допомогла, можете пригостити автора кавою.`,
     link: 'Пригостити кавою',
     more: 'Докладніше',
@@ -246,6 +295,33 @@ export const uk: Dictionary = {
       'Це лише подяка. Вона нічого не відкриває: програма працює однаково в будь-якому разі.'
     ],
     close: 'Закрити'
+  },
+  updates: {
+    noticeLabel: 'Нова версія',
+    available: (appName, version) => `Доступна нова версія ${appName}: ${version}.`,
+    availableDetail: (current) => `У вас версія ${current}. Завантажте нову версію й замініть нею програму в папці «Програми».`,
+    download: 'Завантажити',
+    dismiss: 'Закрити',
+    later: 'Пізніше',
+    upToDate: (appName, version) => `У вас найновіша версія ${appName} (${version}).`,
+    failed: 'Не вдалося перевірити оновлення.',
+    failedDetail: 'Перевірте підключення до інтернету або перегляньте найновішу версію на сторінці випусків.',
+    openReleases: 'Відкрити сторінку випусків',
+    ok: 'OK'
+  },
+  crash: {
+    title: 'Щось пішло не так',
+    message: 'Ваші резюме в безпеці – зміни зберігаються автоматично. Перезавантажте застосунок, щоб продовжити.',
+    reload: 'Перезавантажити',
+    repeated: {
+      message: (appName) => `Вікно ${appName} кілька разів поспіль перестало працювати.`,
+      detail: 'Збережені резюме в безпеці. Можна перезавантажити вікно або вийти із застосунку.'
+    },
+    unexpected: {
+      title: 'Сталася неочікувана помилка',
+      message: (appName) =>
+        `У ${appName} виникла проблема. Збережені резюме в безпеці. Якщо щось працює неправильно, вийдіть із застосунку та відкрийте його знову.`
+    }
   },
   defaultContent: {
     cvName: 'Нове резюме',

@@ -1,21 +1,32 @@
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import type { Dictionary } from '../../../shared/i18n/en'
 import type { CvDocument } from '../domain/schema'
 import { useDictionary } from '../i18n'
 import type { CvEditor } from './cvEditor'
 import { updateHeader } from './documentEdits'
-import { clampView, cropRect, initialView, MAX_ZOOM, outputSize, PHOTO_ASPECT, type CropView } from './photoCrop'
+import { useRemove } from './removalUndo'
+import { clampView, cropRect, initialView, MAX_ZOOM, nudgeView, outputSize, PHOTO_ASPECT, type CropView } from './photoCrop'
 
 type PickError = keyof Dictionary['editor']['photo']['errors']
 const JPEG_QUALITY = 0.9
 const FRAME_WIDTH_PX = 240
 const FRAME_HEIGHT_PX = FRAME_WIDTH_PX / PHOTO_ASPECT
+// Krok przesunięcia kadru strzałką (w pikselach ramki); z Shift większy.
+const NUDGE_STEP_PX = 8
+const NUDGE_STEP_SHIFT_PX = 40
+const ARROW_DIRECTIONS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1]
+}
 
 // Zdjęcie w nagłówku: wybór z dysku, kadrowanie przed zapisem i usunięcie (nagłówek bez kolumny na zdjęcie).
 export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocument['header']['photo'] }) {
   const [source, setSource] = useState<HTMLImageElement | null>(null)
   const [error, setError] = useState<PickError | null>(null)
   const t = useDictionary().editor.photo
+  const remove = useRemove()
 
   async function pick() {
     setError(null)
@@ -37,7 +48,7 @@ export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocum
   }
 
   return (
-    <fieldset className="form-group">
+    <fieldset className="form-group" data-entry-id="photo">
       <legend>{t.legend}</legend>
       <div className="form-row photo-field">
         {photo && <img className="photo-thumbnail" src={photo.dataUrl} alt={t.thumbnail} />}
@@ -45,7 +56,7 @@ export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocum
           {photo ? t.change : t.choose}
         </button>
         {photo && (
-          <button type="button" onClick={() => editor.edit(updateHeader({ photo: null }))}>
+          <button type="button" onClick={() => remove(updateHeader({ photo: null }), { entryId: 'photo', listId: 'photo' })}>
             {t.remove}
           </button>
         )}
@@ -69,7 +80,7 @@ export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocum
   )
 }
 
-// Okno kadrowania: przeciąganie przesuwa zdjęcie w kadrze, suwak powiększa.
+// Okno kadrowania: przeciąganie albo strzałki (na ramce z fokusem) przesuwają zdjęcie w kadrze, suwak powiększa.
 // Zatwierdzony kadr jest zapisywany jako JPEG w rozdzielczości potrzebnej do druku.
 function PhotoCropper({
   source,
@@ -104,13 +115,27 @@ function PhotoCropper({
 
   const update = (change: (view: CropView) => CropView) => setView((current) => clampView(image, change(current)))
 
+  // Przesuwa zdjęcie w ramce o (dx, dy) pikseli ramki, przeliczone na piksele zdjęcia przy bieżącym powiększeniu.
+  const moveBy = (dx: number, dy: number) => {
+    const pxPerFramePx = rect.width / FRAME_WIDTH_PX
+    setView((current) => nudgeView(image, current, dx * pxPerFramePx, dy * pxPerFramePx))
+  }
+
   function move(event: PointerEvent<HTMLCanvasElement>) {
     if (!drag.current) return
-    const pxPerFramePx = rect.width / FRAME_WIDTH_PX
     const dx = event.clientX - drag.current.x
     const dy = event.clientY - drag.current.y
     drag.current = { x: event.clientX, y: event.clientY }
-    update((current) => ({ ...current, centerX: current.centerX - dx * pxPerFramePx, centerY: current.centerY - dy * pxPerFramePx }))
+    moveBy(dx, dy)
+  }
+
+  function nudge(event: KeyboardEvent<HTMLCanvasElement>) {
+    const direction = ARROW_DIRECTIONS[event.key]
+    if (!direction) return
+    // Bez przewijania okna dialogowego strzałką.
+    event.preventDefault()
+    const step = event.shiftKey ? NUDGE_STEP_SHIFT_PX : NUDGE_STEP_PX
+    moveBy(direction[0] * step, direction[1] * step)
   }
 
   function apply() {
@@ -144,7 +169,9 @@ function PhotoCropper({
         className="photo-cropper-frame"
         role="img"
         aria-label={t.cropPreview}
+        tabIndex={0}
         style={{ width: FRAME_WIDTH_PX, height: FRAME_HEIGHT_PX }}
+        onKeyDown={nudge}
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId)
           drag.current = { x: event.clientX, y: event.clientY }

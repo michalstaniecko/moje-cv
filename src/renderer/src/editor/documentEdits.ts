@@ -17,6 +17,15 @@ const moveById = <T extends { id: string }>(items: T[], id: string, toIndex: num
 
 const newId = (): string => crypto.randomUUID()
 
+// Nazwa CV z nagłówka edytora. Ta sama reguła co zmiana nazwy w bibliotece CV: nazwa przycięta, a pusta (lub z samych
+// spacji) niczego nie zmienia – CV zostaje przy poprzedniej nazwie.
+export const updateName =
+  (name: string): Change<CvDocument> =>
+  (document) => {
+    const trimmed = name.trim()
+    return trimmed && trimmed !== document.name ? { ...document, name: trimmed } : document
+  }
+
 export const updateSettings =
   (patch: Partial<CvDocument['settings']>): Change<CvDocument> =>
   (document) => ({ ...document, settings: { ...document.settings, ...patch } })
