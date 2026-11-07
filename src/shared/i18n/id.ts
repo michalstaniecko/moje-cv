@@ -258,7 +258,7 @@ export const id: Dictionary = {
         undecodable: 'Tidak dapat memuat foto – file rusak, tidak tersedia, atau formatnya tidak didukung.'
       },
       crop: 'Pangkas foto',
-      cropHint: 'Seret foto untuk mengatur bingkai.',
+      cropHint: 'Seret foto atau gunakan tombol panah untuk mengatur bingkai.',
       cropPreview: 'Pratinjau bingkai',
       zoom: 'Zoom',
       apply: 'Terapkan'

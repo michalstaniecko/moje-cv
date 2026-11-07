@@ -258,7 +258,7 @@ export const it: Dictionary = {
         undecodable: 'Impossibile caricare la foto – il file è danneggiato, non disponibile o in un formato non supportato.'
       },
       crop: 'Ritaglia foto',
-      cropHint: 'Trascina la foto per regolare l’inquadratura.',
+      cropHint: 'Trascina la foto o usa i tasti freccia per regolare l’inquadratura.',
       cropPreview: 'Anteprima inquadratura',
       zoom: 'Zoom',
       apply: 'Applica'

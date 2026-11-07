@@ -258,7 +258,7 @@ export const pl: Dictionary = {
         undecodable: 'Nie udało się wczytać zdjęcia – plik jest uszkodzony, niedostępny albo ma nieobsługiwany format.'
       },
       crop: 'Kadrowanie zdjęcia',
-      cropHint: 'Przeciągnij zdjęcie, żeby ustawić kadr.',
+      cropHint: 'Przeciągnij zdjęcie albo użyj strzałek, żeby ustawić kadr.',
       cropPreview: 'Podgląd kadru',
       zoom: 'Powiększenie',
       apply: 'Zastosuj'

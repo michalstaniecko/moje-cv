@@ -265,7 +265,7 @@ export const nl: Dictionary = {
         undecodable: 'Kan de foto niet laden – het bestand is beschadigd, niet beschikbaar of heeft een niet-ondersteunde indeling.'
       },
       crop: 'Snijd foto bij',
-      cropHint: 'Sleep de foto om de uitsnede in te stellen.',
+      cropHint: 'Sleep de foto of gebruik de pijltjestoetsen om de uitsnede in te stellen.',
       cropPreview: 'Voorvertoning van uitsnede',
       zoom: 'Zoom',
       apply: 'Pas toe'

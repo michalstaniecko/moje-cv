@@ -258,7 +258,7 @@ export const tr: Dictionary = {
         undecodable: 'Fotoğraf yüklenemedi – dosya hasarlı, erişilemez veya desteklenmeyen bir biçimde.'
       },
       crop: 'Fotoğrafı kırp',
-      cropHint: 'Kadrajı ayarlamak için fotoğrafı sürükleyin.',
+      cropHint: 'Kadrajı ayarlamak için fotoğrafı sürükleyin veya ok tuşlarını kullanın.',
       cropPreview: 'Kadraj önizlemesi',
       zoom: 'Yakınlaştırma',
       apply: 'Uygula'

@@ -258,7 +258,7 @@ export const cs: Dictionary = {
         undecodable: 'Fotku se nepodařilo načíst – soubor je poškozený, nedostupný nebo v nepodporovaném formátu.'
       },
       crop: 'Oříznutí fotky',
-      cropHint: 'Přetažením fotky nastavte výřez.',
+      cropHint: 'Výřez nastavte přetažením fotky nebo šipkami.',
       cropPreview: 'Náhled výřezu',
       zoom: 'Zvětšení',
       apply: 'Použít'

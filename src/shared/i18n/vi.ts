@@ -258,7 +258,7 @@ export const vi: Dictionary = {
         undecodable: 'Không thể tải ảnh – tệp bị hỏng, không truy cập được hoặc có định dạng không được hỗ trợ.'
       },
       crop: 'Cắt ảnh',
-      cropHint: 'Kéo ảnh để chỉnh khung.',
+      cropHint: 'Kéo ảnh hoặc dùng các phím mũi tên để chỉnh khung.',
       cropPreview: 'Xem trước khung',
       zoom: 'Thu phóng',
       apply: 'Áp dụng'

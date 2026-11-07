@@ -258,7 +258,7 @@ export const ro: Dictionary = {
         undecodable: 'Fotografia nu a putut fi încărcată – fișierul este deteriorat, indisponibil sau într-un format neacceptat.'
       },
       crop: 'Decupează fotografia',
-      cropHint: 'Trage fotografia pentru a stabili cadrul.',
+      cropHint: 'Trage fotografia sau folosește tastele săgeți pentru a stabili cadrul.',
       cropPreview: 'Previzualizarea cadrului',
       zoom: 'Zoom',
       apply: 'Aplică'

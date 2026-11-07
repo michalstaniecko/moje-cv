@@ -258,7 +258,7 @@ export const pt: Dictionary = {
         undecodable: 'Não foi possível carregar a foto – o arquivo está danificado, indisponível ou em formato não suportado.'
       },
       crop: 'Recortar foto',
-      cropHint: 'Arraste a foto para ajustar o enquadramento.',
+      cropHint: 'Arraste a foto ou use as teclas de seta para ajustar o enquadramento.',
       cropPreview: 'Prévia do enquadramento',
       zoom: 'Zoom',
       apply: 'Aplicar'

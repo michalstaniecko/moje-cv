@@ -258,7 +258,7 @@ export const fr: Dictionary = {
         undecodable: 'Impossible de charger la photo – le fichier est endommagé, indisponible ou dans un format non pris en charge.'
       },
       crop: 'Recadrer la photo',
-      cropHint: 'Faites glisser la photo pour ajuster le cadrage.',
+      cropHint: 'Faites glisser la photo ou utilisez les touches fléchées pour ajuster le cadrage.',
       cropPreview: 'Aperçu du cadrage',
       zoom: 'Zoom',
       apply: 'Appliquer'

@@ -280,7 +280,7 @@ export const en = {
         undecodable: 'Couldn’t load the photo – the file is damaged, unavailable or in an unsupported format.'
       },
       crop: 'Crop photo',
-      cropHint: 'Drag the photo to set the frame.',
+      cropHint: 'Drag the photo or use the arrow keys to set the frame.',
       cropPreview: 'Frame preview',
       zoom: 'Zoom',
       apply: 'Apply'

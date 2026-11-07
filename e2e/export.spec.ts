@@ -568,7 +568,7 @@ test('the CV editor is in English, including the save status, photo cropping and
   await stubOpenDialog(photoPath)
   await photoField.getByRole('button', { name: 'Change photo' }).click()
   const cropper = window.getByRole('dialog', { name: 'Crop photo' })
-  await expect(cropper).toContainText('Drag the photo to set the frame.')
+  await expect(cropper).toContainText('Drag the photo or use the arrow keys to set the frame.')
   await expect(cropper.getByRole('img', { name: 'Frame preview' })).toBeVisible()
   await expect(cropper.getByLabel('Zoom')).toBeVisible()
   await cropper.getByRole('button', { name: 'Apply' }).click()
@@ -1354,17 +1354,7 @@ test('manages the consent clause library, uses a clause in a CV without changing
 })
 
 test('picks a photo from disk, crops it to 3:4 for the header and removes it, in the preview and PDF', async () => {
-  // Zdjęcie poziome 1200 × 800: lewa połowa czerwona, prawa niebieska.
-  const photoPath = join(outputDir, 'photo.png')
-  const png = await app.evaluate(({ nativeImage }) => {
-    const [width, height] = [1200, 800]
-    const bitmap = Buffer.alloc(width * height * 4)
-    // Piksele w kolejności BGRA.
-    for (let y = 0; y < height; y++)
-      for (let x = 0; x < width; x++) bitmap.set(x < width / 2 ? [0, 0, 255, 255] : [255, 0, 0, 255], (y * width + x) * 4)
-    return nativeImage.createFromBitmap(bitmap, { width, height }).toPNG().toString('base64')
-  })
-  await writeFile(photoPath, Buffer.from(png, 'base64'))
+  const photoPath = await writeRedBluePhoto()
   const brokenPath = join(outputDir, 'broken.jpg')
   await writeFile(brokenPath, 'not an image')
   await openFirstCv()
@@ -1400,31 +1390,7 @@ test('picks a photo from disk, crops it to 3:4 for the header and removes it, in
   // W CV wykadrowany JPEG 3:4 w rozdzielczości do druku (42 mm przy 300 dpi), o szerokości 42 mm.
   const photo = preview.locator('.cv-page .cv-photo')
   await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
-  const stored = await photo.evaluate(async (element) => {
-    const image = element as typeof element & { naturalWidth: number; naturalHeight: number; src: string; decode: () => Promise<void> }
-    await image.decode()
-    const view = element.ownerDocument.defaultView!
-    const canvas = element.ownerDocument.createElement('canvas') as unknown as {
-      width: number
-      height: number
-      getContext: (type: '2d') => {
-        drawImage: (image: unknown, x: number, y: number) => void
-        getImageData: (x: number, y: number, width: number, height: number) => { data: Uint8ClampedArray }
-      }
-    }
-    canvas.width = image.naturalWidth
-    canvas.height = image.naturalHeight
-    const context = canvas.getContext('2d')
-    context.drawImage(image, 0, 0)
-    const pixel = (x: number, y: number) => [...context.getImageData(x, y, 1, 1).data.slice(0, 3)]
-    return {
-      width: image.naturalWidth,
-      height: image.naturalHeight,
-      cssWidth: view.getComputedStyle(element).width,
-      corners: [pixel(2, 2), pixel(canvas.width - 3, canvas.height - 3)],
-      length: image.src.length
-    }
-  })
+  const stored = await storedPhoto(photo)
   expect(stored.width).toBe(496)
   expect(stored.height).toBe(661)
   expect(parseFloat(stored.cssWidth)).toBeCloseTo((42 * 96) / 25.4, 0)
@@ -1461,6 +1427,46 @@ test('picks a photo from disk, crops it to 3:4 for the header and removes it, in
   await photoField.getByRole('button', { name: 'Choose photo' }).click()
   await expect(window.getByRole('dialog', { name: 'Crop photo' })).toHaveCount(0)
   await expect(preview.locator('.cv-photo')).toHaveCount(0)
+})
+
+test('the crop frame takes the focus and the arrow keys move the photo in it, with Shift in bigger steps', async () => {
+  const photoPath = await writeRedBluePhoto()
+  await openFirstCv()
+  const photoField = window.getByRole('group', { name: 'Photo', exact: true })
+  await stubOpenDialog(photoPath)
+  await photoField.getByRole('button', { name: 'Change photo' }).click()
+  const cropper = window.getByRole('dialog', { name: 'Crop photo' })
+  await expect(cropper).toContainText('Drag the photo or use the arrow keys to set the frame.')
+
+  // Ramka jest w kolejności Tab tuż przed suwakiem powiększenia i ma widoczny obrys fokusu.
+  const frame = cropper.getByRole('img', { name: 'Frame preview' })
+  await cropper.getByRole('slider', { name: 'Zoom' }).focus()
+  await window.keyboard.press('Shift+Tab')
+  await expect(frame).toBeFocused()
+  await expect(frame).toHaveCSS('outline-width', '2px')
+
+  // Strzałka w lewo przesuwa zdjęcie w lewo: z prawej (niebieskiej) połowy, Shift o większy krok.
+  const scrollBefore = await cropper.evaluate((element) => element.scrollTop)
+  await window.keyboard.press('ArrowRight')
+  for (let i = 0; i < 5; i++) await window.keyboard.press('Shift+ArrowLeft')
+  expect(await cropper.evaluate((element) => element.scrollTop)).toBe(scrollBefore)
+  await cropper.getByRole('button', { name: 'Apply' }).click()
+  const photo = window.locator('.preview .cv-page .cv-photo')
+  await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+  for (const [r = 0, , b = 0] of (await storedPhoto(photo)).corners) {
+    expect(b).toBeGreaterThan(200)
+    expect(r).toBeLessThan(40)
+  }
+
+  // Strzałki w prawo z Shift doprowadzają kadr do lewej (czerwonej) krawędzi i tam go zatrzymują.
+  await photoField.getByRole('button', { name: 'Change photo' }).click()
+  await cropper.getByRole('img', { name: 'Frame preview' }).focus()
+  for (let i = 0; i < 10; i++) await window.keyboard.press('Shift+ArrowRight')
+  await cropper.getByRole('button', { name: 'Apply' }).click()
+  await expect(cropper).toHaveCount(0)
+  await expect
+    .poll(async () => (await storedPhoto(photo)).corners.every(([r = 0, , b = 0]) => r > 200 && b < 40))
+    .toBe(true)
 })
 
 test('shows the page count, warns about long CVs and oversized fragments only in the preview, and zooms without changing the page split', async () => {
@@ -2565,6 +2571,50 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   await expect(window.getByRole('alert')).toHaveCount(0)
   await expect(rows).toHaveCount(2)
 })
+
+// Zdjęcie poziome 1200 × 800 zapisane jako PNG w katalogu testu: lewa połowa czerwona, prawa niebieska.
+async function writeRedBluePhoto() {
+  const photoPath = join(outputDir, 'photo.png')
+  const png = await app.evaluate(({ nativeImage }) => {
+    const [width, height] = [1200, 800]
+    const bitmap = Buffer.alloc(width * height * 4)
+    // Piksele w kolejności BGRA.
+    for (let y = 0; y < height; y++)
+      for (let x = 0; x < width; x++) bitmap.set(x < width / 2 ? [0, 0, 255, 255] : [255, 0, 0, 255], (y * width + x) * 4)
+    return nativeImage.createFromBitmap(bitmap, { width, height }).toPNG().toString('base64')
+  })
+  await writeFile(photoPath, Buffer.from(png, 'base64'))
+  return photoPath
+}
+
+// Zdjęcie zapisane w CV (element <img> w podglądzie): rozmiar, szerokość w CSS, kolory dwóch przeciwległych rogów i długość data URL.
+function storedPhoto(photo: Locator) {
+  return photo.evaluate(async (element) => {
+    const image = element as typeof element & { naturalWidth: number; naturalHeight: number; src: string; decode: () => Promise<void> }
+    await image.decode()
+    const view = element.ownerDocument.defaultView!
+    const canvas = element.ownerDocument.createElement('canvas') as unknown as {
+      width: number
+      height: number
+      getContext: (type: '2d') => {
+        drawImage: (image: unknown, x: number, y: number) => void
+        getImageData: (x: number, y: number, width: number, height: number) => { data: Uint8ClampedArray }
+      }
+    }
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    const context = canvas.getContext('2d')
+    context.drawImage(image, 0, 0)
+    const pixel = (x: number, y: number) => [...context.getImageData(x, y, 1, 1).data.slice(0, 3)]
+    return {
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      cssWidth: view.getComputedStyle(element).width,
+      corners: [pixel(2, 2), pixel(canvas.width - 3, canvas.height - 3)],
+      length: image.src.length
+    }
+  })
+}
 
 // Wartości wszystkich pól wskazanych lokatorem, w kolejności z formularza.
 function inputValues(fields: Locator) {

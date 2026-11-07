@@ -266,7 +266,7 @@ export const de: Dictionary = {
           'Das Foto konnte nicht geladen werden – die Datei ist beschädigt, nicht verfügbar oder hat ein nicht unterstütztes Format.'
       },
       crop: 'Foto zuschneiden',
-      cropHint: 'Ziehe das Foto, um den Ausschnitt festzulegen.',
+      cropHint: 'Ziehe das Foto oder nutze die Pfeiltasten, um den Ausschnitt festzulegen.',
       cropPreview: 'Vorschau des Ausschnitts',
       zoom: 'Zoom',
       apply: 'Anwenden'

@@ -263,7 +263,7 @@ export const sv: Dictionary = {
         undecodable: 'Det gick inte att läsa in fotot – filen är skadad, otillgänglig eller har ett format som inte stöds.'
       },
       crop: 'Beskär foto',
-      cropHint: 'Dra fotot för att ställa in utsnittet.',
+      cropHint: 'Dra fotot eller använd piltangenterna för att ställa in utsnittet.',
       cropPreview: 'Förhandsvisning av utsnitt',
       zoom: 'Zoom',
       apply: 'Använd'
