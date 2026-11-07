@@ -143,3 +143,66 @@ test('a change made in the editor right before a rendering error is kept after R
   await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
   await expect(window.getByLabel('Imię i nazwisko')).toHaveValue('Ewa Nowak')
 })
+
+// Zabija proces renderera okna aplikacji, jak przy awarii.
+async function crashRenderer() {
+  await app.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows()[0]!.webContents.forcefullyCrashRenderer()
+  })
+}
+
+// Czy okno znów pokazuje bibliotekę CV. Stan sprawdzamy w procesie głównym, bo obiekt `Page` Playwrighta
+// nie musi przetrwać awarii renderera.
+const libraryShown = () =>
+  app.evaluate(async ({ BrowserWindow }) => {
+    const contents = BrowserWindow.getAllWindows()[0]!.webContents
+    if (contents.isCrashed() || contents.isLoading()) return false
+    const text = (await contents.executeJavaScript('document.body.innerText').catch(() => '')) as string
+    return text.includes('New CV')
+  })
+
+// Podmienia natywne okno komunikatu: zapamiętuje opcje i zwraca wskazany przycisk.
+async function stubMessageBox(response: number) {
+  await app.evaluate(({ dialog }, response) => {
+    const calls: Electron.MessageBoxOptions[] = []
+    ;(globalThis as { messageBoxCalls?: typeof calls }).messageBoxCalls = calls
+    const stub = async (...args: unknown[]) => {
+      calls.push(args.at(-1) as Electron.MessageBoxOptions)
+      return { response, checkboxChecked: false }
+    }
+    dialog.showMessageBox = stub as typeof dialog.showMessageBox
+  }, response)
+}
+
+const messageBoxCalls = () =>
+  app.evaluate(() => (globalThis as { messageBoxCalls?: Electron.MessageBoxOptions[] }).messageBoxCalls ?? [])
+
+test('a crashed app window reloads itself and shows the library again', async () => {
+  await expect(cvList()).toBeVisible()
+  await crashRenderer()
+  await expect.poll(libraryShown, { timeout: 10_000 }).toBe(true)
+})
+
+test('after the fourth crash within a minute the app asks whether to reload or quit instead of reloading in a loop', async () => {
+  await expect(cvList()).toBeVisible()
+  await stubMessageBox(0)
+  for (let crash = 0; crash < 3; crash++) {
+    await crashRenderer()
+    await expect.poll(libraryShown, { timeout: 10_000 }).toBe(true)
+  }
+  expect(await messageBoxCalls()).toEqual([])
+
+  await crashRenderer()
+  await expect.poll(messageBoxCalls).toHaveLength(1)
+  const [question] = await messageBoxCalls()
+  expect(question).toMatchObject({
+    message: 'The CV Press window stopped working several times in a row.',
+    detail: 'Your saved CVs are safe. You can reload the window or quit the app.',
+    buttons: ['Reload', 'Quit CV Press']
+  })
+  // „Wczytaj ponownie” przeładowuje okno i zeruje licznik: kolejna awaria znów tylko przeładowuje.
+  await expect.poll(libraryShown, { timeout: 10_000 }).toBe(true)
+  await crashRenderer()
+  await expect.poll(libraryShown, { timeout: 10_000 }).toBe(true)
+  expect(await messageBoxCalls()).toHaveLength(1)
+})

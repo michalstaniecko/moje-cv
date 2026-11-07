@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { app, BrowserWindow } from 'electron'
 import { sampleCvs } from '../renderer/src/domain/sampleCv'
 import { createAppearance, windowBackground } from './appearance'
+import { reloadAfterRendererCrash } from './crashHandling'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
 import { createInterfaceLanguage, registerInterfaceLanguage, type InterfaceLanguageState } from './interfaceLanguage'
@@ -18,10 +19,14 @@ import { loadRenderer, lockNavigation, secureWebPreferences } from './windows'
 // pozostaje „widoczne” dla Electrona, więc renderer nie jest dławiony, a Playwright steruje nim przez CDP.
 const hiddenForTests = process.env['MOJE_CV_E2E_HIDDEN'] === '1'
 
+// Okno aplikacji. Proces główny trzyma do niego referencję, bo `BrowserWindow.getAllWindows()` zwraca też ukryte
+// okna wydruku PDF.
+let mainWindow: BrowserWindow | null = null
+
 // Tytuł okna to nazwa aplikacji ze słownika; renderer ustawia go także w dokumencie przy zmianie języka.
 // Tło okna równe tłu aplikacji w bieżącym wyglądzie, żeby przy starcie nie było błysku innej barwy.
 function createWindow(language: InterfaceLanguageState): void {
-  const window = new BrowserWindow({
+  const window = (mainWindow = new BrowserWindow({
     width: 1280,
     height: 900,
     title: language.dictionary().appName,
@@ -29,13 +34,17 @@ function createWindow(language: InterfaceLanguageState): void {
     backgroundColor: windowBackground(),
     webPreferences: secureWebPreferences,
     ...(hiddenForTests && { opacity: 0 })
-  })
+  }))
 
   window.once('ready-to-show', () => {
     if (!hiddenForTests) return window.show()
     window.setIgnoreMouseEvents(true)
     window.showInactive()
   })
+  window.on('closed', () => {
+    if (mainWindow === window) mainWindow = null
+  })
+  reloadAfterRendererCrash(window, language.dictionary)
   void loadRenderer(window)
 }
 
@@ -63,7 +72,7 @@ app.whenReady().then(async () => {
   createWindow(language)
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow(language)
+    if (!mainWindow) createWindow(language)
   })
 })
 
