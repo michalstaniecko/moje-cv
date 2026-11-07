@@ -76,6 +76,10 @@ export const nl: Dictionary = {
     confirmDeleteDamaged: (fileName) =>
       `Beschadigd bestand “${fileName}” verwijderen? Dit kan niet ongedaan worden gemaakt.`,
     damaged: 'Beschadigd bestand – kan niet worden geopend',
+    newerVersion: (appName) => `Vereist een nieuwere versie van ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Bestand “${fileName}” verwijderen? Het is een cv uit een nieuwere versie van ${appName} en gaat verloren. Dit kan niet ongedaan worden gemaakt.`,
+    loading: 'Laden…',
     imported: (name) => `“${name}” geïmporteerd.`,
     savedFile: (fileName) => `Bestand bewaard: ${fileName}`,
     importErrors: {

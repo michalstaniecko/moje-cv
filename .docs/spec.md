@@ -118,7 +118,7 @@ Uwagi:
 - `userData/cvs/<id>.json` – jedno CV na plik.
 - `userData/settings.json` – `AppSettings`.
 - Zapis atomowy (zapis do pliku tymczasowego + rename).
-- Odczyt: `JSON.parse` → migracje do bieżącej `schemaVersion` → walidacja Zod. Plik niepoprawny nie jest nadpisywany; CV oznaczone jako uszkodzone na liście.
+- Odczyt: `JSON.parse` → migracje do bieżącej `schemaVersion` → walidacja Zod. Plik niepoprawny nie jest nadpisywany; CV oznaczone jako uszkodzone na liście. Plik z nowszą `schemaVersion` (zapisany w nowszej wersji aplikacji) też nie jest nadpisywany, ale na liście jest oznaczony osobno od uszkodzonego („Wymaga nowszej wersji CV Press”); da się go tylko usunąć.
 - Import `.json`: ta sama ścieżka (migracja + walidacja) i nowe `id`, żeby nie nadpisać istniejącego.
 
 ## 4. Podział na strony

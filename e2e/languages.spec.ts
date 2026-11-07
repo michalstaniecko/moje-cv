@@ -163,5 +163,13 @@ for (const language of interfaceLanguageCodes) {
     expect(pdf.numPages).toBe(SAMPLE_CV_PAGES)
     const firstPage = await (await pdf.getPage(1)).getTextContent()
     expect(firstPage.items.map((item) => ('str' in item ? item.str : '')).join('')).toContain(sample.header.fullName)
+
+    // Pusta biblioteka: tekst i przycisk „Dodaj przykładowe CV” się mieszczą.
+    await window.getByRole('button', { name: t.common.back(t.appName) }).click()
+    await library.getByRole('button', { name: t.common.delete }).click()
+    await library.getByRole('alertdialog').getByRole('button', { name: t.common.delete }).click()
+    await expect(library.getByRole('listitem')).toHaveCount(0)
+    await expect(window.locator('.library-empty-state').getByRole('button', { name: t.library.addSample })).toBeVisible()
+    expect(await controlsThatDoNotFit('.toolbar, .library-empty-state, .sponsor-bar')).toEqual([])
   })
 }

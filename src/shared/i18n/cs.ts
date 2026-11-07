@@ -75,6 +75,10 @@ export const cs: Dictionary = {
     confirmDelete: (name) => `Smazat „${name}“? Tuto akci nelze vrátit.`,
     confirmDeleteDamaged: (fileName) => `Smazat poškozený soubor „${fileName}“? Tuto akci nelze vrátit.`,
     damaged: 'Poškozený soubor – nelze ho otevřít',
+    newerVersion: (appName) => `Vyžaduje novější verzi ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Smazat soubor „${fileName}“? Je to CV z novější verze ${appName} a bude ztraceno. Tuto akci nelze vrátit.`,
+    loading: 'Načítání…',
     imported: (name) => `Importováno „${name}“.`,
     savedFile: (fileName) => `Soubor uložen: ${fileName}`,
     importErrors: {

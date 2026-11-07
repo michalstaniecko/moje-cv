@@ -75,6 +75,10 @@ export const uk: Dictionary = {
     confirmDelete: (name) => `Видалити «${name}»? Цю дію не можна скасувати.`,
     confirmDeleteDamaged: (fileName) => `Видалити пошкоджений файл «${fileName}»? Цю дію не можна скасувати.`,
     damaged: 'Файл пошкоджено – його не вдається відкрити',
+    newerVersion: (appName) => `Потрібна новіша версія ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Видалити файл «${fileName}»? Це резюме з новішої версії ${appName}, його буде втрачено. Цю дію не можна скасувати.`,
+    loading: 'Завантаження…',
     imported: (name) => `Імпортовано «${name}».`,
     savedFile: (fileName) => `Файл збережено: ${fileName}`,
     importErrors: {

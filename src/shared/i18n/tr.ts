@@ -75,6 +75,10 @@ export const tr: Dictionary = {
     confirmDelete: (name) => `“${name}” silinsin mi? Bu işlem geri alınamaz.`,
     confirmDeleteDamaged: (fileName) => `Hasarlı “${fileName}” dosyası silinsin mi? Bu işlem geri alınamaz.`,
     damaged: 'Hasarlı dosya – açılamıyor',
+    newerVersion: (appName) => `${appName} uygulamasının daha yeni bir sürümü gerekiyor`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `“${fileName}” dosyası silinsin mi? Bu, ${appName} uygulamasının daha yeni bir sürümünden bir CV’dir ve kaybolacak. Bu işlem geri alınamaz.`,
+    loading: 'Yükleniyor…',
     imported: (name) => `“${name}” içe aktarıldı.`,
     savedFile: (fileName) => `Dosya kaydedildi: ${fileName}`,
     importErrors: {

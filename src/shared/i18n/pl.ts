@@ -75,6 +75,10 @@ export const pl: Dictionary = {
     confirmDelete: (name) => `Usunąć „${name}”? Tej operacji nie można cofnąć.`,
     confirmDeleteDamaged: (fileName) => `Usunąć uszkodzony plik „${fileName}”? Tej operacji nie można cofnąć.`,
     damaged: 'Plik uszkodzony – nie można go otworzyć',
+    newerVersion: (appName) => `Wymaga nowszej wersji ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Usunąć plik „${fileName}”? To CV z nowszej wersji ${appName} – zostanie utracone. Tej operacji nie można cofnąć.`,
+    loading: 'Wczytywanie…',
     imported: (name) => `Zaimportowano „${name}”.`,
     savedFile: (fileName) => `Zapisano plik: ${fileName}`,
     importErrors: {
