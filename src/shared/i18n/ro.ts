@@ -229,7 +229,12 @@ export const ro: Dictionary = {
       position: (name) => `postul „${name}”`,
       education: (name) => `intrarea „${name}”`,
       bullet: (number) => `punctul ${number}`,
-      listItem: (number) => `elementul ${number}`
+      listItem: (number) => `elementul ${number}`,
+      pickedUp: (item) => `Ai ridicat ${item}.`,
+      movedOver: (item, position, total) => `Muți ${item}: poziția ${position} din ${total}.`,
+      dropped: (item, position, total) => `Ai plasat ${item} pe poziția ${position} din ${total}.`,
+      cancelled: (item) => `Ai pus ${item} înapoi la locul său.`,
+      instructions: 'Pentru a ridica un element, apasă Spațiu sau Enter. Mută-l cu tastele săgeți, plasează-l cu Spațiu sau Enter, iar Escape anulează.'
     },
     consent: {
       title: 'Clauză de acord',
@@ -258,7 +263,7 @@ export const ro: Dictionary = {
         undecodable: 'Fotografia nu a putut fi încărcată – fișierul este deteriorat, indisponibil sau într-un format neacceptat.'
       },
       crop: 'Decupează fotografia',
-      cropHint: 'Trage fotografia pentru a stabili cadrul.',
+      cropHint: 'Trage fotografia sau folosește tastele săgeți pentru a stabili cadrul.',
       cropPreview: 'Previzualizarea cadrului',
       zoom: 'Zoom',
       apply: 'Aplică'
@@ -277,7 +282,7 @@ export const ro: Dictionary = {
     fit: 'Potrivește'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Susține ${appName}`,
     message: (appName) => `${appName} este gratuit. Dacă te-a ajutat, poți să-i mulțumești autorului cu o cafea.`,
     link: 'Cumpără-mi o cafea',
     more: 'Mai mult',

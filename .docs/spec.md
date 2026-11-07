@@ -9,7 +9,7 @@ Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/bri
 |---|---|---|
 | Q1 | Technologia | Electron + React + TypeScript + Vite. Podgląd i PDF renderuje ten sam silnik (Chromium). |
 | Q2 | Odbiorcy | Kilka znanych osób. Aplikacja niepodpisana + instrukcja pierwszego uruchomienia (PPM → Otwórz). |
-| Q3 | Edycja | Formularz po lewej, podgląd stron A4 po prawej. Podgląd tylko do odczytu. |
+| Q3 | Edycja | Formularz po lewej, podgląd stron A4 po prawej. Podgląd tylko do odczytu i ukryty przed czytnikami ekranu (źródłem treści jest formularz); pasek podglądu zostaje dostępny. |
 | Q4 | Sekcje | Typowane sekcje z template'u (pole `type`), z możliwością ukrycia i zmiany kolejności. Nowe typy dodawane w kodzie. |
 | Q5 | Podział stron | Automatyczne reguły + przełącznik „nowa strona przed tym elementem” przy sekcji i wpisie. |
 | Q6 | Klauzula – zachowanie | Zawsze na dole ostatniej strony. Gdy się nie mieści – na dół nowej strony. Przełącznik wł./wył. Zwykły tekst. |
@@ -24,7 +24,7 @@ Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/bri
 | Q15 | Silnik stron | Własny, blokowy (sekcja 4). Bez Paged.js. |
 | Q16 | Kontynuacja | Punkty przechodzą na kolejną stronę bez „(cd.)”. |
 | Q17 | Daty | Miesiąc + rok, format `MM.RRRR`. Doświadczenie: zakres + „obecnie” w CV language (np. „present” po angielsku). Wykształcenie: data ukończenia, opcjonalnie początek. Checkbox w formularzu: „Nadal tu pracuję”. Koniec wcześniejszy niż początek (dwie pełne daty; ten sam miesiąc to nie błąd) daje ostrzeżenie pod datami (`aria-describedby` pola końca), bez blokady zapisu i eksportu (#69). |
-| Q18 | Kolejność | Ręczna: drag & drop + strzałki góra/dół (sekcje, wpisy, punkty). |
+| Q18 | Kolejność | Ręczna: drag & drop + strzałki góra/dół (sekcje, wpisy, punkty). Przeciąganie z klawiatury ogłasza czytnikowi ekranu element, pozycję („pozycja 3 z 5”), upuszczenie i anulowanie w Interface language. |
 | Q19 | Eksport PDF | Systemowe okno zapisu, nazwa `CV_Imie_Nazwisko.pdf` z transliteracją (mapa liter nierozkładalnych i cyrylicy, potem NFD; dla CV language `uk` zasady ukraińskie), kolejno z imienia i nazwiska, z nazwy CV, a na końcu `CV.pdf`. Przy za długich blokach najpierw pytanie „Eksportować mimo to?”. W trakcie przygotowania wskaźnik postępu; przekroczenie czasu ma osobny komunikat. Potem zamykane powiadomienie z „Pokaż w Finderze / Otwórz” pod paskiem narzędzi. Tekst zaznaczalny, metadane Title/Author (w oryginalnym zapisie). |
 | Q20 | Liczba stron | Licznik stron w podglądzie; dyskretna informacja przy > 2 stronach. Bez limitu. |
 | Q21 | Dane startowe | Przykładowe CV z fikcyjnymi danymi przy pierwszym uruchomieniu, w języku interfejsu. Prawdziwe dane – osobny JSON do importu, poza repo. |

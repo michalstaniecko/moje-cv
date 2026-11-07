@@ -229,7 +229,12 @@ export const pt: Dictionary = {
       position: (name) => `o cargo “${name}”`,
       education: (name) => `o item “${name}”`,
       bullet: (number) => `o tópico ${number}`,
-      listItem: (number) => `o item ${number}`
+      listItem: (number) => `o item ${number}`,
+      pickedUp: (item) => `Você pegou ${item}.`,
+      movedOver: (item, position, total) => `Movendo ${item}: posição ${position} de ${total}.`,
+      dropped: (item, position, total) => `Você soltou ${item} na posição ${position} de ${total}.`,
+      cancelled: (item) => `Você devolveu ${item} ao lugar original.`,
+      instructions: 'Para pegar um item, pressione Espaço ou Enter. Use as setas para movê-lo, Espaço ou Enter para soltá-lo e Esc para cancelar.'
     },
     consent: {
       title: 'Cláusula de consentimento',
@@ -258,7 +263,7 @@ export const pt: Dictionary = {
         undecodable: 'Não foi possível carregar a foto – o arquivo está danificado, indisponível ou em formato não suportado.'
       },
       crop: 'Recortar foto',
-      cropHint: 'Arraste a foto para ajustar o enquadramento.',
+      cropHint: 'Arraste a foto ou use as teclas de seta para ajustar o enquadramento.',
       cropPreview: 'Prévia do enquadramento',
       zoom: 'Zoom',
       apply: 'Aplicar'
@@ -277,7 +282,7 @@ export const pt: Dictionary = {
     fit: 'Ajustar'
   },
   sponsor: {
-    bar: 'Patrocínio',
+    bar: (appName) => `Apoio ao ${appName}`,
     message: (appName) => `O ${appName} é gratuito. Se ele ajudou você, agradeça ao autor com um café.`,
     link: 'Me pague um café',
     more: 'Mais',

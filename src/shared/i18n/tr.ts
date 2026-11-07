@@ -229,7 +229,12 @@ export const tr: Dictionary = {
       position: (name) => `“${name}” pozisyonu`,
       education: (name) => `“${name}” kaydı`,
       bullet: (number) => `${number}. madde`,
-      listItem: (number) => `${number}. öğe`
+      listItem: (number) => `${number}. öğe`,
+      pickedUp: (item) => `${item} alındı.`,
+      movedOver: (item, position, total) => `${item} taşınıyor: konum ${position} / ${total}.`,
+      dropped: (item, position, total) => `${item} bırakıldı: konum ${position} / ${total}.`,
+      cancelled: (item) => `${item} eski yerine geri kondu.`,
+      instructions: 'Bir öğeyi almak için Boşluk veya Enter tuşuna basın. Ok tuşlarıyla taşıyın, Boşluk veya Enter ile bırakın, Escape ile iptal edin.'
     },
     consent: {
       title: 'Onay metni',
@@ -258,7 +263,7 @@ export const tr: Dictionary = {
         undecodable: 'Fotoğraf yüklenemedi – dosya hasarlı, erişilemez veya desteklenmeyen bir biçimde.'
       },
       crop: 'Fotoğrafı kırp',
-      cropHint: 'Kadrajı ayarlamak için fotoğrafı sürükleyin.',
+      cropHint: 'Kadrajı ayarlamak için fotoğrafı sürükleyin veya ok tuşlarını kullanın.',
       cropPreview: 'Kadraj önizlemesi',
       zoom: 'Yakınlaştırma',
       apply: 'Uygula'
@@ -276,7 +281,7 @@ export const tr: Dictionary = {
     fit: 'Sığdır'
   },
   sponsor: {
-    bar: 'Destek',
+    bar: (appName) => `${appName} uygulamasını destekleyin`,
     message: (appName) => `${appName} ücretsizdir. İşinize yaradıysa geliştiriciye bir kahve ısmarlayarak teşekkür edebilirsiniz.`,
     link: 'Bana kahve ısmarla',
     more: 'Daha fazla',

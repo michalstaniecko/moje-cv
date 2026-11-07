@@ -55,6 +55,9 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | „Nadal tu pracuję” ustawia na dokumencie i w PDF „obecnie” w CV language (#69) | [ ] | [ ] |
 | Data „do” wcześniejsza niż „od” (doświadczenie i wykształcenie): ostrzeżenie pod datami, czytelne w jasnym i ciemnym wyglądzie; eksport nadal działa (#69) | [ ] | [ ] |
 | Usunięcie stanowiska: „Usunięto.” z „Cofnij” na dole kolumny formularza (nie na podglądzie); „Cofnij” przywraca stanowisko z punktami; komunikat znika sam po ok. 8 s, ale nie pod kursorem ani z fokusem; VoiceOver ogłasza „Usunięto” (#69) | [ ] | [ ] |
+| VoiceOver na uchwycie ⠿ sekcji „Języki”: instrukcja przeciągania w Interface language; Spacja „Podniesiono sekcję „Języki””, strzałka „Przesuwasz…: pozycja 3 z 5”, Spacja „Upuszczono…”, Escape „Odłożono…”; nigdzie identyfikatora (#71) | [ ] | [ ] |
+| VoiceOver w edytorze nie czyta treści stron podglądu (imię, sekcje); licznik stron, ostrzeżenie o długości i przyciski powiększenia są dostępne (#71) | [ ] | [ ] |
+| CV dłuższe niż 2 strony: ostrzeżenie w pasku podglądu z ikoną ⚠ w kolorze ostrzeżenia (bursztynowy), czytelne w jasnym i ciemnym wyglądzie (#71) | [ ] | [ ] |
 | Duży CV (4+ strony, zdjęcie): podgląd nadąża za pisaniem, pisanie nie przycina się przy autozapisie (#72) | [ ] | [ ] |
 | Pomiar wydajności na M1 (#72): `MOJE_CV_PERF=1 pnpm test:e2e:packaged e2e/performance.spec.ts`; mediana i p95 „keystroke → preview painted” < 100 ms, „cv:update total” < 100 ms, brak długich zadań ≥ 100 ms | — | [ ] |
 
@@ -84,6 +87,7 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | Sprawdź | MAS | DMG |
 | --- | --- | --- |
 | Wybór zdjęcia i kadrowanie | [ ] | [ ] |
+| Kadrowanie z klawiatury: Tab do ramki (widoczny obrys fokusu), strzałki przesuwają zdjęcie, z Shift szybciej; okno się nie przewija (#71) | [ ] | [ ] |
 | „Bez zdjęcia” | [ ] | [ ] |
 | Za duży albo nieobsługiwany plik daje komunikat | [ ] | [ ] |
 
@@ -100,6 +104,7 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | --- | --- | --- |
 | Dodanie, edycja, usunięcie klauzuli i klauzula domyślna | [ ] | [ ] |
 | Klauzula w CV i w PDF | [ ] | [ ] |
+| Escape w formularzu klauzuli zamyka go bez zapisu; po zamknięciu (Escape, Anuluj, Zapisz) fokus wraca na „Dodaj klauzulę” albo „Edytuj” (#71) | [ ] | [ ] |
 
 ## Interface language
 
@@ -122,6 +127,7 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | Sponsor bar widoczny na dole okna | — (niewidoczny) | [ ] |
 | Sponsor link otwiera GitHub Sponsors w przeglądarce | — | [ ] |
 | Okno „Więcej” otwiera się i zamyka | — | [ ] |
+| VoiceOver (rotor, punkty orientacyjne): belka to „Wsparcie CV Press”, nie „Sponsor” (#71) | — | [ ] |
 
 ## Menu aplikacji
 

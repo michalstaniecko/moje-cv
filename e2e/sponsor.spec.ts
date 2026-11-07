@@ -69,7 +69,8 @@ async function chooseLanguage(itemLabel: string) {
   )
 }
 
-const sponsorBar = () => window.getByRole('contentinfo', { name: 'Sponsor' })
+// Sponsor bar to landmark contentinfo nazwany w Interface language: „Support CV Press”, po polsku „Wsparcie CV Press”.
+const sponsorBar = (name = 'Support CV Press') => window.getByRole('contentinfo', { name, exact: true })
 
 test('on first launch the Sponsor bar is visible on the library screen with the Sponsor link and the More button', async () => {
   await expect(window.getByRole('button', { name: 'New CV' })).toBeVisible()
@@ -135,7 +136,8 @@ test('the Sponsor bar and the dialog follow the interface language switched in t
   await expect(sponsorBar()).toContainText('CV Press is free')
 
   await chooseLanguage('Polski')
-  const bar = sponsorBar()
+  await expect(sponsorBar('Support CV Press')).toHaveCount(0)
+  const bar = sponsorBar('Wsparcie CV Press')
   await expect(bar).toContainText('CV Press jest darmowe')
   await expect(bar.getByRole('button', { name: 'Postaw mi kawę' })).toBeVisible()
   await bar.getByRole('button', { name: 'Więcej' }).click()

@@ -234,7 +234,12 @@ export const sv: Dictionary = {
       position: (name) => `tjänsten ”${name}”`,
       education: (name) => `posten ”${name}”`,
       bullet: (number) => `punkt ${number}`,
-      listItem: (number) => `post ${number}`
+      listItem: (number) => `post ${number}`,
+      pickedUp: (item) => `Du har lyft ${item}.`,
+      movedOver: (item, position, total) => `Du flyttar ${item}: position ${position} av ${total}.`,
+      dropped: (item, position, total) => `Du har släppt ${item} på position ${position} av ${total}.`,
+      cancelled: (item) => `Du har lagt tillbaka ${item} på sin plats.`,
+      instructions: 'Tryck på blanksteg eller Retur för att lyfta ett objekt. Flytta det med piltangenterna, släpp det med blanksteg eller Retur och avbryt med Escape.'
     },
     consent: {
       title: 'Samtyckesklausul',
@@ -263,7 +268,7 @@ export const sv: Dictionary = {
         undecodable: 'Det gick inte att läsa in fotot – filen är skadad, otillgänglig eller har ett format som inte stöds.'
       },
       crop: 'Beskär foto',
-      cropHint: 'Dra fotot för att ställa in utsnittet.',
+      cropHint: 'Dra fotot eller använd piltangenterna för att ställa in utsnittet.',
       cropPreview: 'Förhandsvisning av utsnitt',
       zoom: 'Zoom',
       apply: 'Använd'
@@ -281,7 +286,7 @@ export const sv: Dictionary = {
     fit: 'Anpassa'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Stöd ${appName}`,
     message: (appName) => `${appName} är gratis. Om appen har hjälpt dig kan du tacka utvecklaren med en kaffe.`,
     link: 'Bjud på en kaffe',
     more: 'Mer',

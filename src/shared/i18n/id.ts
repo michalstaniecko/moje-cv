@@ -229,7 +229,12 @@ export const id: Dictionary = {
       position: (name) => `posisi “${name}”`,
       education: (name) => `entri “${name}”`,
       bullet: (number) => `poin ${number}`,
-      listItem: (number) => `item ${number}`
+      listItem: (number) => `item ${number}`,
+      pickedUp: (item) => `Mengambil ${item}.`,
+      movedOver: (item, position, total) => `Memindahkan ${item}: posisi ${position} dari ${total}.`,
+      dropped: (item, position, total) => `Meletakkan ${item} di posisi ${position} dari ${total}.`,
+      cancelled: (item) => `Mengembalikan ${item} ke tempat semula.`,
+      instructions: 'Untuk mengambil item, tekan Spasi atau Enter. Gunakan tombol panah untuk memindahkannya, Spasi atau Enter untuk meletakkannya, dan Escape untuk membatalkan.'
     },
     consent: {
       title: 'Klausul persetujuan',
@@ -258,7 +263,7 @@ export const id: Dictionary = {
         undecodable: 'Tidak dapat memuat foto – file rusak, tidak tersedia, atau formatnya tidak didukung.'
       },
       crop: 'Pangkas foto',
-      cropHint: 'Seret foto untuk mengatur bingkai.',
+      cropHint: 'Seret foto atau gunakan tombol panah untuk mengatur bingkai.',
       cropPreview: 'Pratinjau bingkai',
       zoom: 'Zoom',
       apply: 'Terapkan'
@@ -275,7 +280,7 @@ export const id: Dictionary = {
     fit: 'Sesuaikan'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Dukung ${appName}`,
     message: (appName) => `${appName} gratis. Jika aplikasi ini membantu, Anda bisa berterima kasih kepada pembuatnya dengan secangkir kopi.`,
     link: 'Traktir saya kopi',
     more: 'Selengkapnya',

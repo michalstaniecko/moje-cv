@@ -35,3 +35,8 @@ export function outputSize(rect: Rect): Size {
   const width = Math.max(1, Math.min(Math.round(rect.width), PHOTO_MAX_WIDTH_PX))
   return { width, height: Math.round(width / PHOTO_ASPECT) }
 }
+
+// Przesunięcie zdjęcia w ramce o (dx, dy) pikseli zdjęcia – tak jak przy przeciąganiu: dodatnie dx przesuwa zdjęcie
+// w prawo, więc kadr pokazuje więcej z jego lewej strony. Kadr zatrzymuje się na krawędzi zdjęcia.
+export const nudgeView = (image: Size, view: CropView, dx: number, dy: number): CropView =>
+  clampView(image, { ...view, centerX: view.centerX - dx, centerY: view.centerY - dy })

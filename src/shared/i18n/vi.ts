@@ -229,7 +229,12 @@ export const vi: Dictionary = {
       position: (name) => `vị trí “${name}”`,
       education: (name) => `mục nhập “${name}”`,
       bullet: (number) => `ý ${number}`,
-      listItem: (number) => `mục ${number}`
+      listItem: (number) => `mục ${number}`,
+      pickedUp: (item) => `Đã nhấc ${item}.`,
+      movedOver: (item, position, total) => `Đang di chuyển ${item}: vị trí ${position} trên ${total}.`,
+      dropped: (item, position, total) => `Đã thả ${item} tại vị trí ${position} trên ${total}.`,
+      cancelled: (item) => `Đã đặt ${item} về chỗ cũ.`,
+      instructions: 'Để nhấc một mục, nhấn Phím cách hoặc Enter. Dùng các phím mũi tên để di chuyển, Phím cách hoặc Enter để thả và Escape để hủy.'
     },
     consent: {
       title: 'Điều khoản đồng ý',
@@ -258,7 +263,7 @@ export const vi: Dictionary = {
         undecodable: 'Không thể tải ảnh – tệp bị hỏng, không truy cập được hoặc có định dạng không được hỗ trợ.'
       },
       crop: 'Cắt ảnh',
-      cropHint: 'Kéo ảnh để chỉnh khung.',
+      cropHint: 'Kéo ảnh hoặc dùng các phím mũi tên để chỉnh khung.',
       cropPreview: 'Xem trước khung',
       zoom: 'Thu phóng',
       apply: 'Áp dụng'
@@ -275,7 +280,7 @@ export const vi: Dictionary = {
     fit: 'Vừa khít'
   },
   sponsor: {
-    bar: 'Tài trợ',
+    bar: (appName) => `Ủng hộ ${appName}`,
     message: (appName) => `${appName} miễn phí. Nếu ứng dụng giúp ích cho bạn, bạn có thể cảm ơn tác giả bằng một ly cà phê.`,
     link: 'Mời tôi cà phê',
     more: 'Thêm',

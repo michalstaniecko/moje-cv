@@ -229,7 +229,12 @@ export const uk: Dictionary = {
       position: (name) => `посаду «${name}»`,
       education: (name) => `запис «${name}»`,
       bullet: (number) => `пункт ${number}`,
-      listItem: (number) => `елемент ${number}`
+      listItem: (number) => `елемент ${number}`,
+      pickedUp: (item) => `Ви взяли ${item}.`,
+      movedOver: (item, position, total) => `Ви переміщуєте ${item}: позиція ${position} з ${total}.`,
+      dropped: (item, position, total) => `Ви поставили ${item} на позицію ${position} з ${total}.`,
+      cancelled: (item) => `Ви повернули ${item} на попереднє місце.`,
+      instructions: 'Щоб взяти елемент, натисніть Пробіл або Enter. Переміщуйте його клавішами зі стрілками, поставте Пробілом або Enter, Escape скасовує.'
     },
     consent: {
       title: 'Згода на обробку даних',
@@ -258,7 +263,7 @@ export const uk: Dictionary = {
         undecodable: 'Не вдалося завантажити фото – файл пошкоджений, недоступний або має непідтримуваний формат.'
       },
       crop: 'Кадрування фото',
-      cropHint: 'Перетягніть фото, щоб налаштувати кадр.',
+      cropHint: 'Перетягніть фото або скористайтеся клавішами зі стрілками, щоб налаштувати кадр.',
       cropPreview: 'Попередній перегляд кадру',
       zoom: 'Масштаб',
       apply: 'Застосувати'
@@ -278,7 +283,7 @@ export const uk: Dictionary = {
     fit: 'За розміром'
   },
   sponsor: {
-    bar: 'Підтримка',
+    bar: (appName) => `Підтримка ${appName}`,
     message: (appName) => `${appName} – безкоштовна програма. Якщо вона вам допомогла, можете пригостити автора кавою.`,
     link: 'Пригостити кавою',
     more: 'Докладніше',

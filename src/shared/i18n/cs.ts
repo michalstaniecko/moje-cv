@@ -229,7 +229,12 @@ export const cs: Dictionary = {
       position: (name) => `pozici „${name}“`,
       education: (name) => `položku „${name}“`,
       bullet: (number) => `bod ${number}`,
-      listItem: (number) => `položku ${number}`
+      listItem: (number) => `položku ${number}`,
+      pickedUp: (item) => `Zvedli jste ${item}.`,
+      movedOver: (item, position, total) => `Přesouváte ${item}: pozice ${position} z ${total}.`,
+      dropped: (item, position, total) => `Položili jste ${item} na pozici ${position} z ${total}.`,
+      cancelled: (item) => `Vrátili jste ${item} na původní místo.`,
+      instructions: 'Položku zvednete mezerníkem nebo Enterem. Šipkami ji přesunete, mezerníkem nebo Enterem ji položíte a Escape přesun zruší.'
     },
     consent: {
       title: 'Souhlas se zpracováním údajů',
@@ -258,7 +263,7 @@ export const cs: Dictionary = {
         undecodable: 'Fotku se nepodařilo načíst – soubor je poškozený, nedostupný nebo v nepodporovaném formátu.'
       },
       crop: 'Oříznutí fotky',
-      cropHint: 'Přetažením fotky nastavte výřez.',
+      cropHint: 'Výřez nastavte přetažením fotky nebo šipkami.',
       cropPreview: 'Náhled výřezu',
       zoom: 'Zvětšení',
       apply: 'Použít'
@@ -278,7 +283,7 @@ export const cs: Dictionary = {
     fit: 'Přizpůsobit'
   },
   sponsor: {
-    bar: 'Podpora',
+    bar: (appName) => `Podpora ${appName}`,
     message: (appName) => `${appName} je zdarma. Pokud vám pomohla, můžete autorovi poděkovat kávou.`,
     link: 'Kupte mi kávu',
     more: 'Více',

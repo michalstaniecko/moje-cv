@@ -229,7 +229,12 @@ export const es: Dictionary = {
       position: (name) => `el puesto «${name}»`,
       education: (name) => `la entrada «${name}»`,
       bullet: (number) => `la viñeta ${number}`,
-      listItem: (number) => `el elemento ${number}`
+      listItem: (number) => `el elemento ${number}`,
+      pickedUp: (item) => `Has tomado ${item}.`,
+      movedOver: (item, position, total) => `Moviendo ${item}: posición ${position} de ${total}.`,
+      dropped: (item, position, total) => `Has soltado ${item} en la posición ${position} de ${total}.`,
+      cancelled: (item) => `Has devuelto ${item} a su sitio.`,
+      instructions: 'Para tomar un elemento, pulsa Espacio o Intro. Muévelo con las flechas, suéltalo con Espacio o Intro y cancela con Escape.'
     },
     consent: {
       title: 'Cláusula de consentimiento',
@@ -258,7 +263,7 @@ export const es: Dictionary = {
         undecodable: 'No se ha podido cargar la foto: el archivo está dañado, no está disponible o tiene un formato no compatible.'
       },
       crop: 'Recortar foto',
-      cropHint: 'Arrastra la foto para ajustar el encuadre.',
+      cropHint: 'Arrastra la foto o usa las teclas de flecha para ajustar el encuadre.',
       cropPreview: 'Vista previa del encuadre',
       zoom: 'Zoom',
       apply: 'Aplicar'
@@ -277,7 +282,7 @@ export const es: Dictionary = {
     fit: 'Ajustar'
   },
   sponsor: {
-    bar: 'Patrocinio',
+    bar: (appName) => `Apoyo a ${appName}`,
     message: (appName) => `${appName} es gratuito. Si te ha sido útil, puedes darle las gracias al autor con un café.`,
     link: 'Invítame a un café',
     more: 'Más',

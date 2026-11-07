@@ -568,7 +568,7 @@ test('the CV editor is in English, including the save status, photo cropping and
   await stubOpenDialog(photoPath)
   await photoField.getByRole('button', { name: 'Change photo' }).click()
   const cropper = window.getByRole('dialog', { name: 'Crop photo' })
-  await expect(cropper).toContainText('Drag the photo to set the frame.')
+  await expect(cropper).toContainText('Drag the photo or use the arrow keys to set the frame.')
   await expect(cropper.getByRole('img', { name: 'Frame preview' })).toBeVisible()
   await expect(cropper.getByLabel('Zoom')).toBeVisible()
   await cropper.getByRole('button', { name: 'Apply' }).click()
@@ -888,6 +888,76 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   await launch()
   await openFirstCv()
   await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
+})
+
+// Ogłoszenia dnd-kit dla czytnika ekranu: regiony aria-live (po jednym na listę) poza widokiem, szukane po treści.
+const dragAnnouncement = (text: string) => window.locator('[aria-live]').filter({ hasText: text })
+
+// Podnosi element z klawiatury (Spacja na uchwycie z fokusem). dnd-kit mierzy listę i podpina obsługę strzałek
+// chwilę po podniesieniu, więc strzałka wciśnięta od razu po ogłoszeniu bywa gubiona.
+async function pickUpWithKeyboard(announcement: string) {
+  await window.keyboard.press('Space')
+  await expect(dragAnnouncement(announcement)).toHaveCount(1)
+  await window.waitForTimeout(200)
+}
+
+// Przenosi element z klawiatury o jedno miejsce w górę i sprawdza, co po kolei słyszy czytnik ekranu.
+async function moveUpWithKeyboard(expected: {
+  handle: string
+  instructions: string
+  pickedUp: string
+  moving: string
+  dropped: string
+}) {
+  const handle = window.getByRole('button', { name: expected.handle, exact: true })
+  await expect(handle).toHaveAccessibleDescription(expected.instructions)
+  await handle.focus()
+  await pickUpWithKeyboard(expected.pickedUp)
+  await window.keyboard.press('ArrowUp')
+  await expect(dragAnnouncement(expected.moving)).toHaveCount(1)
+  await window.keyboard.press('Space')
+  await expect(dragAnnouncement(expected.dropped)).toHaveCount(1)
+  // Żadne ogłoszenie nie zawiera identyfikatora elementu z dokumentu.
+  const announcements = await window.locator('[aria-live]').allTextContents()
+  expect(announcements.join(' ')).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/)
+  expect(announcements.join(' ')).not.toMatch(/draggable|droppable/i)
+}
+
+test('reordering with the keyboard tells the screen reader what was picked up, where it moves and where it was dropped, in English and in Polish', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  // Sekcje przykładowego CV: Work experience, Education, Skills, Languages, Interests.
+  await moveUpWithKeyboard({
+    handle: 'Drag section “Languages” to reorder',
+    instructions:
+      'To pick up an item, press Space or Enter. Use the arrow keys to move it, Space or Enter to drop it, and Escape to cancel.',
+    pickedUp: 'Picked up section “Languages”.',
+    moving: 'Moving section “Languages”: position 3 of 5.',
+    dropped: 'Dropped section “Languages” at position 3 of 5.'
+  })
+  await expect(preview.locator('.cv-page .cv-section-title').nth(2)).toHaveText('Languages')
+
+  // Escape odkłada element na miejsce i mówi o tym.
+  const handle = window.getByRole('button', { name: 'Drag section “Skills” to reorder', exact: true })
+  await handle.focus()
+  await pickUpWithKeyboard('Picked up section “Skills”.')
+  await window.keyboard.press('ArrowUp')
+  await expect(dragAnnouncement('Moving section “Skills”: position 3 of 5.')).toHaveCount(1)
+  await window.keyboard.press('Escape')
+  await expect(dragAnnouncement('Put section “Skills” back in its place.')).toHaveCount(1)
+
+  await app.close()
+  await rm(join(outputDir, 'user-data'), { recursive: true })
+  await launch({ language: 'pl' })
+  await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
+  await moveUpWithKeyboard({
+    handle: 'Przeciągnij sekcję „Języki”, aby zmienić kolejność',
+    instructions:
+      'Aby podnieść element, naciśnij Spację lub Enter. Strzałkami przesuń go, Spacją lub Enterem upuść, Escape anuluje.',
+    pickedUp: 'Podniesiono sekcję „Języki”.',
+    moving: 'Przesuwasz sekcję „Języki”: pozycja 3 z 5.',
+    dropped: 'Upuszczono sekcję „Języki” na pozycji 3 z 5.'
+  })
 })
 
 test('edits education and lists, reorders and hides sections, and forces page breaks in the preview and PDF', async () => {
@@ -1353,18 +1423,50 @@ test('manages the consent clause library, uses a clause in a CV without changing
   await expect(row('Bank')).toContainText('I consent for the Bank.')
 })
 
+test('Escape closes the clause form without saving, and closing the form returns the focus to the button that opened it', async () => {
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
+  const clauses = window.getByRole('list', { name: 'Clause list' })
+  const row = (name: string) => clauses.getByRole('listitem').filter({ hasText: name })
+  const form = window.getByRole('form', { name: 'Clause' })
+  const addClause = window.getByRole('button', { name: 'Add clause' })
+
+  // Nowa klauzula: Escape zamyka formularz bez dodawania, fokus wraca na „Add clause”, tak samo po „Cancel” i po zapisie.
+  await addClause.click()
+  await window.getByLabel('Name').fill('Not saved')
+  await window.keyboard.press('Escape')
+  await expect(form).toHaveCount(0)
+  await expect(clauses.getByRole('listitem')).toHaveCount(0)
+  await expect(addClause).toBeFocused()
+  await addClause.click()
+  await form.getByRole('button', { name: 'Cancel' }).click()
+  await expect(addClause).toBeFocused()
+  await addClause.click()
+  await window.getByLabel('Name').fill('General')
+  await window.getByLabel('Text').fill('I consent.')
+  await window.keyboard.press('Escape')
+  await expect(clauses.getByRole('listitem')).toHaveCount(0)
+  await addClause.click()
+  await window.getByLabel('Name').fill('General')
+  await window.getByRole('button', { name: 'Save' }).click()
+  await expect(row('General')).toBeVisible()
+  await expect(addClause).toBeFocused()
+
+  // Edycja: Escape z pola treści zostawia klauzulę bez zmian, a fokus wraca na „Edit” tej klauzuli, także po zapisie.
+  const edit = row('General').getByRole('button', { name: 'Edit' })
+  await edit.click()
+  await window.getByLabel('Text').fill('Changed but not saved.')
+  await window.keyboard.press('Escape')
+  await expect(form).toHaveCount(0)
+  await expect(row('General')).not.toContainText('Changed but not saved.')
+  await expect(edit).toBeFocused()
+  await edit.click()
+  await window.getByLabel('Name').fill('General clause')
+  await window.getByRole('button', { name: 'Save' }).click()
+  await expect(row('General clause').getByRole('button', { name: 'Edit' })).toBeFocused()
+})
+
 test('picks a photo from disk, crops it to 3:4 for the header and removes it, in the preview and PDF', async () => {
-  // Zdjęcie poziome 1200 × 800: lewa połowa czerwona, prawa niebieska.
-  const photoPath = join(outputDir, 'photo.png')
-  const png = await app.evaluate(({ nativeImage }) => {
-    const [width, height] = [1200, 800]
-    const bitmap = Buffer.alloc(width * height * 4)
-    // Piksele w kolejności BGRA.
-    for (let y = 0; y < height; y++)
-      for (let x = 0; x < width; x++) bitmap.set(x < width / 2 ? [0, 0, 255, 255] : [255, 0, 0, 255], (y * width + x) * 4)
-    return nativeImage.createFromBitmap(bitmap, { width, height }).toPNG().toString('base64')
-  })
-  await writeFile(photoPath, Buffer.from(png, 'base64'))
+  const photoPath = await writeRedBluePhoto()
   const brokenPath = join(outputDir, 'broken.jpg')
   await writeFile(brokenPath, 'not an image')
   await openFirstCv()
@@ -1400,31 +1502,7 @@ test('picks a photo from disk, crops it to 3:4 for the header and removes it, in
   // W CV wykadrowany JPEG 3:4 w rozdzielczości do druku (42 mm przy 300 dpi), o szerokości 42 mm.
   const photo = preview.locator('.cv-page .cv-photo')
   await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
-  const stored = await photo.evaluate(async (element) => {
-    const image = element as typeof element & { naturalWidth: number; naturalHeight: number; src: string; decode: () => Promise<void> }
-    await image.decode()
-    const view = element.ownerDocument.defaultView!
-    const canvas = element.ownerDocument.createElement('canvas') as unknown as {
-      width: number
-      height: number
-      getContext: (type: '2d') => {
-        drawImage: (image: unknown, x: number, y: number) => void
-        getImageData: (x: number, y: number, width: number, height: number) => { data: Uint8ClampedArray }
-      }
-    }
-    canvas.width = image.naturalWidth
-    canvas.height = image.naturalHeight
-    const context = canvas.getContext('2d')
-    context.drawImage(image, 0, 0)
-    const pixel = (x: number, y: number) => [...context.getImageData(x, y, 1, 1).data.slice(0, 3)]
-    return {
-      width: image.naturalWidth,
-      height: image.naturalHeight,
-      cssWidth: view.getComputedStyle(element).width,
-      corners: [pixel(2, 2), pixel(canvas.width - 3, canvas.height - 3)],
-      length: image.src.length
-    }
-  })
+  const stored = await storedPhoto(photo)
   expect(stored.width).toBe(496)
   expect(stored.height).toBe(661)
   expect(parseFloat(stored.cssWidth)).toBeCloseTo((42 * 96) / 25.4, 0)
@@ -1461,6 +1539,46 @@ test('picks a photo from disk, crops it to 3:4 for the header and removes it, in
   await photoField.getByRole('button', { name: 'Choose photo' }).click()
   await expect(window.getByRole('dialog', { name: 'Crop photo' })).toHaveCount(0)
   await expect(preview.locator('.cv-photo')).toHaveCount(0)
+})
+
+test('the crop frame takes the focus and the arrow keys move the photo in it, with Shift in bigger steps', async () => {
+  const photoPath = await writeRedBluePhoto()
+  await openFirstCv()
+  const photoField = window.getByRole('group', { name: 'Photo', exact: true })
+  await stubOpenDialog(photoPath)
+  await photoField.getByRole('button', { name: 'Change photo' }).click()
+  const cropper = window.getByRole('dialog', { name: 'Crop photo' })
+  await expect(cropper).toContainText('Drag the photo or use the arrow keys to set the frame.')
+
+  // Ramka jest w kolejności Tab tuż przed suwakiem powiększenia i ma widoczny obrys fokusu.
+  const frame = cropper.getByRole('img', { name: 'Frame preview' })
+  await cropper.getByRole('slider', { name: 'Zoom' }).focus()
+  await window.keyboard.press('Shift+Tab')
+  await expect(frame).toBeFocused()
+  await expect(frame).toHaveCSS('outline-width', '2px')
+
+  // Strzałka w lewo przesuwa zdjęcie w lewo: z prawej (niebieskiej) połowy, Shift o większy krok.
+  const scrollBefore = await cropper.evaluate((element) => element.scrollTop)
+  await window.keyboard.press('ArrowRight')
+  for (let i = 0; i < 5; i++) await window.keyboard.press('Shift+ArrowLeft')
+  expect(await cropper.evaluate((element) => element.scrollTop)).toBe(scrollBefore)
+  await cropper.getByRole('button', { name: 'Apply' }).click()
+  const photo = window.locator('.preview .cv-page .cv-photo')
+  await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+  for (const [r = 0, , b = 0] of (await storedPhoto(photo)).corners) {
+    expect(b).toBeGreaterThan(200)
+    expect(r).toBeLessThan(40)
+  }
+
+  // Strzałki w prawo z Shift doprowadzają kadr do lewej (czerwonej) krawędzi i tam go zatrzymują.
+  await photoField.getByRole('button', { name: 'Change photo' }).click()
+  await cropper.getByRole('img', { name: 'Frame preview' }).focus()
+  for (let i = 0; i < 10; i++) await window.keyboard.press('Shift+ArrowRight')
+  await cropper.getByRole('button', { name: 'Apply' }).click()
+  await expect(cropper).toHaveCount(0)
+  await expect
+    .poll(async () => (await storedPhoto(photo)).corners.every(([r = 0, , b = 0]) => r > 200 && b < 40))
+    .toBe(true)
 })
 
 test('shows the page count, warns about long CVs and oversized fragments only in the preview, and zooms without changing the page split', async () => {
@@ -1534,6 +1652,47 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   await expect.poll(pageWidth).toBeCloseTo(793.7 * 0.75, 0)
   expect(await pageTexts()).toEqual(textsAtFit)
   await expect(pageCount).toHaveText(`${longPageCount} pages`)
+})
+
+test('the CV length warning looks like a warning, with the warning colour and icon, in the light and the dark appearance', async () => {
+  // Kolory tokenu --ui-warning z app.css: #8a5a00 w jasnym, #e3b341 w ciemnym wyglądzie (oba ≥ 4.5:1 na tle paska).
+  for (const [appearance, warning] of [
+    ['light', 'rgb(138, 90, 0)'],
+    ['dark', 'rgb(227, 179, 65)']
+  ] as const) {
+    await app.close()
+    await launch({ appearance })
+    await openFirstCv()
+    await window.getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
+    const notice = window.locator('.preview-length-notice')
+    await expect(notice).toHaveText('⚠ The CV is longer than 2 pages – consider shortening it.')
+    await expect(notice).toHaveCSS('color', warning)
+    // Ikona jest tylko dla oka: czytnik ekranu czyta sam tekst ostrzeżenia.
+    await expect(notice.locator('[aria-hidden="true"]')).toHaveText('⚠')
+  }
+})
+
+test('screen readers read the CV from the form only: the preview pages are hidden from them, the preview bar is not', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  const pages = preview.locator('.cv-pages')
+  await expect(pages.locator('.cv-page .cv-name')).toHaveText('Jane Example')
+
+  // Strony są widoczne, ale nic z nich nie trafia do drzewa dostępności: ani nagłówki, ani listy, ani zdjęcie.
+  await expect(window.getByRole('heading', { name: 'Jane Example', exact: true })).toHaveCount(0)
+  await expect(window.getByRole('heading', { name: 'Work experience', exact: true })).toHaveCount(0)
+  for (const role of ['heading', 'list', 'listitem', 'img', 'status'] as const) await expect(pages.getByRole(role)).toHaveCount(0)
+
+  // Pasek podglądu zostaje dostępny: licznik stron jako status i przyciski powiększenia.
+  await expect(preview.getByRole('status')).toHaveText(/^[12] pages?$/)
+  await expect(preview.getByRole('button', { name: 'Zoom in' })).toBeVisible()
+  await expect(preview.getByRole('button', { name: 'Fit' })).toBeVisible()
+
+  // Za długi fragment jest wyróżniony tylko wizualnie: komunikat nie jest już komunikatem dla czytnika.
+  await window.getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
+  await expect(pages.getByText('This fragment is too long to fit on a page')).toBeVisible()
+  await expect(pages.getByRole('status')).toHaveCount(0)
+  await expect(window.getByRole('status').filter({ hasText: 'This fragment is too long' })).toHaveCount(0)
 })
 
 test('while the PDF is prepared a progress bar is shown, and a print page that never gets ready ends with its own message', async () => {
@@ -2565,6 +2724,50 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   await expect(window.getByRole('alert')).toHaveCount(0)
   await expect(rows).toHaveCount(2)
 })
+
+// Zdjęcie poziome 1200 × 800 zapisane jako PNG w katalogu testu: lewa połowa czerwona, prawa niebieska.
+async function writeRedBluePhoto() {
+  const photoPath = join(outputDir, 'photo.png')
+  const png = await app.evaluate(({ nativeImage }) => {
+    const [width, height] = [1200, 800]
+    const bitmap = Buffer.alloc(width * height * 4)
+    // Piksele w kolejności BGRA.
+    for (let y = 0; y < height; y++)
+      for (let x = 0; x < width; x++) bitmap.set(x < width / 2 ? [0, 0, 255, 255] : [255, 0, 0, 255], (y * width + x) * 4)
+    return nativeImage.createFromBitmap(bitmap, { width, height }).toPNG().toString('base64')
+  })
+  await writeFile(photoPath, Buffer.from(png, 'base64'))
+  return photoPath
+}
+
+// Zdjęcie zapisane w CV (element <img> w podglądzie): rozmiar, szerokość w CSS, kolory dwóch przeciwległych rogów i długość data URL.
+function storedPhoto(photo: Locator) {
+  return photo.evaluate(async (element) => {
+    const image = element as typeof element & { naturalWidth: number; naturalHeight: number; src: string; decode: () => Promise<void> }
+    await image.decode()
+    const view = element.ownerDocument.defaultView!
+    const canvas = element.ownerDocument.createElement('canvas') as unknown as {
+      width: number
+      height: number
+      getContext: (type: '2d') => {
+        drawImage: (image: unknown, x: number, y: number) => void
+        getImageData: (x: number, y: number, width: number, height: number) => { data: Uint8ClampedArray }
+      }
+    }
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    const context = canvas.getContext('2d')
+    context.drawImage(image, 0, 0)
+    const pixel = (x: number, y: number) => [...context.getImageData(x, y, 1, 1).data.slice(0, 3)]
+    return {
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      cssWidth: view.getComputedStyle(element).width,
+      corners: [pixel(2, 2), pixel(canvas.width - 3, canvas.height - 3)],
+      length: image.src.length
+    }
+  })
+}
 
 // Wartości wszystkich pól wskazanych lokatorem, w kolejności z formularza.
 function inputValues(fields: Locator) {

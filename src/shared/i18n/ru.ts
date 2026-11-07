@@ -229,7 +229,12 @@ export const ru: Dictionary = {
       position: (name) => `должность «${name}»`,
       education: (name) => `запись «${name}»`,
       bullet: (number) => `пункт ${number}`,
-      listItem: (number) => `элемент ${number}`
+      listItem: (number) => `элемент ${number}`,
+      pickedUp: (item) => `Вы взяли ${item}.`,
+      movedOver: (item, position, total) => `Вы перемещаете ${item}: позиция ${position} из ${total}.`,
+      dropped: (item, position, total) => `Вы поставили ${item} на позицию ${position} из ${total}.`,
+      cancelled: (item) => `Вы вернули ${item} на прежнее место.`,
+      instructions: 'Чтобы взять элемент, нажмите Пробел или Enter. Перемещайте его клавишами со стрелками, поставьте Пробелом или Enter, Escape отменяет.'
     },
     consent: {
       title: 'Согласие на обработку данных',
@@ -258,7 +263,7 @@ export const ru: Dictionary = {
         undecodable: 'Не удалось загрузить фото – файл поврежден, недоступен или имеет неподдерживаемый формат.'
       },
       crop: 'Кадрирование фото',
-      cropHint: 'Перетащите фото, чтобы настроить кадр.',
+      cropHint: 'Перетащите фото или используйте клавиши со стрелками, чтобы настроить кадр.',
       cropPreview: 'Предпросмотр кадра',
       zoom: 'Масштаб',
       apply: 'Применить'
@@ -278,7 +283,7 @@ export const ru: Dictionary = {
     fit: 'По размеру'
   },
   sponsor: {
-    bar: 'Поддержка',
+    bar: (appName) => `Поддержка ${appName}`,
     message: (appName) => `${appName} – бесплатная программа. Если она вам помогла, можете угостить автора кофе.`,
     link: 'Угостить кофе',
     more: 'Подробнее',

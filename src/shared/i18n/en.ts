@@ -251,7 +251,13 @@ export const en = {
       position: (name: string) => `position “${name}”`,
       education: (name: string) => `entry “${name}”`,
       bullet: (number: number) => `bullet ${number}`,
-      listItem: (number: number) => `item ${number}`
+      listItem: (number: number) => `item ${number}`,
+      // Ogłoszenia przeciągania dla czytnika ekranu (dnd-kit); `item` to nazwa z `section`, `position` itd.
+      pickedUp: (item: string) => `Picked up ${item}.`,
+      movedOver: (item: string, position: number, total: number) => `Moving ${item}: position ${position} of ${total}.`,
+      dropped: (item: string, position: number, total: number) => `Dropped ${item} at position ${position} of ${total}.`,
+      cancelled: (item: string) => `Put ${item} back in its place.`,
+      instructions: 'To pick up an item, press Space or Enter. Use the arrow keys to move it, Space or Enter to drop it, and Escape to cancel.'
     },
     consent: {
       title: 'Consent clause',
@@ -280,7 +286,7 @@ export const en = {
         undecodable: 'Couldn’t load the photo – the file is damaged, unavailable or in an unsupported format.'
       },
       crop: 'Crop photo',
-      cropHint: 'Drag the photo to set the frame.',
+      cropHint: 'Drag the photo or use the arrow keys to set the frame.',
       cropPreview: 'Frame preview',
       zoom: 'Zoom',
       apply: 'Apply'
@@ -297,7 +303,7 @@ export const en = {
   },
   // Sponsor bar i okno „Więcej” (zob. GLOSSARY.md). Podziękowanie, nie płatność: niczego nie odblokowuje.
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName: string) => `Support ${appName}`,
     message: (appName: string) => `${appName} is free. If it helped you, you can thank the author with a coffee.`,
     link: 'Buy me a coffee',
     more: 'More',

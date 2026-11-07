@@ -236,7 +236,12 @@ export const nl: Dictionary = {
       position: (name) => `functie “${name}”`,
       education: (name) => `item “${name}”`,
       bullet: (number) => `punt ${number}`,
-      listItem: (number) => `item ${number}`
+      listItem: (number) => `item ${number}`,
+      pickedUp: (item) => `Je hebt ${item} opgepakt.`,
+      movedOver: (item, position, total) => `Je verplaatst ${item}: positie ${position} van ${total}.`,
+      dropped: (item, position, total) => `Je hebt ${item} neergezet op positie ${position} van ${total}.`,
+      cancelled: (item) => `Je hebt ${item} teruggezet op de oude plek.`,
+      instructions: 'Druk op Spatie of Enter om een item op te pakken. Verplaats het met de pijltjestoetsen, zet het neer met Spatie of Enter en annuleer met Escape.'
     },
     consent: {
       title: 'Toestemmingsverklaring',
@@ -265,7 +270,7 @@ export const nl: Dictionary = {
         undecodable: 'Kan de foto niet laden – het bestand is beschadigd, niet beschikbaar of heeft een niet-ondersteunde indeling.'
       },
       crop: 'Snijd foto bij',
-      cropHint: 'Sleep de foto om de uitsnede in te stellen.',
+      cropHint: 'Sleep de foto of gebruik de pijltjestoetsen om de uitsnede in te stellen.',
       cropPreview: 'Voorvertoning van uitsnede',
       zoom: 'Zoom',
       apply: 'Pas toe'
@@ -283,7 +288,7 @@ export const nl: Dictionary = {
     fit: 'Passend'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Steun ${appName}`,
     message: (appName) => `${appName} is gratis. Heeft het je geholpen? Bedank de maker dan met een kopje koffie.`,
     link: 'Trakteer op koffie',
     more: 'Meer',

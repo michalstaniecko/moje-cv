@@ -229,7 +229,12 @@ export const pl: Dictionary = {
       position: (name) => `stanowisko „${name}”`,
       education: (name) => `wpis „${name}”`,
       bullet: (number) => `punkt ${number}`,
-      listItem: (number) => `element ${number}`
+      listItem: (number) => `element ${number}`,
+      pickedUp: (item) => `Podniesiono ${item}.`,
+      movedOver: (item, position, total) => `Przesuwasz ${item}: pozycja ${position} z ${total}.`,
+      dropped: (item, position, total) => `Upuszczono ${item} na pozycji ${position} z ${total}.`,
+      cancelled: (item) => `Odłożono ${item} na poprzednie miejsce.`,
+      instructions: 'Aby podnieść element, naciśnij Spację lub Enter. Strzałkami przesuń go, Spacją lub Enterem upuść, Escape anuluje.'
     },
     consent: {
       title: 'Klauzula zgody',
@@ -258,7 +263,7 @@ export const pl: Dictionary = {
         undecodable: 'Nie udało się wczytać zdjęcia – plik jest uszkodzony, niedostępny albo ma nieobsługiwany format.'
       },
       crop: 'Kadrowanie zdjęcia',
-      cropHint: 'Przeciągnij zdjęcie, żeby ustawić kadr.',
+      cropHint: 'Przeciągnij zdjęcie albo użyj strzałek, żeby ustawić kadr.',
       cropPreview: 'Podgląd kadru',
       zoom: 'Powiększenie',
       apply: 'Zastosuj'
@@ -278,7 +283,7 @@ export const pl: Dictionary = {
     fit: 'Dopasuj'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `Wsparcie ${appName}`,
     message: (appName) => `${appName} jest darmowe. Jeśli Ci pomogło, możesz podziękować autorowi kawą.`,
     link: 'Postaw mi kawę',
     more: 'Więcej',

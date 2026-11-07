@@ -236,7 +236,12 @@ export const de: Dictionary = {
       position: (name) => `Position „${name}“`,
       education: (name) => `Eintrag „${name}“`,
       bullet: (number) => `Punkt ${number}`,
-      listItem: (number) => `Eintrag ${number}`
+      listItem: (number) => `Eintrag ${number}`,
+      pickedUp: (item) => `${item} aufgenommen.`,
+      movedOver: (item, position, total) => `${item} wird verschoben: Position ${position} von ${total}.`,
+      dropped: (item, position, total) => `${item} an Position ${position} von ${total} abgelegt.`,
+      cancelled: (item) => `${item} an den ursprünglichen Platz zurückgelegt.`,
+      instructions: 'Zum Aufnehmen eines Eintrags die Leertaste oder die Eingabetaste drücken. Mit den Pfeiltasten verschieben, mit der Leertaste oder der Eingabetaste ablegen, mit Escape abbrechen.'
     },
     consent: {
       title: 'Einwilligungserklärung',
@@ -266,7 +271,7 @@ export const de: Dictionary = {
           'Das Foto konnte nicht geladen werden – die Datei ist beschädigt, nicht verfügbar oder hat ein nicht unterstütztes Format.'
       },
       crop: 'Foto zuschneiden',
-      cropHint: 'Ziehe das Foto, um den Ausschnitt festzulegen.',
+      cropHint: 'Ziehe das Foto oder nutze die Pfeiltasten, um den Ausschnitt festzulegen.',
       cropPreview: 'Vorschau des Ausschnitts',
       zoom: 'Zoom',
       apply: 'Anwenden'
@@ -284,7 +289,7 @@ export const de: Dictionary = {
     fit: 'Einpassen'
   },
   sponsor: {
-    bar: 'Sponsor',
+    bar: (appName) => `${appName} unterstützen`,
     message: (appName) =>
       `${appName} ist kostenlos. Wenn dir die App geholfen hat, kannst du dem Autor mit einem Kaffee danken.`,
     link: 'Kaffee spendieren',
