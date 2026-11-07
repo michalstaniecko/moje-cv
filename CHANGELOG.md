@@ -17,6 +17,7 @@
 - The window remembers its size, position and maximized state, and opens on a visible screen.
 
 ### Fixed
+- Closing the window or quitting right after an edit waits for the save, and asks before discarding changes that couldn’t be saved.
 - Keyboard focus returns to the button that opened a form in a CV library row (rename, tags, delete) when the form closes; after deleting a CV it moves to the neighbouring CV, or to "New CV" when the library is empty.
 - The English Sample CV printed the Polish word "obecnie" instead of "present".
 - Characters missing from Lato (e.g. Cyrillic) fall back to the bundled Source Sans 3 instead of a system font.
@@ -26,6 +27,7 @@
 - A CV file saved by a newer version of the app is marked "Needs a newer version of CV Press" instead of "Damaged file". It is never overwritten; it can still be deleted, with a confirmation saying what will be lost.
 - The app never opens new windows or navigates away from its own screens.
 - The window has a minimum size; opening the app again brings the running window to the front instead of starting a second copy.
+- A failed autosave shows an alert with Try again; leaving the editor with unsaved changes asks first instead of doing nothing.
 
 ## [0.3.0] – 2026-10-27
 

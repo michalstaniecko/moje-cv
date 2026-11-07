@@ -48,7 +48,16 @@ export const sv: Dictionary = {
     imagesFilter: 'Bilder',
     exportCv: 'Exportera cv till fil',
     importCv: 'Importera cv från fil',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Dina ändringar i cv:t har inte sparats.',
+      closeDetail: 'Om du stänger fönstret nu går dina senaste ändringar förlorade.',
+      quitDetail: (appName) =>
+        `Om du avslutar ${appName} nu går dina senaste ändringar förlorade.`,
+      closeAnyway: 'Stäng ändå',
+      quitAnyway: 'Avsluta ändå',
+      backToEditor: 'Tillbaka till redigeraren'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -152,6 +161,11 @@ export const sv: Dictionary = {
     openPdf: 'Öppna',
     showInFolder: 'Visa i Finder',
     exportFailed: 'Det gick inte att spara PDF:en. Försök igen.',
+    saveFailed: 'Det gick inte att spara ändringarna. Dina senaste ändringar finns än så länge bara i det här fönstret.',
+    retrySave: 'Försök igen',
+    leaveUnsaved: 'Dina ändringar har inte sparats. Lämna ändå?',
+    leaveAnyway: 'Lämna ändå',
+    stayInEditor: 'Stanna i redigeraren',
     remove: 'Ta bort',
     appearance: 'Utseende',
     accentColor: 'Accentfärg',

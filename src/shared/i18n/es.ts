@@ -48,7 +48,16 @@ export const es: Dictionary = {
     imagesFilter: 'Imágenes',
     exportCv: 'Exportar CV a archivo',
     importCv: 'Importar CV desde archivo',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Los cambios en el CV no se han guardado.',
+      closeDetail: 'Si cierras la ventana ahora, se perderán tus últimos cambios.',
+      quitDetail: (appName) =>
+        `Si sales de ${appName} ahora, se perderán tus últimos cambios.`,
+      closeAnyway: 'Cerrar de todos modos',
+      quitAnyway: 'Salir de todos modos',
+      backToEditor: 'Volver al editor'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -147,6 +156,11 @@ export const es: Dictionary = {
     openPdf: 'Abrir',
     showInFolder: 'Mostrar en Finder',
     exportFailed: 'No se ha podido guardar el PDF. Inténtalo de nuevo.',
+    saveFailed: 'No se han podido guardar los cambios. Por ahora, tus últimos cambios solo están en esta ventana.',
+    retrySave: 'Reintentar',
+    leaveUnsaved: 'Tus cambios no se han guardado. ¿Salir de todos modos?',
+    leaveAnyway: 'Salir de todos modos',
+    stayInEditor: 'Quedarse en el editor',
     remove: 'Quitar',
     appearance: 'Apariencia',
     accentColor: 'Color de acento',

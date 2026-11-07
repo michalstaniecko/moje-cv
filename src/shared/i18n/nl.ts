@@ -48,7 +48,16 @@ export const nl: Dictionary = {
     imagesFilter: 'Afbeeldingen',
     exportCv: 'Exporteer cv naar bestand',
     importCv: 'Importeer cv uit bestand',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Je wijzigingen in het cv zijn niet bewaard.',
+      closeDetail: 'Als je het venster nu sluit, gaan je laatste wijzigingen verloren.',
+      quitDetail: (appName) =>
+        `Als je ${appName} nu stopt, gaan je laatste wijzigingen verloren.`,
+      closeAnyway: 'Toch sluiten',
+      quitAnyway: 'Toch stoppen',
+      backToEditor: 'Terug naar editor'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -154,6 +163,11 @@ export const nl: Dictionary = {
     openPdf: 'Open',
     showInFolder: 'Toon in Finder',
     exportFailed: 'Kan de PDF niet bewaren. Probeer het opnieuw.',
+    saveFailed: 'Kan de wijzigingen niet bewaren. Je laatste wijzigingen staan voorlopig alleen in dit venster.',
+    retrySave: 'Probeer opnieuw',
+    leaveUnsaved: 'Je wijzigingen zijn niet bewaard. Toch verlaten?',
+    leaveAnyway: 'Toch verlaten',
+    stayInEditor: 'In de editor blijven',
     remove: 'Verwijder',
     appearance: 'Weergave',
     accentColor: 'Accentkleur',

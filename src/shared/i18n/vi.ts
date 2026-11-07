@@ -48,7 +48,16 @@ export const vi: Dictionary = {
     imagesFilter: 'Hình ảnh',
     exportCv: 'Xuất CV ra tệp',
     importCv: 'Nhập CV từ tệp',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Các thay đổi trong CV chưa được lưu.',
+      closeDetail: 'Nếu đóng cửa sổ bây giờ, các thay đổi mới nhất sẽ bị mất.',
+      quitDetail: (appName) =>
+        `Nếu thoát ${appName} bây giờ, các thay đổi mới nhất sẽ bị mất.`,
+      closeAnyway: 'Vẫn đóng',
+      quitAnyway: 'Vẫn thoát',
+      backToEditor: 'Quay lại trình chỉnh sửa'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -147,6 +156,11 @@ export const vi: Dictionary = {
     openPdf: 'Mở',
     showInFolder: 'Hiển thị trong Finder',
     exportFailed: 'Không thể lưu PDF. Hãy thử lại.',
+    saveFailed: 'Không thể lưu thay đổi. Hiện các thay đổi mới nhất chỉ có trong cửa sổ này.',
+    retrySave: 'Thử lại',
+    leaveUnsaved: 'Các thay đổi chưa được lưu. Vẫn rời đi?',
+    leaveAnyway: 'Vẫn rời đi',
+    stayInEditor: 'Ở lại trình chỉnh sửa',
     remove: 'Xóa',
     appearance: 'Giao diện',
     accentColor: 'Màu nhấn',

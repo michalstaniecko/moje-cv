@@ -93,6 +93,9 @@ export type Api = {
   editor: {
     // Zwraca funkcję wypisania.
     onHistoryCommand: (listener: (command: HistoryCommand) => void) => () => void
+    // Prośba procesu głównego o zapis przed zamknięciem okna lub zakończeniem aplikacji. Listener zapisuje oczekujące
+    // zmiany i zwraca, czy się zapisały (odrzucona obietnica to nieudany zapis). Zwraca funkcję wypisania.
+    onFlushRequest: (listener: () => Promise<boolean>) => () => void
   }
   // Renderer zgłasza bieżący ekran okna (od niego zależy aktywność menu Plik i Cofnij / Ponów) i dostaje
   // komendy menu Plik. Poza zgłoszeniem ekranu nic nie wraca do procesu głównego.

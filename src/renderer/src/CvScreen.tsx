@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import type { MenuCommand } from '../../shared/api'
 import { cvDisplayName, type Clause, type ClauseContent, type CvDocument } from './domain/schema'
@@ -34,7 +34,15 @@ export function CvScreen({
   const [jsonExport, setJsonExport] = useState<JsonExportState>({ status: 'idle' })
   const [clauses, saveClause] = useClauseLibrary()
   const { appName, common, editor: t, library } = useDictionary()
+  // Wyjście z edytora po nieudanym zapisie czeka na decyzję: komenda menu Plik, z którą wychodzimy (albo samo wyjście).
+  const [leaving, setLeaving] = useState<{ command?: MenuCommand } | null>(null)
+  const backButton = useRef<HTMLButtonElement>(null)
   useEditorLifecycle(editor)
+
+  // Ponowiony albo kolejny zapis kończy pytanie o wyjście; przy następnym błędzie pasek wraca do zwykłego komunikatu.
+  useEffect(() => {
+    if (saveStatus !== 'failed') setLeaving(null)
+  }, [saveStatus])
 
   const exportPdf = async () => {
     setJsonExport({ status: 'idle' })
@@ -47,10 +55,17 @@ export function CvScreen({
     }
   }
 
-  // Przy nieudanym zapisie zostajemy w edytorze – komunikat o błędzie jest widoczny, a zmiany nie przepadają.
+  // Przy nieudanym zapisie wyjście wymaga potwierdzenia („Wyjdź mimo to”), żeby zmiany nie przepadły przez przypadek,
+  // a użytkownik nie utknął w edytorze przy trwałym błędzie.
   const back = async (command?: MenuCommand) => {
     await editor.flush()
     if (editor.store.getState().saveStatus !== 'failed') onBack(command)
+    else setLeaving({ command })
+  }
+
+  const stay = () => {
+    setLeaving(null)
+    backButton.current?.focus()
   }
 
   // Eksport do .json z menu Plik: najpierw zapis oczekującej zmiany, żeby plik miał to, co właśnie wpisano.
@@ -78,15 +93,13 @@ export function CvScreen({
   return (
     <div className="editor-screen">
       <header className="toolbar">
-        <button type="button" onClick={() => back()}>
+        <button type="button" ref={backButton} onClick={() => back()}>
           {common.back(appName)}
         </button>
         <h1 className="toolbar-title">{cvDisplayName(document.name, library.untitled)}</h1>
-        <span
-          className={saveStatus === 'failed' ? 'toolbar-status toolbar-status--error' : 'toolbar-status'}
-          role="status"
-        >
-          {t.saveStatus[saveStatus]}
+        {/* Przy nieudanym zapisie status jest pusty – błąd ogłasza pasek komunikatu pod paskiem narzędzi. */}
+        <span className="toolbar-status" role="status">
+          {saveStatus === 'failed' ? '' : t.saveStatus[saveStatus]}
         </span>
         <button type="button" className="button-primary" onClick={exportPdf} disabled={exportState.status === 'exporting'}>
           {exportState.status === 'exporting' ? t.exporting : t.exportPdf}
@@ -118,12 +131,70 @@ export function CvScreen({
           </p>
         )}
       </header>
+      {saveStatus === 'failed' && (
+        <SaveFailedAlert
+          leaving={leaving !== null}
+          onRetry={() => void editor.flush()}
+          onLeave={() => onBack(leaving?.command)}
+          onStay={stay}
+        />
+      )}
       <div className="editor-panes">
         <aside className="editor-form">
           <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} />
         </aside>
         <PreviewPane document={document} />
       </div>
+    </div>
+  )
+}
+
+// Pasek pod paskiem narzędzi przy nieudanym autozapisie: komunikat z „Spróbuj ponownie”, a po próbie wyjścia z edytora
+// pytanie „Wyjść mimo to?”. Fokus przechodzi wtedy na „Zostań w edytorze”, a Escape działa jak ten przycisk.
+function SaveFailedAlert({
+  leaving,
+  onRetry,
+  onLeave,
+  onStay
+}: {
+  leaving: boolean
+  onRetry: () => void
+  onLeave: () => void
+  onStay: () => void
+}) {
+  const { editor: t } = useDictionary()
+  const stayButton = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (leaving) stayButton.current?.focus()
+  }, [leaving])
+
+  return (
+    <div
+      className="editor-alert"
+      role="alert"
+      onKeyDown={(event) => {
+        if (leaving && event.key === 'Escape') onStay()
+      }}
+    >
+      {leaving ? (
+        <>
+          <span>{t.leaveUnsaved}</span>
+          <button type="button" onClick={onLeave}>
+            {t.leaveAnyway}
+          </button>
+          <button type="button" ref={stayButton} onClick={onStay}>
+            {t.stayInEditor}
+          </button>
+        </>
+      ) : (
+        <>
+          <span>{t.saveFailed}</span>
+          <button type="button" onClick={onRetry}>
+            {t.retrySave}
+          </button>
+        </>
+      )}
     </div>
   )
 }
@@ -151,7 +222,8 @@ function useClauseLibrary() {
 
 // Cmd+Z / Cmd+Shift+Z (Ctrl na innych systemach) i Edycja → Cofnij / Ponów w menu cofają i ponawiają zmiany
 // w dokumencie – także w polu tekstowym, zamiast wbudowanego cofania pola. Skrót obsłużony tutaj (preventDefault)
-// nie uruchamia już pozycji menu. Oczekująca zmiana jest zapisywana przy zamknięciu okna i wyjściu z edytora.
+// nie uruchamia już pozycji menu. Oczekująca zmiana jest zapisywana przy wyjściu z edytora, przeładowaniu okna
+// (`beforeunload`) i na prośbę procesu głównego przed zamknięciem okna lub zakończeniem aplikacji.
 function useEditorLifecycle(editor: CvEditor) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -167,10 +239,16 @@ function useEditorLifecycle(editor: CvEditor) {
     const unsubscribe = window.api.editor.onHistoryCommand((command) =>
       command === 'undo' ? editor.undo() : editor.redo()
     )
+    // Zamknięcie okna i zakończenie aplikacji czekają na ten zapis (także zmiany zakolejkowane za trwającym zapisem).
+    const unsubscribeFlush = window.api.editor.onFlushRequest(async () => {
+      await editor.flush()
+      return editor.store.getState().saveStatus !== 'failed'
+    })
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('beforeunload', onUnload)
       unsubscribe()
+      unsubscribeFlush()
       void editor.flush()
     }
   }, [editor])

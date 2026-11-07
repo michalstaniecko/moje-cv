@@ -4,6 +4,7 @@ import { sampleCvs } from '../renderer/src/domain/sampleCv'
 import { en } from '../shared/i18n/en'
 import { createAppearance, windowBackground } from './appearance'
 import { createWindowStateKeeper, type InitialWindowState, type WindowStateKeeper } from './appWindowState'
+import { guardUnsavedChanges } from './closeGuard'
 import { reloadAfterRendererCrash, reportMainProcessErrors } from './crashHandling'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
@@ -56,6 +57,7 @@ function createWindow(language: InterfaceLanguageState, windowState: WindowState
     if (mainWindow === window) mainWindow = null
   })
   reloadAfterRendererCrash(window, language.dictionary)
+  guardUnsavedChanges(window, language.dictionary)
   loadAppWindow(window)
 }
 

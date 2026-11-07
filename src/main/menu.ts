@@ -1,5 +1,5 @@
-import { app, BrowserWindow, ipcMain, Menu, shell, type BaseWindow, type MenuItemConstructorOptions, type WebContents } from 'electron'
-import type { AppScreen, HistoryCommand, MenuCommand } from '../shared/api'
+import { app, BrowserWindow, ipcMain, Menu, shell, type BaseWindow, type MenuItemConstructorOptions } from 'electron'
+import type { HistoryCommand, MenuCommand } from '../shared/api'
 import { interfaceLanguageCodes, interfaceLanguages } from '../shared/i18n/languages'
 import { appearances, type Appearance } from '../shared/appearance'
 import { HELP_URL } from '../shared/links'
@@ -9,11 +9,7 @@ import { helpMenuItems } from './helpMenu'
 import type { InterfaceLanguageState } from './interfaceLanguage'
 import { requireAppScreen } from './ipcArgs'
 import { enabledMenuCommands } from './menuCommands'
-
-// Bieżący ekran okien (według id webContents) zgłaszany przez renderer. `clear` odpina nasłuchiwanie zamknięcia
-// i przeładowania okna i usuwa wpis. Kolejność wpisów to kolejność zgłoszeń – ostatni jest ekranem, na którym
-// użytkownik właśnie jest.
-const screens = new Map<number, { screen: AppScreen; clear: () => void }>()
+import { currentScreen, isEditorActive, trackScreen } from './screens'
 
 // Menu aplikacji w języku interfejsu, przebudowywane przy zmianie języka, wyglądu (zaznaczenie radio) i ekranu
 // (aktywność pozycji menu Plik). Cofnij / Ponów w edytorze CV działają na historii CV (jak Cmd+Z w edytorze),
@@ -30,36 +26,6 @@ export function registerAppMenu(language: InterfaceLanguageState, appearance: Ap
   language.onChange(build)
   appearance.onChange(build)
   build()
-}
-
-// Ekran znika razem z oknem i przy przeładowaniu strony (renderer zgłosi go ponownie po starcie); menu jest wtedy
-// przebudowywane (`onClear`).
-function trackScreen(contents: WebContents, screen: AppScreen, onClear: () => void) {
-  const id = contents.id
-  const tracked = screens.get(id)
-  if (tracked) {
-    screens.delete(id)
-    screens.set(id, { ...tracked, screen })
-    return
-  }
-  const onNavigation = (details: Electron.Event<Electron.WebContentsDidStartNavigationEventParams>) => {
-    if (details.isMainFrame && !details.isSameDocument) clear()
-  }
-  const clear = () => {
-    screens.delete(id)
-    onClear()
-    if (contents.isDestroyed()) return
-    contents.off('did-start-navigation', onNavigation)
-    contents.off('destroyed', clear)
-  }
-  contents.on('did-start-navigation', onNavigation)
-  contents.once('destroyed', clear)
-  screens.set(id, { screen, clear })
-}
-
-// Ekran, od którego zależy aktywność menu Plik: ostatnio zgłoszony; bez okien – żaden.
-function currentScreen(): AppScreen | undefined {
-  return [...screens.values()].at(-1)?.screen
 }
 
 // Panel „O aplikacji”: wersja z `app.getVersion()` (jedno źródło, wzorem ADR-0005). W spakowanej aplikacji pole
@@ -81,7 +47,7 @@ function historyCommand(command: HistoryCommand) {
   return (_item: Electron.MenuItem, window: BaseWindow | undefined) => {
     if (!(window instanceof BrowserWindow)) return
     const contents = window.webContents
-    if (screens.get(contents.id)?.screen === 'editor') contents.send(`editor:${command}`)
+    if (isEditorActive(contents)) contents.send(`editor:${command}`)
     else contents[command]()
   }
 }
