@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu, type BaseWindow, type MenuItemConstr
 import type { HistoryCommand } from '../shared/api'
 import { interfaceLanguageCodes, interfaceLanguages } from '../shared/i18n/languages'
 import { appearances, type Appearance } from '../shared/appearance'
+import { HELP_URL } from '../shared/links'
 import type { AppearanceState } from './appearance'
 import type { InterfaceLanguageState } from './interfaceLanguage'
 import { requireBoolean } from './ipcArgs'
@@ -19,7 +20,7 @@ export function registerAppMenu(language: InterfaceLanguageState, appearance: Ap
     else activeEditors.get(event.sender.id)?.()
   })
   const build = () => {
-    app.setAboutPanelOptions({ applicationName: language.dictionary().appName })
+    app.setAboutPanelOptions(aboutPanelOptions(language.dictionary().appName))
     Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate(language, appearance)))
   }
   language.onChange(build)
@@ -43,6 +44,19 @@ function trackEditor(contents: WebContents) {
   contents.on('did-start-navigation', onNavigation)
   contents.once('destroyed', clear)
   activeEditors.set(id, clear)
+}
+
+// Panel „O aplikacji”: wersja z `app.getVersion()` (jedno źródło, wzorem ADR-0005). W spakowanej aplikacji pole
+// `version` jest pominięte, więc macOS pokazuje numer buildu z Info.plist (`CFBundleVersion`); poza paczką „dev”,
+// żeby panel nie pokazywał wersji Electrona. `website` działa tylko na Linuksie – na macOS do pomocy prowadzi menu Pomoc.
+function aboutPanelOptions(appName: string): Electron.AboutPanelOptionsOptions {
+  return {
+    applicationName: appName,
+    applicationVersion: app.getVersion(),
+    ...(app.isPackaged ? {} : { version: 'dev' }),
+    copyright: '© 2026 Michal Staniecko',
+    website: HELP_URL
+  }
 }
 
 // Skrót Cmd+Z obsłużony przez edytor (preventDefault) nie dociera do menu, więc tu trafia tylko kliknięcie

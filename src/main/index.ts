@@ -5,6 +5,7 @@ import { createAppearance, windowBackground } from './appearance'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
 import { createInterfaceLanguage, registerInterfaceLanguage, type InterfaceLanguageState } from './interfaceLanguage'
+import { registerAppInfo } from './appInfo'
 import { registerAppMenu } from './menu'
 import { registerPdfExport } from './pdfExport'
 import { registerPhotoPicker } from './photo'
@@ -58,6 +59,7 @@ app.whenReady().then(async () => {
   registerPhotoPicker(language)
   registerAppMenu(language, appearance)
   registerSponsor()
+  registerAppInfo()
   createWindow(language)
 
   app.on('activate', () => {

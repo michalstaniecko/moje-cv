@@ -4,6 +4,9 @@ import type { InterfaceLanguage } from '../shared/i18n/languages'
 
 // Wąskie API dla renderera.
 const api: Api = {
+  app: {
+    version: () => ipcRenderer.invoke('app:version')
+  },
   cv: {
     list: () => ipcRenderer.invoke('cv:list'),
     get: (id) => ipcRenderer.invoke('cv:get', id),
