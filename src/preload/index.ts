@@ -2,6 +2,14 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { Api, MenuCommand } from '../shared/api'
 import type { InterfaceLanguage } from '../shared/i18n/languages'
 
+// Prośba o zapis przed zamknięciem okna (`editor:flush-request` z identyfikatorem) dostaje zawsze odpowiedź: wynik
+// zapisu z edytora CV albo `true`, gdy żaden edytor nie słucha (nie ma czego zapisywać).
+let flushListener: (() => Promise<boolean>) | null = null
+ipcRenderer.on('editor:flush-request', async (_event, requestId: string) => {
+  const saved = flushListener ? await flushListener().catch(() => false) : true
+  ipcRenderer.send('editor:flush-result', requestId, saved === true)
+})
+
 // Wąskie API dla renderera.
 const api: Api = {
   app: {
@@ -54,6 +62,12 @@ const api: Api = {
       return () => {
         ipcRenderer.off('editor:undo', undo)
         ipcRenderer.off('editor:redo', redo)
+      }
+    },
+    onFlushRequest: (listener) => {
+      flushListener = listener
+      return () => {
+        if (flushListener === listener) flushListener = null
       }
     }
   },

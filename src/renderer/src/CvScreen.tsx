@@ -222,7 +222,8 @@ function useClauseLibrary() {
 
 // Cmd+Z / Cmd+Shift+Z (Ctrl na innych systemach) i Edycja → Cofnij / Ponów w menu cofają i ponawiają zmiany
 // w dokumencie – także w polu tekstowym, zamiast wbudowanego cofania pola. Skrót obsłużony tutaj (preventDefault)
-// nie uruchamia już pozycji menu. Oczekująca zmiana jest zapisywana przy zamknięciu okna i wyjściu z edytora.
+// nie uruchamia już pozycji menu. Oczekująca zmiana jest zapisywana przy wyjściu z edytora, przeładowaniu okna
+// (`beforeunload`) i na prośbę procesu głównego przed zamknięciem okna lub zakończeniem aplikacji.
 function useEditorLifecycle(editor: CvEditor) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -238,10 +239,16 @@ function useEditorLifecycle(editor: CvEditor) {
     const unsubscribe = window.api.editor.onHistoryCommand((command) =>
       command === 'undo' ? editor.undo() : editor.redo()
     )
+    // Zamknięcie okna i zakończenie aplikacji czekają na ten zapis (także zmiany zakolejkowane za trwającym zapisem).
+    const unsubscribeFlush = window.api.editor.onFlushRequest(async () => {
+      await editor.flush()
+      return editor.store.getState().saveStatus !== 'failed'
+    })
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('beforeunload', onUnload)
       unsubscribe()
+      unsubscribeFlush()
       void editor.flush()
     }
   }, [editor])

@@ -3,6 +3,7 @@ import { app, BrowserWindow } from 'electron'
 import { sampleCvs } from '../renderer/src/domain/sampleCv'
 import { en } from '../shared/i18n/en'
 import { createAppearance, windowBackground } from './appearance'
+import { guardUnsavedChanges } from './closeGuard'
 import { reloadAfterRendererCrash, reportMainProcessErrors } from './crashHandling'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
@@ -51,6 +52,7 @@ function createWindow(language: InterfaceLanguageState): void {
     if (mainWindow === window) mainWindow = null
   })
   reloadAfterRendererCrash(window, language.dictionary)
+  guardUnsavedChanges(window, language.dictionary)
   loadAppWindow(window)
 }
 

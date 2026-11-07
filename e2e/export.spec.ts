@@ -1909,6 +1909,158 @@ test('a failed autosave shows an alert with Try again, which saves once the caus
   await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
 })
 
+// Autozapis trwający 1,5 s: zapis z edytora czeka, a dopiero potem trafia do pliku CV (jak w repozytorium: z tagami
+// z pliku). Liczba otrzymanych zapisów jest w `updateCalls`.
+async function slowDownAutosave() {
+  await app.evaluate(({ app, ipcMain }) => {
+    const state = globalThis as { updateCalls?: number }
+    state.updateCalls = 0
+    ipcMain.removeHandler('cv:update')
+    ipcMain.handle('cv:update', async (_event, document: { id: string }) => {
+      state.updateCalls = (state.updateCalls ?? 0) + 1
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const { readFile, writeFile } = process.getBuiltinModule('node:fs/promises')
+      const { join } = process.getBuiltinModule('node:path')
+      const filePath = join(app.getPath('userData'), 'cvs', `${document.id}.json`)
+      const { tags } = JSON.parse(await readFile(filePath, 'utf8'))
+      await writeFile(filePath, JSON.stringify({ ...document, tags }, null, 2))
+    })
+  })
+}
+
+const updateCalls = () => app.evaluate(() => (globalThis as { updateCalls?: number }).updateCalls ?? 0)
+
+// Zamyka okno aplikacji jak Cmd+W albo czerwony przycisk (bez kończenia aplikacji).
+async function closeAppWindow() {
+  await app.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows()
+      .find((window) => window.isVisible())
+      ?.close()
+  })
+}
+
+const appWindowCount = () =>
+  app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().filter((window) => window.isVisible()).length)
+
+// Podmienia natywne okno komunikatu: odpowiada przyciskiem `globalThis.messageBoxResponse` i zapamiętuje opcje.
+async function stubMessageBox(response: number) {
+  await app.evaluate(({ dialog }, response) => {
+    const state = globalThis as { messageBoxCalls?: Electron.MessageBoxOptions[]; messageBoxResponse?: number }
+    state.messageBoxCalls = []
+    state.messageBoxResponse = response
+    dialog.showMessageBox = (async (...args: unknown[]) => {
+      state.messageBoxCalls!.push(args.at(-1) as Electron.MessageBoxOptions)
+      return { response: state.messageBoxResponse, checkboxChecked: false }
+    }) as typeof dialog.showMessageBox
+  }, response)
+}
+
+const setMessageBoxResponse = (response: number) =>
+  app.evaluate((_electron, response) => {
+    ;(globalThis as { messageBoxResponse?: number }).messageBoxResponse = response
+  }, response)
+
+const messageBoxCalls = () =>
+  app.evaluate(() => (globalThis as { messageBoxCalls?: Electron.MessageBoxOptions[] }).messageBoxCalls ?? [])
+
+// Zapis w toku i zmiana czekająca za nim: pierwsza zmiana jest już zapisywana, druga dopiero wpisana.
+async function editDuringSave() {
+  await openFirstCv()
+  await slowDownAutosave()
+  await window.getByLabel('Full name').fill('Ewa')
+  await expect.poll(updateCalls).toBe(1)
+  await window.getByLabel('Full name').fill('Ewa Nowak')
+}
+
+test('closing the window right after an edit waits for the save in progress and the change queued behind it', async () => {
+  await editDuringSave()
+  await closeAppWindow()
+  await expect.poll(appWindowCount, { timeout: 10_000 }).toBe(0)
+  await app.close()
+  await launch()
+  await openFirstCv()
+  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
+})
+
+test('quitting right after an edit waits for the save in progress and the change queued behind it', async () => {
+  await editDuringSave()
+  await app.close()
+  await launch()
+  await openFirstCv()
+  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
+})
+
+test('closing the window after a failed autosave asks natively: Back to Editor keeps it open, Close Anyway closes it', async () => {
+  await openFirstCv()
+  await breakAutosave()
+  await window.getByLabel('Full name').fill('Jane Doe')
+  await expect(window.getByRole('alert')).toContainText('Couldn’t save changes')
+
+  await stubMessageBox(1)
+  await closeAppWindow()
+  await expect.poll(async () => (await messageBoxCalls()).length).toBe(1)
+  const [options] = await messageBoxCalls()
+  expect(options).toMatchObject({
+    type: 'warning',
+    message: 'Your changes to the CV weren’t saved.',
+    detail: 'If you close the window now, your latest changes will be lost.',
+    buttons: ['Close Anyway', 'Back to Editor'],
+    defaultId: 1,
+    cancelId: 1
+  })
+  expect(await appWindowCount()).toBe(1)
+  await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
+
+  await setMessageBoxResponse(0)
+  await closeAppWindow()
+  await expect.poll(appWindowCount).toBe(0)
+})
+
+test('quitting after a failed autosave asks natively, and Back to Editor keeps the app running', async () => {
+  await openFirstCv()
+  await breakAutosave()
+  await window.getByLabel('Full name').fill('Jane Doe')
+  await expect(window.getByRole('alert')).toContainText('Couldn’t save changes')
+
+  await stubMessageBox(1)
+  await app.evaluate(({ app }) => app.quit())
+  await expect.poll(async () => (await messageBoxCalls()).length).toBe(1)
+  const [options] = await messageBoxCalls()
+  expect(options).toMatchObject({
+    message: 'Your changes to the CV weren’t saved.',
+    detail: 'If you quit CV Press now, your latest changes will be lost.',
+    buttons: ['Quit Anyway', 'Back to Editor']
+  })
+  expect(await appWindowCount()).toBe(1)
+  await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
+
+  // Zamknięcie okna po „Wróć do edytora” to już nie zakończenie aplikacji.
+  await closeAppWindow()
+  await expect.poll(async () => (await messageBoxCalls()).length).toBe(2)
+  expect((await messageBoxCalls())[1]).toMatchObject({ buttons: ['Close Anyway', 'Back to Editor'] })
+
+  // `afterEach` kończy aplikację: „Zakończ mimo to”.
+  await setMessageBoxResponse(0)
+})
+
+test('closing the window from the CV library or with saved changes asks nothing', async () => {
+  await openFirstCv()
+  await stubMessageBox(1)
+  await window.getByLabel('Full name').fill('Jane Doe')
+  await expect(window.getByRole('status').filter({ hasText: 'Changes saved' })).toBeVisible()
+  await closeAppWindow()
+  await expect.poll(appWindowCount).toBe(0)
+  expect(await messageBoxCalls()).toEqual([])
+
+  await app.close()
+  await launch()
+  await stubMessageBox(1)
+  await expect(window.getByRole('list', { name: 'CV list' })).toBeVisible()
+  await closeAppWindow()
+  await expect.poll(appWindowCount).toBe(0)
+  expect(await messageBoxCalls()).toEqual([])
+})
+
 test('in the editor File → Export to PDF… and Export JSON… export the open CV, the JSON with the change typed just before', async () => {
   await openFirstCv()
   await expect(window.locator('.cv-page').first()).toBeVisible()
