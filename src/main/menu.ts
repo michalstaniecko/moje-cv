@@ -9,10 +9,10 @@ import { helpMenuItems } from './helpMenu'
 import type { InterfaceLanguageState } from './interfaceLanguage'
 import { requireAppScreen } from './ipcArgs'
 import { enabledMenuCommands } from './menuCommands'
-import { currentScreen, isEditorActive, trackScreen } from './screens'
+import { isEditorActive, menuScreen, screenOf, trackScreen } from './screens'
 
-// Menu aplikacji w języku interfejsu, przebudowywane przy zmianie języka, wyglądu (zaznaczenie radio) i ekranu
-// (aktywność pozycji menu Plik). Cofnij / Ponów w edytorze CV działają na historii CV (jak Cmd+Z w edytorze),
+// Menu aplikacji w języku interfejsu, przebudowywane przy zmianie języka, wyglądu (zaznaczenie radio), ekranu i okna
+// z fokusem (aktywność pozycji menu Plik według ekranu tego okna). Cofnij / Ponów w edytorze CV działają na historii CV (jak Cmd+Z w edytorze),
 // a poza edytorem jak zwykłe cofanie pola tekstowego.
 // `checkForUpdates` to „Check for Updates…” z menu Pomoc (ADR-0006, tylko poza Mac App Store).
 export function registerAppMenu(
@@ -28,6 +28,8 @@ export function registerAppMenu(
     trackScreen(event.sender, requireAppScreen(screen), build)
     build()
   })
+  app.on('browser-window-focus', build)
+  app.on('browser-window-blur', build)
   language.onChange(build)
   appearance.onChange(build)
   build()
@@ -57,13 +59,14 @@ function historyCommand(command: HistoryCommand) {
   }
 }
 
-// Pozycja menu Plik: aktywna według ekranu okna; komenda trafia do okna, z którego kliknięto, i wykonuje ją
-// zamontowany ekran renderera.
+// Pozycja menu Plik: aktywna według ekranu okna z fokusem; komenda trafia do okna, z którego kliknięto (o ile na jego
+// ekranie jest aktywna), i wykonuje ją zamontowany ekran renderera.
 function menuCommand(command: MenuCommand, enabled: ReadonlySet<MenuCommand>): MenuItemConstructorOptions {
   return {
     enabled: enabled.has(command),
     click: (_item, window) => {
-      if (window instanceof BrowserWindow) window.webContents.send('menu:command', command)
+      if (!(window instanceof BrowserWindow) || !enabledMenuCommands(screenOf(window.webContents)).has(command)) return
+      window.webContents.send('menu:command', command)
     }
   }
 }
@@ -103,7 +106,7 @@ function menuTemplate(
   }
   // Pozycje Plik wykonują w rendererze te same akcje co przyciski biblioteki CV i edytora. Skróty działają także
   // w polach tekstowych (żadne pole ich nie używa); przy nieaktywnej pozycji skrót nic nie robi.
-  const enabled = enabledMenuCommands(currentScreen())
+  const enabled = enabledMenuCommands(menuScreen(BrowserWindow.getFocusedWindow()?.webContents))
   const fileMenu: MenuItemConstructorOptions = {
     label: menu.file,
     submenu: [
