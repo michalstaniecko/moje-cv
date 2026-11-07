@@ -4,6 +4,7 @@ import { sampleCvs } from '../renderer/src/domain/sampleCv'
 import { en } from '../shared/i18n/en'
 import { createAppearance, windowBackground } from './appearance'
 import { createWindowStateKeeper, type InitialWindowState, type WindowStateKeeper } from './appWindowState'
+import { isMacAppStore } from './channel'
 import { guardUnsavedChanges } from './closeGuard'
 import { reloadAfterRendererCrash, reportMainProcessErrors } from './crashHandling'
 import { createCvRepository } from './cvRepository'
@@ -16,6 +17,7 @@ import { registerPhotoPicker } from './photo'
 import { registerSettings } from './settings'
 import { createSettingsRepository } from './settingsRepository'
 import { registerSponsor } from './sponsor'
+import { registerUpdates } from './updates'
 import { loadAppWindow, lockNavigation, secureWebPreferences } from './windows'
 import { MIN_WINDOW_SIZE } from './windowState'
 
@@ -94,8 +96,10 @@ app.whenReady().then(async () => {
   registerSettings(settings)
   registerPdfExport(language)
   registerPhotoPicker(language)
-  registerAppMenu(language, appearance)
   registerSponsor()
+  // Ta sama reguła kanału co Sponsor bar i menu Pomoc: w Mac App Store bez żadnego ruchu sieciowego (ADR-0006).
+  const updates = registerUpdates({ language, settings, macAppStore: isMacAppStore() })
+  registerAppMenu(language, appearance, updates.checkForUpdates)
   registerAppInfo()
   const windowState = createWindowStateKeeper(settings)
   const openWindow = async () => createWindow(language, windowState, await windowState.initial())

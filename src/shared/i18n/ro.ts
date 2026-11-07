@@ -39,7 +39,8 @@ export const ro: Dictionary = {
     helpPage: (appName) => `Ajutor ${appName}`,
     privacyPolicy: 'Politica de confidențialitate',
     reportIssue: 'Raportează o problemă…',
-    supportApp: (appName) => `Susține ${appName}…`
+    supportApp: (appName) => `Susține ${appName}…`,
+    checkForUpdates: 'Caută actualizări…'
   },
   dialogs: {
     exportPdf: 'Exportă în PDF',
@@ -284,6 +285,19 @@ export const ro: Dictionary = {
       'Este doar un mulțumesc. Nu deblochează nimic: aplicația funcționează exact la fel în ambele cazuri.'
     ],
     close: 'Închide'
+  },
+  updates: {
+    noticeLabel: 'Versiune nouă',
+    available: (appName, version) => `Este disponibilă o versiune nouă de ${appName}: ${version}.`,
+    availableDetail: (current) => `Ai versiunea ${current}. Descarcă versiunea nouă și înlocuiește cu ea aplicația din dosarul Aplicații.`,
+    download: 'Descarcă',
+    dismiss: 'Închide',
+    later: 'Mai târziu',
+    upToDate: (appName, version) => `Ai cea mai nouă versiune de ${appName} (${version}).`,
+    failed: 'Nu s-au putut căuta actualizări.',
+    failedDetail: 'Verifică conexiunea la internet sau vezi cea mai nouă versiune pe pagina de versiuni.',
+    openReleases: 'Deschide pagina de versiuni',
+    ok: 'OK'
   },
   crash: {
     title: 'Ceva nu a mers bine',

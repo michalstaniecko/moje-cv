@@ -39,7 +39,8 @@ export const de: Dictionary = {
     helpPage: (appName) => `${appName}-Hilfe`,
     privacyPolicy: 'Datenschutzerklärung',
     reportIssue: 'Problem melden …',
-    supportApp: (appName) => `${appName} unterstützen …`
+    supportApp: (appName) => `${appName} unterstützen …`,
+    checkForUpdates: 'Nach Updates suchen …'
   },
   dialogs: {
     exportPdf: 'Als PDF exportieren',
@@ -292,6 +293,19 @@ export const de: Dictionary = {
       'Das ist nur ein Dankeschön. Es schaltet nichts frei: Die App funktioniert so oder so genau gleich.'
     ],
     close: 'Schließen'
+  },
+  updates: {
+    noticeLabel: 'Neue Version',
+    available: (appName, version) => `Eine neue Version von ${appName} ist verfügbar: ${version}.`,
+    availableDetail: (current) => `Du hast Version ${current}. Lade die neue Version herunter und ersetze damit die App im Ordner „Programme“.`,
+    download: 'Laden',
+    dismiss: 'Schließen',
+    later: 'Später',
+    upToDate: (appName, version) => `Du hast die neueste Version von ${appName} (${version}).`,
+    failed: 'Die Suche nach Updates ist fehlgeschlagen.',
+    failedDetail: 'Prüfe deine Internetverbindung oder sieh dir die neueste Version auf der Seite mit den Releases an.',
+    openReleases: 'Release-Seite öffnen',
+    ok: 'OK'
   },
   crash: {
     title: 'Etwas ist schiefgelaufen',

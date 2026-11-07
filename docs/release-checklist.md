@@ -128,7 +128,7 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | CV Press → Usługi działa na zaznaczonym tekście; Okno → „Przenieś wszystko na wierzch” i lista okien (#63) | [ ] | [ ] |
 | Pomoc: „Sprawdź aktualizacje…” (#78) i „Wesprzyj CV Press…” (#64) | — (brak obu pozycji) | [ ] |
 | Pomoc: strona pomocy, polityka prywatności, zgłaszanie problemu otwierają przeglądarkę (#64) | [ ] | [ ] |
-| Pomoc: trzy pozycje w MAS, cztery w `.dmg` (z separatorem przed „Wesprzyj CV Press…”); każda otwiera właściwą stronę: pomoc `michalstaniecko.github.io/moje-cv/`, prywatność `…/privacy/`, zgłoszenie `github.com/michalstaniecko/moje-cv/issues/new/choose`, wsparcie GitHub Sponsors (#64) | [ ] | [ ] |
+| Pomoc: trzy pozycje w MAS, pięć w `.dmg` (z separatorem przed „Sprawdź aktualizacje…” i „Wesprzyj CV Press…”); każda otwiera właściwą stronę: pomoc `michalstaniecko.github.io/moje-cv/`, prywatność `…/privacy/`, zgłoszenie `github.com/michalstaniecko/moje-cv/issues/new/choose`, wsparcie GitHub Sponsors (#64) | [ ] | [ ] |
 | Pomoc: systemowe pole wyszukiwania pozycji menu; po zmianie Interface language menu Pomoc od razu w nowym języku (#64) | [ ] | [ ] |
 
 ## Wersja
@@ -140,6 +140,24 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | Ta sama wersja w oknie „Więcej” Sponsor bara | — | [ ] |
 | Numer buildu w panelu równy temu z App Store Connect | [ ] | — |
 | Pasek o nowej wersji w bibliotece i dialog „Sprawdź aktualizacje…” (#78) | — | [ ] |
+
+## Powiadomienie o nowej wersji (#78, ADR-0006)
+
+Wymuszenie „nowszej wersji” w spakowanym `.dmg` bez publikowania wydania: w pustym katalogu zapisz plik `latest.json` z treścią `{"tag_name":"v99.0.0"}`, uruchom w nim `python3 -m http.server 8000`, a aplikację z terminala: `MOJE_CV_UPDATE_URL=http://127.0.0.1:8000/latest.json "/Applications/CV Press.app/Contents/MacOS/CV Press"`. Z tym adresem sprawdzenie przy starcie idzie od razu, ale limit 24 h nadal obowiązuje: żeby przy kolejnym starcie znów zapytać serwer, usuń pole `updateCheck` z `settings.json` (w `~/Library/Containers/com.michalstaniecko.mojecv/Data/Library/Application Support/Moje CV/`) albo użyj menu Pomoc. Wariant „masz najnowszą” to tag równy bieżącej wersji, a „nie udało się” to zatrzymany serwer.
+
+| Sprawdź | MAS | DMG |
+| --- | --- | --- |
+| Przy nowszym wydaniu biblioteka CV pokazuje pasek „Dostępna jest nowa wersja CV Press 99.0.0.” z „Pobierz” i „Zamknij”; pasek nie zabiera fokusu i jest czytelny w jasnym i ciemnym wyglądzie | — | [ ] |
+| „Pobierz” w pasku otwiera w przeglądarce stronę tego wydania (`github.com/michalstaniecko/moje-cv/releases/tag/v99.0.0`) | — | [ ] |
+| „Zamknij” chowa pasek; po restarcie nie wraca, dopóki nie pojawi się kolejna wersja | — | [ ] |
+| Pomoc → „Sprawdź aktualizacje…”: „Masz najnowszą wersję CV Press (…)” [OK] | — | [ ] |
+| Pomoc → „Sprawdź aktualizacje…”: „Dostępna jest nowa wersja…” [Pobierz] [Później]; „Pobierz” otwiera stronę wydania | — | [ ] |
+| Pomoc → „Sprawdź aktualizacje…” bez sieci: „Nie udało się sprawdzić aktualizacji.” [Otwórz stronę wydań] [OK]; przycisk otwiera `…/releases/latest` | — | [ ] |
+| Bez internetu przy starcie: żadnego komunikatu ani paska | — | [ ] |
+| Pasek, pozycja menu i dialogi w nowym Interface language po przełączeniu | — | [ ] |
+| Brak pozycji „Sprawdź aktualizacje…” i paska; brak jakiegokolwiek ruchu sieciowego w Little Snitch | [ ] | — |
+| Entitlements `.dmg` mają `com.apple.security.network.client` (inaczej sprawdzanie zawsze milczy), a MAS go nie ma (#42, #43) | [ ] | [ ] |
+| Wydanie opublikowane jako GitHub Release (nie draft, nie pre-release) z tagiem `vX.Y.Z` równym `version` w `package.json` (#74, #48) | — | [ ] |
 
 ## Awarie i okno
 

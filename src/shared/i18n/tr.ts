@@ -39,7 +39,8 @@ export const tr: Dictionary = {
     helpPage: (appName) => `${appName} Yardımı`,
     privacyPolicy: 'Gizlilik Politikası',
     reportIssue: 'Sorun Bildir…',
-    supportApp: (appName) => `${appName} Uygulamasını Destekle…`
+    supportApp: (appName) => `${appName} Uygulamasını Destekle…`,
+    checkForUpdates: 'Güncellemeleri Denetle…'
   },
   dialogs: {
     exportPdf: 'PDF olarak dışa aktar',
@@ -283,6 +284,19 @@ export const tr: Dictionary = {
       'Bu yalnızca bir teşekkürdür. Hiçbir şeyin kilidini açmaz: uygulama her iki durumda da tamamen aynı çalışır.'
     ],
     close: 'Kapat'
+  },
+  updates: {
+    noticeLabel: 'Yeni sürüm',
+    available: (appName, version) => `${appName} uygulamasının yeni bir sürümü var: ${version}.`,
+    availableDetail: (current) => `Sizdeki sürüm ${current}. Yeni sürümü indirin ve Uygulamalar klasöründeki uygulamayı onunla değiştirin.`,
+    download: 'İndir',
+    dismiss: 'Kapat',
+    later: 'Daha Sonra',
+    upToDate: (appName, version) => `${appName} uygulamasının en son sürümüne sahipsiniz (${version}).`,
+    failed: 'Güncellemeler denetlenemedi.',
+    failedDetail: 'İnternet bağlantınızı denetleyin veya en son sürümü sürümler sayfasında görün.',
+    openReleases: 'Sürümler Sayfasını Aç',
+    ok: 'Tamam'
   },
   crash: {
     title: 'Bir sorun oluştu',
