@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, Menu, type BaseWindow, type MenuItemConstructorOptions, type WebContents } from 'electron'
-import type { HistoryCommand } from '../shared/api'
+import type { HistoryCommand, MenuCommand } from '../shared/api'
 import { interfaceLanguageCodes, interfaceLanguages } from '../shared/i18n/languages'
 import { appearances, type Appearance } from '../shared/appearance'
 import { HELP_URL } from '../shared/links'
@@ -70,12 +70,21 @@ function historyCommand(command: HistoryCommand) {
   }
 }
 
+// Komenda z menu Plik trafia do okna, z którego kliknięto; obsługuje ją zamontowany ekran renderera.
+function menuCommand(command: MenuCommand) {
+  return (_item: Electron.MenuItem, window: BaseWindow | undefined) => {
+    if (window instanceof BrowserWindow) window.webContents.send('menu:command', command)
+  }
+}
+
 function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceState): MenuItemConstructorOptions[] {
   const { appName, menu } = language.dictionary()
   const appMenu: MenuItemConstructorOptions = {
     label: appName,
     submenu: [
       { role: 'about', label: menu.about(appName) },
+      { type: 'separator' },
+      { role: 'services', label: menu.services },
       { type: 'separator' },
       { role: 'hide', label: menu.hide(appName) },
       { role: 'hideOthers', label: menu.hideOthers },
@@ -96,12 +105,33 @@ function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceSt
       { role: 'selectAll', label: menu.selectAll }
     ]
   }
+  // Pozycje Plik wykonują w rendererze te same akcje co przyciski biblioteki CV i edytora (`menuCommand`).
+  const fileMenu: MenuItemConstructorOptions = {
+    label: menu.file,
+    submenu: [
+      { label: menu.newCv, accelerator: 'CmdOrCtrl+N', click: menuCommand('new-cv') },
+      { label: menu.addSample, click: menuCommand('add-sample') },
+      { label: menu.importCv, accelerator: 'CmdOrCtrl+O', click: menuCommand('import') },
+      { type: 'separator' },
+      { label: menu.exportJson, click: menuCommand('export-json') },
+      { label: menu.exportPdf, accelerator: 'CmdOrCtrl+E', click: menuCommand('export-pdf') },
+      { type: 'separator' },
+      { role: 'close', label: menu.closeWindow, accelerator: 'CmdOrCtrl+W' }
+    ]
+  }
+  const viewMenu: MenuItemConstructorOptions = {
+    label: menu.view,
+    submenu: [{ role: 'togglefullscreen', label: menu.toggleFullScreen }]
+  }
+  // Rola `windowMenu` czyni z niego systemowe menu okien: macOS dopisuje listę otwartych okien.
   const windowMenu: MenuItemConstructorOptions = {
     label: menu.window,
+    role: 'windowMenu',
     submenu: [
       { role: 'minimize', label: menu.minimize },
       { role: 'zoom', label: menu.zoom },
-      { role: 'close', label: menu.closeWindow }
+      { type: 'separator' },
+      { role: 'front', label: menu.bringAllToFront }
     ]
   }
   // Language (etykieta dwujęzyczna, np. „Sprache / Language”): zaznaczony jest wybór użytkownika (albo System), a nie wynik – np. System przy polskim systemie.
@@ -126,8 +156,8 @@ function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceSt
     choose: (choice) => void appearance.choose(choice)
   })
   return process.platform === 'darwin'
-    ? [appMenu, editMenu, languageMenu, appearanceMenu, windowMenu]
-    : [editMenu, languageMenu, appearanceMenu, windowMenu]
+    ? [appMenu, fileMenu, editMenu, viewMenu, languageMenu, appearanceMenu, windowMenu]
+    : [fileMenu, editMenu, viewMenu, languageMenu, appearanceMenu, windowMenu]
 }
 
 // Podmenu preferencji „wartości + System”: po jednym radio na wartość i radio System zaznaczone, gdy preferencji

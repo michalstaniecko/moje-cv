@@ -32,6 +32,12 @@ export type SetCvTagsResult = { status: 'saved'; document: CvDocument } | { stat
 // Polecenie historii CV wysyłane z menu Edycja do otwartego edytora.
 export type HistoryCommand = 'undo' | 'redo'
 
+// Polecenie z menu Plik wysyłane do okna; wykonuje je zamontowany ekran (biblioteka CV albo edytor).
+export type MenuCommand = 'new-cv' | 'add-sample' | 'import' | 'export-json' | 'export-pdf'
+
+// Bieżący ekran okna zgłaszany procesowi głównemu: od niego zależy aktywność pozycji menu Plik i Cofnij / Ponów.
+export type AppScreen = 'library' | 'clauses' | 'editor'
+
 // Pozycja na liście CV. Uszkodzony plik (niepoprawny JSON lub niezgodny ze schematem) jest widoczny, ale nie da się go otworzyć.
 export type CvListEntry =
   | { status: 'ok'; id: string; name: string; updatedAt: string; tags: string[] }
