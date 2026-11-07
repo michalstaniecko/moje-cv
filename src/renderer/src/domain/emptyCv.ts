@@ -1,20 +1,22 @@
-import type { DefaultContent } from '../../../shared/i18n/en'
-import { CV_SCHEMA_VERSION, cvDocumentSchema, defaultCvSettings, type Clause, type CvDocument } from './schema'
+import { dictionaryFor } from '../../../shared/i18n/languages'
+import { CV_SCHEMA_VERSION, cvDocumentSchema, defaultCvSettings, type Clause, type CvDocument, type CvLanguage } from './schema'
 
 // Puste CV z domyślnymi sekcjami i podpowiedziami kontaktu – punkt startowy przy „Nowe CV”.
-// Nazwa, tytuły sekcji i etykiety kontaktu pochodzą z treści domyślnej (`content`) języka interfejsu.
+// `language` – bieżący język interfejsu: CV startuje w nim jako CV language, a nazwa, tytuły sekcji i etykiety kontaktu
+// pochodzą z jego treści domyślnej.
 // Domyślna klauzula z biblioteki jest kopiowana do CV i włączona.
 export function emptyCv({
-  content,
+  language,
   now,
   newId,
   defaultClause = null
 }: {
-  content: DefaultContent
+  language: CvLanguage
   now: Date
   newId: () => string
   defaultClause?: Clause | null
 }): CvDocument {
+  const content = dictionaryFor(language).defaultContent
   const titles = content.sectionTitles
   const timestamp = now.toISOString()
   const sectionDefaults = { hidden: false, pageBreakBefore: false, items: [] }
@@ -25,7 +27,7 @@ export function emptyCv({
     tags: [],
     createdAt: timestamp,
     updatedAt: timestamp,
-    settings: defaultCvSettings,
+    settings: defaultCvSettings(language),
     header: {
       fullName: '',
       photo: null,

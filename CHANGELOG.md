@@ -3,7 +3,14 @@
 ## [Unreleased]
 
 ### Added
+- 14 new interface languages: Spanish, French, German, Portuguese (Brazil), Italian, Dutch, Russian, Ukrainian, Turkish, Indonesian, Vietnamese, Czech, Romanian and Swedish, each with its own localized Sample CV. The Language menu is labelled in the current language and in English (e.g. "Sprache / Language").
 - Sponsor bar at the bottom of the window: the app is free, with a "Buy me a coffee" link to GitHub Sponsors and a "More" dialog. Hidden in the Mac App Store build.
+- "Add sample CV" in the menu under the arrow next to "New CV": adds the Sample CV again, in the interface language.
+- CV language in each CV's settings: sets the fixed text on the document ("present") and the page language. New CVs start in the interface language; existing CVs are Polish.
+
+### Fixed
+- The English Sample CV printed the Polish word "obecnie" instead of "present".
+- Characters missing from Lato (e.g. Cyrillic) fall back to the bundled Source Sans 3 instead of a system font.
 
 ### Changed
 - The app is now called "CV Press" (previously "Moje CV"). Existing CVs and settings stay where they were.

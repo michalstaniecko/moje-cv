@@ -8,6 +8,7 @@ const api: Api = {
     list: () => ipcRenderer.invoke('cv:list'),
     get: (id) => ipcRenderer.invoke('cv:get', id),
     create: () => ipcRenderer.invoke('cv:create'),
+    addSample: () => ipcRenderer.invoke('cv:add-sample'),
     duplicate: (id) => ipcRenderer.invoke('cv:duplicate', id),
     rename: (id, name) => ipcRenderer.invoke('cv:rename', id, name),
     setTags: (id, tags) => ipcRenderer.invoke('cv:set-tags', id, tags),

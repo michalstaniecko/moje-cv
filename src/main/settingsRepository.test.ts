@@ -136,7 +136,7 @@ describe('interface language preference', () => {
   })
 
   test('an unsupported language in the file makes it unreadable like any other schema mismatch', async () => {
-    const content = JSON.stringify({ schemaVersion: 1, clauses: [], defaultClauseId: null, interfaceLanguage: 'de' })
+    const content = JSON.stringify({ schemaVersion: 1, clauses: [], defaultClauseId: null, interfaceLanguage: 'ja' })
     await writeFile(settingsPath, content)
 
     await expect(repository.get()).rejects.toThrow()

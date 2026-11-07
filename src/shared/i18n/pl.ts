@@ -19,7 +19,7 @@ export const pl: Dictionary = {
     minimize: 'Minimalizuj',
     zoom: 'Zoom',
     closeWindow: 'Zamknij okno',
-    language: 'Language / Język',
+    language: 'Język / Language',
     systemLanguage: 'System',
     appearance: 'Wygląd',
     lightAppearance: 'Jasny',
@@ -47,6 +47,8 @@ export const pl: Dictionary = {
     clauses: 'Klauzule zgody',
     importFile: 'Importuj z pliku',
     newCv: 'Nowe CV',
+    moreCreateOptions: 'Więcej opcji tworzenia',
+    addSample: 'Dodaj przykładowe CV',
     empty: 'Nie masz jeszcze żadnego CV. Kliknij „Nowe CV”.',
     list: 'Lista CV',
     modified: (date) => `Zmieniono ${date}`,
@@ -130,6 +132,7 @@ export const pl: Dictionary = {
     appearance: 'Wygląd',
     accentColor: 'Kolor akcentu',
     font: 'Font',
+    cvLanguage: 'Język CV',
     template: 'Szablon',
     templateNames: { classic: 'Klasyczny', modern: 'Nowoczesny', bold: 'Wyrazisty' },
     header: 'Nagłówek',
@@ -249,5 +252,8 @@ export const pl: Dictionary = {
     copyName: (name) => `${name} (kopia)`,
     contactLabels: ['Tel', 'E-mail', 'LinkedIn', 'Miasto'],
     sectionTitles: { experience: 'Doświadczenie zawodowe', education: 'Wykształcenie', skills: 'Umiejętności', languages: 'Języki' }
+  },
+  cvText: {
+    present: 'obecnie'
   }
 }

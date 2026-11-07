@@ -42,6 +42,8 @@ export type Api = {
     list: () => Promise<CvListEntry[]>
     get: (id: string) => Promise<CvDocument>
     create: () => Promise<CvDocument>
+    // Dodaje Sample CV w bieżącym języku interfejsu jako nowe CV (zob. GLOSSARY.md).
+    addSample: () => Promise<CvDocument>
     duplicate: (id: string) => Promise<CvDocument>
     rename: (id: string, name: string) => Promise<CvDocument>
     // Zastępuje tagi CV; repozytorium je normalizuje. Nie zmienia daty ostatniej zmiany.

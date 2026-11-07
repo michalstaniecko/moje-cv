@@ -4,10 +4,10 @@ import { basename, join } from 'node:path'
 import { exists, writeJsonAtomic } from './atomicFile'
 import { emptyCv } from '../renderer/src/domain/emptyCv'
 import { cvMigrations, migrateCv, NewerSchemaVersionError, type CvMigrations } from '../renderer/src/domain/migrations'
-import type { Clause, CvDocument } from '../renderer/src/domain/schema'
+import type { Clause, CvDocument, CvLanguage } from '../renderer/src/domain/schema'
 import { InvalidTagError, normalizeTags, tagKey } from '../renderer/src/domain/tags'
 import type { CvListEntry, InvalidCvFileReason } from '../shared/api'
-import type { DefaultContent } from '../shared/i18n/en'
+import { dictionaryFor, type InterfaceLanguage } from '../shared/i18n/languages'
 
 export type CvRepository = ReturnType<typeof createCvRepository>
 
@@ -113,14 +113,19 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
       if (!(await exists(dir))) await saveAsNew(sample)
     },
 
-    // Nowe CV z treścią domyślną (`content`) języka interfejsu i domyślną klauzulą z biblioteki (włączoną), o ile jest.
-    create: (content: DefaultContent, defaultClause: Clause | null = null) =>
-      saveAsNew(emptyCv({ content, now: now(), newId: randomUUID, defaultClause })),
+    // Sample CV na żądanie: zawsze nowe CV z treścią przekazanego dokumentu (bez wykrywania duplikatów).
+    addSample: (sample: CvDocument): Promise<CvDocument> => saveAsNew(sample),
 
-    // Dopisek przy nazwie kopii pochodzi z treści domyślnej języka interfejsu.
-    async duplicate(id: string, content: DefaultContent): Promise<CvDocument> {
+    // Nowe CV w bieżącym języku interfejsu (`language`): to jego CV language i treść domyślna.
+    // Domyślna klauzula z biblioteki jest włączona, o ile jest.
+    create: (language: CvLanguage, defaultClause: Clause | null = null) =>
+      saveAsNew(emptyCv({ language, now: now(), newId: randomUUID, defaultClause })),
+
+    // Dopisek przy nazwie kopii pochodzi z treści domyślnej bieżącego języka interfejsu (`language`);
+    // kopia zachowuje CV language oryginału.
+    async duplicate(id: string, language: InterfaceLanguage): Promise<CvDocument> {
       const original = await get(id)
-      return saveAsNew({ ...original, name: content.copyName(original.name) })
+      return saveAsNew({ ...original, name: dictionaryFor(language).defaultContent.copyName(original.name) })
     },
 
     rename: (id: string, name: string): Promise<CvDocument> =>

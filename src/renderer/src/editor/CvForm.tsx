@@ -1,7 +1,8 @@
 import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useStore } from 'zustand'
 import type { Dictionary } from '../../../shared/i18n/en'
-import { clauseName, type Clause, type ClauseContent, type CvDocument, type EducationItem, type ExperienceItem, type Section, type TextItem } from '../domain/schema'
+import { interfaceLanguages } from '../../../shared/i18n/languages'
+import { clauseName, cvLanguageCodes, type Clause, type ClauseContent, type CvDocument, type CvLanguage, type EducationItem, type ExperienceItem, type Section, type TextItem } from '../domain/schema'
 import { useDictionary } from '../i18n'
 import { fontFamilies, type Font } from '../template/fonts'
 import type { CvEditor } from './cvEditor'
@@ -69,7 +70,8 @@ export function CvForm({
   )
 }
 
-// Wygląd tego CV: kolor akcentu (imię, tytuły sekcji, kropki przy datach), font i szablon.
+// Wygląd tego CV: kolor akcentu (imię, tytuły sekcji, kropki przy datach), font, szablon i CV language.
+// Zmiana CV language zmienia tylko stały tekst na dokumencie, nie treść CV.
 function AppearanceFields({ editor, document }: { editor: CvEditor; document: CvDocument }) {
   const t = useDictionary().editor
   const { settings } = document
@@ -102,6 +104,21 @@ function AppearanceFields({ editor, document }: { editor: CvEditor; document: Cv
         </label>
       </div>
       <TemplatePicker document={document} onChange={(template) => editor.edit(updateSettings({ template }))} />
+      <div className="form-row">
+        <label className="form-field">
+          <span>{t.cvLanguage}</span>
+          <select
+            value={settings.language}
+            onChange={(event) => editor.edit(updateSettings({ language: event.target.value as CvLanguage }))}
+          >
+            {cvLanguageCodes.map((language) => (
+              <option key={language} value={language}>
+                {interfaceLanguages[language].name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
     </section>
   )
 }

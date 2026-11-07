@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FocusEvent, type FormEvent } from 'react'
 import type { CvListEntry, InvalidCvFileReason } from '../../shared/api'
 import type { Dictionary } from '../../shared/i18n/en'
 import type { InterfaceLanguage } from '../../shared/i18n/languages'
@@ -80,6 +80,10 @@ export function Library({
     }
   }
 
+  // Nowe CV (puste lub Sample CV): filtr tagów jest czyszczony, żeby nowe CV (bez tagów) było widać na liście.
+  const createAndShow = (create: () => Promise<unknown>) =>
+    runAndRefresh(() => create().then(() => onTagFilterChange([])), 'create')
+
   // Zapisuje tagi CV, nie zamykając trybu „Tagi”. Zwraca, czy się udało; odrzucony tag kończy się komunikatem z powodem.
   const saveTags = async (id: string, tags: string[]): Promise<boolean> => {
     setError(null)
@@ -155,13 +159,10 @@ export function Library({
         <button type="button" onClick={importFile}>
           {t.importFile}
         </button>
-        <button
-          type="button"
-          className="button-primary"
-          onClick={() => runAndRefresh(() => window.api.cv.create().then(() => onTagFilterChange([])), 'create')}
-        >
-          {t.newCv}
-        </button>
+        <NewCvButton
+          onCreate={() => createAndShow(() => window.api.cv.create())}
+          onAddSample={() => createAndShow(() => window.api.cv.addSample())}
+        />
       </header>
       <main className="library">
         {error && (
@@ -243,6 +244,80 @@ export function Library({
         </ul>
       </main>
     </>
+  )
+}
+
+// Split button „Nowe CV”: główna część tworzy puste CV, strzałka obok otwiera menu z „Dodaj przykładowe CV”.
+// Menu zamyka wybór pozycji, Escape (fokus wraca na strzałkę), kliknięcie poza nim i przejście fokusu poza przycisk.
+function NewCvButton({ onCreate, onAddSample }: { onCreate: () => void; onAddSample: () => void }) {
+  const [open, setOpen] = useState(false)
+  const arrow = useRef<HTMLButtonElement>(null)
+  const firstItem = useRef<HTMLButtonElement>(null)
+  const container = useRef<HTMLDivElement>(null)
+  const { library: t } = useDictionary()
+
+  useEffect(() => {
+    if (!open) return
+    firstItem.current?.focus()
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!container.current?.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', closeOnOutsidePointer)
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer)
+  }, [open])
+
+  const closeAndFocusArrow = () => {
+    setOpen(false)
+    arrow.current?.focus()
+  }
+  const closeOnFocusLeave = (event: FocusEvent) => {
+    if (!container.current?.contains(event.relatedTarget as Node | null)) setOpen(false)
+  }
+
+  return (
+    <div
+      ref={container}
+      className="split-button"
+      onBlur={closeOnFocusLeave}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && open) {
+          event.stopPropagation()
+          closeAndFocusArrow()
+        }
+      }}
+    >
+      <button type="button" className="button-primary split-button-main" onClick={onCreate}>
+        {t.newCv}
+      </button>
+      <button
+        ref={arrow}
+        type="button"
+        className="button-primary split-button-arrow"
+        aria-label={t.moreCreateOptions}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((wasOpen) => !wasOpen)}
+      >
+        ▾
+      </button>
+      {open && (
+        <ul className="split-button-menu" role="menu" aria-label={t.moreCreateOptions}>
+          <li role="none">
+            <button
+              ref={firstItem}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                closeAndFocusArrow()
+                onAddSample()
+              }}
+            >
+              {t.addSample}
+            </button>
+          </li>
+        </ul>
+      )}
+    </div>
   )
 }
 

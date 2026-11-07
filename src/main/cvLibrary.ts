@@ -1,6 +1,7 @@
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { sampleCvs } from '../renderer/src/domain/sampleCv'
 import { cvDocumentSchema } from '../renderer/src/domain/schema'
 import { InvalidTagError } from '../renderer/src/domain/tags'
 import type { ExportCvFileResult, ImportCvFileResult, SetCvTagsResult } from '../shared/api'
@@ -37,10 +38,11 @@ export function registerCvLibrary(
 
   ipcMain.handle('cv:list', () => repository.list())
   ipcMain.handle('cv:get', (_event, id: unknown) => repository.get(requireString(id)))
-  // Treść domyślna nowego CV i kopii powstaje w bieżącym języku interfejsu.
-  const defaultContent = () => language.dictionary().defaultContent
-  ipcMain.handle('cv:create', async () => repository.create(defaultContent(), await settings.defaultClause()))
-  ipcMain.handle('cv:duplicate', (_event, id: unknown) => repository.duplicate(requireString(id), defaultContent()))
+  // Nowe CV startuje w bieżącym języku interfejsu (CV language i treść domyślna); dopisek kopii też jest w tym języku.
+  ipcMain.handle('cv:create', async () => repository.create(language.current(), await settings.defaultClause()))
+  // Sample CV w bieżącym języku interfejsu, z wbudowaną klauzulą (bez domyślnej klauzuli z biblioteki).
+  ipcMain.handle('cv:add-sample', () => repository.addSample(sampleCvs[language.current()]))
+  ipcMain.handle('cv:duplicate', (_event, id: unknown) => repository.duplicate(requireString(id), language.current()))
   ipcMain.handle('cv:rename', (_event, id: unknown, name: unknown) => repository.rename(requireString(id), requireString(name)))
   ipcMain.handle('cv:set-tags', async (_event, id: unknown, tags: unknown): Promise<SetCvTagsResult> => {
     try {

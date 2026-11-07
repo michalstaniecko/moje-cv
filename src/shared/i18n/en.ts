@@ -24,8 +24,9 @@ export const en = {
     minimize: 'Minimize',
     zoom: 'Zoom',
     closeWindow: 'Close Window',
-    // Dwujęzyczne, żeby dało się wrócić po wybraniu języka, którego się nie czyta.
-    language: 'Language / Język',
+    // W innych językach dwujęzyczne („Sprache / Language”), żeby dało się wrócić po wybraniu języka,
+    // którego się nie czyta; po angielsku samo „Language”.
+    language: 'Language',
     systemLanguage: 'System',
     // Wygląd interfejsu (Appearance): jasny, ciemny albo za systemem.
     appearance: 'Appearance',
@@ -55,6 +56,9 @@ export const en = {
     clauses: 'Consent clauses',
     importFile: 'Import from file',
     newCv: 'New CV',
+    // Strzałka obok „New CV” i jedyna pozycja jej menu.
+    moreCreateOptions: 'More ways to create',
+    addSample: 'Add sample CV',
     empty: 'You don’t have any CVs yet. Click “New CV”.',
     list: 'CV list',
     modified: (date: string) => `Modified ${date}`,
@@ -144,6 +148,8 @@ export const en = {
     appearance: 'Appearance',
     accentColor: 'Accent color',
     font: 'Font',
+    // CV language (zob. GLOSSARY.md): język stałego tekstu na dokumencie, np. „present”.
+    cvLanguage: 'CV language',
     template: 'Template',
     templateNames: { classic: 'Classic', modern: 'Modern', bold: 'Bold' },
     header: 'Header',
@@ -264,6 +270,11 @@ export const en = {
     // Etykiety kontaktu w nowym CV i podpowiedzi w edytorze.
     contactLabels: ['Phone', 'Email', 'LinkedIn', 'City'],
     sectionTitles: { experience: 'Work experience', education: 'Education', skills: 'Skills', languages: 'Languages' }
+  },
+  // Stały tekst na dokumencie CV: pochodzi z CV language (zob. GLOSSARY.md), nie z języka interfejsu.
+  cvText: {
+    // Koniec trwającego zakresu dat, np. „03.2021 – present”.
+    present: 'present'
   }
 }
 

@@ -13,8 +13,14 @@ export class InvalidTagError extends Error {
 // Tag bez skrajnych spacji, z pojedynczymi spacjami w środku (z samych spacji zostaje pusty tekst).
 export const cleanTag = (tag: string) => tag.replace(/\s+/g, ' ').trim()
 
-// Tagi równe bez względu na wielkość liter mają ten sam klucz.
-export const tagKey = (tag: string) => tag.toLocaleLowerCase()
+// Stały locale tagów. Tagi nie należą do żadnego języka (zob. GLOSSARY.md), a ich klucze i kolejność muszą być takie
+// same przy każdym języku interfejsu i systemu – inaczej ten sam tag dostawałby inny klucz (po turecku „I” → „ı”)
+// i dwa CV z tym samym tagiem przestałyby się zgadzać po zmianie języka. Polski stawia polskie litery na ich
+// miejscach w alfabecie.
+const TAG_LOCALE = 'pl'
+
+// Tagi równe bez względu na wielkość liter mają ten sam klucz (małe litery w TAG_LOCALE).
+export const tagKey = (tag: string) => tag.toLocaleLowerCase(TAG_LOCALE)
 
 // Tagi CV: oczyszczone (cleanTag), bez pustych i bez powtórzeń różniących się tylko wielkością liter
 // (zostaje pierwsza pisownia). Za długi tag kończy się InvalidTagError.
@@ -30,8 +36,8 @@ export function normalizeTags(tags: readonly string[]): string[] {
   return [...normalized.values()]
 }
 
-// Porządek tagów do wyświetlenia: alfabetycznie z polskimi literami na swoich miejscach (ą po a, ł po l, ś po s),
-// niezależnie od języka interfejsu – tagi nie należą do żadnego języka (zob. GLOSSARY.md).
-const collator = new Intl.Collator('pl')
+// Porządek tagów do wyświetlenia: alfabetycznie w TAG_LOCALE, z polskimi literami na swoich miejscach
+// (ą po a, ł po l, ś po s), niezależnie od języka interfejsu.
+const collator = new Intl.Collator(TAG_LOCALE)
 
 export const sortTags = (tags: readonly string[]): string[] => [...tags].sort(collator.compare)

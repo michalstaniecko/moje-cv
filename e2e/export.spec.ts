@@ -16,7 +16,7 @@ const packagedExecutable = process.env['MOJE_CV_APP']
 
 // Uruchamia aplikację na tymczasowym katalogu danych testu, żeby nie dotykać danych użytkownika.
 // Język interfejsu jest wymuszony (`MOJE_CV_LANGUAGE`, domyślnie angielski), żeby testy nie zależały od języka systemu;
-// `language: null` uruchamia aplikację bez wymuszenia (wybór z menu Language / Język, a bez niego system).
+// `language: null` uruchamia aplikację bez wymuszenia (wybór z menu Language, a bez niego system).
 // Wygląd tak samo (`MOJE_CV_APPEARANCE`, domyślnie jasny; zmienna z otoczenia testu ma pierwszeństwo, żeby dało się
 // przejść cały zestaw w ciemnym wyglądzie), a `appearance: null` zostawia wybór menu Wygląd / Appearance.
 // Playwright domyślnie emuluje `prefers-color-scheme: light` w każdym oknie; `colorScheme: null` wyłącza emulację
@@ -115,6 +115,43 @@ async function menuLabels(menuLabel: string) {
   }, menuLabel)
 }
 
+// Menu Language ma etykietę w języku interfejsu („Language”, „Język / Language”…), więc szukamy go po pozycji English.
+async function languageMenuLabel() {
+  return app.evaluate(({ Menu }) => {
+    const items = Menu.getApplicationMenu()?.items ?? []
+    const menu = items.find((item) => item.submenu?.items.some((entry) => entry.label === 'English'))
+    if (!menu) throw new Error('Brak menu Language')
+    return menu.label
+  })
+}
+
+// Wybiera język w menu Language (etykieta pozycji w jej własnym języku, np. „Polski”, albo „System” po angielsku).
+async function chooseLanguage(itemLabel: string) {
+  await clickMenuItem(await languageMenuLabel(), itemLabel)
+}
+
+// Pozycje menu Language: wszystkie języki w ich własnych nazwach, alfabetycznie, i System na końcu.
+const languageItems = (checked: string) =>
+  [
+    'Bahasa Indonesia',
+    'Čeština',
+    'Deutsch',
+    'English',
+    'Español',
+    'Français',
+    'Italiano',
+    'Nederlands',
+    'Polski',
+    'Português',
+    'Română',
+    'Svenska',
+    'Tiếng Việt',
+    'Türkçe',
+    'Русский',
+    'Українська',
+    'System'
+  ].map((label) => (label === checked ? `${label} ✓` : label))
+
 // Język systemu widziany przez aplikację, żeby wybór „System” dawał przewidywalny wynik.
 async function stubSystemLanguages(languages: string[]) {
   await app.evaluate(({ app }, languages) => {
@@ -132,15 +169,15 @@ test('the whole menu and the document follow the interface language forced for t
 
   await app.close()
   await launch({ language: 'en' })
-  expect((await menuLabels('Edit')).top).toEqual(['CV Press', 'Edit', 'Language / Język', 'Appearance', 'Window'])
+  expect((await menuLabels('Edit')).top).toEqual(['CV Press', 'Edit', 'Language', 'Appearance', 'Window'])
   expect((await menuLabels('CV Press')).items).toEqual(['About CV Press', 'Hide CV Press', 'Hide Others', 'Show All', 'Quit CV Press'])
   expect((await menuLabels('Edit')).items).toEqual(['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All'])
   expect((await menuLabels('Window')).items).toEqual(['Minimize', 'Zoom', 'Close Window'])
-  expect((await menuLabels('Language / Język')).items).toEqual(['English', 'Polski', 'System ✓'])
+  expect((await menuLabels('Language')).items).toEqual(languageItems('System'))
 
   await app.close()
   await launch({ language: 'pl' })
-  expect((await menuLabels('Edycja')).top).toEqual(['CV Press', 'Edycja', 'Language / Język', 'Wygląd', 'Okno'])
+  expect((await menuLabels('Edycja')).top).toEqual(['CV Press', 'Edycja', 'Język / Language', 'Wygląd', 'Okno'])
   expect((await menuLabels('CV Press')).items).toEqual([
     'O aplikacji CV Press',
     'Ukryj CV Press',
@@ -152,22 +189,22 @@ test('the whole menu and the document follow the interface language forced for t
   expect((await menuLabels('Okno')).items).toEqual(['Minimalizuj', 'Zoom', 'Zamknij okno'])
 })
 
-test('Language / Język switches the menu and the window immediately, the choice survives a restart and System follows the system again', async () => {
+test('the Language menu switches the menu and the window immediately, the choice survives a restart and System follows the system again', async () => {
   await app.close()
   await launch({ language: null })
-  await stubSystemLanguages(['de-DE', 'pl-PL'])
+  await stubSystemLanguages(['ja-JP', 'pl-PL'])
 
-  await clickMenuItem('Language / Język', 'English')
-  await expect.poll(() => menuLabels('Language / Język')).toEqual({
-    top: ['CV Press', 'Edit', 'Language / Język', 'Appearance', 'Window'],
-    items: ['English ✓', 'Polski', 'System']
+  await chooseLanguage('English')
+  await expect.poll(() => menuLabels('Language')).toEqual({
+    top: ['CV Press', 'Edit', 'Language', 'Appearance', 'Window'],
+    items: languageItems('English')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
 
-  await clickMenuItem('Language / Język', 'Polski')
-  await expect.poll(() => menuLabels('Language / Język')).toEqual({
-    top: ['CV Press', 'Edycja', 'Language / Język', 'Wygląd', 'Okno'],
-    items: ['English', 'Polski ✓', 'System']
+  await chooseLanguage('Polski')
+  await expect.poll(() => menuLabels('Język / Language')).toEqual({
+    top: ['CV Press', 'Edycja', 'Język / Language', 'Wygląd', 'Okno'],
+    items: languageItems('Polski')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'pl')
 
@@ -180,17 +217,26 @@ test('Language / Język switches the menu and the window immediately, the choice
 
   await app.close()
   await launch({ language: null })
-  expect((await menuLabels('Language / Język')).items).toEqual(['English', 'Polski ✓', 'System'])
+  expect((await menuLabels('Język / Language')).items).toEqual(languageItems('Polski'))
   await expect(window.locator('html')).toHaveAttribute('lang', 'pl')
 
   // System: pierwszy obsługiwany język systemu, a bez takiego angielski.
-  await stubSystemLanguages(['de-DE'])
-  await clickMenuItem('Language / Język', 'System')
-  await expect.poll(() => menuLabels('Language / Język')).toEqual({
-    top: ['CV Press', 'Edit', 'Language / Język', 'Appearance', 'Window'],
-    items: ['English', 'Polski', 'System ✓']
+  await stubSystemLanguages(['ja-JP'])
+  await chooseLanguage('System')
+  await expect.poll(() => menuLabels('Language')).toEqual({
+    top: ['CV Press', 'Edit', 'Language', 'Appearance', 'Window'],
+    items: languageItems('System')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
+
+  // System z niemieckim systemem: niemiecki, z dwujęzyczną etykietą menu.
+  await stubSystemLanguages(['de-DE', 'en-US'])
+  await chooseLanguage('System')
+  await expect.poll(() => menuLabels('Sprache / Language')).toEqual({
+    top: ['CV Press', 'Bearbeiten', 'Sprache / Language', 'Erscheinungsbild', 'Fenster'],
+    items: languageItems('System')
+  })
+  await expect(window.locator('html')).toHaveAttribute('lang', 'de')
 })
 
 test('Appearance switches the app immediately, the choice survives a restart and System follows the system again', async () => {
@@ -342,7 +388,7 @@ test('switching the language in the menu immediately translates the CV library a
   await expect(window.getByRole('button', { name: 'New CV' })).toBeVisible()
   await expect(window.getByRole('listitem').first()).toContainText(/Modified \d{1,2}\/\d{1,2}\/\d{2}/)
 
-  await clickMenuItem('Language / Język', 'Polski')
+  await chooseLanguage('Polski')
   await expect(window.getByRole('button', { name: 'Nowe CV' })).toBeVisible()
   await expect(window.getByRole('list', { name: 'Lista CV' }).getByRole('listitem')).toContainText(
     /Zmieniono \d{1,2}\.\d{2}\.\d{4}, \d{2}:\d{2}/
@@ -350,7 +396,7 @@ test('switching the language in the menu immediately translates the CV library a
 
   await window.getByRole('button', { name: 'Klauzule zgody' }).click()
   await expect(window.getByRole('heading', { name: 'Klauzule zgody' })).toBeVisible()
-  await clickMenuItem('Language / Język', 'English')
+  await chooseLanguage('English')
   await expect(window.getByRole('heading', { name: 'Consent clauses' })).toBeVisible()
   await expect(window.getByRole('button', { name: 'Add clause' })).toBeVisible()
 })
@@ -454,7 +500,7 @@ test('switching the language in the menu translates the open editor without losi
   const original = await window.getByLabel('Full name').inputValue()
   await window.getByLabel('Full name').fill('Ewa Nowak')
 
-  await clickMenuItem('Language / Język', 'Polski')
+  await chooseLanguage('Polski')
   const fullName = window.getByLabel('Imię i nazwisko')
   await expect(fullName).toHaveValue('Ewa Nowak')
   await expect(window.getByRole('button', { name: 'Eksportuj do PDF' })).toBeVisible()
@@ -462,7 +508,7 @@ test('switching the language in the menu translates the open editor without losi
 
   await clickMenuItem('Edycja', 'Cofnij')
   await expect(fullName).toHaveValue(original)
-  await clickMenuItem('Language / Język', 'English')
+  await chooseLanguage('English')
   await window.keyboard.press('Meta+Shift+z')
   await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
@@ -506,6 +552,82 @@ test('Default content follows the interface language at creation and never chang
   await polishRows.filter({ hasText: 'Nowe CV' }).getByRole('button', { name: 'Otwórz' }).click()
   await expect.poll(() => inputValues(window.locator('.form-contact-label'))).toEqual(['Tel', 'E-mail', 'LinkedIn', 'Miasto'])
   await expect.poll(() => inputValues(window.getByLabel(/^Tytuł sekcji/))).toEqual(['Doświadczenie zawodowe', 'Wykształcenie', 'Umiejętności', 'Języki'])
+})
+
+test('the arrow next to New CV adds the Sample CV again in the interface language, clearing the tag filter', async () => {
+  const library = window.getByRole('list', { name: 'CV list' })
+  const rows = library.getByRole('listitem')
+  const cvNames = () => rows.locator('.library-item-name')
+  const arrow = window.getByRole('button', { name: 'More ways to create' })
+  const menu = window.getByRole('menu')
+
+  // Użytkownik usunął Sample CV – biblioteka jest pusta, a „New CV” nadal tworzy puste CV jednym kliknięciem.
+  await rows.filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Delete' }).click()
+  await library.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(rows).toHaveCount(0)
+  await expect(window.getByText('You don’t have any CVs yet. Click “New CV”.')).toBeVisible()
+  await window.getByRole('button', { name: 'New CV', exact: true }).click()
+  await expect(cvNames()).toHaveText(['New CV'])
+  await expect(menu).toHaveCount(0)
+
+  // Strzałka to przycisk rozwijający menu; Escape i kliknięcie poza menu je zamykają.
+  await expect(arrow).toHaveAttribute('aria-haspopup', 'menu')
+  await expect(arrow).toHaveAttribute('aria-expanded', 'false')
+  await arrow.click()
+  await expect(arrow).toHaveAttribute('aria-expanded', 'true')
+  await expect(menu.getByRole('menuitem')).toHaveText(['Add sample CV'])
+  await window.keyboard.press('Escape')
+  await expect(menu).toHaveCount(0)
+  await expect(arrow).toHaveAttribute('aria-expanded', 'false')
+  await expect(arrow).toBeFocused()
+  await arrow.click()
+  await expect(menu).toBeVisible()
+  await window.locator('.library').click({ position: { x: 5, y: 5 } })
+  await expect(menu).toHaveCount(0)
+
+  // Z klawiatury: Enter otwiera menu z fokusem na pozycji, Enter ją wybiera. Filtr tagów zostaje wyczyszczony.
+  await rows.filter({ hasText: 'New CV' }).getByRole('button', { name: 'Tags' }).click()
+  const newTag = library.getByLabel('New tag')
+  await newTag.fill('mine')
+  await newTag.press('Enter')
+  await library.getByRole('button', { name: 'Done' }).click()
+  const filterBar = window.getByRole('group', { name: 'Filter by tag' })
+  await filterBar.getByRole('button', { name: 'mine', exact: true }).click()
+  await expect(cvNames()).toHaveText(['New CV'])
+  await arrow.focus()
+  await window.keyboard.press('Enter')
+  await expect(menu.getByRole('menuitem', { name: 'Add sample CV' })).toBeFocused()
+  await window.keyboard.press('Enter')
+  await expect(menu).toHaveCount(0)
+  await expect(filterBar.getByRole('button', { pressed: true })).toHaveCount(0)
+  await expect(cvNames()).toHaveText(['Sample CV', 'New CV'])
+
+  // Dodany Sample CV jest po angielsku, bez klauzuli; każde dodanie to osobne CV o tej samej nazwie.
+  await arrow.click()
+  await menu.getByRole('menuitem', { name: 'Add sample CV' }).click()
+  await expect(cvNames()).toHaveText(['Sample CV', 'Sample CV', 'New CV'])
+  await rows.first().getByRole('button', { name: 'Open' }).click()
+  const preview = window.locator('.preview')
+  await expect(preview.locator('.cv-page .cv-name')).toHaveText('Jane Example')
+  await expect(preview.locator('.cv-page .cv-section-title')).toHaveText(['Work experience', 'Education', 'Skills', 'Languages'])
+  await expect(preview.locator('.cv-consent')).toHaveCount(0)
+  await window.getByRole('button', { name: '← CV Press' }).click()
+
+  // Po przełączeniu na polski etykiety zmieniają się od razu, a nowy Sample CV jest polski, z wbudowaną klauzulą zgody.
+  await app.close()
+  await launch({ language: null })
+  await stubSystemLanguages(['en-US'])
+  await expect(window.getByRole('button', { name: 'More ways to create' })).toBeVisible()
+  await chooseLanguage('Polski')
+  const polishArrow = window.getByRole('button', { name: 'Więcej opcji tworzenia' })
+  await polishArrow.click()
+  await window.getByRole('menu').getByRole('menuitem', { name: 'Dodaj przykładowe CV' }).click()
+  const polishRows = window.getByRole('list', { name: 'Lista CV' }).getByRole('listitem')
+  await expect(polishRows.locator('.library-item-name')).toHaveText(['Przykładowe CV', 'Sample CV', 'Sample CV', 'New CV'])
+  await polishRows.first().getByRole('button', { name: 'Otwórz' }).click()
+  const polishPreview = window.locator('.preview')
+  await expect(polishPreview.locator('.cv-page .cv-name')).toHaveText('Anna Przykładowa')
+  await expect(polishPreview.locator('.cv-page .cv-consent')).toContainText('Wyrażam zgodę na przetwarzanie moich danych osobowych')
 })
 
 test('a CV without a name is shown and exported under a fallback name in the interface language', async () => {
@@ -780,6 +902,74 @@ test('changes the accent colour and font of one CV in the preview and PDF, with 
   await library.getByRole('listitem').filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Open' }).click()
   await expect(window.getByLabel('Accent color')).toHaveValue('#8a2be2')
   await expect(window.getByLabel('Font')).toHaveValue('arimo')
+})
+
+test('the CV language sets the fixed text and the page language of the document, never the CV content', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  const firstDates = preview.locator('.cv-page .cv-date').first()
+  const sectionTitles = preview.locator('.cv-page .cv-section-title')
+  await expect(firstDates).toHaveText('03.2023 – present')
+
+  // Angielskie Sample CV jest w języku, w którym je napisano: „present” w podglądzie i w PDF.
+  const language = window.getByLabel('CV language')
+  await expect(language).toHaveValue('en')
+  await expect(preview.locator('.cv')).toHaveAttribute('lang', 'en')
+  const englishPdf = join(outputDir, 'english.pdf')
+  await stubSaveDialog(englishPdf)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: english.pdf')).toBeVisible()
+  const english = (await readPdf(await readFile(englishPdf))).pages.join('')
+  expect(english).toContain('03.2023 – present')
+  expect(english).not.toContain('obecnie')
+
+  // Polski jako CV language: stały tekst po polsku, tytuły sekcji i reszta treści bez zmian; wybór zostaje w CV.
+  const titlesBefore = await sectionTitles.allTextContents()
+  await language.selectOption('pl')
+  await expect(firstDates).toHaveText('03.2023 – obecnie')
+  await expect(preview.locator('.cv')).toHaveAttribute('lang', 'pl')
+  expect(await sectionTitles.allTextContents()).toEqual(titlesBefore)
+  await expect(window.getByText('Changes saved')).toBeVisible()
+  const polishPdf = join(outputDir, 'polish.pdf')
+  await stubSaveDialog(polishPdf)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: polish.pdf')).toBeVisible()
+  const polish = (await readPdf(await readFile(polishPdf))).pages.join('')
+  expect(polish).toContain('03.2023 – obecnie')
+  expect(polish).toContain('Work experience')
+
+  await window.getByRole('button', { name: '← CV Press' }).click()
+  await openFirstCv()
+  await expect(window.getByLabel('CV language')).toHaveValue('pl')
+
+  // Nowe CV startuje w języku interfejsu.
+  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: 'New CV' }).click()
+  await window
+    .getByRole('list', { name: 'CV list' })
+    .getByRole('listitem')
+    .filter({ hasText: 'New CV' })
+    .getByRole('button', { name: 'Open' })
+    .click()
+  await expect(window.getByLabel('CV language')).toHaveValue('en')
+})
+
+test('Cyrillic text in a Lato CV is rendered with the bundled Source Sans 3, not a system font', async () => {
+  const pdfPath = join(outputDir, 'cyrillic.pdf')
+  await stubSaveDialog(pdfPath)
+  await openFirstCv()
+  await expect(window.getByLabel('Font')).toHaveValue('lato')
+  await window.getByLabel('Full name').fill('Олена Шевченко')
+  await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Олена Шевченко')
+  await expect(window.getByText('Changes saved')).toBeVisible()
+
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: cyrillic.pdf')).toBeVisible()
+  const pdf = await readPdf(await readFile(pdfPath))
+  expect(pdf.pages[0]).toContain('Олена Шевченко')
+  expect(pdf.embeddedFonts.some((name) => name.includes('SourceSans3'))).toBe(true)
+  expect(pdf.embeddedFonts.some((name) => name.includes('Lato'))).toBe(true)
+  expect(pdf.embeddedFonts.every((name) => name.includes('Lato') || name.includes('SourceSans3'))).toBe(true)
 })
 
 test('picks the Template next to the colour and font from a live thumbnail of the CV, without changing the preview or the PDF', async () => {
@@ -1567,9 +1757,9 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV – Talent Partners.json')
   const exported = JSON.parse(await readFile(jsonPath, 'utf8'))
   expect(exported).toMatchObject({
-    schemaVersion: 5,
+    schemaVersion: 6,
     name: 'CV – Talent Partners',
-    settings: { template: 'classic' },
+    settings: { template: 'classic', language: 'en' },
     header: { fullName: 'Jane Example' }
   })
 

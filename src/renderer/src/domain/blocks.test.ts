@@ -146,6 +146,15 @@ describe('generateBlocks', () => {
     })
   })
 
+  it('writes the end of an ongoing entry in the CV language, leaving the section titles as they are', () => {
+    const inLanguage = (language: CvDocument['settings']['language']) =>
+      generateBlocks({ ...sampleCvs.en, settings: { ...sampleCvs.en.settings, language } }, geometry())
+
+    expect(inLanguage('en')).toContainEqual(expect.objectContaining({ id: 'e1', dates: '03.2023 – present' }))
+    expect(inLanguage('pl')).toContainEqual(expect.objectContaining({ id: 'e1', dates: '03.2023 – obecnie' }))
+    expect(inLanguage('pl')).toContainEqual(expect.objectContaining({ id: 'experience:title', title: 'Work experience' }))
+  })
+
   it('keeps the level of an education entry apart from the rest of its line', () => {
     const education = educationSection
     const item = { ...education.items[0]!, level: 'Master’s degree', field: 'Logistics', institution: ' ' }
