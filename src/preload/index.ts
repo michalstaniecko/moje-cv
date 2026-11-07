@@ -1,9 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { Api } from '../shared/api'
+import type { Api, MenuCommand } from '../shared/api'
 import type { InterfaceLanguage } from '../shared/i18n/languages'
 
 // Wąskie API dla renderera.
 const api: Api = {
+  app: {
+    version: () => ipcRenderer.invoke('app:version')
+  },
   cv: {
     list: () => ipcRenderer.invoke('cv:list'),
     get: (id) => ipcRenderer.invoke('cv:get', id),
@@ -43,7 +46,6 @@ const api: Api = {
     }
   },
   editor: {
-    setActive: (active) => ipcRenderer.send('editor:active', active),
     onHistoryCommand: (listener) => {
       const undo = () => listener('undo')
       const redo = () => listener('redo')
@@ -52,6 +54,16 @@ const api: Api = {
       return () => {
         ipcRenderer.off('editor:undo', undo)
         ipcRenderer.off('editor:redo', redo)
+      }
+    }
+  },
+  menu: {
+    setScreen: (screen) => ipcRenderer.send('menu:screen', screen),
+    onCommand: (listener) => {
+      const command = (_event: Electron.IpcRendererEvent, value: MenuCommand) => listener(value)
+      ipcRenderer.on('menu:command', command)
+      return () => {
+        ipcRenderer.off('menu:command', command)
       }
     }
   },

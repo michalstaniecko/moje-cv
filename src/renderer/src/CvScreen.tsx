@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useStore } from 'zustand'
+import type { MenuCommand } from '../../shared/api'
 import { cvDisplayName, type Clause, type ClauseContent, type CvDocument } from './domain/schema'
 import { createCvEditor, type CvEditor } from './editor/cvEditor'
 import { CvForm } from './editor/CvForm'
 import { useDictionary } from './i18n'
+import { useMenuCommands } from './menuCommands'
 import { PreviewPane } from './preview/PreviewPane'
 
 type ExportState =
@@ -12,17 +14,30 @@ type ExportState =
   | { status: 'saved'; filePath: string }
   | { status: 'failed' }
 
+// Wynik eksportu otwartego CV do pliku .json z menu Plik.
+type JsonExportState = { status: 'idle' } | { status: 'saved'; fileName: string } | { status: 'failed' }
+
 // Otwarte CV: formularz edycji (lewo), podgląd stron (prawo) i eksport do PDF.
-export function CvScreen({ document: initial, onBack }: { document: CvDocument; onBack: () => void }) {
+// `onBack` dostaje komendę menu Plik (Nowe CV, Dodaj przykładowe CV, Importuj…), gdy edytor wychodzi, żeby wykonała
+// ją biblioteka CV.
+export function CvScreen({
+  document: initial,
+  onBack
+}: {
+  document: CvDocument
+  onBack: (command?: MenuCommand) => void
+}) {
   const [editor] = useState(() => createCvEditor(initial, window.api.cv.update))
   const document = useStore(editor.store, (state) => state.document)
   const saveStatus = useStore(editor.store, (state) => state.saveStatus)
   const [exportState, setExportState] = useState<ExportState>({ status: 'idle' })
+  const [jsonExport, setJsonExport] = useState<JsonExportState>({ status: 'idle' })
   const [clauses, saveClause] = useClauseLibrary()
   const { appName, common, editor: t, library } = useDictionary()
   useEditorLifecycle(editor)
 
   const exportPdf = async () => {
+    setJsonExport({ status: 'idle' })
     setExportState({ status: 'exporting' })
     try {
       const result = await window.api.pdf.export(document)
@@ -33,15 +48,37 @@ export function CvScreen({ document: initial, onBack }: { document: CvDocument; 
   }
 
   // Przy nieudanym zapisie zostajemy w edytorze – komunikat o błędzie jest widoczny, a zmiany nie przepadają.
-  const back = async () => {
+  const back = async (command?: MenuCommand) => {
     await editor.flush()
-    if (editor.store.getState().saveStatus !== 'failed') onBack()
+    if (editor.store.getState().saveStatus !== 'failed') onBack(command)
   }
+
+  // Eksport do .json z menu Plik: najpierw zapis oczekującej zmiany, żeby plik miał to, co właśnie wpisano.
+  const exportJson = async () => {
+    setExportState({ status: 'idle' })
+    setJsonExport({ status: 'idle' })
+    try {
+      await editor.flush()
+      const result = await window.api.cv.exportFile(document.id)
+      if (result.status === 'saved') setJsonExport({ status: 'saved', fileName: baseName(result.filePath) })
+    } catch {
+      setJsonExport({ status: 'failed' })
+    }
+  }
+
+  // Menu Plik: eksport tymi samymi funkcjami co przycisk (trwający eksport do PDF – komenda pominięta, jak wyłączony
+  // przycisk); tworzenie i import tą samą drogą co „← Wróć”, a wykonuje je biblioteka CV.
+  useMenuCommands((command) => {
+    if (command === 'export-pdf') {
+      if (exportState.status !== 'exporting') void exportPdf()
+    } else if (command === 'export-json') void exportJson()
+    else void back(command)
+  })
 
   return (
     <div className="editor-screen">
       <header className="toolbar">
-        <button type="button" onClick={back}>
+        <button type="button" onClick={() => back()}>
           {common.back(appName)}
         </button>
         <h1 className="toolbar-title">{cvDisplayName(document.name, library.untitled)}</h1>
@@ -68,6 +105,16 @@ export function CvScreen({ document: initial, onBack }: { document: CvDocument; 
         {exportState.status === 'failed' && (
           <p className="toolbar-notice toolbar-notice--error" role="alert">
             {t.exportFailed}
+          </p>
+        )}
+        {jsonExport.status === 'saved' && (
+          <p className="toolbar-notice" role="status">
+            {library.savedFile(jsonExport.fileName)}
+          </p>
+        )}
+        {jsonExport.status === 'failed' && (
+          <p className="toolbar-notice toolbar-notice--error" role="alert">
+            {library.errors.export}
           </p>
         )}
       </header>
@@ -117,7 +164,6 @@ function useEditorLifecycle(editor: CvEditor) {
     const onUnload = () => void editor.flush()
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('beforeunload', onUnload)
-    window.api.editor.setActive(true)
     const unsubscribe = window.api.editor.onHistoryCommand((command) =>
       command === 'undo' ? editor.undo() : editor.redo()
     )
@@ -125,7 +171,6 @@ function useEditorLifecycle(editor: CvEditor) {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('beforeunload', onUnload)
       unsubscribe()
-      window.api.editor.setActive(false)
       void editor.flush()
     }
   }, [editor])

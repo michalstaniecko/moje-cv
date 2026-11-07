@@ -118,7 +118,7 @@ for (const language of interfaceLanguageCodes) {
     await expect.poll(() => window.title()).toBe('CV Press')
     expect(t.menu.language).toEqual(language === 'en' ? 'Language' : expect.stringMatching(/^\S.* \/ Language$/))
     await expect.poll(menu).toEqual({
-      top: [t.appName, t.menu.edit, t.menu.language, t.menu.appearance, t.menu.window],
+      top: [t.appName, t.menu.file, t.menu.edit, t.menu.view, t.menu.language, t.menu.appearance, t.menu.window],
       languages: [...languageMenuItems, `${t.menu.systemLanguage} ✓`]
     })
 
@@ -163,5 +163,13 @@ for (const language of interfaceLanguageCodes) {
     expect(pdf.numPages).toBe(SAMPLE_CV_PAGES)
     const firstPage = await (await pdf.getPage(1)).getTextContent()
     expect(firstPage.items.map((item) => ('str' in item ? item.str : '')).join('')).toContain(sample.header.fullName)
+
+    // Pusta biblioteka: tekst i przycisk „Dodaj przykładowe CV” się mieszczą.
+    await window.getByRole('button', { name: t.common.back(t.appName) }).click()
+    await library.getByRole('button', { name: t.common.delete }).click()
+    await library.getByRole('alertdialog').getByRole('button', { name: t.common.delete }).click()
+    await expect(library.getByRole('listitem')).toHaveCount(0)
+    await expect(window.locator('.library-empty-state').getByRole('button', { name: t.library.addSample })).toBeVisible()
+    expect(await controlsThatDoNotFit('.toolbar, .library-empty-state, .sponsor-bar')).toEqual([])
   })
 }

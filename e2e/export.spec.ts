@@ -115,6 +115,14 @@ async function menuLabels(menuLabel: string) {
   }, menuLabel)
 }
 
+// Aktywność pozycji wskazanego menu (bez separatorów): etykieta → czy da się ją kliknąć.
+async function menuEnabled(menuLabel: string) {
+  return app.evaluate(({ Menu }, menuLabel) => {
+    const submenu = Menu.getApplicationMenu()?.items.find((item) => item.label === menuLabel)?.submenu?.items ?? []
+    return Object.fromEntries(submenu.filter((item) => item.type !== 'separator').map((item) => [item.label, item.enabled]))
+  }, menuLabel)
+}
+
 // Menu Language ma etykietę w języku interfejsu („Language”, „Język / Language”…), więc szukamy go po pozycji English.
 async function languageMenuLabel() {
   return app.evaluate(({ Menu }) => {
@@ -169,24 +177,50 @@ test('the whole menu and the document follow the interface language forced for t
 
   await app.close()
   await launch({ language: 'en' })
-  expect((await menuLabels('Edit')).top).toEqual(['CV Press', 'Edit', 'Language', 'Appearance', 'Window'])
-  expect((await menuLabels('CV Press')).items).toEqual(['About CV Press', 'Hide CV Press', 'Hide Others', 'Show All', 'Quit CV Press'])
+  expect((await menuLabels('Edit')).top).toEqual(['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window'])
+  expect((await menuLabels('CV Press')).items).toEqual([
+    'About CV Press',
+    'Services',
+    'Hide CV Press',
+    'Hide Others',
+    'Show All',
+    'Quit CV Press'
+  ])
+  expect((await menuLabels('File')).items).toEqual([
+    'New CV',
+    'Add Sample CV',
+    'Import…',
+    'Export JSON…',
+    'Export to PDF…',
+    'Close Window'
+  ])
   expect((await menuLabels('Edit')).items).toEqual(['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All'])
-  expect((await menuLabels('Window')).items).toEqual(['Minimize', 'Zoom', 'Close Window'])
+  expect((await menuLabels('View')).items).toEqual(['Toggle Full Screen'])
+  expect((await menuLabels('Window')).items).toEqual(['Minimize', 'Zoom', 'Bring All to Front'])
   expect((await menuLabels('Language')).items).toEqual(languageItems('System'))
 
   await app.close()
   await launch({ language: 'pl' })
-  expect((await menuLabels('Edycja')).top).toEqual(['CV Press', 'Edycja', 'Język / Language', 'Wygląd', 'Okno'])
+  expect((await menuLabels('Edycja')).top).toEqual(['CV Press', 'Plik', 'Edycja', 'Widok', 'Język / Language', 'Wygląd', 'Okno'])
   expect((await menuLabels('CV Press')).items).toEqual([
     'O aplikacji CV Press',
+    'Usługi',
     'Ukryj CV Press',
     'Ukryj pozostałe',
     'Pokaż wszystkie',
     'Zakończ CV Press'
   ])
   expect((await menuLabels('Edycja')).items).toEqual(['Cofnij', 'Ponów', 'Wytnij', 'Kopiuj', 'Wklej', 'Zaznacz wszystko'])
-  expect((await menuLabels('Okno')).items).toEqual(['Minimalizuj', 'Zoom', 'Zamknij okno'])
+  expect((await menuLabels('Plik')).items).toEqual([
+    'Nowe CV',
+    'Dodaj przykładowe CV',
+    'Importuj…',
+    'Eksportuj JSON…',
+    'Eksportuj do PDF…',
+    'Zamknij okno'
+  ])
+  expect((await menuLabels('Widok')).items).toEqual(['Przełącz pełny ekran'])
+  expect((await menuLabels('Okno')).items).toEqual(['Minimalizuj', 'Zoom', 'Przenieś wszystko na wierzch'])
 })
 
 test('the Language menu switches the menu and the window immediately, the choice survives a restart and System follows the system again', async () => {
@@ -196,14 +230,14 @@ test('the Language menu switches the menu and the window immediately, the choice
 
   await chooseLanguage('English')
   await expect.poll(() => menuLabels('Language')).toEqual({
-    top: ['CV Press', 'Edit', 'Language', 'Appearance', 'Window'],
+    top: ['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window'],
     items: languageItems('English')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
 
   await chooseLanguage('Polski')
   await expect.poll(() => menuLabels('Język / Language')).toEqual({
-    top: ['CV Press', 'Edycja', 'Język / Language', 'Wygląd', 'Okno'],
+    top: ['CV Press', 'Plik', 'Edycja', 'Widok', 'Język / Language', 'Wygląd', 'Okno'],
     items: languageItems('Polski')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'pl')
@@ -224,7 +258,7 @@ test('the Language menu switches the menu and the window immediately, the choice
   await stubSystemLanguages(['ja-JP'])
   await chooseLanguage('System')
   await expect.poll(() => menuLabels('Language')).toEqual({
-    top: ['CV Press', 'Edit', 'Language', 'Appearance', 'Window'],
+    top: ['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window'],
     items: languageItems('System')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
@@ -233,7 +267,7 @@ test('the Language menu switches the menu and the window immediately, the choice
   await stubSystemLanguages(['de-DE', 'en-US'])
   await chooseLanguage('System')
   await expect.poll(() => menuLabels('Sprache / Language')).toEqual({
-    top: ['CV Press', 'Bearbeiten', 'Sprache / Language', 'Erscheinungsbild', 'Fenster'],
+    top: ['CV Press', 'Ablage', 'Bearbeiten', 'Darstellung', 'Sprache / Language', 'Erscheinungsbild', 'Fenster'],
     items: languageItems('System')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'de')
@@ -1735,6 +1769,218 @@ test('filters the CV list by tags (all selected tags), keeps the filter for the 
   const rowsAfterRestart = window.getByRole('list', { name: 'CV list' }).getByRole('listitem').filter({ has: window.getByRole('button', { name: 'Open' }) })
   await expect(rowsAfterRestart).toHaveCount(5)
   await expect(window.getByRole('group', { name: 'Filter by tag' }).getByRole('button', { pressed: true })).toHaveCount(0)
+})
+
+test('File menu: creating and importing in the CV library and the editor, exporting only in the editor, nothing in the clause library', async () => {
+  const fileMenu = (create: boolean, exports: boolean) => ({
+    'New CV': create,
+    'Add Sample CV': create,
+    'Import…': create,
+    'Export JSON…': exports,
+    'Export to PDF…': exports,
+    'Close Window': true
+  })
+  await expect(window.getByRole('list', { name: 'CV list' })).toBeVisible()
+  await expect.poll(() => menuEnabled('File')).toEqual(fileMenu(true, false))
+
+  await openFirstCv()
+  await expect.poll(() => menuEnabled('File')).toEqual(fileMenu(true, true))
+
+  await window.getByRole('button', { name: '← CV Press' }).click()
+  await expect.poll(() => menuEnabled('File')).toEqual(fileMenu(true, false))
+
+  // Formularze klauzul nie mają autozapisu, więc skrót nie może porzucić wpisanej klauzuli.
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
+  await expect.poll(() => menuEnabled('File')).toEqual(fileMenu(false, false))
+})
+
+test('File → New CV, Add Sample CV and Import… work like the library buttons, and from the editor they go back to the library first', async () => {
+  const rows = window.getByRole('list', { name: 'CV list' }).getByRole('listitem')
+  await expect(rows).toHaveCount(1)
+
+  // W bibliotece: nowe CV z Default content na górze listy.
+  await clickMenuItem('File', 'New CV')
+  await expect(rows).toHaveCount(2)
+  await expect(rows.first()).toContainText('New CV')
+
+  // Z edytora: powrót do biblioteki z nowym CV na liście.
+  await rows.first().getByRole('button', { name: 'Open' }).click()
+  await expect(window.getByLabel('Full name')).toBeVisible()
+  await clickMenuItem('File', 'Add Sample CV')
+  await expect(rows).toHaveCount(3)
+  await expect(rows.first()).toContainText('Sample CV')
+
+  // Importuj… w bibliotece i z edytora: komunikat jak przy przycisku.
+  const jsonPath = join(outputDir, 'sample.json')
+  await stubSaveDialog(jsonPath)
+  await rows.first().getByRole('button', { name: 'Export to file' }).click()
+  await expect(window.getByRole('status')).toHaveText('Saved file: sample.json')
+  await stubOpenDialog(jsonPath)
+  await clickMenuItem('File', 'Import…')
+  await expect(window.getByRole('status')).toHaveText('Imported “Sample CV”.')
+  await expect(rows).toHaveCount(4)
+  await rows.first().getByRole('button', { name: 'Open' }).click()
+  await expect(window.getByLabel('Full name')).toBeVisible()
+  await clickMenuItem('File', 'Import…')
+  await expect(window.getByRole('status').filter({ hasText: 'Imported “Sample CV”.' })).toBeVisible()
+  await expect(rows).toHaveCount(5)
+})
+
+test('File → New CV after a failed autosave keeps the editor open with the error, like ← Back', async () => {
+  await openFirstCv()
+  await rm(join(outputDir, 'user-data', 'cvs'), { recursive: true })
+  await window.getByLabel('Full name').fill('Jane Doe')
+  await expect(window.getByRole('status').filter({ hasText: 'Couldn’t save changes' })).toBeVisible()
+
+  await clickMenuItem('File', 'New CV')
+  await expect(window.getByRole('status').filter({ hasText: 'Couldn’t save changes' })).toBeVisible()
+  await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
+  await expect(window.getByRole('list', { name: 'CV list' })).toHaveCount(0)
+})
+
+test('in the editor File → Export to PDF… and Export JSON… export the open CV, the JSON with the change typed just before', async () => {
+  await openFirstCv()
+  await expect(window.locator('.cv-page').first()).toBeVisible()
+  const previewPageCount = await window.locator('.preview .cv-page').count()
+
+  const pdfPath = join(outputDir, 'menu.pdf')
+  await stubSaveDialog(pdfPath)
+  await clickMenuItem('File', 'Export to PDF…')
+  await expect(window.getByRole('status').filter({ hasText: 'Saved PDF: menu.pdf' })).toBeVisible()
+  const pdf = await readPdf(await readFile(pdfPath))
+  expect(previewPageCount).toBeGreaterThan(0)
+  expect(pdf.pages).toHaveLength(previewPageCount)
+  expect(pdf.pages[0]).toContain('Jane Example')
+
+  // Zmiana wpisana tuż przed komendą (autozapis jeszcze nie ruszył) trafia do pliku.
+  const jsonPath = join(outputDir, 'menu.json')
+  await stubSaveDialog(jsonPath)
+  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await clickMenuItem('File', 'Export JSON…')
+  await expect(window.getByRole('status').filter({ hasText: 'Saved file: menu.json' })).toBeVisible()
+  expect(JSON.parse(await readFile(jsonPath, 'utf8'))).toMatchObject({ header: { fullName: 'Ewa Nowak' } })
+
+  // Plik daje się zaimportować.
+  await window.getByRole('button', { name: '← CV Press' }).click()
+  await stubOpenDialog(jsonPath)
+  await clickMenuItem('File', 'Import…')
+  await expect(window.getByRole('status')).toHaveText('Imported “Sample CV”.')
+  await expect(window.getByRole('list', { name: 'CV list' }).getByRole('listitem')).toHaveCount(2)
+
+  // Nieudany eksport JSON: komunikat błędu w pasku edytora.
+  await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).first().click()
+  await expect(window.getByLabel('Full name')).toBeVisible()
+  await app.evaluate(({ dialog }) => {
+    dialog.showSaveDialog = (async () => {
+      throw new Error('disk full')
+    }) as typeof dialog.showSaveDialog
+  })
+  await clickMenuItem('File', 'Export JSON…')
+  await expect(window.getByRole('alert')).toHaveText('Couldn’t export the CV.')
+})
+
+test('a CV file from a newer version of the app is marked as needing a newer version, not as damaged, and its deletion says what is lost', async () => {
+  const library = window.getByRole('list', { name: 'CV list' })
+  await expect(library.getByRole('listitem')).toHaveCount(1)
+  const cvDir = join(outputDir, 'user-data', 'cvs')
+  await writeFile(join(cvDir, 'future.json'), JSON.stringify({ ...sampleCvs.en, id: 'future', schemaVersion: 99 }))
+  await writeFile(join(cvDir, 'broken.json'), '{ not json')
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
+  await window.getByRole('button', { name: '← CV Press' }).click()
+
+  const future = library.getByRole('listitem').filter({ hasText: 'future.json' })
+  const broken = library.getByRole('listitem').filter({ hasText: 'broken.json' })
+  await expect(future).toContainText('Needs a newer version of CV Press')
+  await expect(future).not.toContainText('Damaged file')
+  await expect(future.getByRole('button', { name: 'Open' })).toHaveCount(0)
+  await expect(broken).toContainText('Damaged file')
+
+  await future.getByRole('button', { name: 'Delete' }).click()
+  await expect(future.getByRole('alertdialog')).toContainText(
+    'Delete the file “future.json”? It is a CV from a newer version of CV Press and will be lost. This can’t be undone.'
+  )
+  await future.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(future).toHaveCount(0)
+  await expect(broken).toHaveCount(1)
+})
+
+test('an empty library offers “Add sample CV”, which adds the Sample CV at the top without opening it', async () => {
+  const library = window.getByRole('list', { name: 'CV list' })
+  const rows = library.getByRole('listitem')
+  await rows.filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Delete' }).click()
+  await library.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(rows).toHaveCount(0)
+
+  const emptyState = window.locator('.library-empty-state')
+  await expect(emptyState).toContainText('You don’t have any CVs yet. Click “New CV”.')
+  await emptyState.getByRole('button', { name: 'Add sample CV' }).click()
+  await expect(rows.locator('.library-item-name')).toHaveText(['Sample CV'])
+  await expect(emptyState).toHaveCount(0)
+  await expect(window.locator('.preview')).toHaveCount(0)
+})
+
+test('while the CV list is loading the library says “Loading…”, not that it is empty', async () => {
+  await app.evaluate(({ ipcMain }) => {
+    const release: { resolve?: () => void } = {}
+    ;(globalThis as { releaseCvList?: typeof release }).releaseCvList = release
+    ipcMain.removeHandler('cv:list')
+    ipcMain.handle('cv:list', () => new Promise((resolve) => (release.resolve = () => resolve([]))))
+  })
+  await window.reload()
+
+  const libraryScreen = window.locator('.library')
+  await expect(libraryScreen.getByRole('status')).toHaveText('Loading…')
+  await expect(window.getByText('You don’t have any CVs yet. Click “New CV”.')).toHaveCount(0)
+  await app.evaluate(() => (globalThis as { releaseCvList?: { resolve?: () => void } }).releaseCvList?.resolve?.())
+  await expect(window.getByText('You don’t have any CVs yet. Click “New CV”.')).toBeVisible()
+  await expect(window.getByText('Loading…')).toHaveCount(0)
+})
+
+test('closing a row form returns the focus to the button that opened it, and deleting a CV moves it to the next one', async () => {
+  const library = window.getByRole('list', { name: 'CV list' })
+  const rows = library.getByRole('listitem')
+  const row = (name: string) => rows.filter({ hasText: name })
+  for (const name of ['First', 'Second']) {
+    await window.getByRole('button', { name: 'New CV', exact: true }).click()
+    await row('New CV').getByRole('button', { name: 'Rename' }).click()
+    await library.getByLabel('CV name').fill(name)
+    await library.getByLabel('CV name').press('Enter')
+    await expect(row(name)).toHaveCount(1)
+  }
+  await expect(rows.locator('.library-item-name')).toHaveText(['Second', 'First', 'Sample CV'])
+
+  // Zmiana nazwy: Escape i zapis wracają na „Rename” tego CV, także gdy CV przeskoczyło na górę listy.
+  await row('First').getByRole('button', { name: 'Rename' }).click()
+  await library.getByLabel('CV name').press('Escape')
+  await expect(row('First').getByRole('button', { name: 'Rename' })).toBeFocused()
+  await row('First').getByRole('button', { name: 'Rename' }).click()
+  await library.getByLabel('CV name').fill('First renamed')
+  await library.getByLabel('CV name').press('Enter')
+  await expect(rows.locator('.library-item-name')).toHaveText(['First renamed', 'Second', 'Sample CV'])
+  await expect(row('First renamed').getByRole('button', { name: 'Rename' })).toBeFocused()
+
+  // Tagi: „Done” wraca na „Tags”.
+  await row('Second').getByRole('button', { name: 'Tags' }).click()
+  await library.getByRole('button', { name: 'Done' }).click()
+  await expect(row('Second').getByRole('button', { name: 'Tags' })).toBeFocused()
+
+  // Usuwanie: „Cancel” wraca na „Delete”, a usunięcie przenosi fokus na „Open” następnego CV, przy ostatnim na poprzednie.
+  await row('Second').getByRole('button', { name: 'Delete' }).click()
+  await library.getByRole('alertdialog').getByRole('button', { name: 'Cancel' }).click()
+  await expect(row('Second').getByRole('button', { name: 'Delete' })).toBeFocused()
+  await row('Second').getByRole('button', { name: 'Delete' }).click()
+  await library.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(rows.locator('.library-item-name')).toHaveText(['First renamed', 'Sample CV'])
+  await expect(row('Sample CV').getByRole('button', { name: 'Open' })).toBeFocused()
+  await row('Sample CV').getByRole('button', { name: 'Delete' }).click()
+  await library.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(row('First renamed').getByRole('button', { name: 'Open' })).toBeFocused()
+
+  // Po usunięciu ostatniego CV fokus jest na „New CV”.
+  await row('First renamed').getByRole('button', { name: 'Delete' }).click()
+  await library.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(rows).toHaveCount(0)
+  await expect(window.getByRole('button', { name: 'New CV', exact: true })).toBeFocused()
 })
 
 test('exports a CV to a JSON file and imports it back as a new CV; an invalid file leaves the library unchanged', async () => {

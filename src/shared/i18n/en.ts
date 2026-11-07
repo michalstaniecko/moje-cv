@@ -9,10 +9,17 @@ export const en = {
   appName: 'CV Press',
   menu: {
     about: (appName: string) => `About ${appName}`,
+    services: 'Services',
     hide: (appName: string) => `Hide ${appName}`,
     hideOthers: 'Hide Others',
     showAll: 'Show All',
     quit: (appName: string) => `Quit ${appName}`,
+    file: 'File',
+    newCv: 'New CV',
+    addSample: 'Add Sample CV',
+    importCv: 'Import…',
+    exportJson: 'Export JSON…',
+    exportPdf: 'Export to PDF…',
     edit: 'Edit',
     undo: 'Undo',
     redo: 'Redo',
@@ -20,10 +27,13 @@ export const en = {
     copy: 'Copy',
     paste: 'Paste',
     selectAll: 'Select All',
+    view: 'View',
+    toggleFullScreen: 'Toggle Full Screen',
     window: 'Window',
     minimize: 'Minimize',
     zoom: 'Zoom',
     closeWindow: 'Close Window',
+    bringAllToFront: 'Bring All to Front',
     // W innych językach dwujęzyczne („Sprache / Language”), żeby dało się wrócić po wybraniu języka,
     // którego się nie czyta; po angielsku samo „Language”.
     language: 'Language',
@@ -90,6 +100,11 @@ export const en = {
     confirmDelete: (name: string) => `Delete “${name}”? This can’t be undone.`,
     confirmDeleteDamaged: (fileName: string) => `Delete the damaged file “${fileName}”? This can’t be undone.`,
     damaged: 'Damaged file – it can’t be opened',
+    // Plik CV zapisany w nowszej wersji aplikacji: poprawny, ale ta wersja go nie zna.
+    newerVersion: (appName: string) => `Needs a newer version of ${appName}`,
+    confirmDeleteNewer: (fileName: string, appName: string) =>
+      `Delete the file “${fileName}”? It is a CV from a newer version of ${appName} and will be lost. This can’t be undone.`,
+    loading: 'Loading…',
     imported: (name: string) => `Imported “${name}”.`,
     savedFile: (fileName: string) => `Saved file: ${fileName}`,
     // Dlaczego importowany plik został odrzucony – pokazywane po „Couldn’t import the CV.”.

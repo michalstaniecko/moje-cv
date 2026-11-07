@@ -46,8 +46,8 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     try {
       const { name, updatedAt, tags } = await get(id)
       return { status: 'ok', id, name, updatedAt, tags }
-    } catch {
-      return { status: 'damaged', id }
+    } catch (error) {
+      return { status: 'damaged', id, reason: error instanceof NewerSchemaVersionError ? 'newer-version' : 'damaged' }
     }
   }
 
@@ -81,11 +81,12 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     )
   }
 
-  // Zapis atomowy (patrz writeJsonAtomic). Uszkodzonego pliku nie nadpisujemy – może dać się go jeszcze odzyskać ręcznie.
+  // Zapis atomowy (patrz writeJsonAtomic). Nieczytelnego pliku nie nadpisujemy: uszkodzony może dać się jeszcze
+  // odzyskać ręcznie, a plik z nowszej wersji aplikacji straciłby dane, których ta wersja nie zna.
   async function save(document: CvDocument): Promise<void> {
     const targetPath = filePath(document.id)
-    if ((await exists(targetPath)) && (await listEntry(document.id)).status === 'damaged') {
-      throw new Error(`The CV file is corrupted and will not be overwritten: ${document.id}`)
+    if ((await exists(targetPath)) && (await listEntry(document.id)).status !== 'ok') {
+      throw new Error(`The CV file can’t be read, so it will not be overwritten: ${document.id}`)
     }
     await writeJsonAtomic(targetPath, document)
   }
@@ -99,7 +100,7 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
   }
 
   return {
-    // Najpierw CV od ostatnio zmienionego, uszkodzone pliki na końcu.
+    // Najpierw CV od ostatnio zmienionego, nieczytelne pliki (uszkodzone i z nowszej wersji) na końcu.
     async list(): Promise<CvListEntry[]> {
       return (await listEntries()).sort((a, b) => sortKey(b).localeCompare(sortKey(a)))
     },

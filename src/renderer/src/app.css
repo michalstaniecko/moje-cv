@@ -350,8 +350,17 @@ textarea:focus-visible {
   flex-shrink: 0;
 }
 
-.library-empty {
+.library-empty,
+.library-loading {
   color: var(--ui-text-muted);
+}
+
+/* Pusta biblioteka: tekst z odesłaniem do „Nowe CV” i przycisk „Dodaj przykładowe CV” pod nim. */
+.library-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .library-notice {
@@ -878,4 +887,17 @@ textarea:focus-visible {
 .sponsor-dialog-paragraph {
   margin: 0 0 10px;
   line-height: 1.45;
+}
+
+.library-version {
+  margin: 24px 0 0;
+  font-size: 11px;
+  color: var(--ui-text-muted);
+  text-align: center;
+}
+
+.sponsor-dialog-version {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--ui-text-muted);
 }
