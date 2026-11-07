@@ -1584,6 +1584,29 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   await expect(pageCount).toHaveText(`${longPageCount} pages`)
 })
 
+test('screen readers read the CV from the form only: the preview pages are hidden from them, the preview bar is not', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  const pages = preview.locator('.cv-pages')
+  await expect(pages.locator('.cv-page .cv-name')).toHaveText('Jane Example')
+
+  // Strony są widoczne, ale nic z nich nie trafia do drzewa dostępności: ani nagłówki, ani listy, ani zdjęcie.
+  await expect(window.getByRole('heading', { name: 'Jane Example', exact: true })).toHaveCount(0)
+  await expect(window.getByRole('heading', { name: 'Work experience', exact: true })).toHaveCount(0)
+  for (const role of ['heading', 'list', 'listitem', 'img', 'status'] as const) await expect(pages.getByRole(role)).toHaveCount(0)
+
+  // Pasek podglądu zostaje dostępny: licznik stron jako status i przyciski powiększenia.
+  await expect(preview.getByRole('status')).toHaveText(/^[12] pages?$/)
+  await expect(preview.getByRole('button', { name: 'Zoom in' })).toBeVisible()
+  await expect(preview.getByRole('button', { name: 'Fit' })).toBeVisible()
+
+  // Za długi fragment jest wyróżniony tylko wizualnie: komunikat nie jest już komunikatem dla czytnika.
+  await window.getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
+  await expect(pages.getByText('This fragment is too long to fit on a page')).toBeVisible()
+  await expect(pages.getByRole('status')).toHaveCount(0)
+  await expect(window.getByRole('status').filter({ hasText: 'This fragment is too long' })).toHaveCount(0)
+})
+
 test('while the PDF is prepared a progress bar is shown, and a print page that never gets ready ends with its own message', async () => {
   await app.close()
   await launch({ extraEnv: { MOJE_CV_PRINT_TIMEOUT_MS: '2000' } })

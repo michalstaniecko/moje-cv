@@ -6,8 +6,9 @@ import { CvPages } from '../template/CvPages'
 import { pageCountLabel, RECOMMENDED_MAX_PAGES } from './pageCount'
 import { fitScale, PREVIEW_MARGIN_PX, zoomIn, zoomOut } from './zoom'
 
-// Podgląd stron CV z licznikiem stron i powiększeniem. Domyślnie strony dopasowane są do szerokości panelu;
-// po użyciu +, − lub 100% obowiązuje wybrana skala, a „Dopasuj” wraca do dopasowania.
+// Podgląd stron CV z licznikiem stron i powiększeniem; same strony są ukryte przed czytnikiem ekranu.
+// Domyślnie strony dopasowane są do szerokości panelu; po użyciu +, − lub 100% obowiązuje wybrana skala,
+// a „Dopasuj” wraca do dopasowania.
 // `onLayout` dostaje każdy nowy podział stron (np. edytor sprawdza przed eksportem, czy są za długie bloki).
 export function PreviewPane({
   document,
@@ -58,7 +59,11 @@ export function PreviewPane({
           </button>
         </div>
       </div>
-      <CvPages document={document} onLayout={onLayout} oversizedMessage={t.oversized} />
+      {/* Strony są dla czytnika ekranu ukryte: to druga kopia CV, którego źródłem i miejscem edycji jest formularz.
+          Pasek podglądu (licznik stron, ostrzeżenie o długości, powiększenie) zostaje dostępny. */}
+      <div className="preview-pages" aria-hidden>
+        <CvPages document={document} onLayout={onLayout} oversizedMessage={t.oversized} />
+      </div>
     </main>
   )
 }
