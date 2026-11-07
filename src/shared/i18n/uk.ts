@@ -39,7 +39,8 @@ export const uk: Dictionary = {
     helpPage: (appName) => `Довідка ${appName}`,
     privacyPolicy: 'Політика конфіденційності',
     reportIssue: 'Повідомити про проблему…',
-    supportApp: (appName) => `Підтримати ${appName}…`
+    supportApp: (appName) => `Підтримати ${appName}…`,
+    checkForUpdates: 'Перевірити оновлення…'
   },
   dialogs: {
     exportPdf: 'Експорт у PDF',
@@ -265,6 +266,19 @@ export const uk: Dictionary = {
       'Це лише подяка. Вона нічого не відкриває: програма працює однаково в будь-якому разі.'
     ],
     close: 'Закрити'
+  },
+  updates: {
+    noticeLabel: 'Нова версія',
+    available: (appName, version) => `Доступна нова версія ${appName}: ${version}.`,
+    availableDetail: (current) => `У вас версія ${current}. Завантажте нову версію й замініть нею програму в папці «Програми».`,
+    download: 'Завантажити',
+    dismiss: 'Закрити',
+    later: 'Пізніше',
+    upToDate: (appName, version) => `У вас найновіша версія ${appName} (${version}).`,
+    failed: 'Не вдалося перевірити оновлення.',
+    failedDetail: 'Перевірте підключення до інтернету або перегляньте найновішу версію на сторінці випусків.',
+    openReleases: 'Відкрити сторінку випусків',
+    ok: 'OK'
   },
   crash: {
     title: 'Щось пішло не так',

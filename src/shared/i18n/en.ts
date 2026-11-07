@@ -48,7 +48,8 @@ export const en = {
     helpPage: (appName: string) => `${appName} Help`,
     privacyPolicy: 'Privacy Policy',
     reportIssue: 'Report a Problem…',
-    supportApp: (appName: string) => `Support ${appName}…`
+    supportApp: (appName: string) => `Support ${appName}…`,
+    checkForUpdates: 'Check for Updates…'
   },
   // Tytuły i filtry systemowych okien plików (przyciski w nich są w języku systemu).
   dialogs: {
@@ -283,6 +284,21 @@ export const en = {
       'This is a thank-you only. It unlocks nothing: the app works exactly the same either way.'
     ],
     close: 'Close'
+  },
+  // Update notice i dialogi „Check for Updates…” – tylko w `.dmg` (ADR-0006). Aplikacja tylko informuje o nowej
+  // wersji; pobranie i podmiana aplikacji należą do użytkownika.
+  updates: {
+    noticeLabel: 'New version',
+    available: (appName: string, version: string) => `A new version of ${appName} is available: ${version}.`,
+    availableDetail: (current: string) => `You have version ${current}. Download the new version and replace the app in your Applications folder.`,
+    download: 'Download',
+    dismiss: 'Close',
+    later: 'Later',
+    upToDate: (appName: string, version: string) => `You have the latest version of ${appName} (${version}).`,
+    failed: 'Couldn’t check for updates.',
+    failedDetail: 'Check your internet connection or see the latest version on the releases page.',
+    openReleases: 'Open Releases Page',
+    ok: 'OK'
   },
   // Obsługa awarii: ekran błędu renderowania i natywne okna procesu głównego. Nie obiecują, że zachowana jest
   // każda zmiana (autozapis ma opóźnienie), tylko że zapisane CV są bezpieczne.

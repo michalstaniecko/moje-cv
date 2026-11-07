@@ -194,6 +194,48 @@ describe('appearance preference', () => {
   })
 })
 
+describe('update check state', () => {
+  test('is missing until the first check', async () => {
+    expect((await repository.get()).updateCheck).toBeUndefined()
+  })
+
+  test('a recorded check is kept in the settings file without touching clauses, language or appearance', async () => {
+    const general = await repository.addClause({ name: 'Ogólna', text: 'A' })
+    await repository.setInterfaceLanguage('pl')
+    await repository.setAppearance('dark')
+
+    await repository.recordUpdateCheck({ checkedAt: '2026-11-07T10:00:00.000Z', latestVersion: '1.1.0' })
+
+    expect(JSON.parse(await readFile(settingsPath, 'utf8'))).toEqual({
+      schemaVersion: 1,
+      clauses: [general],
+      defaultClauseId: null,
+      interfaceLanguage: 'pl',
+      appearance: 'dark',
+      updateCheck: { checkedAt: '2026-11-07T10:00:00.000Z', latestVersion: '1.1.0' }
+    })
+  })
+
+  test('a dismissed version is kept and survives the next recorded check', async () => {
+    await repository.recordUpdateCheck({ checkedAt: '2026-11-07T10:00:00.000Z', latestVersion: '1.1.0' })
+    await repository.dismissUpdate('1.1.0')
+    await repository.recordUpdateCheck({ checkedAt: '2026-11-08T10:00:00.000Z', latestVersion: '1.2.0' })
+
+    expect((await createSettingsRepository(settingsPath).get()).updateCheck).toEqual({
+      checkedAt: '2026-11-08T10:00:00.000Z',
+      latestVersion: '1.2.0',
+      dismissedVersion: '1.1.0'
+    })
+  })
+
+  test('a settings file without the update check loads unchanged', async () => {
+    const old = { schemaVersion: 1, clauses: [], defaultClauseId: null, interfaceLanguage: 'pl', appearance: 'light' }
+    await writeFile(settingsPath, JSON.stringify(old))
+
+    expect(await repository.get()).toEqual(old)
+  })
+})
+
 describe('damaged settings file', () => {
   const damagedFiles = {
     'invalid JSON': '{ "schemaVersion": 1, "clauses": ',

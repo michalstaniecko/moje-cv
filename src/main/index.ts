@@ -3,6 +3,7 @@ import { app, BrowserWindow } from 'electron'
 import { sampleCvs } from '../renderer/src/domain/sampleCv'
 import { en } from '../shared/i18n/en'
 import { createAppearance, windowBackground } from './appearance'
+import { isMacAppStore } from './channel'
 import { reloadAfterRendererCrash, reportMainProcessErrors } from './crashHandling'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
@@ -14,6 +15,7 @@ import { registerPhotoPicker } from './photo'
 import { registerSettings } from './settings'
 import { createSettingsRepository } from './settingsRepository'
 import { registerSponsor } from './sponsor'
+import { registerUpdates } from './updates'
 import { loadAppWindow, lockNavigation, secureWebPreferences } from './windows'
 
 // Testy e2e (`MOJE_CV_E2E_HIDDEN=1`) uruchamiają aplikację w tle: bez ikony w Docku, z przezroczystym oknem
@@ -73,8 +75,10 @@ app.whenReady().then(async () => {
   registerSettings(settings)
   registerPdfExport(language)
   registerPhotoPicker(language)
-  registerAppMenu(language, appearance)
   registerSponsor()
+  // Ta sama reguła kanału co Sponsor bar i menu Pomoc: w Mac App Store bez żadnego ruchu sieciowego (ADR-0006).
+  const updates = registerUpdates({ language, settings, macAppStore: isMacAppStore() })
+  registerAppMenu(language, appearance, updates.checkForUpdates)
   registerAppInfo()
   createWindow(language)
 

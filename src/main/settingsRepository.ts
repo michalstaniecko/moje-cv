@@ -75,6 +75,18 @@ export function createSettingsRepository(path: string) {
       )
     },
 
+    // Wynik udanego sprawdzenia nowej wersji (ADR-0006). Zamknięta wersja zostaje.
+    async recordUpdateCheck({ checkedAt, latestVersion }: { checkedAt: string; latestVersion: string }): Promise<AppSettings> {
+      return change((settings) => ({ ...settings, updateCheck: { ...settings.updateCheck, checkedAt, latestVersion } }))
+    },
+
+    // Wersja zamknięta w pasku Update notice. Bez wcześniejszego sprawdzenia nie ma czego zamykać.
+    async dismissUpdate(version: string): Promise<AppSettings> {
+      return change((settings) =>
+        settings.updateCheck ? { ...settings, updateCheck: { ...settings.updateCheck, dismissedVersion: version } } : settings
+      )
+    },
+
     // Klauzula, którą dostaje nowe CV. Uszkodzony plik ustawień nie blokuje tworzenia CV – wtedy bez klauzuli.
     async defaultClause(): Promise<Clause | null> {
       try {

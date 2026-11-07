@@ -39,7 +39,8 @@ export const id: Dictionary = {
     helpPage: (appName) => `Bantuan ${appName}`,
     privacyPolicy: 'Kebijakan Privasi',
     reportIssue: 'Laporkan Masalah…',
-    supportApp: (appName) => `Dukung ${appName}…`
+    supportApp: (appName) => `Dukung ${appName}…`,
+    checkForUpdates: 'Periksa Pembaruan…'
   },
   dialogs: {
     exportPdf: 'Ekspor ke PDF',
@@ -262,6 +263,19 @@ export const id: Dictionary = {
       'Ini hanya ucapan terima kasih. Tidak ada yang terbuka karenanya: aplikasi bekerja sama persis apa pun pilihan Anda.'
     ],
     close: 'Tutup'
+  },
+  updates: {
+    noticeLabel: 'Versi baru',
+    available: (appName, version) => `Versi baru ${appName} tersedia: ${version}.`,
+    availableDetail: (current) => `Anda memiliki versi ${current}. Unduh versi baru dan ganti aplikasi di folder Aplikasi.`,
+    download: 'Unduh',
+    dismiss: 'Tutup',
+    later: 'Nanti',
+    upToDate: (appName, version) => `Anda memiliki versi terbaru ${appName} (${version}).`,
+    failed: 'Tidak dapat memeriksa pembaruan.',
+    failedDetail: 'Periksa koneksi internet Anda atau lihat versi terbaru di halaman rilis.',
+    openReleases: 'Buka Halaman Rilis',
+    ok: 'OK'
   },
   crash: {
     title: 'Terjadi kesalahan',

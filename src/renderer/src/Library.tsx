@@ -5,6 +5,7 @@ import type { InterfaceLanguage } from '../../shared/i18n/languages'
 import { cvDisplayName, type CvDocument } from './domain/schema'
 import { cleanTag, MAX_TAG_LENGTH, sortTags, tagKey } from './domain/tags'
 import { AppVersion } from './appVersion'
+import { UpdateNotice } from './UpdateNotice'
 import { useDictionary, useInterfaceLanguage } from './i18n'
 import { useMenuCommands } from './menuCommands'
 
@@ -223,6 +224,7 @@ export function Library({
         />
       </header>
       <main ref={main} className="library">
+        <UpdateNotice />
         {error && (
           <p className="library-error" role="alert">
             {error(dictionary)}

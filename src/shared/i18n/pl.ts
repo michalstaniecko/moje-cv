@@ -39,7 +39,8 @@ export const pl: Dictionary = {
     helpPage: (appName) => `Pomoc ${appName}`,
     privacyPolicy: 'Polityka prywatności',
     reportIssue: 'Zgłoś problem…',
-    supportApp: (appName) => `Wesprzyj ${appName}…`
+    supportApp: (appName) => `Wesprzyj ${appName}…`,
+    checkForUpdates: 'Sprawdź aktualizacje…'
   },
   dialogs: {
     exportPdf: 'Eksportuj do PDF',
@@ -265,6 +266,19 @@ export const pl: Dictionary = {
       'To wyłącznie podziękowanie. Niczego nie odblokowuje: aplikacja działa dokładnie tak samo w obu przypadkach.'
     ],
     close: 'Zamknij'
+  },
+  updates: {
+    noticeLabel: 'Nowa wersja',
+    available: (appName, version) => `Dostępna jest nowa wersja ${appName} ${version}.`,
+    availableDetail: (current) => `Masz wersję ${current}. Pobierz nową wersję i zastąp nią aplikację w folderze Aplikacje.`,
+    download: 'Pobierz',
+    dismiss: 'Zamknij',
+    later: 'Później',
+    upToDate: (appName, version) => `Masz najnowszą wersję ${appName} (${version}).`,
+    failed: 'Nie udało się sprawdzić aktualizacji.',
+    failedDetail: 'Sprawdź połączenie z internetem albo zobacz najnowszą wersję na stronie wydań.',
+    openReleases: 'Otwórz stronę wydań',
+    ok: 'OK'
   },
   crash: {
     title: 'Coś poszło nie tak',
