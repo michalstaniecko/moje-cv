@@ -266,6 +266,20 @@ export const pl: Dictionary = {
     ],
     close: 'Zamknij'
   },
+  crash: {
+    title: 'Coś poszło nie tak',
+    message: 'Twoje CV są bezpieczne – zmiany zapisują się automatycznie. Wczytaj aplikację ponownie, żeby kontynuować.',
+    reload: 'Wczytaj ponownie',
+    repeated: {
+      message: (appName) => `Okno ${appName} kilka razy z rzędu przestało działać.`,
+      detail: 'Zapisane CV są bezpieczne. Możesz wczytać okno ponownie albo zakończyć aplikację.'
+    },
+    unexpected: {
+      title: 'Wystąpił nieoczekiwany błąd',
+      message: (appName) =>
+        `${appName} napotkał problem. Zapisane CV są bezpieczne. Jeśli coś nie działa poprawnie, zakończ aplikację i uruchom ją ponownie.`
+    }
+  },
   defaultContent: {
     cvName: 'Nowe CV',
     copyName: (name) => `${name} (kopia)`,

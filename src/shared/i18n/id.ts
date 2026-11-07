@@ -263,6 +263,20 @@ export const id: Dictionary = {
     ],
     close: 'Tutup'
   },
+  crash: {
+    title: 'Terjadi kesalahan',
+    message: 'CV Anda aman – perubahan disimpan secara otomatis. Muat ulang aplikasi untuk melanjutkan.',
+    reload: 'Muat ulang',
+    repeated: {
+      message: (appName) => `Jendela ${appName} beberapa kali berturut-turut berhenti berfungsi.`,
+      detail: 'CV yang tersimpan aman. Anda bisa memuat ulang jendela atau keluar dari aplikasi.'
+    },
+    unexpected: {
+      title: 'Terjadi kesalahan tak terduga',
+      message: (appName) =>
+        `${appName} mengalami masalah. CV yang tersimpan aman. Jika ada yang tidak berfungsi sebagaimana mestinya, keluar dari aplikasi lalu buka kembali.`
+    }
+  },
   defaultContent: {
     cvName: 'CV baru',
     copyName: (name) => `${name} (salinan)`,

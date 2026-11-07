@@ -269,6 +269,20 @@ export const sv: Dictionary = {
     ],
     close: 'Stäng'
   },
+  crash: {
+    title: 'Något gick fel',
+    message: 'Dina cv är säkra – ändringar sparas automatiskt. Läs in appen igen för att fortsätta.',
+    reload: 'Läs in igen',
+    repeated: {
+      message: (appName) => `Fönstret i ${appName} slutade fungera flera gånger i rad.`,
+      detail: 'Dina sparade cv är säkra. Du kan läsa in fönstret igen eller avsluta appen.'
+    },
+    unexpected: {
+      title: 'Ett oväntat fel inträffade',
+      message: (appName) =>
+        `${appName} stötte på ett problem. Dina sparade cv är säkra. Om något inte fungerar som det ska kan du avsluta appen och öppna den igen.`
+    }
+  },
   defaultContent: {
     cvName: 'Nytt cv',
     copyName: (name) => `${name} (kopia)`,

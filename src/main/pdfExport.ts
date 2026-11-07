@@ -60,7 +60,7 @@ export function registerPdfExport(language: InterfaceLanguageState): void {
 
 function printJob(event: IpcMainInvokeEvent) {
   const job = printJobs.get(event.sender.id)
-  if (!job) throw new Error('Brak dokumentu do wydruku dla tego okna')
+  if (!job) throw new Error('No print document for this window')
   return job
 }
 
@@ -75,7 +75,7 @@ async function renderPdf(document: CvDocument): Promise<Uint8Array> {
   const id = window.webContents.id
   try {
     const ready = new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Strona wydruku nie zgłosiła gotowości')), PRINT_READY_TIMEOUT_MS)
+      const timeout = setTimeout(() => reject(new Error('The print page did not report ready')), PRINT_READY_TIMEOUT_MS)
       printJobs.set(id, {
         document,
         ready: () => {
@@ -83,7 +83,14 @@ async function renderPdf(document: CvDocument): Promise<Uint8Array> {
           resolve()
         }
       })
+      // Awaria renderera okna wydruku kończy eksport od razu (renderer pokazuje zwykły komunikat o nieudanym eksporcie).
+      window.webContents.once('render-process-gone', (_event, details) => {
+        clearTimeout(timeout)
+        reject(new Error(`The print window renderer process is gone (${details.reason})`))
+      })
     })
+    // Gdy ładowanie też się nie uda, jego błąd wygrywa, a odrzucenie gotowości nie może zostać nieobsłużone.
+    ready.catch(() => {})
     await loadRenderer(window, '/print')
     await ready
     return await window.webContents.printToPDF({

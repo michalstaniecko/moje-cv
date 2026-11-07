@@ -6,7 +6,7 @@ export const MAX_TAG_LENGTH = 30
 // Tag nie spełnia reguł (np. jest za długi). Użytkownik dostaje powód (`reason`), a nie treść komunikatu.
 export class InvalidTagError extends Error {
   constructor(readonly reason: InvalidTagReason) {
-    super(`Niepoprawny tag: ${reason}`)
+    super(`Invalid tag: ${reason}`)
   }
 }
 

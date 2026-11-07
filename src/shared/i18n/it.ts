@@ -265,6 +265,20 @@ export const it: Dictionary = {
     ],
     close: 'Chiudi'
   },
+  crash: {
+    title: 'Si è verificato un problema',
+    message: 'I tuoi CV sono al sicuro: le modifiche vengono salvate automaticamente. Ricarica l’app per continuare.',
+    reload: 'Ricarica',
+    repeated: {
+      message: (appName) => `La finestra di ${appName} ha smesso di funzionare più volte di seguito.`,
+      detail: 'I CV salvati sono al sicuro. Puoi ricaricare la finestra o uscire dall’app.'
+    },
+    unexpected: {
+      title: 'Si è verificato un errore imprevisto',
+      message: (appName) =>
+        `${appName} ha riscontrato un problema. I CV salvati sono al sicuro. Se qualcosa non funziona come previsto, esci dall’app e riaprila.`
+    }
+  },
   defaultContent: {
     cvName: 'Nuovo CV',
     copyName: (name) => `${name} (copia)`,

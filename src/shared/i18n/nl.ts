@@ -271,6 +271,20 @@ export const nl: Dictionary = {
     ],
     close: 'Sluit'
   },
+  crash: {
+    title: 'Er is iets misgegaan',
+    message: 'Je cv’s zijn veilig – wijzigingen worden automatisch bewaard. Laad de app opnieuw om verder te gaan.',
+    reload: 'Opnieuw laden',
+    repeated: {
+      message: (appName) => `Het venster van ${appName} is meerdere keren achter elkaar vastgelopen.`,
+      detail: 'Je bewaarde cv’s zijn veilig. Je kunt het venster opnieuw laden of de app stoppen.'
+    },
+    unexpected: {
+      title: 'Er is een onverwachte fout opgetreden',
+      message: (appName) =>
+        `${appName} heeft een probleem gehad. Je bewaarde cv’s zijn veilig. Werkt er iets niet zoals verwacht? Stop de app en open hem opnieuw.`
+    }
+  },
   defaultContent: {
     cvName: 'Nieuw cv',
     copyName: (name) => `${name} (kopie)`,

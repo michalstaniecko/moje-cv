@@ -264,6 +264,20 @@ export const tr: Dictionary = {
     ],
     close: 'Kapat'
   },
+  crash: {
+    title: 'Bir sorun oluştu',
+    message: 'CV’leriniz güvende – değişiklikler otomatik olarak kaydedilir. Devam etmek için uygulamayı yeniden yükleyin.',
+    reload: 'Yeniden yükle',
+    repeated: {
+      message: (appName) => `${appName} penceresi art arda birkaç kez çalışmayı durdurdu.`,
+      detail: 'Kaydedilen CV’leriniz güvende. Pencereyi yeniden yükleyebilir veya uygulamadan çıkabilirsiniz.'
+    },
+    unexpected: {
+      title: 'Beklenmeyen bir hata oluştu',
+      message: (appName) =>
+        `${appName} bir sorunla karşılaştı. Kaydedilen CV’leriniz güvende. Bir şey beklendiği gibi çalışmazsa uygulamadan çıkıp yeniden açın.`
+    }
+  },
   defaultContent: {
     cvName: 'Yeni CV',
     copyName: (name) => `${name} (kopya)`,

@@ -284,6 +284,22 @@ export const en = {
     ],
     close: 'Close'
   },
+  // Obsługa awarii: ekran błędu renderowania i natywne okna procesu głównego. Nie obiecują, że zachowana jest
+  // każda zmiana (autozapis ma opóźnienie), tylko że zapisane CV są bezpieczne.
+  crash: {
+    title: 'Something went wrong',
+    message: 'Your CVs are safe – changes are saved automatically. Reload the app to continue.',
+    reload: 'Reload',
+    repeated: {
+      message: (appName: string) => `The ${appName} window stopped working several times in a row.`,
+      detail: 'Your saved CVs are safe. You can reload the window or quit the app.'
+    },
+    unexpected: {
+      title: 'An unexpected error occurred',
+      message: (appName: string) =>
+        `${appName} ran into a problem. Your saved CVs are safe. If something doesn’t work as expected, quit the app and open it again.`
+    }
+  },
   // Treść domyślna: powstaje w języku interfejsu z chwili utworzenia, potem jest zwykłą treścią CV (zob. GLOSSARY.md).
   defaultContent: {
     cvName: 'New CV',
