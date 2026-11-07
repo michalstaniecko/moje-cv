@@ -14,15 +14,18 @@ function parseInputValue(value: string): YearMonth | null {
 
 // Wybór miesiąca i roku; w CV data wyświetla się jako MM.RRRR. Niedokończony wpis (np. skasowany rok)
 // zostaje tylko w polu – dokument zmienia się dopiero po wpisaniu pełnej daty albo wyczyszczeniu pola.
+// `describedBy` – id opisu pola (np. ostrzeżenia o kolejności dat) dla `aria-describedby`.
 export function MonthField({
   label,
   value,
   disabled = false,
+  describedBy,
   onChange
 }: {
   label: string
   value: YearMonth | null
   disabled?: boolean
+  describedBy?: string
   onChange: (value: YearMonth | null) => void
 }) {
   const committed = toInputValue(value)
@@ -41,6 +44,7 @@ export function MonthField({
         type="month"
         value={disabled ? '' : draft}
         disabled={disabled}
+        aria-describedby={describedBy}
         onChange={(event) => {
           setDraft(event.target.value)
           if (event.target.validity.badInput) return

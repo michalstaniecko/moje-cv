@@ -5,6 +5,8 @@ import type { PaginateResult } from './domain/paginate'
 import { cvDisplayName, type Clause, type ClauseContent, type CvDocument } from './domain/schema'
 import { createCvEditor, type CvEditor } from './editor/cvEditor'
 import { CvForm } from './editor/CvForm'
+import { updateName } from './editor/documentEdits'
+import { RemovalMessage, useRemovalUndo } from './editor/removalUndo'
 import { useDictionary } from './i18n'
 import { useMenuCommands } from './menuCommands'
 import { PreviewPane } from './preview/PreviewPane'
@@ -38,7 +40,8 @@ export function CvScreen({
   const [exportState, setExportState] = useState<ExportState>({ status: 'idle' })
   const [jsonExport, setJsonExport] = useState<JsonExportState>({ status: 'idle' })
   const [clauses, saveClause] = useClauseLibrary()
-  const { appName, common, editor: t, library } = useDictionary()
+  const { common, editor: t, library } = useDictionary()
+  const removal = useRemovalUndo(editor)
   // Wyjście z edytora po nieudanym zapisie czeka na decyzję: komenda menu Plik, z którą wychodzimy (albo samo wyjście).
   const [leaving, setLeaving] = useState<{ command?: MenuCommand } | null>(null)
   const backButton = useRef<HTMLButtonElement>(null)
@@ -116,9 +119,9 @@ export function CvScreen({
     <div className="editor-screen">
       <header className="toolbar">
         <button type="button" ref={backButton} onClick={() => back()}>
-          {common.back(appName)}
+          {common.back}
         </button>
-        <h1 className="toolbar-title">{cvDisplayName(document.name, library.untitled)}</h1>
+        <CvNameHeading name={document.name} onRename={(name) => editor.edit(updateName(name))} />
         {/* Przy nieudanym zapisie status jest pusty – błąd ogłasza pasek komunikatu pod paskiem narzędzi. */}
         <span className="toolbar-status" role="status">
           {saveStatus === 'failed' ? '' : t.saveStatus[saveStatus]}
@@ -178,11 +181,73 @@ export function CvScreen({
       )}
       <div className="editor-panes">
         <aside className="editor-form">
-          <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} />
+          <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} onRemove={removal.remove} />
+          <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
         </aside>
         <PreviewPane document={document} onLayout={onLayout} />
       </div>
     </div>
+  )
+}
+
+// Nazwa CV w nagłówku edytora: przycisk z nazwą, który zamienia się w pole z zaznaczonym tekstem. Enter i kliknięcie obok
+// zatwierdzają (zmiana dokumentu: autozapis i jeden krok cofania), Escape anuluje; fokus wraca na przycisk z nazwą.
+// Pusta nazwa niczego nie zmienia (`updateName`).
+function CvNameHeading({ name, onRename }: { name: string; onRename: (name: string) => void }) {
+  const { editor: t, library } = useDictionary()
+  const [draft, setDraft] = useState<string | null>(null)
+  const nameButton = useRef<HTMLButtonElement>(null)
+  const nameField = useRef<HTMLInputElement>(null)
+  const focusButtonAfterEditing = useRef(false)
+  const editing = draft !== null
+  const displayName = cvDisplayName(name, library.untitled)
+
+  useEffect(() => {
+    if (editing) nameField.current?.select()
+    else if (focusButtonAfterEditing.current) {
+      focusButtonAfterEditing.current = false
+      nameButton.current?.focus()
+    }
+  }, [editing])
+
+  // Enter/Escape kończą edycję, zanim pole zniknie – późniejsze `blur` nie zatwierdza już drugi raz.
+  const finish = (commit: boolean, focusButton: boolean) => {
+    if (draft === null) return
+    if (commit) onRename(draft)
+    focusButtonAfterEditing.current = focusButton
+    setDraft(null)
+  }
+
+  return (
+    <h1 className="toolbar-title">
+      {editing ? (
+        <input
+          ref={nameField}
+          className="toolbar-title-field"
+          aria-label={library.name}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            // Bez preventDefault Enter „kliknąłby” przycisk z nazwą, który dostaje fokus, i otworzył pole ponownie.
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              finish(true, true)
+            } else if (event.key === 'Escape') finish(false, true)
+          }}
+          onBlur={() => finish(true, false)}
+        />
+      ) : (
+        <button
+          type="button"
+          ref={nameButton}
+          className="toolbar-title-button"
+          aria-label={t.renameCv(displayName)}
+          onClick={() => setDraft(name)}
+        >
+          {displayName}
+        </button>
+      )}
+    </h1>
   )
 }
 

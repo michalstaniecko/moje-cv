@@ -17,6 +17,9 @@
 - A translated "Something went wrong" screen with Reload instead of a blank window; a crashed window reloads itself, and repeated crashes ask before reloading again.
 - The window remembers its size, position and maximized state, and opens on a visible screen.
 - A warning before exporting a CV whose content doesn’t fit on a page; a progress indicator while the PDF is prepared; a separate message when preparing the PDF takes too long.
+- The CV name can be changed right in the editor header (click the name; Enter or clicking elsewhere keeps it, Escape cancels, ⌘Z undoes it).
+- A warning under the dates when a position or education ends before it starts; it never blocks saving or exporting.
+- "Removed. Undo" after removing a position, education entry, bullet, list item, contact or photo; it goes away by itself after a few seconds.
 
 ### Fixed
 - Closing the window or quitting right after an edit waits for the save, and asks before discarding changes that couldn’t be saved.
@@ -31,6 +34,7 @@
 - The window has a minimum size; opening the app again brings the running window to the front instead of starting a second copy.
 - A failed autosave shows an alert with Try again; leaving the editor with unsaved changes asks first instead of doing nothing.
 - PDF file names transliterate Cyrillic and other non-Latin letters (e.g. CV_Olena_Zrazkova.pdf) and fall back to the CV name; the export notice can be dismissed.
+- In the CV editor the "Appearance" section is now "CV design", the back button reads "← CV library" (also in the consent clause library), and the "present" checkbox reads "I currently work here" (the document still says "present").
 
 ## [0.3.0] – 2026-10-27
 

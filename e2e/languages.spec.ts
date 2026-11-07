@@ -164,7 +164,7 @@ for (const language of interfaceLanguageCodes) {
     await window.getByRole('button', { name: t.library.clauses }).click()
     await expect(window.getByRole('heading', { name: t.clauses.title })).toBeVisible()
     expect(await controlsThatDoNotFit('.toolbar, .sponsor-bar')).toEqual([])
-    await window.getByRole('button', { name: t.common.back(t.appName) }).click()
+    await window.getByRole('button', { name: t.common.back }).click()
 
     // Edytor: Sample CV w swoim CV language i foncie, licznik stron, paski i przyciski formularza się mieszczą.
     await library.getByRole('button', { name: t.library.open }).click()
@@ -199,7 +199,7 @@ for (const language of interfaceLanguageCodes) {
     expect(firstPage.items.map((item) => ('str' in item ? item.str : '')).join('')).toContain(sample.header.fullName)
 
     // Pusta biblioteka: tekst i przycisk „Dodaj przykładowe CV” się mieszczą.
-    await window.getByRole('button', { name: t.common.back(t.appName) }).click()
+    await window.getByRole('button', { name: t.common.back }).click()
     await library.getByRole('button', { name: t.common.delete }).click()
     await library.getByRole('alertdialog').getByRole('button', { name: t.common.delete }).click()
     await expect(library.getByRole('listitem')).toHaveCount(0)

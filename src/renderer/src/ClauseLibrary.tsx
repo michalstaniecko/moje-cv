@@ -14,7 +14,7 @@ export function ClauseLibrary({ onBack }: { onBack: () => void }) {
   const [mode, setMode] = useState<Mode>(null)
   // Błąd jako klucz, żeby zmiana języka tłumaczyła także widoczny już komunikat.
   const [error, setError] = useState<Failure | null>(null)
-  const { appName, common, clauses: t } = useDictionary()
+  const { common, clauses: t } = useDictionary()
 
   useEffect(() => {
     window.api.settings.get().then(setSettings, () => setError('load'))
@@ -41,7 +41,7 @@ export function ClauseLibrary({ onBack }: { onBack: () => void }) {
     <>
       <header className="toolbar">
         <button type="button" onClick={onBack}>
-          {common.back(appName)}
+          {common.back}
         </button>
         <h1 className="toolbar-title">{t.title}</h1>
         <button type="button" onClick={() => setMode({ kind: 'add' })} disabled={settings === null}>

@@ -28,9 +28,13 @@ _Avoid_: Theme, layout, skin, style (as names for the whole design)
 A short, user-chosen label attached to a CV to organise the CV library (e.g. "frontend", "EN", "Allegro"). Private metadata: never shown on the CV document itself. A tag exists only as long as at least one CV carries it. Independent of the CV language, even when it names a language.
 _Avoid_: Label (as a separate concept), keyword, skill, category
 
+**CV design**:
+The settings for how the document of a single CV looks (accent colour, font, Template), gathered in the CV editor in a section of this name together with the CV language. A property of each CV; changing it never touches the CV's content.
+_Avoid_: Appearance (that is the app's light/dark look), look, style
+
 **Appearance**:
 The light or dark look of the app's own interface (panels, forms, toolbars), chosen app-wide as Light, Dark or System, where System follows the operating system. Concerns only the interface: CV pages, template thumbnails and the exported PDF always keep their own look.
-_Avoid_: Theme, dark mode (as the name of the setting), skin, color scheme (as the name of the setting)
+_Avoid_: Theme, dark mode (as the name of the setting), skin, color scheme (as the name of the setting); for the settings of a single CV's document, say CV design
 
 **Sponsor bar**:
 The single-line strip at the bottom of the app window, shown on every screen, telling the user that the app is free and that they may thank the author. It never covers CV pages or forms, cannot be closed and holds only a short message, the Sponsor link and a "more" button opening a longer explanation.

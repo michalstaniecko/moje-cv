@@ -476,7 +476,7 @@ test('the CV library and the consent clause library are in English', async () =>
   await expect(clause.getByRole('alertdialog', { name: 'Confirm deletion' })).toHaveText(
     /Delete the clause “General”\? CVs that use it keep their own copy of the text\./
   )
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await expect(library).toBeVisible()
 })
 
@@ -503,7 +503,12 @@ test('switching the language in the menu immediately translates the CV library a
 test('the CV editor is in English, including the save status, photo cropping and the export actions', async () => {
   await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
 
-  // Formularz: wygląd, nagłówek, sekcje z kolejnością, wpisy i klauzula zgody.
+  // Pasek narzędzi: powrót do biblioteki CV i nazwa CV jako przycisk zmiany nazwy w nagłówku.
+  await expect(window.getByRole('button', { name: '← CV library' })).toBeVisible()
+  await expect(window.locator('.toolbar').getByRole('heading').getByRole('button', { name: 'Rename CV: Sample CV' })).toBeVisible()
+
+  // Formularz: CV design, nagłówek, sekcje z kolejnością, wpisy i klauzula zgody.
+  await expect(window.getByRole('heading', { name: 'CV design', exact: true })).toBeVisible()
   for (const label of ['Accent color', 'Full name', 'Contact label 1', 'Contact value 1', 'Summary']) {
     await expect(window.getByLabel(label)).toBeVisible()
   }
@@ -516,7 +521,7 @@ test('the CV editor is in English, including the save status, photo cropping and
   await expect(window.getByLabel('Hide section').first()).toBeVisible()
   await expect(window.getByLabel('New page before this section').first()).toBeVisible()
   const position = window.locator('.form fieldset').filter({ has: window.getByLabel('Job title') }).first()
-  for (const label of ['Job title', 'Company', 'City', 'From', 'To', 'present', 'Bullet 1', 'New page before this entry']) {
+  for (const label of ['Job title', 'Company', 'City', 'From', 'To', 'I currently work here', 'Bullet 1', 'New page before this entry']) {
     await expect(position.getByLabel(label, { exact: true })).toBeVisible()
   }
   for (const name of ['Remove bullet 1', 'Move bullet 2 up', 'Drag bullet 1 to reorder', 'Add bullet', 'Remove position']) {
@@ -635,7 +640,7 @@ test('Default content follows the interface language at creation and never chang
   await expect(preview.locator('.cv-page .cv-section-title')).toHaveText(['Work experience', 'Education', 'Skills', 'Languages'])
   await expect(preview.locator('.cv-consent')).toHaveCount(0)
   await expect(window.getByRole('region', { name: 'Consent clause' }).getByLabel('Show the clause at the bottom of the last page')).not.toBeChecked()
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
 
   // Nowe CV i kopia po angielsku.
   await window.getByRole('button', { name: 'New CV' }).click()
@@ -645,7 +650,7 @@ test('Default content follows the interface language at creation and never chang
   await expect(window.getByRole('heading', { name: 'New CV' })).toBeVisible()
   await expect.poll(() => inputValues(window.locator('.form-contact-label'))).toEqual(['Phone', 'Email', 'LinkedIn', 'City'])
   await expect.poll(() => inputValues(window.getByLabel(/^Section title/))).toEqual(['Work experience', 'Education', 'Skills', 'Languages'])
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
 
   // Po zmianie języka istniejące CV są bez zmian, a nowe treści powstają po polsku.
   await app.close()
@@ -657,7 +662,7 @@ test('Default content follows the interface language at creation and never chang
   await expect(polishRows.filter({ hasText: 'Sample CV (copy) (kopia)' })).toHaveCount(1)
   await polishRows.filter({ hasText: /^New CV/ }).getByRole('button', { name: 'Otwórz' }).click()
   await expect.poll(() => inputValues(window.locator('.form-contact-label'))).toEqual(['Phone', 'Email', 'LinkedIn', 'City'])
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← Biblioteka CV' }).click()
   await polishRows.filter({ hasText: 'Nowe CV' }).getByRole('button', { name: 'Otwórz' }).click()
   await expect.poll(() => inputValues(window.locator('.form-contact-label'))).toEqual(['Tel', 'E-mail', 'LinkedIn', 'Miasto'])
   await expect.poll(() => inputValues(window.getByLabel(/^Tytuł sekcji/))).toEqual(['Doświadczenie zawodowe', 'Wykształcenie', 'Umiejętności', 'Języki'])
@@ -720,7 +725,7 @@ test('the arrow next to New CV adds the Sample CV again in the interface languag
   await expect(preview.locator('.cv-page .cv-name')).toHaveText('Jane Example')
   await expect(preview.locator('.cv-page .cv-section-title')).toHaveText(['Work experience', 'Education', 'Skills', 'Languages'])
   await expect(preview.locator('.cv-consent')).toHaveCount(0)
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
 
   // Po przełączeniu na polski etykiety zmieniają się od razu, a nowy Sample CV jest polski, z wbudowaną klauzulą zgody.
   await app.close()
@@ -793,6 +798,8 @@ test('in a Polish run the sample CV, the editor, the menu, the exported PDF and 
   await library.getByRole('button', { name: 'Otwórz' }).click()
   await expect(window.locator('.preview-page-count')).toHaveText('2 strony')
   await expect(window.getByRole('radiogroup', { name: 'Szablon' }).getByRole('radio', { name: 'Klasyczny' })).toBeChecked()
+  await expect(window.getByRole('heading', { name: 'Projekt CV', exact: true })).toBeVisible()
+  await expect(window.getByLabel('Nadal tu pracuję').first()).toBeChecked()
   const fullName = window.getByLabel('Imię i nazwisko')
   await fullName.fill('Ewa Nowak')
   await expect(window.getByText('Zmiany zapisane')).toBeVisible()
@@ -810,7 +817,7 @@ test('in a Polish run the sample CV, the editor, the menu, the exported PDF and 
   await expect(fullName).toHaveValue('Anna Przykładowa')
 
   // Niepoprawny plik importu → komunikat po polsku, biblioteka bez zmian.
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← Biblioteka CV' }).click()
   const invalidPath = join(outputDir, 'zepsute.json')
   await writeFile(invalidPath, '{ "name": "Nie CV" }')
   await stubOpenDialog(invalidPath)
@@ -1002,12 +1009,12 @@ test('changes the accent colour and font of one CV in the preview and PDF, with 
   }
 
   // Ustawienia należą do CV: nowe CV ma domyślne, a zmienione zostają w swoim CV.
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await window.getByRole('button', { name: 'New CV' }).click()
   await library.getByRole('listitem').filter({ hasText: 'New CV' }).getByRole('button', { name: 'Open' }).click()
   await expect(window.getByLabel('Accent color')).toHaveValue('#1a6e72')
   await expect(window.getByLabel('Font')).toHaveValue('lato')
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await library.getByRole('listitem').filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Open' }).click()
   await expect(window.getByLabel('Accent color')).toHaveValue('#8a2be2')
   await expect(window.getByLabel('Font')).toHaveValue('arimo')
@@ -1047,12 +1054,12 @@ test('the CV language sets the fixed text and the page language of the document,
   expect(polish).toContain('03.2023 – obecnie')
   expect(polish).toContain('Work experience')
 
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await openFirstCv()
   await expect(window.getByLabel('CV language')).toHaveValue('pl')
 
   // Nowe CV startuje w języku interfejsu.
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await window.getByRole('button', { name: 'New CV' }).click()
   await window
     .getByRole('list', { name: 'CV list' })
@@ -1305,7 +1312,7 @@ test('manages the consent clause library, uses a clause in a CV without changing
   await expect(row('Talent Partners')).toContainText('I consent for Talent Partners.')
 
   // Nowe CV dostaje klauzulę domyślną, widoczną w podglądzie.
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await window.getByRole('button', { name: 'New CV' }).click()
   await library.getByRole('listitem').filter({ hasText: 'New CV' }).getByRole('button', { name: 'Open' }).click()
   const preview = window.locator('.preview')
@@ -1339,7 +1346,7 @@ test('manages the consent clause library, uses a clause in a CV without changing
   expect((await readPdf(await readFile(pdfPath))).pages.join('')).not.toContain('I consent')
 
   // Poprawki w CV nie zmieniły biblioteki.
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await window.getByRole('button', { name: 'Consent clauses' }).click()
   await expect(clauses.getByRole('listitem')).toHaveCount(3)
   await expect(row('Talent Partners')).toContainText('I consent for Talent Partners.')
@@ -1612,7 +1619,7 @@ test('after Edit → Undo in the menu, Cmd+Z undoes the earlier CV change and th
   await clickMenuItem('Edit', 'Undo')
   await expect(summary).toHaveValue(originalSummary)
   await expect(window.getByText('Changes saved')).toBeVisible()
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await openFirstCv()
   await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
   await expect(window.getByLabel('Summary')).toHaveValue(originalSummary)
@@ -1623,7 +1630,7 @@ test('in the CV library Edit → Undo undoes typing in the rename field and neve
   await library.getByRole('button', { name: 'Open' }).click()
   await window.getByLabel('Full name').fill('Ewa Nowak')
   await expect(window.getByText('Changes saved')).toBeVisible()
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
 
   // Po wyjściu z edytora menu cofa tekst w polu, a nie historię zamkniętego CV.
   await library.getByRole('button', { name: 'Rename' }).click()
@@ -1642,6 +1649,198 @@ test('in the CV library Edit → Undo undoes typing in the rename field and neve
 
   await library.getByRole('button', { name: 'Open' }).click()
   await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
+})
+
+test('the CV name in the editor header is renamed in place: Enter or leaving the field keeps it, Escape and an empty name do not, Cmd+Z undoes it', async () => {
+  await openFirstCv()
+  const toolbar = window.locator('.toolbar')
+  const heading = toolbar.getByRole('heading')
+  const nameButton = (name: string) => heading.getByRole('button', { name: `Rename CV: ${name}`, exact: true })
+  const field = toolbar.getByLabel('CV name')
+  await expect(heading).toHaveText('Sample CV')
+
+  // Kliknięcie zamienia nazwę w pole z zaznaczonym tekstem; Escape anuluje i oddaje fokus przyciskowi.
+  await nameButton('Sample CV').click()
+  await expect(field).toBeFocused()
+  await expect(field).toHaveValue('Sample CV')
+  await expect(field).toHaveJSProperty('selectionStart', 0)
+  await expect(field).toHaveJSProperty('selectionEnd', 'Sample CV'.length)
+  await field.fill('Not this one')
+  await field.press('Escape')
+  await expect(nameButton('Sample CV')).toBeFocused()
+
+  // Pusta nazwa (same spacje) nie powstaje: wraca poprzednia.
+  await nameButton('Sample CV').click()
+  await field.fill('   ')
+  await field.press('Enter')
+  await expect(nameButton('Sample CV')).toBeFocused()
+
+  // Enter zatwierdza przyciętą nazwę; nazwa CV nie trafia do dokumentu.
+  await nameButton('Sample CV').click()
+  await field.fill('  CV for the bank ')
+  await field.press('Enter')
+  await expect(nameButton('CV for the bank')).toBeFocused()
+  await expect(window.locator('.preview')).not.toContainText('CV for the bank')
+
+  // Zmiana nazwy to jeden krok cofania, jak każda zmiana CV.
+  await window.keyboard.press('Meta+z')
+  await expect(heading).toHaveText('Sample CV')
+  await window.keyboard.press('Meta+Shift+z')
+  await expect(heading).toHaveText('CV for the bank')
+
+  // Kliknięcie obok też zatwierdza; nazwa zapisuje się autozapisem: w bibliotece i po ponownym uruchomieniu.
+  await nameButton('CV for the bank').click()
+  await field.fill('CV for the bank, 2026')
+  await window.getByLabel('Full name').click()
+  await expect(heading).toHaveText('CV for the bank, 2026')
+  await window.getByRole('button', { name: '← CV library' }).click()
+  const library = window.getByRole('list', { name: 'CV list' })
+  await expect(library.locator('.library-item-name')).toHaveText('CV for the bank, 2026')
+  await app.close()
+  await launch()
+  await expect(window.getByRole('list', { name: 'CV list' }).locator('.library-item-name')).toHaveText('CV for the bank, 2026')
+})
+
+test('“I currently work here” ends a position with “present” in the CV language, in the preview and the PDF', async () => {
+  const pdfPath = join(outputDir, 'present.pdf')
+  await stubSaveDialog(pdfPath)
+  await openFirstCv()
+  const position = window.locator('.form fieldset').filter({ has: window.getByLabel('Job title') }).nth(1)
+  const dates = window.locator('.preview .cv-page .cv-date').nth(1)
+  await expect(dates).toHaveText('02.2019 – 02.2023')
+
+  await position.getByLabel('I currently work here').check()
+  await expect(position.getByLabel('To', { exact: true })).toBeDisabled()
+  await expect(dates).toHaveText('02.2019 – present')
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF')).toBeVisible()
+  expect((await readPdf(await readFile(pdfPath))).pages.join('')).toContain('02.2019 – present')
+
+  // Odznaczenie przywraca poprzednią datę końca.
+  await position.getByLabel('I currently work here').uncheck()
+  await expect(dates).toHaveText('02.2019 – 02.2023')
+})
+
+test('an end date before the start date shows a warning under the dates, without blocking the export, for positions and education', async () => {
+  const warning = 'The end date is earlier than the start date.'
+  await stubSaveDialog(join(outputDir, 'dates.pdf'))
+  await openFirstCv()
+
+  const position = window.locator('.form fieldset').filter({ has: window.getByLabel('Job title') }).nth(1)
+  const to = position.getByLabel('To', { exact: true })
+  await expect(position.getByText(warning)).toHaveCount(0)
+  await to.fill('2018-05')
+  await expect(position.getByText(warning)).toBeVisible()
+  await expect(to).toHaveAccessibleDescription(warning)
+  await expect(window.locator('.preview .cv-page .cv-date').nth(1)).toHaveText('02.2019 – 05.2018')
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF')).toBeVisible()
+  await expect(window.getByRole('status').filter({ hasText: 'Changes saved' })).toBeVisible()
+
+  // Ten sam miesiąc nie jest błędem.
+  await to.fill('2019-02')
+  await expect(position.getByText(warning)).toHaveCount(0)
+  await expect(to).toHaveAccessibleDescription('')
+
+  // Wykształcenie: data ukończenia przed (opcjonalnym) początkiem; poprawa początku usuwa ostrzeżenie.
+  const entry = window.getByRole('region', { name: 'Education', exact: true }).locator('fieldset').last()
+  const graduation = entry.getByLabel('Graduation date')
+  await graduation.fill('2008-06')
+  await expect(entry.getByText(warning)).toBeVisible()
+  await expect(graduation).toHaveAccessibleDescription(warning)
+  await entry.getByLabel('From (optional)').fill('2007-10')
+  await expect(entry.getByText(warning)).toHaveCount(0)
+})
+
+test('removing a position says “Removed.” with Undo, which brings it back with its bullets; any later change hides the message', async () => {
+  await openFirstCv()
+  const roles = window.locator('.preview .cv-page .cv-role')
+  const allRoles = ['Senior Procurement Specialist', 'Procurement Specialist', 'Procurement Assistant', 'Junior Customer Service Specialist']
+  const positions = window.locator('.form fieldset').filter({ has: window.getByLabel('Job title') })
+  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+  await expect(removed).toHaveCount(0)
+
+  await positions.nth(1).getByRole('button', { name: 'Remove position' }).click()
+  await expect(roles).toHaveText([allRoles[0]!, allRoles[2]!, allRoles[3]!])
+  await expect(removed).toBeVisible()
+  // Komunikat jest w kolumnie formularza, nie na podglądzie stron, i nie zabiera fokusu.
+  await expect(window.locator('.editor-form').getByRole('status').filter({ hasText: 'Removed.' })).toBeVisible()
+  await expect(removed.getByRole('button', { name: 'Undo' })).not.toBeFocused()
+
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect(roles).toHaveText(allRoles)
+  await expect(positions.nth(1).getByLabel(/^Bullet \d+$/)).toHaveCount(7)
+  await expect(removed).toHaveCount(0)
+  await expect(positions.nth(1).getByLabel('Job title')).toBeFocused()
+
+  // Każda kolejna zmiana chowa komunikat, więc „Undo” nigdy nie cofa czegoś innego niż usunięcie.
+  await positions.first().getByRole('button', { name: 'Remove bullet 1' }).click()
+  await expect(removed).toBeVisible()
+  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await expect(removed).toHaveCount(0)
+  // Cmd+Z po usunięciu też je chowa.
+  await window.getByRole('region', { name: 'Languages', exact: true }).getByRole('button', { name: 'Remove item 2' }).click()
+  await expect(removed).toBeVisible()
+  await window.keyboard.press('Meta+z')
+  await expect(removed).toHaveCount(0)
+  await expect(window.locator('.preview')).toContainText('German – B2')
+})
+
+test('a second removal replaces the “Removed.” message and its Undo brings back only the second item', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+
+  await window.getByRole('region', { name: 'Languages', exact: true }).getByRole('button', { name: 'Remove item 2' }).click()
+  await expect(preview).not.toContainText('German – B2')
+  const education = window.getByRole('region', { name: 'Education', exact: true })
+  await education.getByRole('button', { name: 'Remove education' }).last().click()
+  await expect(preview).not.toContainText('Fictional Academy')
+  await expect(removed).toHaveCount(1)
+
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect(preview).toContainText('Fictional Academy')
+  await expect(preview).not.toContainText('German – B2')
+  await expect(removed).toHaveCount(0)
+  await expect(education.getByLabel('Level').last()).toBeFocused()
+
+  // Kontakt też daje „Removed. Undo”, a „Undo” wraca do jego pola.
+  await window.getByRole('button', { name: 'Remove contact 1' }).click()
+  await expect(removed).toBeVisible()
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect(window.getByLabel('Contact label 1')).toBeFocused()
+})
+
+test('the “Removed.” message goes away by itself after a while, but not while the pointer or the focus is on it', async () => {
+  await window.clock.install()
+  await openFirstCv()
+  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+  const removeContact = () => window.getByRole('button', { name: 'Remove contact 1' }).click()
+
+  await removeContact()
+  await expect(removed).toBeVisible()
+  await window.clock.runFor(7000)
+  await expect(removed).toBeVisible()
+  await window.clock.runFor(1500)
+  await expect(removed).toHaveCount(0)
+
+  // Kursor nad komunikatem wstrzymuje odliczanie; po zjechaniu kursorem liczy się od nowa.
+  await removeContact()
+  await removed.hover()
+  await window.clock.runFor(20_000)
+  await expect(removed).toBeVisible()
+  await window.getByLabel('Full name').hover()
+  await window.clock.runFor(8500)
+  await expect(removed).toHaveCount(0)
+
+  // Fokus na „Undo” (np. Tabem z czytnikiem ekranu) też.
+  await removeContact()
+  await removed.getByRole('button', { name: 'Undo' }).focus()
+  await window.clock.runFor(20_000)
+  await expect(removed).toBeVisible()
+  await window.getByLabel('Full name').focus()
+  await window.clock.runFor(8500)
+  await expect(removed).toHaveCount(0)
 })
 
 test('Edit → Select All, Cut, Copy and Paste in the menu work in a form field', async () => {
@@ -1717,7 +1916,7 @@ test('tags a CV from the list: chips sorted with Polish letters, invalid tags re
   const pdf = (await readPdf(await readFile(pdfPath))).pages.join('')
   expect(pdf).toContain('Ewa Nowak')
   for (const tag of ['Lublin', 'Łódź', 'Senior Frontend', 'Zakopane', 'Ząbki']) expect(pdf).not.toContain(tag)
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await expect(rows.first().getByRole('list', { name: 'Tags' }).getByRole('listitem')).toHaveText([
     'Lublin',
     'Łódź',
@@ -1835,7 +2034,7 @@ test('filters the CV list by tags (all selected tags), keeps the filter for the 
   const damaged = library.getByRole('listitem').filter({ hasText: 'broken.json' })
   await tagButton('frontend').click()
   await window.getByRole('button', { name: 'Consent clauses' }).click()
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await expect(tagButton('frontend')).toHaveAttribute('aria-pressed', 'true')
   await expect(cvNames()).toHaveText(['Frontend PL', 'Sample CV'])
   await expect(damaged).toHaveCount(0)
@@ -1843,7 +2042,7 @@ test('filters the CV list by tags (all selected tags), keeps the filter for the 
   // Filtr przetrwa otwarcie CV w edytorze i powrót do listy.
   await rows.filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Open' }).click()
   await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Jane Example')
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await expect(tagButton('frontend')).toHaveAttribute('aria-pressed', 'true')
   await expect(cvNames()).toHaveText(['Frontend PL', 'Sample CV'])
 
@@ -1896,7 +2095,7 @@ test('File menu: creating and importing in the CV library and the editor, export
   await openFirstCv()
   await expect.poll(() => menuEnabled('File')).toEqual(fileMenu(true, true))
 
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await expect.poll(() => menuEnabled('File')).toEqual(fileMenu(true, false))
 
   // Formularze klauzul nie mają autozapisu, więc skrót nie może porzucić wpisanej klauzuli.
@@ -1956,7 +2155,7 @@ test('leaving the editor after a failed autosave asks first: Stay keeps the edit
   await window.getByLabel('Full name').fill('Jane Doe')
   await expect(window.getByRole('alert')).toContainText('Couldn’t save changes')
 
-  const back = window.getByRole('button', { name: '← CV Press' })
+  const back = window.getByRole('button', { name: '← CV library' })
   await back.click()
   const alert = window.getByRole('alert')
   await expect(alert).toContainText('Your changes weren’t saved. Leave anyway?')
@@ -1992,7 +2191,7 @@ async function breakAutosave() {
 
 // Wyjście z edytora mimo nieudanego zapisu, żeby zamknięcie aplikacji w `afterEach` nie czekało na pytanie.
 async function leaveEditorAnyway() {
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await window.getByRole('button', { name: 'Leave anyway' }).click()
   await expect(window.locator('.library')).toBeVisible()
 }
@@ -2191,7 +2390,7 @@ test('in the editor File → Export to PDF… and Export JSON… export the open
   expect(JSON.parse(await readFile(jsonPath, 'utf8'))).toMatchObject({ header: { fullName: 'Ewa Nowak' } })
 
   // Plik daje się zaimportować.
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
   await stubOpenDialog(jsonPath)
   await clickMenuItem('File', 'Import…')
   await expect(window.getByRole('status')).toHaveText('Imported “Sample CV”.')
@@ -2219,7 +2418,7 @@ test('a CV file from a newer version of the app is marked as needing a newer ver
   await writeFile(join(cvDir, 'future.json'), JSON.stringify({ ...sampleCvs.en, id: 'future', schemaVersion: 99 }))
   await writeFile(join(cvDir, 'broken.json'), '{ not json')
   await window.getByRole('button', { name: 'Consent clauses' }).click()
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
 
   const future = library.getByRole('listitem').filter({ hasText: 'future.json' })
   const broken = library.getByRole('listitem').filter({ hasText: 'broken.json' })
@@ -2350,7 +2549,7 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   await expect(rows.filter({ hasText: 'CV – Talent Partners' })).toHaveCount(2)
   await rows.first().getByRole('button', { name: 'Open' }).click()
   await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Jane Example')
-  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: '← CV library' }).click()
 
   // Niepoprawny plik → komunikat, biblioteka bez zmian.
   const invalidPath = join(outputDir, 'broken.json')
@@ -2457,7 +2656,8 @@ test('the window cannot be made smaller than 960×640, where a long CV name does
   const toolbar = window.locator('.toolbar')
   const title = toolbar.getByRole('heading', { name: longName })
   await expect(title).toBeVisible()
-  const titleLines = await title.evaluate((element) => {
+  // Nazwa jest tekstem przycisku zmiany nazwy w nagłówku – liczą się linie tego tekstu.
+  const titleLines = await title.getByRole('button').evaluate((element) => {
     const range = element.ownerDocument.createRange()
     range.selectNodeContents(element)
     return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size

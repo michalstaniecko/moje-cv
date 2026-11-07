@@ -12,6 +12,7 @@ import {
   updateEducationItem,
   updateConsent,
   updateListItem,
+  updateName,
   updateSection
 } from './documentEdits'
 
@@ -129,5 +130,18 @@ describe('consent', () => {
     expect(talent.text).toBe('Wyrażam zgodę dla Talent Partners.')
 
     expect(applyClause(talent)(edited).consent).toEqual(chosen.consent)
+  })
+})
+
+describe('updateName', () => {
+  it('renames the CV with the name trimmed and leaves the rest of the document alone', () => {
+    const renamed = updateName('  CV – bank  ')(sampleCv)
+    expect(renamed.name).toBe('CV – bank')
+    expect({ ...renamed, name: sampleCv.name }).toEqual(sampleCv)
+  })
+
+  it('leaves the document unchanged for an empty name or one made of spaces', () => {
+    expect(updateName('')(sampleCv)).toBe(sampleCv)
+    expect(updateName('   ')(sampleCv)).toBe(sampleCv)
   })
 })
