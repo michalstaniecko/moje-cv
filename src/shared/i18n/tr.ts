@@ -34,7 +34,12 @@ export const tr: Dictionary = {
     appearance: 'Görünüm',
     lightAppearance: 'Açık',
     darkAppearance: 'Koyu',
-    systemAppearance: 'Sistem'
+    systemAppearance: 'Sistem',
+    help: 'Yardım',
+    helpPage: (appName) => `${appName} Yardımı`,
+    privacyPolicy: 'Gizlilik Politikası',
+    reportIssue: 'Sorun Bildir…',
+    supportApp: (appName) => `${appName} Uygulamasını Destekle…`
   },
   dialogs: {
     exportPdf: 'PDF olarak dışa aktar',

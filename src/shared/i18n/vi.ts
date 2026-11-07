@@ -34,7 +34,12 @@ export const vi: Dictionary = {
     appearance: 'Giao diện',
     lightAppearance: 'Sáng',
     darkAppearance: 'Tối',
-    systemAppearance: 'Hệ thống'
+    systemAppearance: 'Hệ thống',
+    help: 'Trợ giúp',
+    helpPage: (appName) => `Trợ giúp ${appName}`,
+    privacyPolicy: 'Chính sách quyền riêng tư',
+    reportIssue: 'Báo cáo sự cố…',
+    supportApp: (appName) => `Ủng hộ ${appName}…`
   },
   dialogs: {
     exportPdf: 'Xuất ra PDF',
