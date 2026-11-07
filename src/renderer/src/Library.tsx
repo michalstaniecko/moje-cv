@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type FormEvent } from 'react'
-import type { CvListEntry, InvalidCvFileReason } from '../../shared/api'
+import type { CvListEntry, InvalidCvFileReason, MenuCommand } from '../../shared/api'
 import type { Dictionary } from '../../shared/i18n/en'
 import type { InterfaceLanguage } from '../../shared/i18n/languages'
 import { cvDisplayName, type CvDocument } from './domain/schema'
 import { cleanTag, MAX_TAG_LENGTH, sortTags, tagKey } from './domain/tags'
 import { AppVersion } from './appVersion'
 import { useDictionary, useInterfaceLanguage } from './i18n'
+import { useMenuCommands } from './menuCommands'
 
 type OkEntry = Extract<CvListEntry, { status: 'ok' }>
 type DamagedEntry = Extract<CvListEntry, { status: 'damaged' }>
@@ -28,11 +29,14 @@ const failureMessage =
 
 // Ekran startowy: lista CV z akcjami Nowe / Importuj / Otwórz / Duplikuj / Eksportuj / Tagi / Zmień nazwę / Usuń i wejście do biblioteki klauzul.
 export function Library({
+  initialCommand,
   tagFilter,
   onTagFilterChange,
   onOpen,
   onOpenClauses
 }: {
+  // Komenda menu Plik wydana w edytorze, wykonywana raz po zamontowaniu biblioteki.
+  initialCommand?: MenuCommand
   // Zaznaczone tagi filtra; lista pokazuje tylko CV mające wszystkie z nich.
   tagFilter: string[]
   onTagFilterChange: (tags: string[]) => void
@@ -187,6 +191,21 @@ export function Library({
       await refresh()
     }
   }
+
+  // Menu Plik: te same akcje co przyciski „Nowe CV”, „Dodaj przykładowe CV” i „Importuj z pliku”.
+  const runMenuCommand = (command: MenuCommand) => {
+    if (command === 'new-cv') void createAndShow(() => window.api.cv.create())
+    else if (command === 'add-sample') void addSample()
+    else if (command === 'import') void importFile()
+  }
+  useMenuCommands(runMenuCommand)
+  // Komenda z edytora tylko raz po zamontowaniu (strażnik także na podwójny efekt w StrictMode).
+  const initialCommandDone = useRef(false)
+  useEffect(() => {
+    if (!initialCommand || initialCommandDone.current) return
+    initialCommandDone.current = true
+    runMenuCommand(initialCommand)
+  }, [])
 
   return (
     <>
