@@ -43,14 +43,14 @@ export type MenuCommand = 'new-cv' | 'add-sample' | 'import' | 'export-json' | '
 // Bieżący ekran okna zgłaszany procesowi głównemu: od niego zależy aktywność pozycji menu Plik i Cofnij / Ponów.
 export type AppScreen = 'library' | 'clauses' | 'editor'
 
-// Pozycja na liście CV. Uszkodzony plik (niepoprawny JSON lub niezgodny ze schematem) jest widoczny, ale nie da się go otworzyć.
 // Dlaczego pliku CV nie da się otworzyć: uszkodzony (niepoprawny JSON, niezgodność ze schematem) albo zapisany
 // w nowszej wersji aplikacji (poprawny, ale ta wersja go nie zna). Renderer pokazuje kod w języku interfejsu.
 export type UnreadableCvReason = 'damaged' | 'newer-version'
 
+// Pozycja na liście CV. Plik, którego nie da się odczytać, jest widoczny (z powodem), ale nie da się go otworzyć.
 export type CvListEntry =
   | { status: 'ok'; id: string; name: string; updatedAt: string; tags: string[] }
-  | { status: 'damaged'; id: string; reason: UnreadableCvReason }
+  | { status: 'unreadable'; id: string; reason: UnreadableCvReason }
 
 export type Api = {
   // Informacje o aplikacji z procesu głównego – jedyne źródło numeru wersji (`app.getVersion()`) – i przeładowanie

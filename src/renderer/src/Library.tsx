@@ -10,7 +10,7 @@ import { useDictionary, useInterfaceLanguage } from './i18n'
 import { useMenuCommands } from './menuCommands'
 
 type OkEntry = Extract<CvListEntry, { status: 'ok' }>
-type DamagedEntry = Extract<CvListEntry, { status: 'damaged' }>
+type UnreadableEntry = Extract<CvListEntry, { status: 'unreadable' }>
 
 // Tryb pojedynczego wiersza: zwykły, zmiana nazwy, edycja tagów albo potwierdzenie usunięcia.
 type RowMode = { id: string; kind: 'rename' | 'tags' | 'confirm-delete' } | null
@@ -263,15 +263,13 @@ export function Library({
                     label={
                       entry.status === 'ok'
                         ? t.confirmDelete(cvDisplayName(entry.name, t.untitled))
-                        : entry.reason === 'newer-version'
-                          ? t.confirmDeleteNewer(`${entry.id}.json`, appName)
-                          : t.confirmDeleteDamaged(`${entry.id}.json`)
+                        : unreadableTexts(entry, t, appName).confirmDelete
                     }
                     onDelete={() => deleteEntry(entry.id)}
                     onCancel={() => closeRow(entry.id, 'delete')}
                   />
-                ) : entry.status === 'damaged' ? (
-                  <DamagedRow entry={entry} onDelete={askDelete} />
+                ) : entry.status === 'unreadable' ? (
+                  <UnreadableRow entry={entry} onDelete={askDelete} />
                 ) : mode === 'rename' ? (
                   <RenameForm
                     entry={entry}
@@ -585,13 +583,13 @@ function ConfirmDelete({ label, onDelete, onCancel }: { label: string; onDelete:
 }
 
 // Wiersz pliku, którego ta wersja aplikacji nie otworzy: uszkodzonego albo zapisanego w nowszej wersji.
-function DamagedRow({ entry, onDelete }: { entry: DamagedEntry; onDelete: () => void }) {
+function UnreadableRow({ entry, onDelete }: { entry: UnreadableEntry; onDelete: () => void }) {
   const { appName, common, library } = useDictionary()
   return (
     <>
       <div className="library-item-info">
         <span className="library-item-name">{entry.id}.json</span>
-        <span className="library-item-damaged">{entry.reason === 'newer-version' ? library.newerVersion(appName) : library.damaged}</span>
+        <span className="library-item-damaged">{unreadableTexts(entry, library, appName).note}</span>
       </div>
       <div className="library-item-actions">
         <button type="button" data-cv-id={entry.id} data-action="delete" onClick={onDelete}>
@@ -603,6 +601,14 @@ function DamagedRow({ entry, onDelete }: { entry: DamagedEntry; onDelete: () => 
 }
 
 // Tagi wszystkich poprawnych CV (z powtórzeniami); uszkodzone pliki nie mają tagów.
+// Teksty wiersza pliku, którego nie da się odczytać: dopisek przy nazwie pliku i pytanie przy usuwaniu – według powodu.
+function unreadableTexts(entry: UnreadableEntry, t: Dictionary['library'], appName: string) {
+  const fileName = `${entry.id}.json`
+  return entry.reason === 'newer-version'
+    ? { note: t.newerVersion(appName), confirmDelete: t.confirmDeleteNewer(fileName, appName) }
+    : { note: t.damaged, confirmDelete: t.confirmDeleteDamaged(fileName) }
+}
+
 const tagsOf = (entries: readonly CvListEntry[]) => entries.flatMap((entry) => (entry.status === 'ok' ? entry.tags : []))
 
 // Powód odrzucenia importu jako tekst; komunikat o za długim tagu podaje limit długości.

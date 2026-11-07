@@ -526,7 +526,7 @@ describe('damaged files', () => {
 
       expect(await repository.list()).toEqual([
         { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt, tags: [] },
-        { status: 'damaged', id: 'broken', reason: 'damaged' }
+        { status: 'unreadable', id: 'broken', reason: 'damaged' }
       ])
     })
 
@@ -568,7 +568,7 @@ describe('files from a newer version of the app', () => {
 
     expect(await repository.list()).toEqual([
       { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt, tags: [] },
-      { status: 'damaged', id: 'future', reason: 'newer-version' }
+      { status: 'unreadable', id: 'future', reason: 'newer-version' }
     ])
   })
 
@@ -876,7 +876,7 @@ describe('schema migrations', () => {
     await mkdir(cvDir, { recursive: true })
     await writeFile(join(cvDir, 'old.json'), content)
 
-    expect(await repository.list()).toEqual([{ status: 'damaged', id: 'old', reason: 'damaged' }])
+    expect(await repository.list()).toEqual([{ status: 'unreadable', id: 'old', reason: 'damaged' }])
     await expect(repository.importJson(content)).rejects.toMatchObject({ reason: 'not-a-cv' })
     expect(await readFile(join(cvDir, 'old.json'), 'utf8')).toBe(content)
   })
@@ -886,7 +886,7 @@ describe('schema migrations', () => {
     await mkdir(cvDir, { recursive: true })
     await writeFile(join(cvDir, 'broken.json'), content)
 
-    expect(await repository.list()).toEqual([{ status: 'damaged', id: 'broken', reason: 'damaged' }])
+    expect(await repository.list()).toEqual([{ status: 'unreadable', id: 'broken', reason: 'damaged' }])
     await expect(repository.importJson(content)).rejects.toMatchObject({ reason: 'not-a-cv' })
   })
 })
