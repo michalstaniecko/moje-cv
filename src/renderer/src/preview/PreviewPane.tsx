@@ -8,13 +8,26 @@ import { fitScale, PREVIEW_MARGIN_PX, zoomIn, zoomOut } from './zoom'
 
 // Podgląd stron CV z licznikiem stron i powiększeniem. Domyślnie strony dopasowane są do szerokości panelu;
 // po użyciu +, − lub 100% obowiązuje wybrana skala, a „Dopasuj” wraca do dopasowania.
-export function PreviewPane({ document }: { document: CvDocument }) {
+// `onLayout` dostaje każdy nowy podział stron (np. edytor sprawdza przed eksportem, czy są za długie bloki).
+export function PreviewPane({
+  document,
+  onLayout: onLayoutChange
+}: {
+  document: CvDocument
+  onLayout?: (layout: PaginateResult) => void
+}) {
   const panel = useRef<HTMLElement>(null)
   const panelWidth = usePanelWidth(panel)
   const [chosenScale, setChosenScale] = useState<number | null>(null)
   const scale = chosenScale ?? fitScale(panelWidth)
   const [pageCount, setPageCount] = useState<number | null>(null)
-  const onLayout = useCallback((layout: PaginateResult) => setPageCount(layout.pages.length), [])
+  const onLayout = useCallback(
+    (layout: PaginateResult) => {
+      setPageCount(layout.pages.length)
+      onLayoutChange?.(layout)
+    },
+    [onLayoutChange]
+  )
   const t = useDictionary().preview
   const language = useInterfaceLanguage()
 

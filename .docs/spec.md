@@ -25,14 +25,14 @@ Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/bri
 | Q16 | Kontynuacja | Punkty przechodzą na kolejną stronę bez „(cd.)”. |
 | Q17 | Daty | Miesiąc + rok, format `MM.RRRR`. Doświadczenie: zakres + „obecnie” w CV language (np. „present” po angielsku). Wykształcenie: data ukończenia, opcjonalnie początek. |
 | Q18 | Kolejność | Ręczna: drag & drop + strzałki góra/dół (sekcje, wpisy, punkty). |
-| Q19 | Eksport PDF | Systemowe okno zapisu, nazwa `CV_Imie_Nazwisko.pdf`, potem „Pokaż w Finderze / Otwórz”. Tekst zaznaczalny, metadane Title/Author. |
+| Q19 | Eksport PDF | Systemowe okno zapisu, nazwa `CV_Imie_Nazwisko.pdf` z transliteracją (mapa liter nierozkładalnych i cyrylicy, potem NFD; dla CV language `uk` zasady ukraińskie), kolejno z imienia i nazwiska, z nazwy CV, a na końcu `CV.pdf`. Przy za długich blokach najpierw pytanie „Eksportować mimo to?”. W trakcie przygotowania wskaźnik postępu; przekroczenie czasu ma osobny komunikat. Potem zamykane powiadomienie z „Pokaż w Finderze / Otwórz” pod paskiem narzędzi. Tekst zaznaczalny, metadane Title/Author (w oryginalnym zapisie). |
 | Q20 | Liczba stron | Licznik stron w podglądzie; dyskretna informacja przy > 2 stronach. Bez limitu. |
 | Q21 | Dane startowe | Przykładowe CV z fikcyjnymi danymi przy pierwszym uruchomieniu, w języku interfejsu. Prawdziwe dane – osobny JSON do importu, poza repo. |
 | Q22 | Wersjonowanie | `schemaVersion` w każdym pliku + migracje. |
 | Q23 | Dystrybucja | `.dmg` universal (arm64 + x64) przez electron-builder. Konfiguracja gotowa na Win/Linux. Bez auto-update. |
 | Q24 | Font | Dołączone fonty: **Lato (domyślny)**, Source Sans 3, Arimo. Wybór per CV. Osadzane w PDF. |
 | Q25 | Puste dane | Puste pola i sekcje nie są renderowane. |
-| Q26 | Za duży blok | Blok wyższy niż strona nie jest dzielony; dostaje własną stronę i ostrzeżenie „Ten fragment jest za długi…”. |
+| Q26 | Za duży blok | Blok wyższy niż strona nie jest dzielony; dostaje własną stronę i ostrzeżenie „Ten fragment jest za długi…”. W PDF jest ucięty, więc eksport takiego CV najpierw pyta „Eksportować mimo to?” („Eksportuj mimo to” / „Anuluj”). |
 | Q27 | Skalowanie | Dopasowanie do szerokości panelu + przyciski +, −, 100%. |
 | Q28 | Stos | electron-vite, pnpm, Zustand + zundo, Zod, Radix/shadcn, dnd-kit, Vitest, Playwright (Electron), pdf-lib (metadane). |
 | Q29 | Proces | Spec → akceptacja → `git init` → etapy pionowe (sekcja 7). |
@@ -172,7 +172,7 @@ Każda strona to `div` 210×297 mm z paddingiem marginesów, `overflow: hidden`,
 3. Strona druku sygnalizuje gotowość (fonty załadowane, podział policzony, zdjęcie wczytane).
 4. `webContents.printToPDF({ pageSize: 'A4', margins: { marginType: 'none' }, printBackground: true, preferCSSPageSize: true })`.
 5. pdf-lib ustawia Title („CV – Imię Nazwisko”) i Author (imię i nazwisko).
-6. `dialog.showSaveDialog` z domyślną nazwą `CV_Imie_Nazwisko.pdf` (bez polskich znaków i spacji) → zapis → opcje „Otwórz” / „Pokaż w Finderze”.
+6. `dialog.showSaveDialog` z domyślną nazwą `CV_Imie_Nazwisko.pdf` (`src/main/pdfFileName.ts`: transliteracja do `[A-Za-z0-9-]`, słowa rozdzielone `_`; bez imienia i nazwiska nazwa CV, na końcu `CV.pdf`) → zapis → zamykane powiadomienie z „Otwórz” / „Pokaż w Finderze”. Przed krokiem 1 renderer pyta o eksport CV z blokami wyższymi niż strona; od kroku 1 do wyniku widać wskaźnik postępu. Gdy strona druku nie zgłosi gotowości w czasie (30 s, `MOJE_CV_PRINT_TIMEOUT_MS` w e2e), wynik to `timed-out` z osobnym komunikatem.
 
 ## 6. Architektura
 

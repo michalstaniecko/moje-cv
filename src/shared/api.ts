@@ -2,7 +2,12 @@ import type { AppSettings, Clause, ClauseContent, CvDocument } from '../renderer
 import type { InterfaceLanguage } from './i18n/languages'
 
 // Kontrakt API wystawianego przez preload (window.api) – wspólny dla procesu głównego i renderera.
-export type ExportPdfResult = { status: 'saved'; filePath: string } | { status: 'canceled' }
+
+// `timed-out` – strona wydruku nie zgłosiła gotowości w czasie (osobny komunikat); inne błędy odrzucają obietnicę.
+export type ExportPdfResult =
+  | { status: 'saved'; filePath: string }
+  | { status: 'canceled' }
+  | { status: 'timed-out' }
 
 // Wynik wyboru zdjęcia z dysku: oryginał pliku jako data URL (przed kadrowaniem).
 export type PickPhotoResult =

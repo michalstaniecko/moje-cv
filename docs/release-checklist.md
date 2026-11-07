@@ -56,11 +56,13 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | Sprawdź | MAS | DMG |
 | --- | --- | --- |
 | Nazwa pliku | [ ] | [ ] |
-| „Otwórz” i „Pokaż w Finderze” | [ ] | [ ] |
+| Nazwa pliku z transliteracją: Sample CV po ukraińsku `CV_Olena_Zrazkova.pdf`, po rosyjsku `CV_Anna_Obraztsova.pdf`; po usunięciu imienia i nazwiska nazwa z nazwy CV (#68) | [ ] | [ ] |
+| „Otwórz” i „Pokaż w Finderze” w powiadomieniu pod paskiem narzędzi; × zamyka powiadomienie (#68) | [ ] | [ ] |
 | Tekst w PDF da się zaznaczyć | [ ] | [ ] |
 | Metadane PDF (tytuł, autor) | [ ] | [ ] |
 | Liczba stron zgodna z podglądem | [ ] | [ ] |
-| Ostrzeżenie o uciętej treści i komunikat przekroczenia czasu (#68) | [ ] | [ ] |
+| CV z za długim fragmentem (np. bardzo długie podsumowanie): eksport pyta „Eksportować mimo to?”; „Anuluj” i Escape nie otwierają okna zapisu, „Eksportuj mimo to” zapisuje PDF (#68) | [ ] | [ ] |
+| W trakcie przygotowania PDF widać pasek postępu i „Przygotowywanie PDF…”; VoiceOver ogłasza postęp i wynik (#68) | [ ] | [ ] |
 
 ## Eksport i import JSON
 

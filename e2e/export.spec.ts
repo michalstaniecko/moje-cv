@@ -23,12 +23,14 @@ const packagedExecutable = process.env['MOJE_CV_APP']
 // przejść cały zestaw w ciemnym wyglądzie), a `appearance: null` zostawia wybór menu Wygląd / Appearance.
 // Playwright domyślnie emuluje `prefers-color-scheme: light` w każdym oknie; `colorScheme: null` wyłącza emulację
 // i zostawia to Electronowi (`nativeTheme`), bo inaczej ciemny wygląd nigdy nie dotarłby do renderera.
+// `extraEnv` dokłada zmienne dla jednego testu (np. krótszy limit czasu wydruku `MOJE_CV_PRINT_TIMEOUT_MS`).
 async function launch({
   language = 'en',
-  appearance = isAppearance(process.env['MOJE_CV_APPEARANCE']) ? process.env['MOJE_CV_APPEARANCE'] : 'light'
-}: { language?: InterfaceLanguage | null; appearance?: Appearance | null } = {}) {
+  appearance = isAppearance(process.env['MOJE_CV_APPEARANCE']) ? process.env['MOJE_CV_APPEARANCE'] : 'light',
+  extraEnv = {}
+}: { language?: InterfaceLanguage | null; appearance?: Appearance | null; extraEnv?: Record<string, string> } = {}) {
   const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
-  const env = { ...process.env } as Record<string, string>
+  const env = { ...process.env, ...extraEnv } as Record<string, string>
   // Okno w tle (bez fokusu i niewidoczne); `MOJE_CV_E2E_HEADED=1` pokazuje je normalnie do debugowania.
   if (!process.env['MOJE_CV_E2E_HEADED']) env['MOJE_CV_E2E_HIDDEN'] = '1'
   if (language) env['MOJE_CV_LANGUAGE'] = language
@@ -565,13 +567,20 @@ test('the CV editor is in English, including the save status, photo cropping and
   const exported = window.getByRole('status').filter({ hasText: 'Saved PDF: cv.pdf' })
   await expect(exported.getByRole('button', { name: 'Open' })).toBeVisible()
   await expect(exported.getByRole('button', { name: 'Show in Finder' })).toBeVisible()
+  // Powiadomienie jest pod paskiem narzędzi (nie rozpycha go) i da się je zamknąć.
+  await expect(window.locator('.toolbar').getByText('Saved PDF')).toHaveCount(0)
+  await exported.getByRole('button', { name: 'Dismiss message' }).click()
+  await expect(window.getByText('Saved PDF')).toHaveCount(0)
   await app.evaluate(({ dialog }) => {
     dialog.showSaveDialog = (async () => {
       throw new Error('disk full')
     }) as typeof dialog.showSaveDialog
   })
   await window.getByRole('button', { name: 'Export to PDF' }).click()
-  await expect(window.getByRole('alert')).toHaveText('Couldn’t save the PDF. Try again.')
+  const exportFailed = window.getByRole('alert').filter({ hasText: 'Couldn’t save the PDF. Try again.' })
+  await expect(exportFailed).toBeVisible()
+  await exportFailed.getByRole('button', { name: 'Dismiss message' }).click()
+  await expect(exportFailed).toHaveCount(0)
 
   // Nieudany autozapis (plik CV zniknął z dysku).
   await rm(join(outputDir, 'user-data', 'cvs'), { recursive: true })
@@ -1456,8 +1465,24 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   expect(longPageCount).toBeGreaterThan(2)
   await expect(preview).toContainText('The CV is longer than 2 pages – consider shortening it.')
 
-  // Eksport nie jest blokowany, a wyróżnienie nie trafia do PDF.
+  // Eksport najpierw pyta, czy uciąć treść: „Cancel” wraca do edycji bez okna zapisu.
   await window.getByRole('button', { name: 'Export to PDF' }).click()
+  const confirm = window.getByRole('dialog', { name: 'Some content doesn’t fit on a page and will be cut off. Export anyway?' })
+  await expect(confirm).toContainText('The fragments that are too long are highlighted in the preview.')
+  await expect(confirm.getByRole('button', { name: 'Cancel' })).toBeFocused()
+  await confirm.getByRole('button', { name: 'Cancel' }).click()
+  await expect(confirm).toBeHidden()
+  const saveDialogCalls = () =>
+    app.evaluate(() => (globalThis as { saveDialogCalls?: Electron.SaveDialogOptions[] }).saveDialogCalls!.length)
+  expect(await saveDialogCalls()).toBe(0)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await window.keyboard.press('Escape')
+  await expect(confirm).toBeHidden()
+  expect(await saveDialogCalls()).toBe(0)
+
+  // „Export anyway” eksportuje jak dotąd, a wyróżnienie nie trafia do PDF.
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await confirm.getByRole('button', { name: 'Export anyway' }).click()
   await expect(window.getByText('Saved PDF')).toBeVisible()
   const pdf = await readPdf(await readFile(pdfPath))
   expect(pdf.pages).toHaveLength(longPageCount)
@@ -1492,6 +1517,25 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   await expect.poll(pageWidth).toBeCloseTo(793.7 * 0.75, 0)
   expect(await pageTexts()).toEqual(textsAtFit)
   await expect(pageCount).toHaveText(`${longPageCount} pages`)
+})
+
+test('while the PDF is prepared a progress bar is shown, and a print page that never gets ready ends with its own message', async () => {
+  await app.close()
+  await launch({ extraEnv: { MOJE_CV_PRINT_TIMEOUT_MS: '2000' } })
+  await stubSaveDialog(join(outputDir, 'never.pdf'))
+  await app.evaluate(({ ipcMain }) => ipcMain.removeAllListeners('print:ready'))
+  await openFirstCv()
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByRole('progressbar', { name: 'Preparing the PDF…' })).toBeVisible()
+  await expect(window.getByRole('button', { name: 'Exporting…' })).toBeDisabled()
+  const timedOut = window.getByRole('alert').filter({ hasText: 'Preparing the PDF took too long and was stopped. Try again.' })
+  await expect(timedOut).toBeVisible()
+  await expect(window.getByRole('progressbar')).toHaveCount(0)
+  await expect(window.getByText('Couldn’t save the PDF')).toHaveCount(0)
+  expect(await app.evaluate(() => (globalThis as { saveDialogCalls?: unknown[] }).saveDialogCalls!.length)).toBe(0)
+  await timedOut.getByRole('button', { name: 'Dismiss message' }).click()
+  await expect(timedOut).toHaveCount(0)
+  await expect(window.getByRole('button', { name: 'Export to PDF' })).toBeEnabled()
 })
 
 test('Edit → Undo / Redo in the menu undo and redo CV changes in the form and the preview', async () => {
@@ -2143,7 +2187,7 @@ test('in the editor File → Export to PDF… and Export JSON… export the open
   await expect(window.getByRole('status')).toHaveText('Imported “Sample CV”.')
   await expect(window.getByRole('list', { name: 'CV list' }).getByRole('listitem')).toHaveCount(2)
 
-  // Nieudany eksport JSON: komunikat błędu w pasku edytora.
+  // Nieudany eksport JSON: komunikat błędu pod paskiem narzędzi, do zamknięcia.
   await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).first().click()
   await expect(window.getByLabel('Full name')).toBeVisible()
   await app.evaluate(({ dialog }) => {
@@ -2152,7 +2196,10 @@ test('in the editor File → Export to PDF… and Export JSON… export the open
     }) as typeof dialog.showSaveDialog
   })
   await clickMenuItem('File', 'Export JSON…')
-  await expect(window.getByRole('alert')).toHaveText('Couldn’t export the CV.')
+  const exportFailed = window.getByRole('alert').filter({ hasText: 'Couldn’t export the CV.' })
+  await expect(exportFailed).toBeVisible()
+  await exportFailed.getByRole('button', { name: 'Dismiss message' }).click()
+  await expect(exportFailed).toHaveCount(0)
 })
 
 test('a CV file from a newer version of the app is marked as needing a newer version, not as damaged, and its deletion says what is lost', async () => {

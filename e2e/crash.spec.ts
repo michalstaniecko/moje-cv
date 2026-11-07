@@ -191,7 +191,9 @@ test('when the hidden print window crashes, PDF export fails right away instead 
 
   const started = Date.now()
   await window.getByRole('button', { name: 'Export to PDF' }).click()
-  await expect(window.getByRole('alert')).toHaveText('Couldn’t save the PDF. Try again.', { timeout: 10_000 })
+  await expect(window.getByRole('alert').filter({ hasText: 'Couldn’t save the PDF. Try again.' })).toBeVisible({
+    timeout: 10_000
+  })
   expect(Date.now() - started).toBeLessThan(10_000)
 })
 
