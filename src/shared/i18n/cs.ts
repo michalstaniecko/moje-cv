@@ -34,7 +34,12 @@ export const cs: Dictionary = {
     appearance: 'Vzhled',
     lightAppearance: 'Světlý',
     darkAppearance: 'Tmavý',
-    systemAppearance: 'Systémový'
+    systemAppearance: 'Systémový',
+    help: 'Nápověda',
+    helpPage: (appName) => `Nápověda pro ${appName}`,
+    privacyPolicy: 'Zásady ochrany osobních údajů',
+    reportIssue: 'Nahlásit problém…',
+    supportApp: (appName) => `Podpořit ${appName}…`
   },
   dialogs: {
     exportPdf: 'Exportovat do PDF',

@@ -34,7 +34,12 @@ export const ro: Dictionary = {
     appearance: 'Aspect',
     lightAppearance: 'Luminos',
     darkAppearance: 'Întunecat',
-    systemAppearance: 'Sistem'
+    systemAppearance: 'Sistem',
+    help: 'Ajutor',
+    helpPage: (appName) => `Ajutor ${appName}`,
+    privacyPolicy: 'Politica de confidențialitate',
+    reportIssue: 'Raportează o problemă…',
+    supportApp: (appName) => `Susține ${appName}…`
   },
   dialogs: {
     exportPdf: 'Exportă în PDF',

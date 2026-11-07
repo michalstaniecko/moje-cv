@@ -42,7 +42,13 @@ export const en = {
     appearance: 'Appearance',
     lightAppearance: 'Light',
     darkAppearance: 'Dark',
-    systemAppearance: 'System'
+    systemAppearance: 'System',
+    // Menu Pomoc (role help). Pozycja „supportApp” to Sponsor link – tylko poza Mac App Store.
+    help: 'Help',
+    helpPage: (appName: string) => `${appName} Help`,
+    privacyPolicy: 'Privacy Policy',
+    reportIssue: 'Report a Problem…',
+    supportApp: (appName: string) => `Support ${appName}…`
   },
   // Tytuły i filtry systemowych okien plików (przyciski w nich są w języku systemu).
   dialogs: {
