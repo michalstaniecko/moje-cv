@@ -85,6 +85,10 @@ export const fr: Dictionary = {
     confirmDelete: (name) => `Supprimer « ${name} » ? Cette action est irréversible.`,
     confirmDeleteDamaged: (fileName) => `Supprimer le fichier endommagé « ${fileName} » ? Cette action est irréversible.`,
     damaged: 'Fichier endommagé – impossible de l’ouvrir',
+    newerVersion: (appName) => `Nécessite une version plus récente de ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Supprimer le fichier « ${fileName} » ? C’est un CV d’une version plus récente de ${appName} et il sera perdu. Cette action est irréversible.`,
+    loading: 'Chargement…',
     imported: (name) => `« ${name} » a été importé.`,
     savedFile: (fileName) => `Fichier enregistré : ${fileName}`,
     importErrors: {

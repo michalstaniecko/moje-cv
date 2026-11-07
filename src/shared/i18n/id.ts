@@ -85,6 +85,10 @@ export const id: Dictionary = {
     confirmDelete: (name) => `Hapus “${name}”? Tindakan ini tidak dapat diurungkan.`,
     confirmDeleteDamaged: (fileName) => `Hapus file rusak “${fileName}”? Tindakan ini tidak dapat diurungkan.`,
     damaged: 'File rusak – tidak dapat dibuka',
+    newerVersion: (appName) => `Memerlukan versi ${appName} yang lebih baru`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Hapus file “${fileName}”? Ini CV dari versi ${appName} yang lebih baru dan akan hilang. Tindakan ini tidak dapat diurungkan.`,
+    loading: 'Memuat…',
     imported: (name) => `“${name}” berhasil diimpor.`,
     savedFile: (fileName) => `File disimpan: ${fileName}`,
     importErrors: {

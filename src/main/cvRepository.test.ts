@@ -509,7 +509,7 @@ describe('damaged files', () => {
 
       expect(await repository.list()).toEqual([
         { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt, tags: [] },
-        { status: 'damaged', id: 'broken' }
+        { status: 'damaged', id: 'broken', reason: 'damaged' }
       ])
     })
 
@@ -536,6 +536,53 @@ describe('damaged files', () => {
       expect(await repository.list()).toEqual([])
     })
   }
+})
+
+describe('files from a newer version of the app', () => {
+  const content = JSON.stringify({ ...sampleCv, id: 'future', schemaVersion: CV_SCHEMA_VERSION + 1, name: 'Z nowszej wersji' })
+  const writeNewer = async () => {
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, 'future.json'), content)
+  }
+
+  test('a file with a newer schema version is listed as needing a newer version, after healthy CVs', async () => {
+    await repository.save(sampleCv)
+    await writeNewer()
+
+    expect(await repository.list()).toEqual([
+      { status: 'ok', id: sampleCv.id, name: sampleCv.name, updatedAt: sampleCv.updatedAt, tags: [] },
+      { status: 'damaged', id: 'future', reason: 'newer-version' }
+    ])
+  })
+
+  test('a file from a newer version cannot be opened or overwritten and is left byte for byte', async () => {
+    await writeNewer()
+
+    await expect(repository.get('future')).rejects.toThrow()
+    await expect(repository.duplicate('future', 'pl')).rejects.toThrow()
+    await expect(repository.rename('future', 'Nowa nazwa')).rejects.toThrow()
+    await expect(repository.setTags('future', ['EN'])).rejects.toThrow()
+    await expect(repository.save(cv({ id: 'future' }))).rejects.toThrow()
+    await expect(repository.update(cv({ id: 'future' }))).rejects.toThrow()
+
+    expect(await readFile(join(cvDir, 'future.json'), 'utf8')).toBe(content)
+  })
+
+  test('a file from a newer version can be deleted', async () => {
+    await writeNewer()
+
+    await repository.delete('future')
+
+    expect(await repository.list()).toEqual([])
+  })
+
+  test('tags of a file from a newer version do not set the spelling of library tags', async () => {
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, 'future.json'), JSON.stringify({ ...sampleCv, id: 'future', schemaVersion: CV_SCHEMA_VERSION + 1, tags: ['Frontend'] }))
+    await repository.save(cv({ id: 'other' }))
+
+    expect((await repository.setTags('other', ['frontend'])).tags).toEqual(['frontend'])
+  })
 })
 
 test('ids that point outside the CV directory are rejected', async () => {
@@ -812,7 +859,7 @@ describe('schema migrations', () => {
     await mkdir(cvDir, { recursive: true })
     await writeFile(join(cvDir, 'old.json'), content)
 
-    expect(await repository.list()).toEqual([{ status: 'damaged', id: 'old' }])
+    expect(await repository.list()).toEqual([{ status: 'damaged', id: 'old', reason: 'damaged' }])
     await expect(repository.importJson(content)).rejects.toMatchObject({ reason: 'not-a-cv' })
     expect(await readFile(join(cvDir, 'old.json'), 'utf8')).toBe(content)
   })
@@ -822,7 +869,7 @@ describe('schema migrations', () => {
     await mkdir(cvDir, { recursive: true })
     await writeFile(join(cvDir, 'broken.json'), content)
 
-    expect(await repository.list()).toEqual([{ status: 'damaged', id: 'broken' }])
+    expect(await repository.list()).toEqual([{ status: 'damaged', id: 'broken', reason: 'damaged' }])
     await expect(repository.importJson(content)).rejects.toMatchObject({ reason: 'not-a-cv' })
   })
 })

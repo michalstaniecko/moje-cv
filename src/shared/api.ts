@@ -39,9 +39,13 @@ export type MenuCommand = 'new-cv' | 'add-sample' | 'import' | 'export-json' | '
 export type AppScreen = 'library' | 'clauses' | 'editor'
 
 // Pozycja na liście CV. Uszkodzony plik (niepoprawny JSON lub niezgodny ze schematem) jest widoczny, ale nie da się go otworzyć.
+// Dlaczego pliku CV nie da się otworzyć: uszkodzony (niepoprawny JSON, niezgodność ze schematem) albo zapisany
+// w nowszej wersji aplikacji (poprawny, ale ta wersja go nie zna). Renderer pokazuje kod w języku interfejsu.
+export type UnreadableCvReason = 'damaged' | 'newer-version'
+
 export type CvListEntry =
   | { status: 'ok'; id: string; name: string; updatedAt: string; tags: string[] }
-  | { status: 'damaged'; id: string }
+  | { status: 'damaged'; id: string; reason: UnreadableCvReason }
 
 export type Api = {
   // Informacje o aplikacji z procesu głównego – jedyne źródło numeru wersji (`app.getVersion()`).

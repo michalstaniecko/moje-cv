@@ -85,6 +85,10 @@ export const pt: Dictionary = {
     confirmDelete: (name) => `Apagar “${name}”? Não é possível desfazer.`,
     confirmDeleteDamaged: (fileName) => `Apagar o arquivo danificado “${fileName}”? Não é possível desfazer.`,
     damaged: 'Arquivo danificado – não é possível abri-lo',
+    newerVersion: (appName) => `Requer uma versão mais recente do ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Apagar o arquivo “${fileName}”? É um currículo de uma versão mais recente do ${appName} e será perdido. Não é possível desfazer.`,
+    loading: 'Carregando…',
     imported: (name) => `“${name}” importado.`,
     savedFile: (fileName) => `Arquivo salvo: ${fileName}`,
     importErrors: {

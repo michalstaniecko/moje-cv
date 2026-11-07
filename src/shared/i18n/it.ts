@@ -85,6 +85,10 @@ export const it: Dictionary = {
     confirmDelete: (name) => `Eliminare «${name}»? L’operazione non può essere annullata.`,
     confirmDeleteDamaged: (fileName) => `Eliminare il file danneggiato «${fileName}»? L’operazione non può essere annullata.`,
     damaged: 'File danneggiato – impossibile aprirlo',
+    newerVersion: (appName) => `Richiede una versione più recente di ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Eliminare il file «${fileName}»? È un CV di una versione più recente di ${appName} e andrà perso. L’operazione non può essere annullata.`,
+    loading: 'Caricamento…',
     imported: (name) => `«${name}» importato.`,
     savedFile: (fileName) => `File salvato: ${fileName}`,
     importErrors: {

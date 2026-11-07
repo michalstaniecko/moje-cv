@@ -85,6 +85,10 @@ export const ro: Dictionary = {
     confirmDelete: (name) => `Ștergi „${name}”? Acțiunea nu poate fi anulată.`,
     confirmDeleteDamaged: (fileName) => `Ștergi fișierul deteriorat „${fileName}”? Acțiunea nu poate fi anulată.`,
     damaged: 'Fișier deteriorat – nu poate fi deschis',
+    newerVersion: (appName) => `Necesită o versiune mai nouă de ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Ștergi fișierul „${fileName}”? Este un CV dintr-o versiune mai nouă de ${appName} și se va pierde. Acțiunea nu poate fi anulată.`,
+    loading: 'Se încarcă…',
     imported: (name) => `„${name}” a fost importat.`,
     savedFile: (fileName) => `Fișier salvat: ${fileName}`,
     importErrors: {

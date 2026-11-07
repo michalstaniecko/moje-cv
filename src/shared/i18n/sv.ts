@@ -85,6 +85,10 @@ export const sv: Dictionary = {
     confirmDelete: (name) => `Radera ”${name}”? Det går inte att ångra.`,
     confirmDeleteDamaged: (fileName) => `Radera den skadade filen ”${fileName}”? Det går inte att ångra.`,
     damaged: 'Skadad fil – kan inte öppnas',
+    newerVersion: (appName) => `Kräver en nyare version av ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Radera filen ”${fileName}”? Det är ett cv från en nyare version av ${appName} och går förlorat. Det går inte att ångra.`,
+    loading: 'Läser in …',
     imported: (name) => `Importerade ”${name}”.`,
     savedFile: (fileName) => `Sparade filen: ${fileName}`,
     importErrors: {

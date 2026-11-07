@@ -85,6 +85,10 @@ export const ru: Dictionary = {
     confirmDelete: (name) => `Удалить «${name}»? Это действие нельзя отменить.`,
     confirmDeleteDamaged: (fileName) => `Удалить поврежденный файл «${fileName}»? Это действие нельзя отменить.`,
     damaged: 'Файл поврежден – его не удается открыть',
+    newerVersion: (appName) => `Требуется более новая версия ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Удалить файл «${fileName}»? Это резюме из более новой версии ${appName}, оно будет потеряно. Это действие нельзя отменить.`,
+    loading: 'Загрузка…',
     imported: (name) => `Импортировано: «${name}».`,
     savedFile: (fileName) => `Файл сохранен: ${fileName}`,
     importErrors: {

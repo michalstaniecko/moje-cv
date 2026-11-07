@@ -100,6 +100,11 @@ export const en = {
     confirmDelete: (name: string) => `Delete “${name}”? This can’t be undone.`,
     confirmDeleteDamaged: (fileName: string) => `Delete the damaged file “${fileName}”? This can’t be undone.`,
     damaged: 'Damaged file – it can’t be opened',
+    // Plik CV zapisany w nowszej wersji aplikacji: poprawny, ale ta wersja go nie zna.
+    newerVersion: (appName: string) => `Needs a newer version of ${appName}`,
+    confirmDeleteNewer: (fileName: string, appName: string) =>
+      `Delete the file “${fileName}”? It is a CV from a newer version of ${appName} and will be lost. This can’t be undone.`,
+    loading: 'Loading…',
     imported: (name: string) => `Imported “${name}”.`,
     savedFile: (fileName: string) => `Saved file: ${fileName}`,
     // Dlaczego importowany plik został odrzucony – pokazywane po „Couldn’t import the CV.”.

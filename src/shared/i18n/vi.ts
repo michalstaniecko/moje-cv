@@ -85,6 +85,10 @@ export const vi: Dictionary = {
     confirmDelete: (name) => `Xóa “${name}”? Không thể hoàn tác thao tác này.`,
     confirmDeleteDamaged: (fileName) => `Xóa tệp bị hỏng “${fileName}”? Không thể hoàn tác thao tác này.`,
     damaged: 'Tệp bị hỏng – không thể mở',
+    newerVersion: (appName) => `Cần phiên bản ${appName} mới hơn`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Xóa tệp “${fileName}”? Đây là CV từ phiên bản ${appName} mới hơn và sẽ bị mất. Không thể hoàn tác thao tác này.`,
+    loading: 'Đang tải…',
     imported: (name) => `Đã nhập “${name}”.`,
     savedFile: (fileName) => `Đã lưu tệp: ${fileName}`,
     importErrors: {
