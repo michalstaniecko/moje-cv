@@ -43,7 +43,16 @@ export const uk: Dictionary = {
     imagesFilter: 'Зображення',
     exportCv: 'Експорт резюме у файл',
     importCv: 'Імпорт резюме з файлу',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Зміни в резюме не збережено.',
+      closeDetail: 'Якщо закрити вікно зараз, останні зміни буде втрачено.',
+      quitDetail: (appName) =>
+        `Якщо завершити ${appName} зараз, останні зміни буде втрачено.`,
+      closeAnyway: 'Усе одно закрити',
+      quitAnyway: 'Усе одно завершити',
+      backToEditor: 'Повернутися до редактора'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -142,6 +151,11 @@ export const uk: Dictionary = {
     openPdf: 'Відкрити',
     showInFolder: 'Показати у Finder',
     exportFailed: 'Не вдалося зберегти PDF. Спробуйте ще раз.',
+    saveFailed: 'Не вдалося зберегти зміни. Поки що останні зміни є тільки в цьому вікні.',
+    retrySave: 'Спробувати ще раз',
+    leaveUnsaved: 'Зміни не збережено. Усе одно вийти?',
+    leaveAnyway: 'Усе одно вийти',
+    stayInEditor: 'Залишитися в редакторі',
     remove: 'Видалити',
     appearance: 'Вигляд',
     accentColor: 'Колір акценту',

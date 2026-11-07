@@ -43,7 +43,16 @@ export const id: Dictionary = {
     imagesFilter: 'Gambar',
     exportCv: 'Ekspor CV ke File',
     importCv: 'Impor CV dari File',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Perubahan pada CV Anda belum disimpan.',
+      closeDetail: 'Jika Anda menutup jendela sekarang, perubahan terakhir Anda akan hilang.',
+      quitDetail: (appName) =>
+        `Jika Anda keluar dari ${appName} sekarang, perubahan terakhir Anda akan hilang.`,
+      closeAnyway: 'Tetap Tutup',
+      quitAnyway: 'Tetap Keluar',
+      backToEditor: 'Kembali ke Editor'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -142,6 +151,11 @@ export const id: Dictionary = {
     openPdf: 'Buka',
     showInFolder: 'Tampilkan di Finder',
     exportFailed: 'Tidak dapat menyimpan PDF. Coba lagi.',
+    saveFailed: 'Tidak dapat menyimpan perubahan. Untuk saat ini, perubahan terakhir Anda hanya ada di jendela ini.',
+    retrySave: 'Coba lagi',
+    leaveUnsaved: 'Perubahan Anda belum disimpan. Tetap keluar?',
+    leaveAnyway: 'Tetap keluar',
+    stayInEditor: 'Tetap di editor',
     remove: 'Hapus',
     appearance: 'Tampilan',
     accentColor: 'Warna aksen',

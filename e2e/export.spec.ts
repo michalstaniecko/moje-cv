@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
@@ -523,7 +523,10 @@ test('the CV editor is in English, including the save status, photo cropping and
   // Nieudany autozapis (plik CV zniknął z dysku).
   await rm(join(outputDir, 'user-data', 'cvs'), { recursive: true })
   await window.getByLabel('Full name').fill('Jane Doe')
-  await expect(window.getByRole('status').filter({ hasText: 'Couldn’t save changes' })).toBeVisible()
+  await expect(window.getByRole('alert').filter({ hasText: 'Couldn’t save changes' })).toHaveText(
+    'Couldn’t save changes. Your latest edits are only in this window for now.Try again'
+  )
+  await leaveEditorAnyway()
 })
 
 test('switching the language in the menu translates the open editor without losing unsaved changes or the undo history', async () => {
@@ -1826,16 +1829,84 @@ test('File → New CV, Add Sample CV and Import… work like the library buttons
   await expect(rows).toHaveCount(5)
 })
 
-test('File → New CV after a failed autosave keeps the editor open with the error, like ← Back', async () => {
+test('File → New CV after a failed autosave asks before leaving the editor, like ← Back', async () => {
   await openFirstCv()
-  await rm(join(outputDir, 'user-data', 'cvs'), { recursive: true })
+  await breakAutosave()
   await window.getByLabel('Full name').fill('Jane Doe')
-  await expect(window.getByRole('status').filter({ hasText: 'Couldn’t save changes' })).toBeVisible()
+  await expect(window.getByRole('alert')).toContainText('Couldn’t save changes')
 
   await clickMenuItem('File', 'New CV')
-  await expect(window.getByRole('status').filter({ hasText: 'Couldn’t save changes' })).toBeVisible()
+  const alert = window.getByRole('alert')
+  await expect(alert).toContainText('Your changes weren’t saved. Leave anyway?')
   await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
-  await expect(window.getByRole('list', { name: 'CV list' })).toHaveCount(0)
+  await alert.getByRole('button', { name: 'Leave anyway' }).click()
+  await expect(window.locator('.library')).toBeVisible()
+})
+
+test('leaving the editor after a failed autosave asks first: Stay keeps the edit and the focus, Leave anyway goes to the library', async () => {
+  await openFirstCv()
+  await breakAutosave()
+  await window.getByLabel('Full name').fill('Jane Doe')
+  await expect(window.getByRole('alert')).toContainText('Couldn’t save changes')
+
+  const back = window.getByRole('button', { name: '← CV Press' })
+  await back.click()
+  const alert = window.getByRole('alert')
+  await expect(alert).toContainText('Your changes weren’t saved. Leave anyway?')
+  await expect(alert.getByRole('button', { name: 'Stay in the editor' })).toBeFocused()
+  await alert.getByRole('button', { name: 'Stay in the editor' }).click()
+  await expect(alert).toContainText('Couldn’t save changes. Your latest edits are only in this window for now.')
+  await expect(back).toBeFocused()
+  await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
+
+  // Escape działa jak „Zostań w edytorze”.
+  await back.click()
+  await expect(alert.getByRole('button', { name: 'Stay in the editor' })).toBeFocused()
+  await window.keyboard.press('Escape')
+  await expect(alert).toContainText('Couldn’t save changes.')
+  await expect(back).toBeFocused()
+
+  await back.click()
+  await alert.getByRole('button', { name: 'Leave anyway' }).click()
+  await expect(window.locator('.library')).toBeVisible()
+})
+
+// Nieudany autozapis: katalog CV znika z dysku (plik zapamiętany, żeby dało się go przywrócić).
+async function breakAutosave() {
+  const cvsDir = join(outputDir, 'user-data', 'cvs')
+  const [fileName] = (await readdir(cvsDir)).filter((name) => name.endsWith('.json'))
+  const content = await readFile(join(cvsDir, fileName!), 'utf8')
+  await rm(cvsDir, { recursive: true })
+  return async () => {
+    await mkdir(cvsDir, { recursive: true })
+    await writeFile(join(cvsDir, fileName!), content)
+  }
+}
+
+// Wyjście z edytora mimo nieudanego zapisu, żeby zamknięcie aplikacji w `afterEach` nie czekało na pytanie.
+async function leaveEditorAnyway() {
+  await window.getByRole('button', { name: '← CV Press' }).click()
+  await window.getByRole('button', { name: 'Leave anyway' }).click()
+  await expect(window.locator('.library')).toBeVisible()
+}
+
+test('a failed autosave shows an alert with Try again, which saves once the cause is gone and hides the alert', async () => {
+  await openFirstCv()
+  const restore = await breakAutosave()
+  await window.getByLabel('Full name').fill('Jane Doe')
+  const alert = window.getByRole('alert')
+  await expect(alert).toContainText('Couldn’t save changes. Your latest edits are only in this window for now.')
+  // Komunikat jest raz – w alercie, a nie także w statusie paska narzędzi.
+  await expect(window.getByRole('status').filter({ hasText: 'Couldn’t save changes' })).toHaveCount(0)
+
+  await restore()
+  await alert.getByRole('button', { name: 'Try again' }).click()
+  await expect(window.getByRole('status').filter({ hasText: 'Changes saved' })).toBeVisible()
+  await expect(window.getByRole('alert')).toHaveCount(0)
+  await app.close()
+  await launch()
+  await openFirstCv()
+  await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
 })
 
 test('in the editor File → Export to PDF… and Export JSON… export the open CV, the JSON with the change typed just before', async () => {

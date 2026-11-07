@@ -52,7 +52,17 @@ export const en = {
     imagesFilter: 'Images',
     exportCv: 'Export CV to File',
     importCv: 'Import CV from File',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    // Natywne pytanie przy zamykaniu okna lub aplikacji, gdy edytor CV nie zdołał zapisać zmian.
+    unsavedChanges: {
+      message: 'Your changes to the CV weren’t saved.',
+      closeDetail: 'If you close the window now, your latest changes will be lost.',
+      quitDetail: (appName: string) =>
+        `If you quit ${appName} now, your latest changes will be lost.`,
+      closeAnyway: 'Close Anyway',
+      quitAnyway: 'Quit Anyway',
+      backToEditor: 'Back to Editor'
+    }
   },
   common: {
     back: (appName: string) => `← ${appName}`,
@@ -159,6 +169,11 @@ export const en = {
     openPdf: 'Open',
     showInFolder: 'Show in Finder',
     exportFailed: 'Couldn’t save the PDF. Try again.',
+    saveFailed: 'Couldn’t save changes. Your latest edits are only in this window for now.',
+    retrySave: 'Try again',
+    leaveUnsaved: 'Your changes weren’t saved. Leave anyway?',
+    leaveAnyway: 'Leave anyway',
+    stayInEditor: 'Stay in the editor',
     remove: 'Remove',
     appearance: 'Appearance',
     accentColor: 'Accent color',

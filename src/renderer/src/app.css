@@ -241,6 +241,18 @@ textarea:focus-visible {
   color: var(--ui-error);
 }
 
+/* Pasek błędu autozapisu pod paskiem narzędzi (poza nim, żeby pasek narzędzi mieścił się przy minimalnym oknie). */
+.editor-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 24px;
+  color: var(--ui-error);
+  background: var(--ui-panel-bg);
+  border-bottom: 1px solid var(--ui-error);
+}
+
 .toolbar-title {
   margin: 0;
   font-size: 16px;

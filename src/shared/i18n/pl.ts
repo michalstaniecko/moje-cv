@@ -43,7 +43,16 @@ export const pl: Dictionary = {
     imagesFilter: 'Obrazy',
     exportCv: 'Eksportuj CV do pliku',
     importCv: 'Importuj CV z pliku',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Zmiany w CV nie zostały zapisane.',
+      closeDetail: 'Jeśli zamkniesz teraz okno, ostatnie zmiany przepadną.',
+      quitDetail: (appName) =>
+        `Jeśli zakończysz teraz ${appName}, ostatnie zmiany przepadną.`,
+      closeAnyway: 'Zamknij mimo to',
+      quitAnyway: 'Zakończ mimo to',
+      backToEditor: 'Wróć do edytora'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -142,6 +151,11 @@ export const pl: Dictionary = {
     openPdf: 'Otwórz',
     showInFolder: 'Pokaż w Finderze',
     exportFailed: 'Nie udało się zapisać PDF. Spróbuj ponownie.',
+    saveFailed: 'Nie udało się zapisać zmian. Ostatnie zmiany są na razie tylko w tym oknie.',
+    retrySave: 'Spróbuj ponownie',
+    leaveUnsaved: 'Zmiany nie zostały zapisane. Wyjść mimo to?',
+    leaveAnyway: 'Wyjdź mimo to',
+    stayInEditor: 'Zostań w edytorze',
     remove: 'Usuń',
     appearance: 'Wygląd',
     accentColor: 'Kolor akcentu',

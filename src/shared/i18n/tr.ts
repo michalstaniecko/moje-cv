@@ -43,7 +43,16 @@ export const tr: Dictionary = {
     imagesFilter: 'Görüntüler',
     exportCv: 'CV’yi dosyaya aktar',
     importCv: 'CV’yi dosyadan içe aktar',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Özgeçmişteki değişiklikleriniz kaydedilmedi.',
+      closeDetail: 'Pencereyi şimdi kapatırsanız son değişiklikleriniz kaybolur.',
+      quitDetail: (appName) =>
+        `${appName} uygulamasından şimdi çıkarsanız son değişiklikleriniz kaybolur.`,
+      closeAnyway: 'Yine de Kapat',
+      quitAnyway: 'Yine de Çık',
+      backToEditor: 'Düzenleyiciye Dön'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -142,6 +151,11 @@ export const tr: Dictionary = {
     openPdf: 'Aç',
     showInFolder: 'Finder’da Göster',
     exportFailed: 'PDF kaydedilemedi. Yeniden deneyin.',
+    saveFailed: 'Değişiklikler kaydedilemedi. Son değişiklikleriniz şimdilik yalnızca bu pencerede.',
+    retrySave: 'Yeniden dene',
+    leaveUnsaved: 'Değişiklikleriniz kaydedilmedi. Yine de çıkılsın mı?',
+    leaveAnyway: 'Yine de çık',
+    stayInEditor: 'Düzenleyicide kal',
     remove: 'Kaldır',
     appearance: 'Görünüm',
     accentColor: 'Vurgu rengi',

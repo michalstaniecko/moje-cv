@@ -43,7 +43,16 @@ export const ru: Dictionary = {
     imagesFilter: 'Изображения',
     exportCv: 'Экспорт резюме в файл',
     importCv: 'Импорт резюме из файла',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Изменения в резюме не сохранены.',
+      closeDetail: 'Если закрыть окно сейчас, последние изменения будут потеряны.',
+      quitDetail: (appName) =>
+        `Если завершить ${appName} сейчас, последние изменения будут потеряны.`,
+      closeAnyway: 'Всё равно закрыть',
+      quitAnyway: 'Всё равно завершить',
+      backToEditor: 'Вернуться в редактор'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -142,6 +151,11 @@ export const ru: Dictionary = {
     openPdf: 'Открыть',
     showInFolder: 'Показать в Finder',
     exportFailed: 'Не удалось сохранить PDF. Попробуйте еще раз.',
+    saveFailed: 'Не удалось сохранить изменения. Пока последние изменения есть только в этом окне.',
+    retrySave: 'Повторить',
+    leaveUnsaved: 'Изменения не сохранены. Всё равно выйти?',
+    leaveAnyway: 'Всё равно выйти',
+    stayInEditor: 'Остаться в редакторе',
     remove: 'Удалить',
     appearance: 'Оформление',
     accentColor: 'Цвет акцента',

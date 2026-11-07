@@ -43,7 +43,16 @@ export const ro: Dictionary = {
     imagesFilter: 'Imagini',
     exportCv: 'Exportă CV-ul în fișier',
     importCv: 'Importă CV din fișier',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Modificările din CV nu au fost salvate.',
+      closeDetail: 'Dacă închizi fereastra acum, ultimele modificări se vor pierde.',
+      quitDetail: (appName) =>
+        `Dacă închizi ${appName} acum, ultimele modificări se vor pierde.`,
+      closeAnyway: 'Închide oricum',
+      quitAnyway: 'Ieși oricum',
+      backToEditor: 'Înapoi la editor'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -142,6 +151,11 @@ export const ro: Dictionary = {
     openPdf: 'Deschide',
     showInFolder: 'Afișează în Finder',
     exportFailed: 'PDF-ul nu a putut fi salvat. Încearcă din nou.',
+    saveFailed: 'Modificările nu au putut fi salvate. Deocamdată, ultimele modificări sunt doar în această fereastră.',
+    retrySave: 'Încearcă din nou',
+    leaveUnsaved: 'Modificările nu au fost salvate. Ieși oricum?',
+    leaveAnyway: 'Ieși oricum',
+    stayInEditor: 'Rămâi în editor',
     remove: 'Elimină',
     appearance: 'Aspect',
     accentColor: 'Culoare de accent',

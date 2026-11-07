@@ -43,7 +43,16 @@ export const de: Dictionary = {
     imagesFilter: 'Bilder',
     exportCv: 'Lebenslauf in Datei exportieren',
     importCv: 'Lebenslauf aus Datei importieren',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Deine Änderungen am Lebenslauf wurden nicht gesichert.',
+      closeDetail: 'Wenn du das Fenster jetzt schließt, gehen deine letzten Änderungen verloren.',
+      quitDetail: (appName) =>
+        `Wenn du ${appName} jetzt beendest, gehen deine letzten Änderungen verloren.`,
+      closeAnyway: 'Trotzdem schließen',
+      quitAnyway: 'Trotzdem beenden',
+      backToEditor: 'Zurück zum Editor'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -149,6 +158,11 @@ export const de: Dictionary = {
     openPdf: 'Öffnen',
     showInFolder: 'Im Finder zeigen',
     exportFailed: 'Das PDF konnte nicht gesichert werden. Versuche es erneut.',
+    saveFailed: 'Die Änderungen konnten nicht gesichert werden. Deine letzten Änderungen gibt es vorerst nur in diesem Fenster.',
+    retrySave: 'Erneut versuchen',
+    leaveUnsaved: 'Deine Änderungen wurden nicht gesichert. Trotzdem verlassen?',
+    leaveAnyway: 'Trotzdem verlassen',
+    stayInEditor: 'Im Editor bleiben',
     remove: 'Entfernen',
     appearance: 'Erscheinungsbild',
     accentColor: 'Akzentfarbe',

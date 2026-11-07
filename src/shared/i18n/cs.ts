@@ -43,7 +43,16 @@ export const cs: Dictionary = {
     imagesFilter: 'Obrázky',
     exportCv: 'Exportovat CV do souboru',
     importCv: 'Importovat CV ze souboru',
-    cvFilter: 'CV (JSON)'
+    cvFilter: 'CV (JSON)',
+    unsavedChanges: {
+      message: 'Změny v životopisu nebyly uloženy.',
+      closeDetail: 'Pokud teď okno zavřete, poslední změny se ztratí.',
+      quitDetail: (appName) =>
+        `Pokud teď ukončíte ${appName}, poslední změny se ztratí.`,
+      closeAnyway: 'Přesto zavřít',
+      quitAnyway: 'Přesto ukončit',
+      backToEditor: 'Zpět do editoru'
+    }
   },
   common: {
     back: (appName) => `← ${appName}`,
@@ -142,6 +151,11 @@ export const cs: Dictionary = {
     openPdf: 'Otevřít',
     showInFolder: 'Zobrazit ve Finderu',
     exportFailed: 'PDF se nepodařilo uložit. Zkuste to znovu.',
+    saveFailed: 'Změny se nepodařilo uložit. Vaše poslední úpravy jsou zatím jen v tomto okně.',
+    retrySave: 'Zkusit znovu',
+    leaveUnsaved: 'Změny nebyly uloženy. Přesto odejít?',
+    leaveAnyway: 'Přesto odejít',
+    stayInEditor: 'Zůstat v editoru',
     remove: 'Odstranit',
     appearance: 'Vzhled',
     accentColor: 'Barva zvýraznění',
