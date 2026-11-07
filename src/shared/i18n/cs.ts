@@ -39,7 +39,8 @@ export const cs: Dictionary = {
     helpPage: (appName) => `Nápověda pro ${appName}`,
     privacyPolicy: 'Zásady ochrany osobních údajů',
     reportIssue: 'Nahlásit problém…',
-    supportApp: (appName) => `Podpořit ${appName}…`
+    supportApp: (appName) => `Podpořit ${appName}…`,
+    checkForUpdates: 'Vyhledat aktualizace…'
   },
   dialogs: {
     exportPdf: 'Exportovat do PDF',
@@ -279,6 +280,19 @@ export const cs: Dictionary = {
       'Je to jen poděkování. Nic neodemyká: aplikace funguje v obou případech úplně stejně.'
     ],
     close: 'Zavřít'
+  },
+  updates: {
+    noticeLabel: 'Nová verze',
+    available: (appName, version) => `Je k dispozici nová verze ${appName}: ${version}.`,
+    availableDetail: (current) => `Máte verzi ${current}. Stáhněte novou verzi a nahraďte jí aplikaci ve složce Aplikace.`,
+    download: 'Stáhnout',
+    dismiss: 'Zavřít',
+    later: 'Později',
+    upToDate: (appName, version) => `Máte nejnovější verzi ${appName} (${version}).`,
+    failed: 'Aktualizace se nepodařilo vyhledat.',
+    failedDetail: 'Zkontrolujte připojení k internetu nebo se podívejte na nejnovější verzi na stránce vydání.',
+    openReleases: 'Otevřít stránku vydání',
+    ok: 'OK'
   },
   crash: {
     title: 'Něco se pokazilo',

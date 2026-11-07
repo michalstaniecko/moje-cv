@@ -39,7 +39,8 @@ export const nl: Dictionary = {
     helpPage: (appName) => `${appName}-help`,
     privacyPolicy: 'Privacybeleid',
     reportIssue: 'Meld een probleem…',
-    supportApp: (appName) => `Steun ${appName}…`
+    supportApp: (appName) => `Steun ${appName}…`,
+    checkForUpdates: 'Controleer op updates…'
   },
   dialogs: {
     exportPdf: 'Exporteer als PDF',
@@ -284,6 +285,19 @@ export const nl: Dictionary = {
       'Dit is alleen een bedankje. Het ontgrendelt niets: de app werkt hoe dan ook precies hetzelfde.'
     ],
     close: 'Sluit'
+  },
+  updates: {
+    noticeLabel: 'Nieuwe versie',
+    available: (appName, version) => `Er is een nieuwe versie van ${appName} beschikbaar: ${version}.`,
+    availableDetail: (current) => `Je hebt versie ${current}. Download de nieuwe versie en vervang daarmee de app in de map Apps.`,
+    download: 'Download',
+    dismiss: 'Sluit',
+    later: 'Later',
+    upToDate: (appName, version) => `Je hebt de nieuwste versie van ${appName} (${version}).`,
+    failed: 'Kan niet controleren op updates.',
+    failedDetail: 'Controleer je internetverbinding of bekijk de nieuwste versie op de releasepagina.',
+    openReleases: 'Open releasepagina',
+    ok: 'OK'
   },
   crash: {
     title: 'Er is iets misgegaan',

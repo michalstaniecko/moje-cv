@@ -39,7 +39,8 @@ export const es: Dictionary = {
     helpPage: (appName) => `Ayuda de ${appName}`,
     privacyPolicy: 'Política de privacidad',
     reportIssue: 'Informar de un problema…',
-    supportApp: (appName) => `Apoyar ${appName}…`
+    supportApp: (appName) => `Apoyar ${appName}…`,
+    checkForUpdates: 'Buscar actualizaciones…'
   },
   dialogs: {
     exportPdf: 'Exportar a PDF',
@@ -278,6 +279,19 @@ export const es: Dictionary = {
       'Es solo un agradecimiento. No desbloquea nada: la aplicación funciona exactamente igual en ambos casos.'
     ],
     close: 'Cerrar'
+  },
+  updates: {
+    noticeLabel: 'Nueva versión',
+    available: (appName, version) => `Hay una nueva versión de ${appName} disponible: ${version}.`,
+    availableDetail: (current) => `Tienes la versión ${current}. Descarga la nueva versión y sustituye con ella la app en la carpeta Aplicaciones.`,
+    download: 'Descargar',
+    dismiss: 'Cerrar',
+    later: 'Más tarde',
+    upToDate: (appName, version) => `Tienes la última versión de ${appName} (${version}).`,
+    failed: 'No se han podido buscar actualizaciones.',
+    failedDetail: 'Comprueba tu conexión a internet o consulta la última versión en la página de versiones.',
+    openReleases: 'Abrir página de versiones',
+    ok: 'OK'
   },
   crash: {
     title: 'Algo salió mal',

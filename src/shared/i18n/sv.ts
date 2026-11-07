@@ -39,7 +39,8 @@ export const sv: Dictionary = {
     helpPage: (appName) => `Hjälp för ${appName}`,
     privacyPolicy: 'Integritetspolicy',
     reportIssue: 'Rapportera ett problem…',
-    supportApp: (appName) => `Stöd ${appName}…`
+    supportApp: (appName) => `Stöd ${appName}…`,
+    checkForUpdates: 'Sök efter uppdateringar…'
   },
   dialogs: {
     exportPdf: 'Exportera till PDF',
@@ -282,6 +283,19 @@ export const sv: Dictionary = {
       'Det här är bara ett tack. Det låser inte upp något: appen fungerar precis likadant i båda fallen.'
     ],
     close: 'Stäng'
+  },
+  updates: {
+    noticeLabel: 'Ny version',
+    available: (appName, version) => `En ny version av ${appName} finns: ${version}.`,
+    availableDetail: (current) => `Du har version ${current}. Hämta den nya versionen och ersätt appen i mappen Program med den.`,
+    download: 'Hämta',
+    dismiss: 'Stäng',
+    later: 'Senare',
+    upToDate: (appName, version) => `Du har den senaste versionen av ${appName} (${version}).`,
+    failed: 'Det gick inte att söka efter uppdateringar.',
+    failedDetail: 'Kontrollera internetanslutningen eller se den senaste versionen på sidan med versioner.',
+    openReleases: 'Öppna sidan med versioner',
+    ok: 'OK'
   },
   crash: {
     title: 'Något gick fel',

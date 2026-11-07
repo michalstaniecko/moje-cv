@@ -31,6 +31,8 @@ async function launch({
   const env = { ...process.env } as Record<string, string>
   // Okno w tle (bez fokusu i niewidoczne); `MOJE_CV_E2E_HEADED=1` pokazuje je normalnie do debugowania.
   if (!process.env['MOJE_CV_E2E_HEADED']) env['MOJE_CV_E2E_HIDDEN'] = '1'
+  // Bez sprawdzania nowej wersji przy starcie: żaden test nie łączy się z GitHubem (ADR-0006).
+  env['MOJE_CV_UPDATE_URL'] = 'off'
   if (language) env['MOJE_CV_LANGUAGE'] = language
   else delete env['MOJE_CV_LANGUAGE']
   if (appearance) env['MOJE_CV_APPEARANCE'] = appearance
@@ -218,7 +220,13 @@ test('the whole menu and the document follow the interface language forced for t
   expect((await menuLabels('View')).items).toEqual(['Toggle Full Screen'])
   expect((await menuLabels('Window')).items).toEqual(['Minimize', 'Zoom', 'Bring All to Front'])
   expect((await menuLabels('Language')).items).toEqual(languageItems('System'))
-  expect((await menuLabels('Help')).items).toEqual(['CV Press Help', 'Privacy Policy', 'Report a Problem…', 'Support CV Press…'])
+  expect((await menuLabels('Help')).items).toEqual([
+    'CV Press Help',
+    'Privacy Policy',
+    'Report a Problem…',
+    'Check for Updates…',
+    'Support CV Press…'
+  ])
 
   await app.close()
   await launch({ language: 'pl' })
@@ -246,10 +254,12 @@ test('the whole menu and the document follow the interface language forced for t
     'Pomoc CV Press',
     'Polityka prywatności',
     'Zgłoś problem…',
+    'Sprawdź aktualizacje…',
     'Wesprzyj CV Press…'
   ])
 })
 
+// „Check for Updates…” nie otwiera adresu sam, tylko pokazuje dialog – sprawdza to e2e/updates.spec.ts.
 test('each Help menu item opens exactly its own address in the system browser, also after switching the language', async () => {
   await app.close()
   await launch({ language: null })
@@ -269,7 +279,7 @@ test('each Help menu item opens exactly its own address in the system browser, a
 
   await chooseLanguage('Polski')
   await expect.poll(() => menuLabels('Pomoc')).toMatchObject({
-    items: ['Pomoc CV Press', 'Polityka prywatności', 'Zgłoś problem…', 'Wesprzyj CV Press…']
+    items: ['Pomoc CV Press', 'Polityka prywatności', 'Zgłoś problem…', 'Sprawdź aktualizacje…', 'Wesprzyj CV Press…']
   })
   await clearOpenExternalCalls()
   await clickMenuItem('Pomoc', 'Zgłoś problem…')
@@ -2414,7 +2424,7 @@ test('the window cannot be made smaller than 960×640, where a long CV name does
 test('starting the app again brings the running window to the front instead of a second copy; another data folder runs its own copy', async () => {
   const executable = packagedExecutable ?? ((await import('electron')).default as unknown as string)
   const args = (userDataDir: string) => [...(packagedExecutable ? [] : ['.']), `--user-data-dir=${userDataDir}`]
-  const env = { ...process.env, MOJE_CV_E2E_HIDDEN: '1', MOJE_CV_LANGUAGE: 'en' } as Record<string, string>
+  const env = { ...process.env, MOJE_CV_E2E_HIDDEN: '1', MOJE_CV_LANGUAGE: 'en', MOJE_CV_UPDATE_URL: 'off' } as Record<string, string>
   // Okno zminimalizowane przed pokazaniem (`ready-to-show`) zostałoby przez nie przywrócone.
   await expect.poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isVisible())).toBe(true)
   await app.evaluate(({ app, BrowserWindow }) => {

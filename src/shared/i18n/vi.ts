@@ -39,7 +39,8 @@ export const vi: Dictionary = {
     helpPage: (appName) => `Trợ giúp ${appName}`,
     privacyPolicy: 'Chính sách quyền riêng tư',
     reportIssue: 'Báo cáo sự cố…',
-    supportApp: (appName) => `Ủng hộ ${appName}…`
+    supportApp: (appName) => `Ủng hộ ${appName}…`,
+    checkForUpdates: 'Kiểm tra bản cập nhật…'
   },
   dialogs: {
     exportPdf: 'Xuất ra PDF',
@@ -276,6 +277,19 @@ export const vi: Dictionary = {
       'Đây chỉ là lời cảm ơn. Nó không mở khóa gì cả: ứng dụng hoạt động hoàn toàn như nhau trong cả hai trường hợp.'
     ],
     close: 'Đóng'
+  },
+  updates: {
+    noticeLabel: 'Phiên bản mới',
+    available: (appName, version) => `Đã có phiên bản mới của ${appName}: ${version}.`,
+    availableDetail: (current) => `Bạn đang dùng phiên bản ${current}. Hãy tải phiên bản mới và thay thế ứng dụng trong thư mục Ứng dụng.`,
+    download: 'Tải về',
+    dismiss: 'Đóng',
+    later: 'Để sau',
+    upToDate: (appName, version) => `Bạn đang dùng phiên bản mới nhất của ${appName} (${version}).`,
+    failed: 'Không thể kiểm tra bản cập nhật.',
+    failedDetail: 'Hãy kiểm tra kết nối internet hoặc xem phiên bản mới nhất trên trang phát hành.',
+    openReleases: 'Mở trang phát hành',
+    ok: 'OK'
   },
   crash: {
     title: 'Đã xảy ra sự cố',

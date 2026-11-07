@@ -17,6 +17,8 @@ async function launch({ language = 'en' }: { language?: InterfaceLanguage | null
   const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
   const env = { MOJE_CV_APPEARANCE: 'light', ...process.env } as Record<string, string>
   if (!process.env['MOJE_CV_E2E_HEADED']) env['MOJE_CV_E2E_HIDDEN'] = '1'
+  // Bez sprawdzania nowej wersji przy starcie: żaden test nie łączy się z GitHubem (ADR-0006).
+  env['MOJE_CV_UPDATE_URL'] = 'off'
   if (language) env['MOJE_CV_LANGUAGE'] = language
   else delete env['MOJE_CV_LANGUAGE']
   app = await electron.launch(

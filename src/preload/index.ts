@@ -85,6 +85,18 @@ const api: Api = {
     isAvailable: () => ipcRenderer.invoke('sponsor:is-available'),
     open: () => ipcRenderer.invoke('sponsor:open')
   },
+  updates: {
+    notice: () => ipcRenderer.invoke('updates:notice'),
+    onNotice: (listener) => {
+      const changed = (_event: Electron.IpcRendererEvent, version: string) => listener(version)
+      ipcRenderer.on('updates:notice-changed', changed)
+      return () => {
+        ipcRenderer.off('updates:notice-changed', changed)
+      }
+    },
+    download: () => ipcRenderer.invoke('updates:download'),
+    dismiss: () => ipcRenderer.invoke('updates:dismiss')
+  },
   print: {
     getDocument: () => ipcRenderer.invoke('print:document'),
     ready: () => ipcRenderer.send('print:ready')

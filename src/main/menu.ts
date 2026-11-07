@@ -14,10 +14,15 @@ import { currentScreen, isEditorActive, trackScreen } from './screens'
 // Menu aplikacji w języku interfejsu, przebudowywane przy zmianie języka, wyglądu (zaznaczenie radio) i ekranu
 // (aktywność pozycji menu Plik). Cofnij / Ponów w edytorze CV działają na historii CV (jak Cmd+Z w edytorze),
 // a poza edytorem jak zwykłe cofanie pola tekstowego.
-export function registerAppMenu(language: InterfaceLanguageState, appearance: AppearanceState): void {
+// `checkForUpdates` to „Check for Updates…” z menu Pomoc (ADR-0006, tylko poza Mac App Store).
+export function registerAppMenu(
+  language: InterfaceLanguageState,
+  appearance: AppearanceState,
+  checkForUpdates: (window?: BrowserWindow) => void
+): void {
   const build = () => {
     app.setAboutPanelOptions(aboutPanelOptions(language.dictionary().appName))
-    Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate(language, appearance)))
+    Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate(language, appearance, checkForUpdates)))
   }
   ipcMain.on('menu:screen', (event, screen: unknown) => {
     trackScreen(event.sender, requireAppScreen(screen), build)
@@ -63,7 +68,11 @@ function menuCommand(command: MenuCommand, enabled: ReadonlySet<MenuCommand>): M
   }
 }
 
-function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceState): MenuItemConstructorOptions[] {
+function menuTemplate(
+  language: InterfaceLanguageState,
+  appearance: AppearanceState,
+  checkForUpdates: (window?: BrowserWindow) => void
+): MenuItemConstructorOptions[] {
   const dictionary = language.dictionary()
   const { appName, menu } = dictionary
   const appMenu: MenuItemConstructorOptions = {
@@ -148,7 +157,8 @@ function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceSt
     choose: (choice) => void appearance.choose(choice)
   })
   // Pomoc: rola `help` daje na macOS systemowe pole wyszukiwania pozycji menu. Pozycje otwierają stałe adresy
-  // w przeglądarce prosto z procesu głównego (bez IPC); Sponsor link tylko poza Mac App Store.
+  // w przeglądarce prosto z procesu głównego (bez IPC); Sponsor link i sprawdzanie aktualizacji (dialog przy oknie,
+  // z którego kliknięto) tylko poza Mac App Store.
   const helpMenu: MenuItemConstructorOptions = {
     label: menu.help,
     role: 'help',
@@ -156,7 +166,8 @@ function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceSt
       dictionary,
       macAppStore: isMacAppStore(),
       open: (url) =>
-        void shell.openExternal(url).catch((error: unknown) => console.error('Nie udało się otworzyć adresu', url, error))
+        void shell.openExternal(url).catch((error: unknown) => console.error('Nie udało się otworzyć adresu', url, error)),
+      checkForUpdates: (window) => checkForUpdates(window instanceof BrowserWindow ? window : undefined)
     })
   }
   return process.platform === 'darwin'

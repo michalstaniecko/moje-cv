@@ -110,6 +110,15 @@ export type Api = {
     isAvailable: () => Promise<boolean>
     open: () => Promise<void>
   }
+  // Update notice (ADR-0006): wersję do pokazania zna proces główny (w Mac App Store zawsze `null`); on też buduje
+  // adres strony wydania i zapamiętuje zamknięcie. Renderer nie przekazuje ani URL-a, ani numeru wersji.
+  updates: {
+    notice: () => Promise<string | null>
+    // Zwraca funkcję wypisania.
+    onNotice: (listener: (version: string) => void) => () => void
+    download: () => Promise<void>
+    dismiss: () => Promise<void>
+  }
   // Używane wyłącznie przez ukryte okno wydruku.
   print: {
     getDocument: () => Promise<CvDocument>
