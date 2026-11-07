@@ -26,11 +26,14 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | Nowe CV | [ ] | [ ] |
 | „Dodaj przykładowe CV” | [ ] | [ ] |
 | Pusty stan biblioteki z „Dodaj przykładowe CV” (#70) | [ ] | [ ] |
+| „Wczytywanie…” zamiast pustej listy przy starcie z dużą biblioteką (#70) | [ ] | [ ] |
 | Duplikowanie | [ ] | [ ] |
 | Zmiana nazwy | [ ] | [ ] |
 | Tagi i filtr po tagach | [ ] | [ ] |
 | Usuwanie z potwierdzeniem | [ ] | [ ] |
 | Uszkodzony plik CV jest widoczny i da się go usunąć | [ ] | [ ] |
+| Plik CV z nowszej wersji (`"schemaVersion": 99`) ma „Wymaga nowszej wersji CV Press”, nie da się go otworzyć, a usunięcie ma osobne potwierdzenie (#70) | [ ] | [ ] |
+| Klawiatura: po zamknięciu zmiany nazwy, tagów i potwierdzenia usunięcia fokus wraca na przycisk wiersza; po usunięciu przechodzi na sąsiednie CV (#70) | [ ] | [ ] |
 
 ## Edytor CV
 

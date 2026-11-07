@@ -1737,6 +1737,110 @@ test('filters the CV list by tags (all selected tags), keeps the filter for the 
   await expect(window.getByRole('group', { name: 'Filter by tag' }).getByRole('button', { pressed: true })).toHaveCount(0)
 })
 
+test('a CV file from a newer version of the app is marked as needing a newer version, not as damaged, and its deletion says what is lost', async () => {
+  const library = window.getByRole('list', { name: 'CV list' })
+  await expect(library.getByRole('listitem')).toHaveCount(1)
+  const cvDir = join(outputDir, 'user-data', 'cvs')
+  await writeFile(join(cvDir, 'future.json'), JSON.stringify({ ...sampleCvs.en, id: 'future', schemaVersion: 99 }))
+  await writeFile(join(cvDir, 'broken.json'), '{ not json')
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
+  await window.getByRole('button', { name: '← CV Press' }).click()
+
+  const future = library.getByRole('listitem').filter({ hasText: 'future.json' })
+  const broken = library.getByRole('listitem').filter({ hasText: 'broken.json' })
+  await expect(future).toContainText('Needs a newer version of CV Press')
+  await expect(future).not.toContainText('Damaged file')
+  await expect(future.getByRole('button', { name: 'Open' })).toHaveCount(0)
+  await expect(broken).toContainText('Damaged file')
+
+  await future.getByRole('button', { name: 'Delete' }).click()
+  await expect(future.getByRole('alertdialog')).toContainText(
+    'Delete the file “future.json”? It is a CV from a newer version of CV Press and will be lost. This can’t be undone.'
+  )
+  await future.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(future).toHaveCount(0)
+  await expect(broken).toHaveCount(1)
+})
+
+test('an empty library offers “Add sample CV”, which adds the Sample CV at the top without opening it', async () => {
+  const library = window.getByRole('list', { name: 'CV list' })
+  const rows = library.getByRole('listitem')
+  await rows.filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Delete' }).click()
+  await library.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(rows).toHaveCount(0)
+
+  const emptyState = window.locator('.library-empty-state')
+  await expect(emptyState).toContainText('You don’t have any CVs yet. Click “New CV”.')
+  await emptyState.getByRole('button', { name: 'Add sample CV' }).click()
+  await expect(rows.locator('.library-item-name')).toHaveText(['Sample CV'])
+  await expect(emptyState).toHaveCount(0)
+  await expect(window.locator('.preview')).toHaveCount(0)
+})
+
+test('while the CV list is loading the library says “Loading…”, not that it is empty', async () => {
+  await app.evaluate(({ ipcMain }) => {
+    const release: { resolve?: () => void } = {}
+    ;(globalThis as { releaseCvList?: typeof release }).releaseCvList = release
+    ipcMain.removeHandler('cv:list')
+    ipcMain.handle('cv:list', () => new Promise((resolve) => (release.resolve = () => resolve([]))))
+  })
+  await window.reload()
+
+  const libraryScreen = window.locator('.library')
+  await expect(libraryScreen.getByRole('status')).toHaveText('Loading…')
+  await expect(window.getByText('You don’t have any CVs yet. Click “New CV”.')).toHaveCount(0)
+  await app.evaluate(() => (globalThis as { releaseCvList?: { resolve?: () => void } }).releaseCvList?.resolve?.())
+  await expect(window.getByText('You don’t have any CVs yet. Click “New CV”.')).toBeVisible()
+  await expect(window.getByText('Loading…')).toHaveCount(0)
+})
+
+test('closing a row form returns the focus to the button that opened it, and deleting a CV moves it to the next one', async () => {
+  const library = window.getByRole('list', { name: 'CV list' })
+  const rows = library.getByRole('listitem')
+  const row = (name: string) => rows.filter({ hasText: name })
+  for (const name of ['First', 'Second']) {
+    await window.getByRole('button', { name: 'New CV', exact: true }).click()
+    await row('New CV').getByRole('button', { name: 'Rename' }).click()
+    await library.getByLabel('CV name').fill(name)
+    await library.getByLabel('CV name').press('Enter')
+    await expect(row(name)).toHaveCount(1)
+  }
+  await expect(rows.locator('.library-item-name')).toHaveText(['Second', 'First', 'Sample CV'])
+
+  // Zmiana nazwy: Escape i zapis wracają na „Rename” tego CV, także gdy CV przeskoczyło na górę listy.
+  await row('First').getByRole('button', { name: 'Rename' }).click()
+  await library.getByLabel('CV name').press('Escape')
+  await expect(row('First').getByRole('button', { name: 'Rename' })).toBeFocused()
+  await row('First').getByRole('button', { name: 'Rename' }).click()
+  await library.getByLabel('CV name').fill('First renamed')
+  await library.getByLabel('CV name').press('Enter')
+  await expect(rows.locator('.library-item-name')).toHaveText(['First renamed', 'Second', 'Sample CV'])
+  await expect(row('First renamed').getByRole('button', { name: 'Rename' })).toBeFocused()
+
+  // Tagi: „Done” wraca na „Tags”.
+  await row('Second').getByRole('button', { name: 'Tags' }).click()
+  await library.getByRole('button', { name: 'Done' }).click()
+  await expect(row('Second').getByRole('button', { name: 'Tags' })).toBeFocused()
+
+  // Usuwanie: „Cancel” wraca na „Delete”, a usunięcie przenosi fokus na „Open” następnego CV, przy ostatnim na poprzednie.
+  await row('Second').getByRole('button', { name: 'Delete' }).click()
+  await library.getByRole('alertdialog').getByRole('button', { name: 'Cancel' }).click()
+  await expect(row('Second').getByRole('button', { name: 'Delete' })).toBeFocused()
+  await row('Second').getByRole('button', { name: 'Delete' }).click()
+  await library.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(rows.locator('.library-item-name')).toHaveText(['First renamed', 'Sample CV'])
+  await expect(row('Sample CV').getByRole('button', { name: 'Open' })).toBeFocused()
+  await row('Sample CV').getByRole('button', { name: 'Delete' }).click()
+  await library.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(row('First renamed').getByRole('button', { name: 'Open' })).toBeFocused()
+
+  // Po usunięciu ostatniego CV fokus jest na „New CV”.
+  await row('First renamed').getByRole('button', { name: 'Delete' }).click()
+  await library.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(rows).toHaveCount(0)
+  await expect(window.getByRole('button', { name: 'New CV', exact: true })).toBeFocused()
+})
+
 test('exports a CV to a JSON file and imports it back as a new CV; an invalid file leaves the library unchanged', async () => {
   const library = window.getByRole('list', { name: 'CV list' })
   const rows = library.getByRole('listitem')

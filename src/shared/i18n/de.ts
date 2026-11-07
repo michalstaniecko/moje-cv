@@ -76,6 +76,10 @@ export const de: Dictionary = {
     confirmDeleteDamaged: (fileName) =>
       `Beschädigte Datei „${fileName}“ löschen? Das kann nicht rückgängig gemacht werden.`,
     damaged: 'Beschädigte Datei – kann nicht geöffnet werden',
+    newerVersion: (appName) => `Erfordert eine neuere Version von ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `Datei „${fileName}“ löschen? Es ist ein Lebenslauf aus einer neueren Version von ${appName} und geht verloren. Das kann nicht rückgängig gemacht werden.`,
+    loading: 'Wird geladen …',
     imported: (name) => `„${name}“ importiert.`,
     savedFile: (fileName) => `Datei gesichert: ${fileName}`,
     importErrors: {

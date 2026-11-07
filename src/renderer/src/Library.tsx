@@ -13,6 +13,11 @@ type DamagedEntry = Extract<CvListEntry, { status: 'damaged' }>
 // Tryb pojedynczego wiersza: zwykły, zmiana nazwy, edycja tagów albo potwierdzenie usunięcia.
 type RowMode = { id: string; kind: 'rename' | 'tags' | 'confirm-delete' } | null
 
+// Przycisk, który dostaje fokus po zamknięciu trybu wiersza albo po usunięciu CV. Szukany po atrybutach
+// `data-cv-id` i `data-action` dopiero po odświeżeniu listy, bo zmiana nazwy przesuwa CV na górę.
+type RowAction = 'open' | 'tags' | 'rename' | 'delete'
+type FocusTarget = { id: string; action: RowAction } | 'new-cv'
+
 // Komunikat tłumaczony przy wyświetlaniu, więc zmiana języka obejmuje także widoczny już komunikat.
 type Message = (dictionary: Dictionary) => string
 type Failure = keyof Dictionary['library']['errors']
@@ -36,6 +41,8 @@ export function Library({
 }) {
   const [entries, setEntries] = useState<CvListEntry[] | null>(null)
   const [rowMode, setRowMode] = useState<RowMode>(null)
+  const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null)
+  const main = useRef<HTMLElement>(null)
   const [error, setError] = useState<Message | null>(null)
   const [notice, setNotice] = useState<Message | null>(null)
   const showError = (message: Message) => setError(() => message)
@@ -50,7 +57,7 @@ export function Library({
   const selectedTags = tagFilter.filter((tag) => allTags.includes(tag))
   const toggleTag = (tag: string) =>
     onTagFilterChange(selectedTags.includes(tag) ? selectedTags.filter((other) => other !== tag) : [...selectedTags, tag])
-  // Przy aktywnym filtrze uszkodzone pliki są ukryte – nie mają tagów.
+  // Przy aktywnym filtrze nieczytelne pliki (uszkodzone i z nowszej wersji) są ukryte – nie mają tagów.
   const visibleEntries = entries?.filter(
     (entry) => selectedTags.length === 0 || (entry.status === 'ok' && selectedTags.every((tag) => entry.tags.includes(tag)))
   )
@@ -68,18 +75,49 @@ export function Library({
     if (tagFilter.some((tag) => !existing.has(tag))) onTagFilterChange(tagFilter.filter((tag) => existing.has(tag)))
   }, [entries, tagFilter, onTagFilterChange])
 
-  // Wykonuje operację, odświeża listę i zamyka edycję wiersza; błąd pokazuje jako komunikat.
-  const runAndRefresh = async (action: () => Promise<unknown>, failure: Failure) => {
+  // Fokus na przycisk wskazany przez `focusTarget`, gdy już jest na ekranie. Wiersz pliku nieczytelnego nie ma „Otwórz”,
+  // więc fokus trafia wtedy na jego „Usuń”.
+  useEffect(() => {
+    if (!focusTarget) return
+    const button =
+      focusTarget === 'new-cv'
+        ? document.querySelector<HTMLElement>('[data-action="new-cv"]')
+        : (main.current?.querySelector<HTMLElement>(`[data-cv-id="${CSS.escape(focusTarget.id)}"][data-action="${focusTarget.action}"]`) ??
+          main.current?.querySelector<HTMLElement>(`[data-cv-id="${CSS.escape(focusTarget.id)}"][data-action="delete"]`))
+    if (!button) return
+    button.focus()
+    setFocusTarget(null)
+  }, [focusTarget, entries, rowMode])
+
+  // Zamyka tryb wiersza i oddaje fokus przyciskowi, który go otworzył.
+  const closeRow = (id: string, action: RowAction) => {
+    setRowMode(null)
+    setFocusTarget({ id, action })
+  }
+
+  // Wykonuje operację, odświeża listę i zamyka edycję wiersza (fokus na `focusAfter`); błąd pokazuje jako komunikat.
+  const runAndRefresh = async (action: () => Promise<unknown>, failure: Failure, focusAfter?: FocusTarget) => {
     setError(null)
     setNotice(null)
     try {
       await action()
-      setRowMode(null)
       await refresh()
+      setRowMode(null)
+      if (focusAfter) setFocusTarget(focusAfter)
     } catch {
       showError(failureMessage(failure))
     }
   }
+
+  // Po usunięciu CV fokus idzie na następny wiersz, przy ostatnim na poprzedni, a przy pustej liście na „Nowe CV”.
+  const deleteEntry = (id: string) => {
+    const visible = visibleEntries ?? []
+    const index = visible.findIndex((entry) => entry.id === id)
+    const neighbour = visible[index + 1] ?? visible[index - 1]
+    return runAndRefresh(() => window.api.cv.delete(id), 'delete', neighbour ? { id: neighbour.id, action: 'open' } : 'new-cv')
+  }
+
+  const addSample = () => createAndShow(() => window.api.cv.addSample())
 
   // Nowe CV (puste lub Sample CV): filtr tagów jest czyszczony, żeby nowe CV (bez tagów) było widać na liście.
   const createAndShow = (create: () => Promise<unknown>) =>
@@ -162,10 +200,10 @@ export function Library({
         </button>
         <NewCvButton
           onCreate={() => createAndShow(() => window.api.cv.create())}
-          onAddSample={() => createAndShow(() => window.api.cv.addSample())}
+          onAddSample={addSample}
         />
       </header>
-      <main className="library">
+      <main ref={main} className="library">
         {error && (
           <p className="library-error" role="alert">
             {error(dictionary)}
@@ -176,7 +214,19 @@ export function Library({
             {notice(dictionary)}
           </p>
         )}
-        {entries?.length === 0 && <p className="library-empty">{t.empty}</p>}
+        {entries === null && !error && (
+          <p className="library-loading" role="status">
+            {t.loading}
+          </p>
+        )}
+        {entries?.length === 0 && (
+          <div className="library-empty-state">
+            <p className="library-empty">{t.empty}</p>
+            <button type="button" onClick={addSample}>
+              {t.addSample}
+            </button>
+          </div>
+        )}
         {allTags.length > 0 && (
           <TagFilterBar tags={allTags} selected={selectedTags} onToggle={toggleTag} onClear={() => onTagFilterChange([])} />
         )}
@@ -190,25 +240,31 @@ export function Library({
                 {mode === 'confirm-delete' ? (
                   <ConfirmDelete
                     label={
-                      entry.status === 'ok' ? t.confirmDelete(cvDisplayName(entry.name, t.untitled)) : t.confirmDeleteDamaged(`${entry.id}.json`)
+                      entry.status === 'ok'
+                        ? t.confirmDelete(cvDisplayName(entry.name, t.untitled))
+                        : entry.reason === 'newer-version'
+                          ? t.confirmDeleteNewer(`${entry.id}.json`, appName)
+                          : t.confirmDeleteDamaged(`${entry.id}.json`)
                     }
-                    onDelete={() => runAndRefresh(() => window.api.cv.delete(entry.id), 'delete')}
-                    onCancel={() => setRowMode(null)}
+                    onDelete={() => deleteEntry(entry.id)}
+                    onCancel={() => closeRow(entry.id, 'delete')}
                   />
                 ) : entry.status === 'damaged' ? (
                   <DamagedRow entry={entry} onDelete={askDelete} />
                 ) : mode === 'rename' ? (
                   <RenameForm
                     entry={entry}
-                    onSubmit={(name) => runAndRefresh(() => window.api.cv.rename(entry.id, name), 'rename')}
-                    onCancel={() => setRowMode(null)}
+                    onSubmit={(name) =>
+                      runAndRefresh(() => window.api.cv.rename(entry.id, name), 'rename', { id: entry.id, action: 'rename' })
+                    }
+                    onCancel={() => closeRow(entry.id, 'rename')}
                   />
                 ) : mode === 'tags' ? (
                   <TagsEditor
                     entry={entry}
                     otherTags={tagsOf((entries ?? []).filter((other) => other.id !== entry.id))}
                     onChange={(tags) => saveTags(entry.id, tags)}
-                    onDone={() => setRowMode(null)}
+                    onDone={() => closeRow(entry.id, 'tags')}
                   />
                 ) : (
                   <>
@@ -218,7 +274,7 @@ export function Library({
                       {entry.tags.length > 0 && <TagChips tags={entry.tags} />}
                     </div>
                     <div className="library-item-actions">
-                      <button type="button" onClick={() => open(entry.id)}>
+                      <button type="button" data-cv-id={entry.id} data-action="open" onClick={() => open(entry.id)}>
                         {t.open}
                       </button>
                       <button type="button" onClick={() => runAndRefresh(() => window.api.cv.duplicate(entry.id), 'duplicate')}>
@@ -227,13 +283,23 @@ export function Library({
                       <button type="button" onClick={() => exportFile(entry.id)}>
                         {t.exportFile}
                       </button>
-                      <button type="button" onClick={() => setRowMode({ id: entry.id, kind: 'tags' })}>
+                      <button
+                        type="button"
+                        data-cv-id={entry.id}
+                        data-action="tags"
+                        onClick={() => setRowMode({ id: entry.id, kind: 'tags' })}
+                      >
                         {t.tags}
                       </button>
-                      <button type="button" onClick={() => setRowMode({ id: entry.id, kind: 'rename' })}>
+                      <button
+                        type="button"
+                        data-cv-id={entry.id}
+                        data-action="rename"
+                        onClick={() => setRowMode({ id: entry.id, kind: 'rename' })}
+                      >
                         {t.rename}
                       </button>
-                      <button type="button" onClick={askDelete}>
+                      <button type="button" data-cv-id={entry.id} data-action="delete" onClick={askDelete}>
                         {common.delete}
                       </button>
                     </div>
@@ -288,7 +354,7 @@ function NewCvButton({ onCreate, onAddSample }: { onCreate: () => void; onAddSam
         }
       }}
     >
-      <button type="button" className="button-primary split-button-main" onClick={onCreate}>
+      <button type="button" className="button-primary split-button-main" data-action="new-cv" onClick={onCreate}>
         {t.newCv}
       </button>
       <button
@@ -497,16 +563,17 @@ function ConfirmDelete({ label, onDelete, onCancel }: { label: string; onDelete:
   )
 }
 
+// Wiersz pliku, którego ta wersja aplikacji nie otworzy: uszkodzonego albo zapisanego w nowszej wersji.
 function DamagedRow({ entry, onDelete }: { entry: DamagedEntry; onDelete: () => void }) {
-  const { common, library } = useDictionary()
+  const { appName, common, library } = useDictionary()
   return (
     <>
       <div className="library-item-info">
         <span className="library-item-name">{entry.id}.json</span>
-        <span className="library-item-damaged">{library.damaged}</span>
+        <span className="library-item-damaged">{entry.reason === 'newer-version' ? library.newerVersion(appName) : library.damaged}</span>
       </div>
       <div className="library-item-actions">
-        <button type="button" onClick={onDelete}>
+        <button type="button" data-cv-id={entry.id} data-action="delete" onClick={onDelete}>
           {common.delete}
         </button>
       </div>

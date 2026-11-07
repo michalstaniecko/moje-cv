@@ -75,6 +75,10 @@ export const es: Dictionary = {
     confirmDelete: (name) => `¿Eliminar «${name}»? Esta acción no se puede deshacer.`,
     confirmDeleteDamaged: (fileName) => `¿Eliminar el archivo dañado «${fileName}»? Esta acción no se puede deshacer.`,
     damaged: 'Archivo dañado: no se puede abrir',
+    newerVersion: (appName) => `Requiere una versión más reciente de ${appName}`,
+    confirmDeleteNewer: (fileName, appName) =>
+      `¿Eliminar el archivo «${fileName}»? Es un CV de una versión más reciente de ${appName} y se perderá. Esta acción no se puede deshacer.`,
+    loading: 'Cargando…',
     imported: (name) => `Se ha importado «${name}».`,
     savedFile: (fileName) => `Archivo guardado: ${fileName}`,
     importErrors: {
