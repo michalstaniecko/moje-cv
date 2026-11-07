@@ -7,6 +7,7 @@
 - Sponsor bar at the bottom of the window: the app is free, with a "Buy me a coffee" link to GitHub Sponsors and a "More" dialog. Hidden in the Mac App Store build.
 - "Add sample CV" in the menu under the arrow next to "New CV": adds the Sample CV again, in the interface language.
 - CV language in each CV's settings: sets the fixed text on the document ("present") and the page language. New CVs start in the interface language; existing CVs are Polish.
+- A translated "Something went wrong" screen with Reload instead of a blank window; a crashed window reloads itself, and repeated crashes ask before reloading again.
 
 ### Fixed
 - The English Sample CV printed the Polish word "obecnie" instead of "present".
@@ -14,6 +15,7 @@
 
 ### Changed
 - The app is now called "CV Press" (previously "Moje CV"). Existing CVs and settings stay where they were.
+- The app never opens new windows or navigates away from its own screens.
 
 ## [0.3.0] – 2026-10-27
 
