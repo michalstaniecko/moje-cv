@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Help menu: CV Press Help, Privacy Policy and Report a Problem… open the help page, the privacy policy and a new issue in the public repository in the browser; Support CV Press… opens GitHub Sponsors (not in the Mac App Store build).
 - File menu: New CV (⌘N), Add Sample CV, Import… (⌘O), Export JSON…, Export to PDF… (⌘E) and Close Window (⌘W). Exporting is available in the CV editor; in the consent clause library creating and importing are greyed out.
 - View menu with Toggle Full Screen, Services in the CV Press menu, and Bring All to Front in the Window menu, which now lists the open windows.
 - The app version is shown in the "About CV Press" panel (with copyright), at the bottom of the CV library and in the Sponsor bar's "More" dialog.
