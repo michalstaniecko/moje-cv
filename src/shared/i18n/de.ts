@@ -268,6 +268,20 @@ export const de: Dictionary = {
     ],
     close: 'Schließen'
   },
+  crash: {
+    title: 'Etwas ist schiefgelaufen',
+    message: 'Deine Lebensläufe sind sicher – Änderungen werden automatisch gespeichert. Lade die App neu, um fortzufahren.',
+    reload: 'Neu laden',
+    repeated: {
+      message: (appName) => `Das Fenster von ${appName} hat mehrmals hintereinander nicht mehr funktioniert.`,
+      detail: 'Deine gespeicherten Lebensläufe sind sicher. Du kannst das Fenster neu laden oder die App beenden.'
+    },
+    unexpected: {
+      title: 'Ein unerwarteter Fehler ist aufgetreten',
+      message: (appName) =>
+        `${appName} ist auf ein Problem gestoßen. Deine gespeicherten Lebensläufe sind sicher. Wenn etwas nicht wie erwartet funktioniert, beende die App und öffne sie erneut.`
+    }
+  },
   defaultContent: {
     cvName: 'Neuer Lebenslauf',
     copyName: (name) => `${name} (Kopie)`,

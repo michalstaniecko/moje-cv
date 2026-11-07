@@ -260,6 +260,20 @@ export const es: Dictionary = {
     ],
     close: 'Cerrar'
   },
+  crash: {
+    title: 'Algo salió mal',
+    message: 'Tus CV están a salvo: los cambios se guardan automáticamente. Vuelve a cargar la aplicación para continuar.',
+    reload: 'Volver a cargar',
+    repeated: {
+      message: (appName) => `La ventana de ${appName} ha dejado de funcionar varias veces seguidas.`,
+      detail: 'Tus CV guardados están a salvo. Puedes volver a cargar la ventana o salir de la aplicación.'
+    },
+    unexpected: {
+      title: 'Se ha producido un error inesperado',
+      message: (appName) =>
+        `${appName} ha tenido un problema. Tus CV guardados están a salvo. Si algo no funciona como debería, sal de la aplicación y vuelve a abrirla.`
+    }
+  },
   defaultContent: {
     cvName: 'Nuevo CV',
     copyName: (name) => `${name} (copia)`,

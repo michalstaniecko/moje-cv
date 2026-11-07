@@ -260,6 +260,20 @@ export const ro: Dictionary = {
     ],
     close: 'Închide'
   },
+  crash: {
+    title: 'Ceva nu a mers bine',
+    message: 'CV-urile tale sunt în siguranță – modificările se salvează automat. Reîncarcă aplicația ca să continui.',
+    reload: 'Reîncarcă',
+    repeated: {
+      message: (appName) => `Fereastra ${appName} s-a oprit de mai multe ori la rând.`,
+      detail: 'CV-urile salvate sunt în siguranță. Poți reîncărca fereastra sau poți ieși din aplicație.'
+    },
+    unexpected: {
+      title: 'A apărut o eroare neașteptată',
+      message: (appName) =>
+        `${appName} a întâmpinat o problemă. CV-urile salvate sunt în siguranță. Dacă ceva nu funcționează cum trebuie, ieși din aplicație și deschide-o din nou.`
+    }
+  },
   defaultContent: {
     cvName: 'CV nou',
     copyName: (name) => `${name} (copie)`,

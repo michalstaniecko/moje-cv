@@ -589,10 +589,10 @@ test('ids that point outside the CV directory are rejected', async () => {
   await writeFile(join(dataDir, 'settings.json'), '{}')
 
   for (const id of ['../settings', '..', '.hidden', 'a/b']) {
-    await expect(repository.get(id)).rejects.toThrow('Niepoprawny identyfikator CV')
-    await expect(repository.delete(id)).rejects.toThrow('Niepoprawny identyfikator CV')
+    await expect(repository.get(id)).rejects.toThrow('Invalid CV id')
+    await expect(repository.delete(id)).rejects.toThrow('Invalid CV id')
   }
-  await expect(repository.save(cv({ id: '../settings' }))).rejects.toThrow('Niepoprawny identyfikator CV')
+  await expect(repository.save(cv({ id: '../settings' }))).rejects.toThrow('Invalid CV id')
   expect(await readFile(join(dataDir, 'settings.json'), 'utf8')).toBe('{}')
 })
 

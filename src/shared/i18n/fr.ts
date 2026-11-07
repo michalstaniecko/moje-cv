@@ -260,6 +260,20 @@ export const fr: Dictionary = {
     ],
     close: 'Fermer'
   },
+  crash: {
+    title: 'Un problème est survenu',
+    message: 'Vos CV sont en sécurité : les modifications sont enregistrées automatiquement. Rechargez l’application pour continuer.',
+    reload: 'Recharger',
+    repeated: {
+      message: (appName) => `La fenêtre de ${appName} a cessé de fonctionner plusieurs fois de suite.`,
+      detail: 'Vos CV enregistrés sont en sécurité. Vous pouvez recharger la fenêtre ou quitter l’application.'
+    },
+    unexpected: {
+      title: 'Une erreur inattendue s’est produite',
+      message: (appName) =>
+        `${appName} a rencontré un problème. Vos CV enregistrés sont en sécurité. Si quelque chose ne fonctionne pas correctement, quittez l’application et rouvrez-la.`
+    }
+  },
   defaultContent: {
     cvName: 'Nouveau CV',
     copyName: (name) => `${name} (copie)`,
