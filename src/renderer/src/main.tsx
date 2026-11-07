@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
+import { ErrorBoundary } from './ErrorBoundary'
 import { InterfaceLanguageProvider } from './i18n'
 import { PrintView } from './PrintView'
 
@@ -12,7 +13,9 @@ createRoot(document.getElementById('root')!).render(
       <PrintView />
     ) : (
       <InterfaceLanguageProvider>
-        <App />
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
       </InterfaceLanguageProvider>
     )}
   </StrictMode>

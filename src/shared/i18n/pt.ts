@@ -246,6 +246,20 @@ export const pt: Dictionary = {
     ],
     close: 'Fechar'
   },
+  crash: {
+    title: 'Algo deu errado',
+    message: 'Seus currículos estão seguros – as alterações são salvas automaticamente. Recarregue o app para continuar.',
+    reload: 'Recarregar',
+    repeated: {
+      message: (appName) => `A janela do ${appName} parou de funcionar várias vezes seguidas.`,
+      detail: 'Seus currículos salvos estão seguros. Você pode recarregar a janela ou encerrar o app.'
+    },
+    unexpected: {
+      title: 'Ocorreu um erro inesperado',
+      message: (appName) =>
+        `O ${appName} encontrou um problema. Seus currículos salvos estão seguros. Se algo não funcionar como esperado, encerre o app e abra-o novamente.`
+    }
+  },
   defaultContent: {
     cvName: 'Novo currículo',
     copyName: (name) => `${name} (cópia)`,

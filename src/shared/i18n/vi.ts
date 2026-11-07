@@ -244,6 +244,20 @@ export const vi: Dictionary = {
     ],
     close: 'Đóng'
   },
+  crash: {
+    title: 'Đã xảy ra sự cố',
+    message: 'CV của bạn vẫn an toàn – các thay đổi được lưu tự động. Hãy tải lại ứng dụng để tiếp tục.',
+    reload: 'Tải lại',
+    repeated: {
+      message: (appName) => `Cửa sổ ${appName} đã ngừng hoạt động nhiều lần liên tiếp.`,
+      detail: 'Các CV đã lưu vẫn an toàn. Bạn có thể tải lại cửa sổ hoặc thoát ứng dụng.'
+    },
+    unexpected: {
+      title: 'Đã xảy ra lỗi không mong muốn',
+      message: (appName) =>
+        `${appName} gặp sự cố. Các CV đã lưu vẫn an toàn. Nếu có gì không hoạt động như mong đợi, hãy thoát ứng dụng rồi mở lại.`
+    }
+  },
   defaultContent: {
     cvName: 'CV mới',
     copyName: (name) => `${name} (bản sao)`,

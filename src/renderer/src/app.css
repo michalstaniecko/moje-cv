@@ -376,6 +376,29 @@ textarea:focus-visible {
   overflow: auto;
 }
 
+/* Ekran błędu renderowania (ErrorBoundary): zastępuje całą powłokę, wyśrodkowany w oknie. */
+.crash-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100vh;
+  padding: 24px;
+  text-align: center;
+}
+
+.crash-screen h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.crash-screen p {
+  max-width: 480px;
+  margin: 0 0 8px;
+  color: var(--ui-text-muted);
+}
+
 .editor-screen {
   display: flex;
   flex-direction: column;

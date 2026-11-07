@@ -11,7 +11,7 @@ import { registerPhotoPicker } from './photo'
 import { registerSettings } from './settings'
 import { createSettingsRepository } from './settingsRepository'
 import { registerSponsor } from './sponsor'
-import { loadRenderer, secureWebPreferences } from './windows'
+import { loadRenderer, lockNavigation, secureWebPreferences } from './windows'
 
 // Testy e2e (`MOJE_CV_E2E_HIDDEN=1`) uruchamiają aplikację w tle: bez ikony w Docku, z przezroczystym oknem
 // pokazanym bez fokusu i przepuszczającym kliknięcia myszy, żeby nie przeszkadzać w pracy na komputerze. Okno
@@ -42,6 +42,8 @@ function createWindow(language: InterfaceLanguageState): void {
 // Folder danych przypięty do „Moje CV” niezależnie od `productName`, żeby zmiana nazwy aplikacji nie przenosiła danych
 // (ADR-0003). `--user-data-dir` (testy e2e) ma pierwszeństwo.
 if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', join(app.getPath('appData'), 'Moje CV'))
+
+app.on('web-contents-created', (_event, contents) => lockNavigation(contents))
 
 app.whenReady().then(async () => {
   if (hiddenForTests) app.dock?.hide()

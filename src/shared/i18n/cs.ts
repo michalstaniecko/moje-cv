@@ -247,6 +247,20 @@ export const cs: Dictionary = {
     ],
     close: 'Zavřít'
   },
+  crash: {
+    title: 'Něco se pokazilo',
+    message: 'Vaše CV jsou v bezpečí – změny se ukládají automaticky. Pokračujte opětovným načtením aplikace.',
+    reload: 'Načíst znovu',
+    repeated: {
+      message: (appName) => `Okno aplikace ${appName} několikrát za sebou přestalo fungovat.`,
+      detail: 'Uložená CV jsou v bezpečí. Okno můžete načíst znovu, nebo aplikaci ukončit.'
+    },
+    unexpected: {
+      title: 'Došlo k neočekávané chybě',
+      message: (appName) =>
+        `Aplikace ${appName} narazila na problém. Uložená CV jsou v bezpečí. Pokud něco nefunguje, jak má, ukončete aplikaci a otevřete ji znovu.`
+    }
+  },
   defaultContent: {
     cvName: 'Nové CV',
     copyName: (name) => `${name} (kopie)`,
