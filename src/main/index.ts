@@ -1,8 +1,9 @@
 import { join } from 'node:path'
 import { app, BrowserWindow } from 'electron'
 import { sampleCvs } from '../renderer/src/domain/sampleCv'
+import { en } from '../shared/i18n/en'
 import { createAppearance, windowBackground } from './appearance'
-import { reloadAfterRendererCrash } from './crashHandling'
+import { reloadAfterRendererCrash, reportMainProcessErrors } from './crashHandling'
 import { createCvRepository } from './cvRepository'
 import { registerCvLibrary } from './cvLibrary'
 import { createInterfaceLanguage, registerInterfaceLanguage, type InterfaceLanguageState } from './interfaceLanguage'
@@ -12,12 +13,16 @@ import { registerPhotoPicker } from './photo'
 import { registerSettings } from './settings'
 import { createSettingsRepository } from './settingsRepository'
 import { registerSponsor } from './sponsor'
-import { loadRenderer, lockNavigation, secureWebPreferences } from './windows'
+import { loadAppWindow, lockNavigation, secureWebPreferences } from './windows'
 
 // Testy e2e (`MOJE_CV_E2E_HIDDEN=1`) uruchamiają aplikację w tle: bez ikony w Docku, z przezroczystym oknem
 // pokazanym bez fokusu i przepuszczającym kliknięcia myszy, żeby nie przeszkadzać w pracy na komputerze. Okno
 // pozostaje „widoczne” dla Electrona, więc renderer nie jest dławiony, a Playwright steruje nim przez CDP.
 const hiddenForTests = process.env['MOJE_CV_E2E_HIDDEN'] === '1'
+
+// Język interfejsu jest znany dopiero po starcie; wcześniejsze błędy procesu głównego dostają tekst angielski.
+let interfaceLanguage: InterfaceLanguageState | undefined
+reportMainProcessErrors(() => interfaceLanguage?.dictionary() ?? en)
 
 // Okno aplikacji. Proces główny trzyma do niego referencję, bo `BrowserWindow.getAllWindows()` zwraca też ukryte
 // okna wydruku PDF.
@@ -45,7 +50,7 @@ function createWindow(language: InterfaceLanguageState): void {
     if (mainWindow === window) mainWindow = null
   })
   reloadAfterRendererCrash(window, language.dictionary)
-  void loadRenderer(window)
+  loadAppWindow(window)
 }
 
 // Folder danych przypięty do „Moje CV” niezależnie od `productName`, żeby zmiana nazwy aplikacji nie przenosiła danych
@@ -60,7 +65,7 @@ app.whenReady().then(async () => {
   const settings = createSettingsRepository(join(app.getPath('userData'), 'settings.json'))
   // Wygląd przed pierwszym oknem, żeby pierwsze malowanie i tło okna były już we właściwej palecie.
   const appearance = await createAppearance(settings)
-  const language = await createInterfaceLanguage(settings)
+  const language = (interfaceLanguage = await createInterfaceLanguage(settings))
   await repository.addSampleOnFirstRun(sampleCvs[language.current()])
   registerInterfaceLanguage(language)
   registerCvLibrary(repository, settings, language)

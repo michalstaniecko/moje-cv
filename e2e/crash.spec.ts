@@ -144,6 +144,42 @@ test('a change made in the editor right before a rendering error is kept after R
   await expect(window.getByLabel('Imię i nazwisko')).toHaveValue('Ewa Nowak')
 })
 
+// Podmienia natywne okno błędu i zapamiętuje tytuł oraz treść każdego wywołania.
+async function stubErrorBox() {
+  await app.evaluate(({ dialog }) => {
+    const calls: { title: string; content: string }[] = []
+    ;(globalThis as { errorBoxCalls?: typeof calls }).errorBoxCalls = calls
+    dialog.showErrorBox = (title, content) => void calls.push({ title, content })
+  })
+}
+
+const errorBoxCalls = () =>
+  app.evaluate(() => (globalThis as { errorBoxCalls?: { title: string; content: string }[] }).errorBoxCalls ?? [])
+
+test('an unexpected error in the main process is reported once in a native error box and the app keeps working', async () => {
+  await expect(cvList()).toBeVisible()
+  await stubErrorBox()
+
+  await app.evaluate(() => {
+    setTimeout(() => {
+      throw new Error('boom')
+    })
+    void Promise.reject(new Error('boom'))
+  })
+
+  await expect.poll(errorBoxCalls).toHaveLength(1)
+  const [errorBox] = await errorBoxCalls()
+  expect(errorBox!.title).toBe('An unexpected error occurred')
+  expect(errorBox!.content).toContain('CV Press ran into a problem. Your saved CVs are safe.')
+  expect(errorBox!.content).toMatch(/\nDetails: boom$/)
+
+  // Drugi błąd w tej samej minucie jest tylko logowany, a aplikacja działa dalej.
+  await window.waitForTimeout(500)
+  expect(await errorBoxCalls()).toHaveLength(1)
+  await window.getByRole('button', { name: 'New CV' }).click()
+  await expect(cvList().getByRole('listitem')).toHaveCount(2)
+})
+
 // Zabija proces renderera okna aplikacji, jak przy awarii.
 async function crashRenderer() {
   await app.evaluate(({ BrowserWindow }) => {

@@ -1,7 +1,7 @@
 import { app, dialog, type BrowserWindow } from 'electron'
 import type { Dictionary } from '../shared/i18n/en'
 import { createCrashGuard } from './crashGuard'
-import { loadRenderer } from './windows'
+import { loadAppWindow } from './windows'
 
 // Lokalna obsługa awarii, bez telemetrii i ruchu sieciowego: logi idą tylko na konsolę procesu (po angielsku).
 
@@ -14,7 +14,7 @@ export function reloadAfterRendererCrash(window: BrowserWindow, dictionary: () =
   window.webContents.on('render-process-gone', (_event, details) => {
     if (details.reason === 'clean-exit') return
     console.error(`The app window renderer process is gone (${details.reason}, exit code ${details.exitCode})`)
-    if (rendererCrashes.record() === 'reload') return void loadRenderer(window)
+    if (rendererCrashes.record() === 'reload') return loadAppWindow(window)
     void askAfterRepeatedCrashes(window, dictionary())
   })
 }
@@ -30,7 +30,7 @@ async function askAfterRepeatedCrashes(window: BrowserWindow, { appName, crash, 
   })
   if (response !== 0) return app.quit()
   rendererCrashes.reset()
-  if (!window.isDestroyed()) void loadRenderer(window)
+  if (!window.isDestroyed()) loadAppWindow(window)
 }
 
 // Nieobsłużony wyjątek i odrzucona obietnica w procesie głównym: log i natywne okno błędu w języku interfejsu,

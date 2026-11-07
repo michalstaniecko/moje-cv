@@ -20,6 +20,12 @@ export const loadRenderer: LoadRenderer = async (window, hash = '') => {
   }
 }
 
+// Ładuje okno aplikacji bez czekania na wynik. Nieudane ładowanie (np. przerwane zamknięciem okna tuż po starcie)
+// jest tylko logowane, żeby nie trafiło do okna błędu procesu głównego jako odrzucona obietnica.
+export function loadAppWindow(window: BrowserWindow): void {
+  loadRenderer(window).catch((error: unknown) => console.error('Failed to load the app window', error))
+}
+
 // Żadna treść nie otwiera nowych okien ani nie przenosi okna na inny adres (upuszczony plik, `window.open`,
 // `location.href`). Aplikacja sama nigdy nie nawiguje – ekrany to stan Reacta – a `loadURL` / `loadFile` /
 // `webContents.reload()` nie wywołują `will-navigate`. Jedyny wyjątek to ten sam adres: `location.reload()` z ekranu
