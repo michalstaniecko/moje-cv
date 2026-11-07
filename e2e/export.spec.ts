@@ -115,6 +115,14 @@ async function menuLabels(menuLabel: string) {
   }, menuLabel)
 }
 
+// Aktywność pozycji wskazanego menu (bez separatorów): etykieta → czy da się ją kliknąć.
+async function menuEnabled(menuLabel: string) {
+  return app.evaluate(({ Menu }, menuLabel) => {
+    const submenu = Menu.getApplicationMenu()?.items.find((item) => item.label === menuLabel)?.submenu?.items ?? []
+    return Object.fromEntries(submenu.filter((item) => item.type !== 'separator').map((item) => [item.label, item.enabled]))
+  }, menuLabel)
+}
+
 // Menu Language ma etykietę w języku interfejsu („Language”, „Język / Language”…), więc szukamy go po pozycji English.
 async function languageMenuLabel() {
   return app.evaluate(({ Menu }) => {
@@ -1761,6 +1769,114 @@ test('filters the CV list by tags (all selected tags), keeps the filter for the 
   const rowsAfterRestart = window.getByRole('list', { name: 'CV list' }).getByRole('listitem').filter({ has: window.getByRole('button', { name: 'Open' }) })
   await expect(rowsAfterRestart).toHaveCount(5)
   await expect(window.getByRole('group', { name: 'Filter by tag' }).getByRole('button', { pressed: true })).toHaveCount(0)
+})
+
+test('File menu: creating and importing in the CV library and the editor, exporting only in the editor, nothing in the clause library', async () => {
+  const fileMenu = (create: boolean, exports: boolean) => ({
+    'New CV': create,
+    'Add Sample CV': create,
+    'Import…': create,
+    'Export JSON…': exports,
+    'Export to PDF…': exports,
+    'Close Window': true
+  })
+  await expect(window.getByRole('list', { name: 'CV list' })).toBeVisible()
+  await expect.poll(() => menuEnabled('File')).toEqual(fileMenu(true, false))
+
+  await openFirstCv()
+  await expect.poll(() => menuEnabled('File')).toEqual(fileMenu(true, true))
+
+  await window.getByRole('button', { name: '← CV Press' }).click()
+  await expect.poll(() => menuEnabled('File')).toEqual(fileMenu(true, false))
+
+  // Formularze klauzul nie mają autozapisu, więc skrót nie może porzucić wpisanej klauzuli.
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
+  await expect.poll(() => menuEnabled('File')).toEqual(fileMenu(false, false))
+})
+
+test('File → New CV, Add Sample CV and Import… work like the library buttons, and from the editor they go back to the library first', async () => {
+  const rows = window.getByRole('list', { name: 'CV list' }).getByRole('listitem')
+  await expect(rows).toHaveCount(1)
+
+  // W bibliotece: nowe CV z Default content na górze listy.
+  await clickMenuItem('File', 'New CV')
+  await expect(rows).toHaveCount(2)
+  await expect(rows.first()).toContainText('New CV')
+
+  // Z edytora: powrót do biblioteki z nowym CV na liście.
+  await rows.first().getByRole('button', { name: 'Open' }).click()
+  await expect(window.getByLabel('Full name')).toBeVisible()
+  await clickMenuItem('File', 'Add Sample CV')
+  await expect(rows).toHaveCount(3)
+  await expect(rows.first()).toContainText('Sample CV')
+
+  // Importuj… w bibliotece i z edytora: komunikat jak przy przycisku.
+  const jsonPath = join(outputDir, 'sample.json')
+  await stubSaveDialog(jsonPath)
+  await rows.first().getByRole('button', { name: 'Export to file' }).click()
+  await expect(window.getByRole('status')).toHaveText('Saved file: sample.json')
+  await stubOpenDialog(jsonPath)
+  await clickMenuItem('File', 'Import…')
+  await expect(window.getByRole('status')).toHaveText('Imported “Sample CV”.')
+  await expect(rows).toHaveCount(4)
+  await rows.first().getByRole('button', { name: 'Open' }).click()
+  await expect(window.getByLabel('Full name')).toBeVisible()
+  await clickMenuItem('File', 'Import…')
+  await expect(window.getByRole('status').filter({ hasText: 'Imported “Sample CV”.' })).toBeVisible()
+  await expect(rows).toHaveCount(5)
+})
+
+test('File → New CV after a failed autosave keeps the editor open with the error, like ← Back', async () => {
+  await openFirstCv()
+  await rm(join(outputDir, 'user-data', 'cvs'), { recursive: true })
+  await window.getByLabel('Full name').fill('Jane Doe')
+  await expect(window.getByRole('status').filter({ hasText: 'Couldn’t save changes' })).toBeVisible()
+
+  await clickMenuItem('File', 'New CV')
+  await expect(window.getByRole('status').filter({ hasText: 'Couldn’t save changes' })).toBeVisible()
+  await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
+  await expect(window.getByRole('list', { name: 'CV list' })).toHaveCount(0)
+})
+
+test('in the editor File → Export to PDF… and Export JSON… export the open CV, the JSON with the change typed just before', async () => {
+  await openFirstCv()
+  await expect(window.locator('.cv-page').first()).toBeVisible()
+  const previewPageCount = await window.locator('.preview .cv-page').count()
+
+  const pdfPath = join(outputDir, 'menu.pdf')
+  await stubSaveDialog(pdfPath)
+  await clickMenuItem('File', 'Export to PDF…')
+  await expect(window.getByRole('status').filter({ hasText: 'Saved PDF: menu.pdf' })).toBeVisible()
+  const pdf = await readPdf(await readFile(pdfPath))
+  expect(previewPageCount).toBeGreaterThan(0)
+  expect(pdf.pages).toHaveLength(previewPageCount)
+  expect(pdf.pages[0]).toContain('Jane Example')
+
+  // Zmiana wpisana tuż przed komendą (autozapis jeszcze nie ruszył) trafia do pliku.
+  const jsonPath = join(outputDir, 'menu.json')
+  await stubSaveDialog(jsonPath)
+  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await clickMenuItem('File', 'Export JSON…')
+  await expect(window.getByRole('status').filter({ hasText: 'Saved file: menu.json' })).toBeVisible()
+  expect(JSON.parse(await readFile(jsonPath, 'utf8'))).toMatchObject({ header: { fullName: 'Ewa Nowak' } })
+
+  // Plik daje się zaimportować.
+  await window.getByRole('button', { name: '← CV Press' }).click()
+  await stubOpenDialog(jsonPath)
+  await clickMenuItem('File', 'Import…')
+  await expect(window.getByRole('status')).toHaveText('Imported “Sample CV”.')
+  await expect(window.getByRole('list', { name: 'CV list' }).getByRole('listitem')).toHaveCount(2)
+
+  // Nieudany eksport JSON: komunikat błędu w pasku edytora.
+  await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).first().click()
+  await expect(window.getByLabel('Full name')).toBeVisible()
+  await app.evaluate(({ dialog }) => {
+    dialog.showSaveDialog = (async () => {
+      throw new Error('disk full')
+    }) as typeof dialog.showSaveDialog
+  })
+  await clickMenuItem('File', 'Export JSON…')
+  await expect(window.getByRole('alert')).toHaveText('Couldn’t export the CV.')
 })
 
 test('exports a CV to a JSON file and imports it back as a new CV; an invalid file leaves the library unchanged', async () => {

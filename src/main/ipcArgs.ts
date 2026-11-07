@@ -1,3 +1,5 @@
+import type { AppScreen } from '../shared/api'
+
 // Weryfikacja argumentów przychodzących przez IPC.
 export function requireString(value: unknown): string {
   if (typeof value !== 'string') throw new Error('Oczekiwano tekstu')
@@ -9,7 +11,9 @@ export function requireStringArray(value: unknown): string[] {
   return value
 }
 
-export function requireBoolean(value: unknown): boolean {
-  if (typeof value !== 'boolean') throw new Error('Oczekiwano wartości logicznej')
-  return value
+const appScreens: readonly AppScreen[] = ['library', 'clauses', 'editor']
+
+export function requireAppScreen(value: unknown): AppScreen {
+  if (!appScreens.includes(value as AppScreen)) throw new Error('Oczekiwano ekranu aplikacji')
+  return value as AppScreen
 }

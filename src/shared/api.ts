@@ -85,11 +85,17 @@ export type Api = {
     // Zwraca funkcję wypisania.
     onChange: (listener: (language: InterfaceLanguage) => void) => () => void
   }
-  // Edytor CV zgłasza, że jest otwarty, i dostaje Cofnij / Ponów kliknięte w menu Edycja.
+  // Otwarty edytor CV dostaje Cofnij / Ponów kliknięte w menu Edycja (gdy okno zgłosiło ekran `editor`).
   editor: {
-    setActive: (active: boolean) => void
     // Zwraca funkcję wypisania.
     onHistoryCommand: (listener: (command: HistoryCommand) => void) => () => void
+  }
+  // Renderer zgłasza bieżący ekran okna (od niego zależy aktywność menu Plik i Cofnij / Ponów) i dostaje
+  // komendy menu Plik. Poza zgłoszeniem ekranu nic nie wraca do procesu głównego.
+  menu: {
+    setScreen: (screen: AppScreen) => void
+    // Zwraca funkcję wypisania.
+    onCommand: (listener: (command: MenuCommand) => void) => () => void
   }
   // Sponsor bar: proces główny mówi, czy belkę pokazać (nie w Mac App Store), i sam otwiera jedyny znany adres
   // Sponsor linku w systemowej przeglądarce – renderer nie przekazuje żadnego URL-a.

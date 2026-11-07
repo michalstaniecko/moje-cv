@@ -1,49 +1,63 @@
 import { app, BrowserWindow, ipcMain, Menu, type BaseWindow, type MenuItemConstructorOptions, type WebContents } from 'electron'
-import type { HistoryCommand, MenuCommand } from '../shared/api'
+import type { AppScreen, HistoryCommand, MenuCommand } from '../shared/api'
 import { interfaceLanguageCodes, interfaceLanguages } from '../shared/i18n/languages'
 import { appearances, type Appearance } from '../shared/appearance'
 import { HELP_URL } from '../shared/links'
 import type { AppearanceState } from './appearance'
 import type { InterfaceLanguageState } from './interfaceLanguage'
-import { requireBoolean } from './ipcArgs'
+import { requireAppScreen } from './ipcArgs'
+import { enabledMenuCommands } from './menuCommands'
 
-// Okna (według id webContents), w których jest otwarty edytor CV – zgłasza je renderer.
-// Wartość odpina nasłuchiwanie zamknięcia i przeładowania okna i usuwa flagę.
-const activeEditors = new Map<number, () => void>()
+// Bieżący ekran okien (według id webContents) zgłaszany przez renderer. `clear` odpina nasłuchiwanie zamknięcia
+// i przeładowania okna i usuwa wpis. Kolejność wpisów to kolejność zgłoszeń – ostatni jest ekranem, na którym
+// użytkownik właśnie jest.
+const screens = new Map<number, { screen: AppScreen; clear: () => void }>()
 
-// Menu aplikacji w języku interfejsu, przebudowywane przy zmianie języka i wyglądu (zaznaczenie radio).
-// Cofnij / Ponów w edytorze CV działają na historii CV (jak Cmd+Z w edytorze), a poza edytorem jak zwykłe
-// cofanie pola tekstowego.
+// Menu aplikacji w języku interfejsu, przebudowywane przy zmianie języka, wyglądu (zaznaczenie radio) i ekranu
+// (aktywność pozycji menu Plik). Cofnij / Ponów w edytorze CV działają na historii CV (jak Cmd+Z w edytorze),
+// a poza edytorem jak zwykłe cofanie pola tekstowego.
 export function registerAppMenu(language: InterfaceLanguageState, appearance: AppearanceState): void {
-  ipcMain.on('editor:active', (event, active: unknown) => {
-    if (requireBoolean(active)) trackEditor(event.sender)
-    else activeEditors.get(event.sender.id)?.()
-  })
   const build = () => {
     app.setAboutPanelOptions(aboutPanelOptions(language.dictionary().appName))
     Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate(language, appearance)))
   }
+  ipcMain.on('menu:screen', (event, screen: unknown) => {
+    trackScreen(event.sender, requireAppScreen(screen), build)
+    build()
+  })
   language.onChange(build)
   appearance.onChange(build)
   build()
 }
 
-// Flaga znika razem z oknem i przy przeładowaniu strony (edytor zgłosi się ponownie po otwarciu).
-function trackEditor(contents: WebContents) {
-  if (activeEditors.has(contents.id)) return
+// Ekran znika razem z oknem i przy przeładowaniu strony (renderer zgłosi go ponownie po starcie); menu jest wtedy
+// przebudowywane (`onClear`).
+function trackScreen(contents: WebContents, screen: AppScreen, onClear: () => void) {
   const id = contents.id
+  const tracked = screens.get(id)
+  if (tracked) {
+    screens.delete(id)
+    screens.set(id, { ...tracked, screen })
+    return
+  }
   const onNavigation = (details: Electron.Event<Electron.WebContentsDidStartNavigationEventParams>) => {
     if (details.isMainFrame && !details.isSameDocument) clear()
   }
   const clear = () => {
-    activeEditors.delete(id)
+    screens.delete(id)
+    onClear()
     if (contents.isDestroyed()) return
     contents.off('did-start-navigation', onNavigation)
     contents.off('destroyed', clear)
   }
   contents.on('did-start-navigation', onNavigation)
   contents.once('destroyed', clear)
-  activeEditors.set(id, clear)
+  screens.set(id, { screen, clear })
+}
+
+// Ekran, od którego zależy aktywność menu Plik: ostatnio zgłoszony; bez okien – żaden.
+function currentScreen(): AppScreen | undefined {
+  return [...screens.values()].at(-1)?.screen
 }
 
 // Panel „O aplikacji”: wersja z `app.getVersion()` (jedno źródło, wzorem ADR-0005). W spakowanej aplikacji pole
@@ -65,15 +79,19 @@ function historyCommand(command: HistoryCommand) {
   return (_item: Electron.MenuItem, window: BaseWindow | undefined) => {
     if (!(window instanceof BrowserWindow)) return
     const contents = window.webContents
-    if (activeEditors.has(contents.id)) contents.send(`editor:${command}`)
+    if (screens.get(contents.id)?.screen === 'editor') contents.send(`editor:${command}`)
     else contents[command]()
   }
 }
 
-// Komenda z menu Plik trafia do okna, z którego kliknięto; obsługuje ją zamontowany ekran renderera.
-function menuCommand(command: MenuCommand) {
-  return (_item: Electron.MenuItem, window: BaseWindow | undefined) => {
-    if (window instanceof BrowserWindow) window.webContents.send('menu:command', command)
+// Pozycja menu Plik: aktywna według ekranu okna; komenda trafia do okna, z którego kliknięto, i wykonuje ją
+// zamontowany ekran renderera.
+function menuCommand(command: MenuCommand, enabled: ReadonlySet<MenuCommand>): MenuItemConstructorOptions {
+  return {
+    enabled: enabled.has(command),
+    click: (_item, window) => {
+      if (window instanceof BrowserWindow) window.webContents.send('menu:command', command)
+    }
   }
 }
 
@@ -105,20 +123,25 @@ function menuTemplate(language: InterfaceLanguageState, appearance: AppearanceSt
       { role: 'selectAll', label: menu.selectAll }
     ]
   }
-  // Pozycje Plik wykonują w rendererze te same akcje co przyciski biblioteki CV i edytora (`menuCommand`).
+  // Pozycje Plik wykonują w rendererze te same akcje co przyciski biblioteki CV i edytora. Skróty działają także
+  // w polach tekstowych (żadne pole ich nie używa); przy nieaktywnej pozycji skrót nic nie robi.
+  const enabled = enabledMenuCommands(currentScreen())
   const fileMenu: MenuItemConstructorOptions = {
     label: menu.file,
     submenu: [
-      { label: menu.newCv, accelerator: 'CmdOrCtrl+N', click: menuCommand('new-cv') },
-      { label: menu.addSample, click: menuCommand('add-sample') },
-      { label: menu.importCv, accelerator: 'CmdOrCtrl+O', click: menuCommand('import') },
+      { label: menu.newCv, accelerator: 'CmdOrCtrl+N', ...menuCommand('new-cv', enabled) },
+      { label: menu.addSample, ...menuCommand('add-sample', enabled) },
+      { label: menu.importCv, accelerator: 'CmdOrCtrl+O', ...menuCommand('import', enabled) },
       { type: 'separator' },
-      { label: menu.exportJson, click: menuCommand('export-json') },
-      { label: menu.exportPdf, accelerator: 'CmdOrCtrl+E', click: menuCommand('export-pdf') },
+      { label: menu.exportJson, ...menuCommand('export-json', enabled) },
+      { label: menu.exportPdf, accelerator: 'CmdOrCtrl+E', ...menuCommand('export-pdf', enabled) },
       { type: 'separator' },
       { role: 'close', label: menu.closeWindow, accelerator: 'CmdOrCtrl+W' }
     ]
   }
+  // Pełny ekran. Jeśli macOS dopisze do menu Widok własną pozycję pełnego ekranu (duplikat), zostaje systemowa,
+  // a tę usuwamy. Systemowych pozycji nie widać w `Menu.getApplicationMenu()`, więc e2e tego nie sprawdzi – sprawdza
+  // to ręcznie checklista wydania (docs/release-checklist.md, „Menu aplikacji”).
   const viewMenu: MenuItemConstructorOptions = {
     label: menu.view,
     submenu: [{ role: 'togglefullscreen', label: menu.toggleFullScreen }]
