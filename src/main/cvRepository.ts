@@ -18,10 +18,14 @@ export class InvalidCvFileError extends Error {
   }
 }
 
-type Options = { now?: () => Date; migrations?: CvMigrations }
+// Pomiar czasu etapu zapisu (odczyt, sprawdzenie, zapis pliku) – zob. perfLog.ts. Domyślnie bez pomiaru.
+export type PhaseTimer = <T>(phase: 'read' | 'check' | 'write', operation: () => Promise<T>) => Promise<T>
+const untimed: PhaseTimer = (_phase, operation) => operation()
+
+type Options = { now?: () => Date; migrations?: CvMigrations; time?: PhaseTimer }
 
 // Repozytorium CV: jedno CV na plik `<id>.json` w podanym katalogu.
-export function createCvRepository(dir: string, { now = () => new Date(), migrations = cvMigrations }: Options = {}) {
+export function createCvRepository(dir: string, { now = () => new Date(), migrations = cvMigrations, time = untimed }: Options = {}) {
   // id przychodzi przez IPC – musi być zwykłą nazwą pliku w katalogu CV.
   const filePath = (id: string) => {
     if (!id || basename(id) !== id || id.startsWith('.')) throw new Error(`Invalid CV id: ${id}`)
@@ -85,10 +89,10 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
   // odzyskać ręcznie, a plik z nowszej wersji aplikacji straciłby dane, których ta wersja nie zna.
   async function save(document: CvDocument): Promise<void> {
     const targetPath = filePath(document.id)
-    if ((await exists(targetPath)) && (await listEntry(document.id)).status !== 'ok') {
+    if ((await exists(targetPath)) && (await time('check', () => listEntry(document.id))).status !== 'ok') {
       throw new Error(`The CV file can’t be read, so it will not be overwritten: ${document.id}`)
     }
-    await writeJsonAtomic(targetPath, document)
+    await time('write', () => writeJsonAtomic(targetPath, document))
   }
 
   // Zapisuje dokument jako nowe CV: nowe id i daty utworzenia/zmiany.
@@ -154,7 +158,7 @@ export function createCvRepository(dir: string, { now = () => new Date(), migrat
     update: (document: CvDocument): Promise<void> =>
       perCv.run(document.id, async () => {
         if (!(await exists(filePath(document.id)))) throw new Error(`CV does not exist: ${document.id}`)
-        const { tags } = await get(document.id)
+        const { tags } = await time('read', () => get(document.id))
         await save({ ...document, tags, updatedAt: now().toISOString() })
       }),
 

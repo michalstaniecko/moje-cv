@@ -9,6 +9,7 @@ import { updateName } from './editor/documentEdits'
 import { RemovalMessage, useRemovalUndo } from './editor/removalUndo'
 import { useDictionary } from './i18n'
 import { useMenuCommands } from './menuCommands'
+import { markInput } from './preview/keystrokeTiming'
 import { PreviewPane } from './preview/PreviewPane'
 
 // `confirming` – CV ma bloki wyższe niż strona i eksport czeka na „Eksportuj mimo to”; `timed-out` – strona wydruku
@@ -180,7 +181,8 @@ export function CvScreen({
         <ExportCutOffDialog onExport={() => void exportPdf({ confirmed: true })} onCancel={cancelExport} />
       )}
       <div className="editor-panes">
-        <aside className="editor-form">
+        {/* Początek pomiaru odpowiedzi podglądu na klawisz (preview/keystrokeTiming.ts). */}
+        <aside className="editor-form" onInput={(event) => markInput(event.timeStamp)}>
           <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} onRemove={removal.remove} />
           <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
         </aside>

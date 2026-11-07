@@ -144,6 +144,8 @@ Każdy blok ma też `breakBefore` (z `pageBreakBefore` sekcji lub wpisu). Odstę
 ### 4.2 Pomiar
 Bloki renderowane są tymi samymi komponentami w ukrytym kontenerze o szerokości 182 mm, po `document.fonts.ready`. Mierzymy `getBoundingClientRect().height`. Przeliczanie przy zmianie danych/ustawień (debounce) – pomiar nie zależy od zoomu podglądu.
 
+**Wydajność (#72)**: odpowiedź podglądu na klawisz (od zdarzenia `input` w formularzu do namalowania podglądu z nowym podziałem stron, User Timing `cv:keystroke-to-preview`) ma mieścić się w **100 ms** (mediana i p95) na M1 w zbudowanej aplikacji. Autozapis nie może tworzyć w rendererze zadań dłuższych niż 100 ms i ma kończyć się w procesie głównym w < 100 ms. Optymalizujemy tylko to, co pomiar pokaże powyżej progu. Pomiar to opcjonalny test `e2e/performance.spec.ts` (duży CV: 4+ strony, zdjęcie), pomijany bez `MOJE_CV_PERF=1`; wypisuje medianę i p95, a asercjami sprawdza tylko fixture. Uruchamiany na zbudowanej aplikacji, nigdy na serwerze deweloperskim: `pnpm build && MOJE_CV_PERF=1 pnpm exec playwright test e2e/performance.spec.ts` albo `MOJE_CV_PERF=1 pnpm test:e2e:packaged e2e/performance.spec.ts`. `MOJE_CV_PERF_CPU_SLOWDOWN=4` spowalnia procesor renderera (przybliżenie starszego Maca). `MOJE_CV_PERF=1` włącza też pomiar autozapisu w procesie głównym (`src/main/perfLog.ts`); bez niej nic nie jest mierzone ani logowane.
+
 ### 4.3 Algorytm (czysta funkcja, testy jednostkowe)
 ```ts
 paginate(input: {
