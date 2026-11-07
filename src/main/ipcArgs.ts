@@ -1,4 +1,4 @@
-import type { AppScreen } from '../shared/api'
+import { appScreens, type AppScreen } from '../shared/api'
 
 // Weryfikacja argumentów przychodzących przez IPC.
 export function requireString(value: unknown): string {
@@ -16,9 +16,7 @@ export function requireStringArray(value: unknown): string[] {
   return value
 }
 
-const appScreens: readonly AppScreen[] = ['library', 'clauses', 'editor']
-
 export function requireAppScreen(value: unknown): AppScreen {
-  if (!appScreens.includes(value as AppScreen)) throw new Error('Expected an app screen')
+  if (!(appScreens as readonly unknown[]).includes(value)) throw new Error('Expected an app screen')
   return value as AppScreen
 }

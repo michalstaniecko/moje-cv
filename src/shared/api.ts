@@ -41,7 +41,10 @@ export type HistoryCommand = 'undo' | 'redo'
 export type MenuCommand = 'new-cv' | 'add-sample' | 'import' | 'export-json' | 'export-pdf'
 
 // Bieżący ekran okna zgłaszany procesowi głównemu: od niego zależy aktywność pozycji menu Plik i Cofnij / Ponów.
-export type AppScreen = 'library' | 'clauses' | 'editor'
+// Jedna lista: z niej typ i weryfikacja argumentu IPC (`requireAppScreen`).
+export const appScreens = ['library', 'clauses', 'editor'] as const
+
+export type AppScreen = (typeof appScreens)[number]
 
 // Dlaczego pliku CV nie da się otworzyć: uszkodzony (niepoprawny JSON, niezgodność ze schematem) albo zapisany
 // w nowszej wersji aplikacji (poprawny, ale ta wersja go nie zna). Renderer pokazuje kod w języku interfejsu.
