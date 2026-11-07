@@ -4,8 +4,10 @@
   margin: 0;
 }
 
-html,
-body {
+/* Tylko okno eksportu (klasę ustawia main.tsx): print.css trafia do wspólnego bundla CSS z app.css, więc bez
+   zawężenia białe tło przykryłoby --ui-app-bg w oknie aplikacji (np. w ciemnym wyglądzie). */
+html.print-route,
+html.print-route body {
   margin: 0;
   background: #fff;
 }
