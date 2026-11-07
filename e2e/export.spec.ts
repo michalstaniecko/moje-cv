@@ -1584,6 +1584,24 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   await expect(pageCount).toHaveText(`${longPageCount} pages`)
 })
 
+test('the CV length warning looks like a warning, with the warning colour and icon, in the light and the dark appearance', async () => {
+  // Kolory tokenu --ui-warning z app.css: #8a5a00 w jasnym, #e3b341 w ciemnym wyglądzie (oba ≥ 4.5:1 na tle paska).
+  for (const [appearance, warning] of [
+    ['light', 'rgb(138, 90, 0)'],
+    ['dark', 'rgb(227, 179, 65)']
+  ] as const) {
+    await app.close()
+    await launch({ appearance })
+    await openFirstCv()
+    await window.getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
+    const notice = window.locator('.preview-length-notice')
+    await expect(notice).toHaveText('⚠ The CV is longer than 2 pages – consider shortening it.')
+    await expect(notice).toHaveCSS('color', warning)
+    // Ikona jest tylko dla oka: czytnik ekranu czyta sam tekst ostrzeżenia.
+    await expect(notice.locator('[aria-hidden="true"]')).toHaveText('⚠')
+  }
+})
+
 test('screen readers read the CV from the form only: the preview pages are hidden from them, the preview bar is not', async () => {
   await openFirstCv()
   const preview = window.locator('.preview')

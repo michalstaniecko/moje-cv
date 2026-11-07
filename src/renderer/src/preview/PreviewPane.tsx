@@ -41,7 +41,9 @@ export function PreviewPane({
           </span>
         )}
         {pageCount !== null && pageCount > RECOMMENDED_MAX_PAGES && (
-          <span className="preview-length-notice">{t.lengthNotice(pageCountLabel(RECOMMENDED_MAX_PAGES, language))}</span>
+          <span className="preview-length-notice">
+            <span aria-hidden="true">⚠</span> {t.lengthNotice(pageCountLabel(RECOMMENDED_MAX_PAGES, language))}
+          </span>
         )}
         <div className="preview-zoom">
           <button type="button" aria-label={t.zoomOut} onClick={() => setChosenScale(zoomOut(scale))}>

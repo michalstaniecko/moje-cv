@@ -195,8 +195,10 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--ui-border);
 }
 
+/* Ostrzeżenie, nie zwykła informacja: kolor --ui-warning ma kontrast ≥ 4.5:1 z --ui-panel-bg w obu wyglądach
+   (5.93:1 jasny, 8.26:1 ciemny). */
 .preview-length-notice {
-  color: var(--ui-text-muted);
+  color: var(--ui-warning);
 }
 
 .preview-zoom {
