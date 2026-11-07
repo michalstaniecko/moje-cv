@@ -13,7 +13,8 @@ ipcRenderer.on('editor:flush-request', async (_event, requestId: string) => {
 // Wąskie API dla renderera.
 const api: Api = {
   app: {
-    version: () => ipcRenderer.invoke('app:version')
+    version: () => ipcRenderer.invoke('app:version'),
+    reload: () => ipcRenderer.invoke('app:reload')
   },
   cv: {
     list: () => ipcRenderer.invoke('cv:list'),

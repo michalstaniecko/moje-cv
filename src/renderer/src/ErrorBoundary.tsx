@@ -30,7 +30,7 @@ function CrashScreen() {
     <main className="crash-screen">
       <h1 role="alert">{t.title}</h1>
       <p>{t.message}</p>
-      <button ref={reload} type="button" className="button-primary" onClick={() => window.location.reload()}>
+      <button ref={reload} type="button" className="button-primary" onClick={() => void window.api.app.reload()}>
         {t.reload}
       </button>
     </main>

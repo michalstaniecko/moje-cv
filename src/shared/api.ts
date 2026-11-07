@@ -53,9 +53,11 @@ export type CvListEntry =
   | { status: 'damaged'; id: string; reason: UnreadableCvReason }
 
 export type Api = {
-  // Informacje o aplikacji z procesu głównego – jedyne źródło numeru wersji (`app.getVersion()`).
+  // Informacje o aplikacji z procesu głównego – jedyne źródło numeru wersji (`app.getVersion()`) – i przeładowanie
+  // bieżącego okna (ekran błędu; treść sama nie może nawigować).
   app: {
     version: () => Promise<string>
+    reload: () => Promise<void>
   }
   cv: {
     list: () => Promise<CvListEntry[]>
