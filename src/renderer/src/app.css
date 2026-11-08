@@ -745,6 +745,13 @@ textarea:focus-visible {
   white-space: normal;
 }
 
+/* „Ukryj sekcję” i „Nowa strona przed tą sekcją”: przy dłuższych tłumaczeniach (de, it, ro, ru) druga przechodzi
+   do nowej linii zamiast poszerzać formularz. */
+.form-section > .form-row {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
 .form-section > .form-row .form-checkbox {
   padding-top: 0;
 }
