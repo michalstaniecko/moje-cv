@@ -5,7 +5,7 @@
   kontener ~/Library/Containers/com.michalstaniecko.mojecv, przenosi do niego folder danych wersji bez sandboksu
   (~/Library/Application Support/Moje CV) na tę samą ścieżkę względną: Data/Library/Application Support/Moje CV, czyli
   tam, gdzie aplikacja ustawia `userData` (src/main/index.ts). Trafia do Contents/Resources (`extraResources`).
-  Działa tylko raz, przy tworzeniu kontenera; planem B jest eksport/import JSON (docs/instalacja.md).
+  Działa tylko raz, przy tworzeniu kontenera; planem B jest eksport/import JSON (strona pomocy, docs/index.md).
 -->
 <plist version="1.0">
   <dict>

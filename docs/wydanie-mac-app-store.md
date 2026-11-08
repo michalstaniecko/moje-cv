@@ -45,7 +45,7 @@ pnpm dist:mas
 Wynik: `dist/mas-universal/CV-Drawer-<wersja>.pkg` (Apple Silicon + Intel) i podpisana aplikacja obok. Build ma:
 
 - entitlements z `build/entitlements.mas.plist` (sandbox, pliki wybrane przez użytkownika, grupa aplikacji, **bez
-  sieci**) i `build/entitlements.mas.inherit.plist` dla helperów; `application-identifier` i `team-identifier`
+  sieci**) i wspólny z `.dmg` `build/entitlements.inherit.plist` dla helperów; `application-identifier` i `team-identifier`
   dopisuje electron-builder z profilu;
 - `ITSAppUsesNonExemptEncryption = false`, kategorię Productivity, `ElectronTeamID`;
 - `container-migration.plist` (dane wersji `.dmg` sprzed sandboksu, ADR-0003);

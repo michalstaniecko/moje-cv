@@ -24,7 +24,7 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 
 ## Wydanie `.dmg` (Developer ID, #43)
 
-Build i dane uwierzytelniające: `docs/instalacja.md`, „Dla programisty”. Kolejność:
+Build i dane uwierzytelniające: `docs/instalacja.md`. Kolejność:
 
 1. `version` w `package.json` = wydawana wersja `X.Y.Z`; wpis w `CHANGELOG.md`.
 2. `pnpm dist:mac` z certyfikatem Developer ID w pęku kluczy i zmiennymi `APPLE_*` → `dist/CV-Drawer-X.Y.Z.dmg`.
@@ -246,7 +246,7 @@ Migracja działa tylko raz, przy zakładaniu kontenera, więc sprawdzaj ją na *
 | Eksport PDF do wybranego folderu (np. Biurko, Dokumenty), potem „Otwórz” i „Pokaż w Finderze” | [ ] | [ ] |
 | Eksport JSON do wybranego folderu i import tego pliku | [ ] | [ ] |
 | Wybór zdjęcia z dowolnego folderu (np. Obrazy, Pobrane) | [ ] | [ ] |
-| Plan B: na drugim czystym koncie najpierw uruchom wersję z sandboksem (pusty kontener), potem starą; eksport CV do `.json` w starej i import w nowej działa (docs/instalacja.md) | [ ] | [ ] |
+| Plan B: na drugim czystym koncie najpierw uruchom wersję z sandboksem (pusty kontener), potem starą; eksport CV do `.json` w starej i import w nowej działa (strona pomocy, `docs/pl/index.md`) | [ ] | [ ] |
 
 ## Ruch sieciowy
 

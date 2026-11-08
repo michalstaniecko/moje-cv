@@ -7,7 +7,14 @@ translation: /
 
 # Pomoc CV Drawer
 
-CV Drawer to darmowa aplikacja na Maca do tworzenia CV i eksportu do PDF. Działa na macOS 12 lub nowszym, na Macach z procesorem Apple i Intel.
+CV Drawer to darmowa aplikacja na Maca do tworzenia CV i eksportu do PDF. Działa na macOS 13 Ventura lub nowszym, na Macach z procesorem Apple i Intel.
+
+## Jak zainstalować CV Drawer?
+
+- **Mac App Store**: zainstaluj ją z App Store, tak jak każdą inną aplikację.
+- **Wersja pobrana z GitHuba**: otwórz pobrany plik `CV-Drawer-<wersja>.dmg`, przeciągnij **CV Drawer** do folderu **Aplikacje**, a potem zamknij okienko i wysuń dysk „CV Drawer” w Finderze (przycisk ⏏ obok jego nazwy).
+
+Za pierwszym razem otwórz CV Drawer z folderu Aplikacje albo z Launchpada. Wersja `.dmg` jest podpisana i sprawdzona przez Apple (notaryzacja), więc macOS otwiera ją bez ostrzeżeń; może tylko zapytać, czy otworzyć aplikację pobraną z internetu. Kliknij **Otwórz**.
 
 ## Gdzie są moje dane?
 
@@ -21,7 +28,9 @@ Usunięcie aplikacji z folderu Aplikacje **nie** usuwa Twoich danych.
 
 ## Korzystałem ze starszej wersji. Gdzie są moje CV?
 
-Przy pierwszym uruchomieniu nowej wersji macOS przenosi CV ze starszej wersji (o nazwie „Moje CV” albo „CV Press”) do folderu powyżej. Jeśli brakuje jakiegoś CV, otwórz starszą wersję, wyeksportuj CV do pliku i zaimportuj je w CV Drawer, jak opisano niżej.
+Przy pierwszym uruchomieniu nowej wersji macOS przenosi CV ze starszej wersji (o nazwie „Moje CV” albo „CV Press”) do folderu powyżej. Nic nie trzeba robić. CV Drawer pojawia się w folderze Aplikacje obok starszej aplikacji; gdy CV Drawer pokaże Twoje CV, przenieś starszą aplikację do Kosza, bo już ich nie widzi.
+
+Jeśli brakuje jakiegoś CV, otwórz starszą wersję, wyeksportuj CV do pliku i zaimportuj je w CV Drawer, jak opisano niżej.
 
 ## Jak przenieść CV na inny Mac albo zrobić kopię zapasową?
 

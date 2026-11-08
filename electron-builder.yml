@@ -15,13 +15,15 @@ publish: null
 # Wydanie bez podpisu kończy się błędem, zamiast dać niepodpisany plik.
 forceCodeSigning: true
 # Przed pakowaniem: certyfikat Developer ID i dane do notaryzacji (inaczej błąd z listą zmiennych). Po zbudowaniu:
-# notaryzacja i stempel samego `.dmg`. Oba kroki pomija build z `mac.notarize: false`. Szczegóły: build/notarize.mjs.
+# notaryzacja i stempel samego `.dmg`. Oba kroki pomija build z `mac.notarize: false` i build Mac App Store (`mas`).
+# Szczegóły: build/notarize.mjs.
 beforePack: ./build/notarize.mjs
 afterAllArtifactBuild: ./build/notarize.mjs
 mac:
   category: public.app-category.productivity
-  # Certyfikat „Developer ID Application” z pęku kluczy, wybierany po identyfikatorze zespołu (tym samym co w grupie
-  # aplikacji i `ElectronTeamID`). Sam identyfikator zespołu nie jest tajny; certyfikat i klucz prywatny są tylko w pęku.
+  # Certyfikat „Developer ID Application” z pęku kluczy, wybierany po identyfikatorze zespołu. Źródłem identyfikatora
+  # zespołu dla hooków jest `extendInfo.ElectronTeamID` niżej; tu i w grupie aplikacji w entitlements musi być ten sam
+  # (build/packaging.test.ts). Sam identyfikator nie jest tajny; certyfikat i klucz prywatny są tylko w pęku.
   identity: '8A9ZJPAGY8'
   type: distribution
   # Hardened runtime wymagany do notaryzacji; JIT V8 dopuszczają `cs.*` w entitlements.
@@ -30,15 +32,15 @@ mac:
   # `APPLE_API_KEY` + `APPLE_API_KEY_ID` + `APPLE_API_ISSUER` (zalecane), albo `APPLE_ID` + `APPLE_APP_SPECIFIC_PASSWORD`
   # + `APPLE_TEAM_ID`, albo `APPLE_KEYCHAIN_PROFILE` (+ opcjonalnie `APPLE_KEYCHAIN`).
   notarize: true
-  # App Sandbox w każdym kanale, ten sam bundle ID i kontener danych (ADR-0003). Pliki entitlements są osobne dla `.dmg`
-  # (tu, z `network.client` do sprawdzania nowej wersji, ADR-0006) i Mac App Store (`build/entitlements.mas*.plist`,
-  # bez sieci); helpery Electrona dziedziczą sandbox (`inherit`).
+  # App Sandbox w każdym kanale, ten sam bundle ID i kontener danych (ADR-0003). Entitlements aplikacji są osobne dla
+  # `.dmg` (tu, z `network.client` do sprawdzania nowej wersji, ADR-0006) i Mac App Store (`build/entitlements.mas.plist`,
+  # bez sieci); helpery Electrona w obu kanałach dziedziczą sandbox aplikacji (`inherit`) z jednego, wspólnego pliku.
   entitlements: build/entitlements.mac.plist
-  entitlementsInherit: build/entitlements.mac.inherit.plist
+  entitlementsInherit: build/entitlements.inherit.plist
   # Bez automatycznych entitlements @electron/osx-sign: grupa aplikacji jest wpisana wprost w entitlements, więc podpis
   # Developer ID i ad-hoc (build lokalny, bez identyfikatora zespołu) dostają dokładnie to samo, co w pliku.
   preAutoEntitlements: false
-  # Zespół Apple Developer: Electron nazywa swoje usługi Mach `<ElectronTeamID>.<appId>.…`, a sandbox pozwala na to tylko
+  # Zespół Apple Developer (jedyne źródło identyfikatora zespołu dla build/notarize.mjs): Electron nazywa swoje usługi Mach `<ElectronTeamID>.<appId>.…`, a sandbox pozwala na to tylko
   # w grupie aplikacji z entitlements (`com.apple.security.application-groups`).
   extendInfo:
     ElectronTeamID: 8A9ZJPAGY8
@@ -58,19 +60,21 @@ dmg:
   writeUpdateInfo: false
 # Mac App Store (#44): `pnpm dist:mas` (paczka `.pkg` do App Store Connect) i `pnpm dist:mas-dev` (lokalny test
 # z sandboksem). Numer buildu i profil provisioningowy podaje build/distMas.ts spoza repo; instrukcja wydania:
-# docs/wydanie-mac-app-store.md. electron-builder składa `mas` z `mac` + `mas` (a `mas-dev` jeszcze z `masDev`), więc
-# kategoria, ElectronTeamID i container-migration.plist (użytkownicy `.dmg` sprzed sandboksu, ADR-0003) przechodzą tu
-# bez powtarzania. Build MAS to Electron z `process.mas`: bez Sponsor bara i sprawdzania aktualizacji (ADR-0005/0006).
+# docs/wydanie-mac-app-store.md. electron-builder składa oba cele (`mas` i `mas-dev`) z `mac` + `mas` (osobnej sekcji
+# `masDev` nie ma; profil `mas-dev` podaje build/distMas.ts), więc kategoria, ElectronTeamID, entitlements helperów
+# i container-migration.plist (użytkownicy `.dmg` sprzed sandboksu, ADR-0003) przechodzą tu bez powtarzania. Build MAS to Electron z `process.mas`: bez Sponsor bara i sprawdzania aktualizacji (ADR-0005/0006).
 mas:
   # Nie Developer ID z `mac`: certyfikat „Apple Distribution” / „3rd Party Mac Developer Application” (aplikacja)
   # i „3rd Party Mac Developer Installer” (`.pkg`) z pęku kluczy, a w `mas-dev` „Apple Development”.
   identity: Michal Staniecko
-  # Bez sieci (ADR-0006); helpery dziedziczą sandbox.
+  # Bez sieci (ADR-0006).
   entitlements: build/entitlements.mas.plist
-  entitlementsInherit: build/entitlements.mas.inherit.plist
   # Identyfikatory aplikacji i zespołu (`application-identifier`, `team-identifier`) z profilu provisioningowego.
   preAutoEntitlements: true
   hardenedRuntime: false
+  # Wprost, bo `mac.notarize: true` przechodzi na `mas`: aplikację ze sklepu sprawdza App Review, nie notaryzacja.
+  # Wyłącza też hooki z build/notarize.mjs.
+  notarize: false
   # LSMinimumSystemVersion zostaje z Info.plist Electrona (45: macOS 13.0), bo niższej wersji Electron nie uruchomi.
   # App Store Connect bierze stąd minimalną wersję wpisu.
   extendInfo:

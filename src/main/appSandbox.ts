@@ -7,7 +7,8 @@ import { clearStaleSingletonSocket } from './staleSingleton'
 // 1. Zwykły (nie-MAS) Electron zamyka helpery (renderer, GPU, sieć) we własnym sandboksie Chromium (Seatbelt), ale
 //    proces już objęty App Sandbox nie może założyć drugiego: helpery kończą się przy starcie („sandbox initialization
 //    failed: Operation not permitted”). Build Mac App Store tego nie robi – opiera się tylko na App Sandbox, który
-//    helpery dziedziczą (`com.apple.security.inherit`). W `.dmg` to samo: wyłączamy Seatbelt Chromium.
+//    helpery dziedziczą (`com.apple.security.inherit`). W `.dmg` to samo: wyłączamy Seatbelt Chromium, więc renderery
+//    ogranicza tylko App Sandbox. Kompromis i jego uzasadnienie: ADR-0007.
 // 2. W obu kanałach: pozostałości blokady jednej instancji po awarii (`staleSingleton.ts`).
 //
 // System ustawia `APP_SANDBOX_CONTAINER_ID` tylko procesom w App Sandbox.
