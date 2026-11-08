@@ -68,7 +68,7 @@ describe('Developer ID identity', () => {
 
 describe('release team', () => {
   test('is the ElectronTeamID of the mac configuration', () => {
-    expect(releaseTeam({ identity: 'Developer ID Application: Someone (ZZZZZZZZZZ)', extendInfo: { ElectronTeamID: '8A9ZJPAGY8' } })).toBe(
+    expect(releaseTeam({ notarize: true, extendInfo: { ElectronTeamID: '8A9ZJPAGY8', CFBundleName: 'CV Drawer' } })).toBe(
       '8A9ZJPAGY8'
     )
   })
