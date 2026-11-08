@@ -1,6 +1,4 @@
-import { writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron'
+import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from 'electron'
 import { PDFDocument } from 'pdf-lib'
 import { cvDocumentSchema, type CvDocument } from '../renderer/src/domain/schema'
 import type { ExportPdfResult } from '../shared/api'
@@ -8,6 +6,7 @@ import type { InterfaceLanguageState } from './interfaceLanguage'
 import { exportDocumentTitle } from './exportDocumentTitle'
 import { exportFileName } from './exportFileName'
 import type { ExportedFiles } from './exportedFiles'
+import { saveExportedFile } from './saveExportedFile'
 import { loadRenderer, secureWebPreferences } from './windows'
 
 // Limit oczekiwania na gotowość strony wydruku. `MOJE_CV_PRINT_TIMEOUT_MS` skraca go w testach e2e.
@@ -47,21 +46,16 @@ export function registerPdfExport(language: InterfaceLanguageState, exportedFile
       extension: 'pdf'
     })
 
-    const owner = BrowserWindow.fromWebContents(event.sender)
     const { dialogs } = language.dictionary()
-    const options = {
+    return saveExportedFile({
+      event,
+      data: pdf,
+      fileName,
+      extension: 'pdf',
       title: dialogs.exportPdf,
-      defaultPath: join(app.getPath('documents'), fileName),
-      filters: [{ name: dialogs.pdfFilter, extensions: ['pdf'] }]
-    }
-    const { canceled, filePath } = owner
-      ? await dialog.showSaveDialog(owner, options)
-      : await dialog.showSaveDialog(options)
-    if (canceled || !filePath) return { status: 'canceled' }
-
-    await writeFile(filePath, pdf)
-    exportedFiles.remember(filePath)
-    return { status: 'saved', filePath }
+      filterName: dialogs.pdfFilter,
+      exportedFiles
+    })
   })
 
   ipcMain.handle('print:document', (event) => printJob(event).document)
