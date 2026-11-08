@@ -7,7 +7,8 @@
 //   którego Gatekeeper nie przepuści;
 // - `afterAllArtifactBuild`: notaryzacja i stempel samego `.dmg` (electron-builder go tylko podpisuje), żeby przeszedł
 //   `spctl` i `xcrun stapler validate` także bez sieci.
-// Build lokalny i testowy (`mac.notarize: false`, electron-builder.local.yml) pomija oba kroki.
+// Build lokalny i testowy (`mac.notarize: false`, electron-builder.local.yml) oraz build Mac App Store (`mas`) pomijają
+// oba kroki.
 //
 // Dane uwierzytelniające wyłącznie ze zmiennych środowiskowych (te same, które czyta electron-builder), nigdy z repo.
 import { execFileSync } from 'node:child_process'
@@ -84,27 +85,50 @@ export function developerIdIdentity(findIdentityOutput, team) {
   )
 }
 
+/** @typedef {{ notarize?: boolean | null, extendInfo?: unknown }} MacOptions */
+
+/**
+ * Identyfikator zespołu Apple Developer wydania: `mac.extendInfo.ElectronTeamID` z electron-builder.yml. Jedno źródło dla
+ * hooków; `mac.identity` i grupa aplikacji w entitlements muszą się z nim zgadzać (pilnuje tego build/packaging.test.ts).
+ * @param {MacOptions} mac
+ * @returns {string}
+ */
+export function releaseTeam(mac) {
+  const extendInfo = /** @type {{ ElectronTeamID?: unknown } | null | undefined} */ (typeof mac.extendInfo === 'object' ? mac.extendInfo : null)
+  const team = extendInfo?.ElectronTeamID
+  if (typeof team !== 'string' || team.trim() === '') {
+    throw new Error('electron-builder.yml: `mac.extendInfo.ElectronTeamID` must be the Apple Developer team ID of the release.')
+  }
+  return team
+}
+
 /**
  * Konfiguracja `mac` buduje wydanie do notaryzacji (nie build lokalny ani testowy z `notarize: false`).
- * @param {{ notarize?: boolean | null, identity?: string | null } | null | undefined} mac
+ * @param {MacOptions | null | undefined} mac
  */
 const isNotarizedRelease = (mac) => mac?.notarize !== false
 
 /**
  * Hook `beforePack`: build wydania bez certyfikatu Developer ID albo bez danych do notaryzacji kończy się przed
- * pakowaniem, z listą tego, czego brakuje. Build Mac App Store (#44) ma osobny podpis i nie jest notaryzowany.
- * @param {{ electronPlatformName: string, packager: { platformSpecificBuildOptions: { notarize?: boolean | null, identity?: string | null } } }} context
+ * pakowaniem, z listą tego, czego brakuje.
+ *
+ * Build Mac App Store (#44) ma osobny podpis i nie jest notaryzowany, więc jest pomijany wprost po platformie: electron-builder
+ * pakuje go jako `mas` (także `mas-dev`), a `.dmg` jako `darwin`. Samo `notarize` tu nie wystarczy, bo `packager` podaje
+ * opcje sekcji `mac` (z `notarize: true`), a nie złożone `mac` + `mas` z `mas.notarize: false`.
+ * @param {{ electronPlatformName: string, packager: { platformSpecificBuildOptions: MacOptions } }} context
  */
 export async function beforePack(context) {
   const mac = context.packager.platformSpecificBuildOptions
-  if (context.electronPlatformName !== 'darwin' || !isNotarizedRelease(mac)) return
-  developerIdIdentity(execFileSync('security', ['find-identity', '-v', '-p', 'codesigning'], { encoding: 'utf8' }), String(mac.identity))
+  const isDmgRelease = context.electronPlatformName === 'darwin' && isNotarizedRelease(mac)
+  if (!isDmgRelease) return
+  developerIdIdentity(execFileSync('security', ['find-identity', '-v', '-p', 'codesigning'], { encoding: 'utf8' }), releaseTeam(mac))
   notarytoolCredentials(process.env)
 }
 
 /**
- * Hook `afterAllArtifactBuild`: notaryzacja (`notarytool submit --wait`) i stempel każdego `.dmg` wydania.
- * @param {{ artifactPaths: string[], configuration: { mac?: { notarize?: boolean | null } | null } }} buildResult
+ * Hook `afterAllArtifactBuild`: notaryzacja (`notarytool submit --wait`) i stempel każdego `.dmg` wydania. Tylko `.dmg`:
+ * paczka `.pkg` Mac App Store (#44) idzie do App Review bez notaryzacji.
+ * @param {{ artifactPaths: string[], configuration: { mac?: MacOptions | null } }} buildResult
  * @returns {Promise<string[]>} brak dodatkowych plików wydania
  */
 export async function afterAllArtifactBuild(buildResult) {

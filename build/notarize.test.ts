@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { developerIdIdentity, notarytoolCredentials } from './notarize.mjs'
+import { afterAllArtifactBuild, beforePack, developerIdIdentity, notarytoolCredentials, releaseTeam } from './notarize.mjs'
 
 // Dane do notaryzacji `.dmg` (#43): te same zmienne środowiskowe, które czyta wbudowana notaryzacja electron-buildera.
 describe('notarization credentials', () => {
@@ -63,5 +63,33 @@ describe('Developer ID identity', () => {
       )
     ).toThrow(/Developer ID Application.*8A9ZJPAGY8/)
     expect(() => developerIdIdentity(identities(), '8A9ZJPAGY8')).toThrow(/dist:mac:local/)
+  })
+})
+
+describe('release team', () => {
+  test('is the ElectronTeamID of the mac configuration', () => {
+    expect(releaseTeam({ identity: 'Developer ID Application: Someone (ZZZZZZZZZZ)', extendInfo: { ElectronTeamID: '8A9ZJPAGY8' } })).toBe(
+      '8A9ZJPAGY8'
+    )
+  })
+
+  test('is an error when the configuration has none', () => {
+    expect(() => releaseTeam({})).toThrow(/ElectronTeamID/)
+    expect(() => releaseTeam({ extendInfo: 'build/Info.plist' })).toThrow(/ElectronTeamID/)
+  })
+})
+
+// Build Mac App Store (#44) dziedziczy `mac`, także `notarize: true`; hooki wydania `.dmg` muszą go pominąć wprost.
+describe('Mac App Store build', () => {
+  const macOptions = { notarize: true, extendInfo: { ElectronTeamID: 'ZZZZZZZZZZ' } }
+
+  test('needs neither a Developer ID certificate nor notarization credentials before packing', async () => {
+    await expect(beforePack({ electronPlatformName: 'mas', packager: { platformSpecificBuildOptions: macOptions } })).resolves.toBeUndefined()
+  })
+
+  test('leaves the .pkg without notarization', async () => {
+    await expect(
+      afterAllArtifactBuild({ artifactPaths: ['/dist/mas-universal/CV Drawer-0.6.0-universal.pkg'], configuration: { mac: macOptions } })
+    ).resolves.toEqual([])
   })
 })
