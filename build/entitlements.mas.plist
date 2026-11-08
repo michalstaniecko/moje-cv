@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements aplikacji w buildzie Mac App Store (cel `mas`, #44). Ten sam sandbox i bundle ID co .dmg (ADR-0003),
+  ale bez żadnego entitlementu `network.*`: build MAS nie łączy się z siecią (ADR-0006, „Data Not Collected”).
+  Identyfikatory zespołu i grupę aplikacji (`application-identifier`, `team-identifier`, `application-groups`)
+  dokłada przy podpisie @electron/osx-sign z profilu provisioningowego (`preAutoEntitlements`). Bez `temporary-exception`.
+-->
+<plist version="1.0">
+  <dict>
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    <!-- Eksport PDF i JSON, import JSON i wybór zdjęcia przez systemowe okna `dialog`. -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <!-- Electron rejestruje usługi Mach jako `<ElectronTeamID>.<bundle ID>.…` (ElectronTeamID w Info.plist,
+         electron-builder.yml); w sandboksie tylko w obrębie tej grupy aplikacji. Identyfikator zespołu Apple Developer. -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+      <string>8A9ZJPAGY8.com.michalstaniecko.mojecv</string>
+    </array>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+  </dict>
+</plist>

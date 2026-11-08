@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements buildu testowego (electron-builder.e2e.yml), nie do dystrybucji. To samo co entitlements.mac.plist
+  (pilnuje tego build/packaging.test.ts) plus dwa dodatki tylko dla testów:
+  - `network.server`: Playwright steruje aplikacją przez inspektor Node (`inspect=0`) i CDP (`remote-debugging-port=0`),
+    które nasłuchują na localhost;
+  - `temporary-exception` na /private/var/folders/: testy trzymają dane (`user-data-dir`) i eksportowane pliki
+    w `os.tmpdir()`, poza kontenerem.
+-->
+<plist version="1.0">
+  <dict>
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <key>com.apple.security.application-groups</key>
+    <array>
+      <string>8A9ZJPAGY8.com.michalstaniecko.mojecv</string>
+    </array>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.network.server</key>
+    <true/>
+    <key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>
+    <array>
+      <string>/private/var/folders/</string>
+    </array>
+  </dict>
+</plist>

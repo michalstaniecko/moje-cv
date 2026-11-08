@@ -2917,7 +2917,9 @@ test('starting the app again brings the running window to the front instead of a
   await expect.poll(async () => (await windowGeometry()).minimized).toBe(false)
   await expect(window.getByRole('list', { name: 'CV list' }).getByRole('listitem')).toHaveCount(1)
 
-  // Kopia na innym folderze danych otwiera własne okno.
+  // Kopia na innym folderze danych otwiera własne okno. Nie w spakowanej aplikacji: w App Sandbox Electron trzyma gniazdo
+  // blokady w stałym folderze kontenera, więc blokada obejmuje cały kontener, nie folder danych (ADR-0003, `appSandbox.ts`).
+  if (packagedExecutable) return
   const other = await electron.launch({
     ...(packagedExecutable && { executablePath: packagedExecutable }),
     args: args(join(outputDir, 'other-user-data')),
