@@ -1,4 +1,6 @@
-# Konfiguracja pakowania aplikacji (electron-builder). Budowanie: `pnpm dist:mac`.
+# Konfiguracja pakowania aplikacji (electron-builder). Wydanie `.dmg`: `pnpm dist:mac` (Developer ID, hardened runtime,
+# notaryzacja i stempel; wymaga certyfikatu w pęku kluczy i zmiennych `APPLE_*`, patrz docs/instalacja.md).
+# Build lokalny bez certyfikatu: `pnpm dist:mac:local` (electron-builder.local.yml).
 # Cele Windows/Linux można dopisać obok `mac` – reszta konfiguracji jest wspólna.
 appId: com.michalstaniecko.mojecv
 artifactName: CV-Drawer-${version}.${ext}
@@ -10,20 +12,31 @@ files:
   - package.json
 # Bez auto-update. Powiadomienie o nowej wersji (bez pobierania): ADR-0006.
 publish: null
+# Wydanie bez podpisu kończy się błędem, zamiast dać niepodpisany plik.
+forceCodeSigning: true
+# Przed pakowaniem: certyfikat Developer ID i dane do notaryzacji (inaczej błąd z listą zmiennych). Po zbudowaniu:
+# notaryzacja i stempel samego `.dmg`. Oba kroki pomija build z `mac.notarize: false`. Szczegóły: build/notarize.mjs.
+beforePack: ./build/notarize.mjs
+afterAllArtifactBuild: ./build/notarize.mjs
 mac:
   category: public.app-category.productivity
-  # Podpis ad-hoc („-”), nie Developer ID: bez niego macOS na Apple Silicon uznaje pobraną aplikację za „uszkodzoną”
-  # i nie pozwala jej otworzyć. Z nim działa zwykłe „Otwórz mimo to” (patrz docs/instalacja.md).
-  identity: '-'
-  # Hardened runtime potrzebny jest tylko do notaryzacji; przy podpisie ad-hoc blokowałby ładowanie frameworków Electrona.
-  hardenedRuntime: false
+  # Certyfikat „Developer ID Application” z pęku kluczy, wybierany po identyfikatorze zespołu (tym samym co w grupie
+  # aplikacji i `ElectronTeamID`). Sam identyfikator zespołu nie jest tajny; certyfikat i klucz prywatny są tylko w pęku.
+  identity: '8A9ZJPAGY8'
+  type: distribution
+  # Hardened runtime wymagany do notaryzacji; JIT V8 dopuszczają `cs.*` w entitlements.
+  hardenedRuntime: true
+  # Wbudowana notaryzacja electron-buildera (@electron/notarize) aplikacji, ze stemplem. Dane ze zmiennych środowiskowych:
+  # `APPLE_API_KEY` + `APPLE_API_KEY_ID` + `APPLE_API_ISSUER` (zalecane), albo `APPLE_ID` + `APPLE_APP_SPECIFIC_PASSWORD`
+  # + `APPLE_TEAM_ID`, albo `APPLE_KEYCHAIN_PROFILE` (+ opcjonalnie `APPLE_KEYCHAIN`).
+  notarize: true
   # App Sandbox w każdym kanale, ten sam bundle ID i kontener danych (ADR-0003). Pliki entitlements są osobne dla `.dmg`
   # (tu, z `network.client` do sprawdzania nowej wersji, ADR-0006) i Mac App Store (`build/entitlements.mas*.plist`,
-  # bez sieci); helpery Electrona dziedziczą sandbox (`inherit`). Podpis ad-hoc z sandboksem działa lokalnie.
+  # bez sieci); helpery Electrona dziedziczą sandbox (`inherit`).
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.inherit.plist
-  # @electron/osx-sign przy sandboksie dopisuje ElectronTeamID i grupę aplikacji z identyfikatora zespołu, którego podpis
-  # ad-hoc nie ma. Przy podpisie Developer ID (#43) do ponownego rozważenia.
+  # Bez automatycznych entitlements @electron/osx-sign: grupa aplikacji jest wpisana wprost w entitlements, więc podpis
+  # Developer ID i ad-hoc (build lokalny, bez identyfikatora zespołu) dostają dokładnie to samo, co w pliku.
   preAutoEntitlements: false
   # Zespół Apple Developer: Electron nazywa swoje usługi Mach `<ElectronTeamID>.<appId>.…`, a sandbox pozwala na to tylko
   # w grupie aplikacji z entitlements (`com.apple.security.application-groups`).
@@ -39,5 +52,7 @@ mac:
       arch: universal
 dmg:
   title: CV Drawer ${version}
+  # Podpis `.dmg` tym samym certyfikatem Developer ID; notaryzacja i stempel w `afterAllArtifactBuild`.
+  sign: true
   # Plik .blockmap służy tylko do auto-update.
   writeUpdateInfo: false

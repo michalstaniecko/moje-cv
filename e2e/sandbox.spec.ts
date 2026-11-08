@@ -7,7 +7,8 @@ import { _electron as electron, expect, test } from '@playwright/test'
 
 // App Sandbox w spakowanej aplikacji (ADR-0003), tylko w `pnpm test:e2e:packaged`:
 // - `MOJE_CV_APP`: build testowy (electron-builder.e2e.yml) z tym samym sandboksem co `.dmg`, na którym idą wszystkie testy e2e;
-// - `MOJE_CV_DIST_APP`: pakiet `.app` z `pnpm dist:mac`, czyli to, co trafia do `.dmg`.
+// - `MOJE_CV_DIST_APP`: pakiet `.app`, który trafia do `.dmg`: w `pnpm test:e2e:packaged` z buildu lokalnego
+//   (`pnpm dist:mac:local`, podpis ad-hoc), przed wydaniem z `pnpm dist:mac` (docs/release-checklist.md).
 const packagedExecutable = process.env['MOJE_CV_APP']
 const distributedApp = process.env['MOJE_CV_DIST_APP']
 
@@ -23,7 +24,7 @@ function signedEntitlements(path: string): Record<string, unknown> {
 }
 
 test.describe('the distributed .dmg app', () => {
-  test.skip(!distributedApp, 'tylko z pakietem z `pnpm dist:mac` (MOJE_CV_DIST_APP)')
+  test.skip(!distributedApp, 'tylko z pakietem z `pnpm dist:mac` albo `pnpm dist:mac:local` (MOJE_CV_DIST_APP)')
 
   test('is signed with the sandbox, user-selected file access and the network client for the update check', () => {
     expect(signedEntitlements(distributedApp!)).toMatchObject({
