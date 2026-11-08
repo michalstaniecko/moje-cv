@@ -5,6 +5,7 @@ import { PDFDocument } from 'pdf-lib'
 import { cvDocumentSchema, type CvDocument } from '../renderer/src/domain/schema'
 import type { ExportPdfResult } from '../shared/api'
 import type { InterfaceLanguageState } from './interfaceLanguage'
+import { exportDocumentTitle } from './exportDocumentTitle'
 import { exportFileName } from './exportFileName'
 import { loadRenderer, secureWebPreferences } from './windows'
 
@@ -124,7 +125,7 @@ async function renderPdf(document: CvDocument): Promise<Uint8Array> {
 
 async function withMetadata(pdf: Uint8Array, fullName: string): Promise<Uint8Array> {
   const document = await PDFDocument.load(pdf)
-  document.setTitle(fullName ? `CV – ${fullName}` : 'CV', { showInWindowTitleBar: true })
+  document.setTitle(exportDocumentTitle(fullName), { showInWindowTitleBar: true })
   document.setAuthor(fullName)
   document.setCreator('CV Drawer')
   return document.save()
