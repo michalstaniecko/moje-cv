@@ -205,6 +205,73 @@ describe('buildDocx', () => {
     expect(withStyle(xml, 'Title').map(text)).toEqual([document.header.fullName])
   })
 
+  describe('photo', () => {
+    // Początek prawdziwych plików: sygnatura JPEG (SOI + APP0 „JFIF”) i PNG – builder nie dekoduje obrazu.
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0xff, 0xd9])
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52])
+    const dataUrl = (mime: string, bytes: Buffer) => `data:${mime};base64,${bytes.toString('base64')}`
+    const withPhoto = (url: string | null): CvDocument => cv({ header: { ...sample.header, photo: url === null ? null : { dataUrl: url } } })
+    const media = (parts: Record<string, string>) => Object.keys(parts).filter((path) => path.startsWith('word/media/'))
+
+    test('a JPEG photo sits next to the name, contacts and summary in a borderless two-column table', async () => {
+      const files = unzipSync(new Uint8Array(await buildDocx(withPhoto(dataUrl('image/jpeg', jpeg)))))
+      const images = Object.keys(files).filter((path) => path.startsWith('word/media/'))
+      expect(images).toHaveLength(1)
+      expect(images[0]).toMatch(/\.jpe?g$/)
+      // Bez ponownej kompresji: w pliku te same bajty co w data URL.
+      expect(Buffer.from(files[images[0]!]!)).toEqual(jpeg)
+
+      const xml = strFromU8(files['word/document.xml']!)
+      const tables = xml.match(/<w:tbl>.*?<\/w:tbl>/gs) ?? []
+      expect(tables).toHaveLength(1)
+      const [table] = tables
+      const cells = table!.match(/<w:tc>.*?<\/w:tc>/gs)!
+      expect(cells).toHaveLength(2)
+      const [left, right] = cells
+      expect(paragraphs(left!).map(text)).toEqual([
+        'Jane Example',
+        ...sample.header.contacts.map((contact) => `${contact.label}⇥${contact.value}`),
+        ...(sample.header.summary.trim() ? [sample.header.summary] : [])
+      ])
+      expect(left).toContain('<w:pStyle w:val="Title"/>')
+      expect(right).toContain('<wp:inline')
+      // 30 × 40 mm (36 000 EMU na mm).
+      expect(right).toContain('<wp:extent cx="1080000" cy="1440000"/>')
+      const borders = table!.match(/<w:tblBorders>.*?<\/w:tblBorders>/s)![0]
+      expect(borders.match(/w:val="(\w+)"/g)!.every((value) => /"(none|nil)"/.test(value))).toBe(true)
+      // Nagłówek przed pierwszym tytułem sekcji, poza tabelą nie powtarza się.
+      expect(xml.indexOf('<w:tbl>')).toBeLessThan(xml.indexOf('Work experience'))
+      expect(xml.split('Jane Example')).toHaveLength(2)
+    })
+
+    test('a PNG photo is embedded as PNG', async () => {
+      const parts = await docxParts(withPhoto(dataUrl('image/png', png)))
+      expect(media(parts)).toEqual([expect.stringMatching(/\.png$/)])
+      expect(parts['word/document.xml']).toContain('<w:tbl>')
+    })
+
+    test('without a photo the header is plain paragraphs, with no table', async () => {
+      const parts = await docxParts(withPhoto(null))
+      expect(parts['word/document.xml']).not.toContain('<w:tbl')
+      expect(media(parts)).toEqual([])
+      expect(withStyle(parts['word/document.xml']!, 'Title').map(text)).toEqual(['Jane Example'])
+    })
+
+    test.each([
+      ['damaged base64', 'data:image/jpeg;base64,@@not base64@@'],
+      ['bytes that are not a JPEG', dataUrl('image/jpeg', Buffer.from('hello, world'))],
+      ['an empty image', 'data:image/jpeg;base64,'],
+      ['not a data URL', 'https://example.com/photo.jpg'],
+      ['an unsupported type (SVG)', 'data:image/svg+xml,%3Csvg%2F%3E'],
+      ['an unsupported type (GIF)', dataUrl('image/gif', Buffer.from('GIF89a'))]
+    ])('a photo with %s is left out and the DOCX is still built', async (_, url) => {
+      const parts = await docxParts(withPhoto(url))
+      expect(media(parts)).toEqual([])
+      expect(parts['word/document.xml']).not.toContain('<w:tbl')
+      expect(withStyle(parts['word/document.xml']!, 'Title').map(text)).toEqual(['Jane Example'])
+    })
+  })
+
   describe('fallback font for Lato', () => {
     const russian = (font: CvDocument['settings']['font']): CvDocument => ({
       ...sampleCvs.ru,

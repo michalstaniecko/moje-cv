@@ -3,12 +3,19 @@ import {
   BorderStyle,
   Document,
   HeadingLevel,
+  ImageRun,
   LevelFormat,
   Packer,
   Paragraph,
   Tab,
+  Table,
+  TableBorders,
+  TableCell,
+  TableLayoutType,
+  TableRow,
   TabStopType,
   TextRun,
+  WidthType,
   type IParagraphOptions,
   type IRunOptions,
   type IStylesOptions
@@ -62,6 +69,13 @@ const HEADING_FONT_HALF_POINTS = 26
 const TEXT_COLOR = '222222'
 
 const BULLETS = 'bullets'
+
+// Zdjęcie w prawej kolumnie nagłówka: 30 × 40 mm (proporcje 3:4 jak przy kadrowaniu), przy prawym marginesie.
+const PHOTO_WIDTH_MM = 30
+const PHOTO_HEIGHT_MM = 40
+const PHOTO_COLUMN_MM = 34
+// `ImageRun` przyjmuje wymiary w pikselach 96 dpi.
+const pixels = (mm: number) => (mm / 25.4) * 96
 
 // Zaokrąglone do całych twipów (A4 = 11906 × 16838, jak w Wordzie).
 const twips = (mm: number) => Math.round((mm / 25.4) * 1440)
@@ -152,6 +166,61 @@ function contentParagraphs(runs: Runs, block: CvBlock): IParagraphOptions[] {
   }
 }
 
+type Photo = { type: 'jpg' | 'png'; data: Buffer }
+
+// Typ zdjęcia z prefiksu MIME data URL i sygnatura pliku, która musi się z nim zgadzać.
+const photoTypes: Record<string, { type: Photo['type']; signature: number[] }> = {
+  'image/jpeg': { type: 'jpg', signature: [0xff, 0xd8, 0xff] },
+  'image/png': { type: 'png', signature: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] }
+}
+
+// Zdjęcie z data URL (bez ponownej kompresji). Inny typ albo uszkodzone dane → null: DOCX powstaje bez zdjęcia.
+function decodePhoto(dataUrl: string | null): Photo | null {
+  const match = dataUrl?.match(/^data:([\w/+.-]+);base64,([A-Za-z0-9+/]+={0,2})$/)
+  const photoType = match ? photoTypes[match[1]!.toLowerCase()] : undefined
+  if (!match || !photoType) return null
+  const data = Buffer.from(match[2]!, 'base64')
+  if (data.length <= photoType.signature.length) return null
+  return photoType.signature.every((byte, index) => data[index] === byte) ? { type: photoType.type, data } : null
+}
+
+// Bez obramowań i marginesów komórek, więc tekst z lewej kolumny stoi przy marginesie jak reszta dokumentu.
+const NO_CELL_MARGINS = { top: 0, bottom: 0, left: 0, right: 0 }
+
+// Nagłówek ze zdjęciem: tabela 2 kolumny bez obramowań – nazwisko, kontakty i podsumowanie z lewej, zdjęcie z prawej.
+function headerTable(left: Paragraph[], photo: Photo, spaceAfterMm: number): Table {
+  const leftWidth = twips(CONTENT_WIDTH_MM - PHOTO_COLUMN_MM)
+  const rightWidth = twips(PHOTO_COLUMN_MM)
+  const image = new Paragraph({
+    alignment: AlignmentType.RIGHT,
+    spacing: { after: twips(spaceAfterMm) },
+    children: [
+      new ImageRun({
+        type: photo.type,
+        data: photo.data,
+        transformation: { width: pixels(PHOTO_WIDTH_MM), height: pixels(PHOTO_HEIGHT_MM) }
+      })
+    ]
+  })
+  return new Table({
+    width: { size: leftWidth + rightWidth, type: WidthType.DXA },
+    columnWidths: [leftWidth, rightWidth],
+    layout: TableLayoutType.FIXED,
+    borders: TableBorders.NONE,
+    margins: NO_CELL_MARGINS,
+    rows: [
+      new TableRow({
+        cantSplit: true,
+        children: [
+          // Komórka musi kończyć się akapitem – także gdy nagłówek ma samo zdjęcie.
+          new TableCell({ width: { size: leftWidth, type: WidthType.DXA }, children: left.length > 0 ? left : [new Paragraph({})] }),
+          new TableCell({ width: { size: rightWidth, type: WidthType.DXA }, children: [image] })
+        ]
+      })
+    ]
+  })
+}
+
 // Akapity bloku z jego regułami podziału stron: wymuszona nowa strona przed pierwszym akapitem, „trzymaj
 // z następnym” i odstęp po bloku na ostatnim.
 function blockParagraphs(runs: Runs, block: CvBlock): Paragraph[] {
@@ -165,6 +234,13 @@ function blockParagraphs(runs: Runs, block: CvBlock): Paragraph[] {
       spacing: { after: last ? twips(block.spaceAfterMm) : 0 }
     })
   })
+}
+
+// Treść bloku w dokumencie: nagłówek z poprawnym zdjęciem jako tabela, wszystko inne jako akapity.
+function blockChildren(runs: Runs, block: CvBlock): (Paragraph | Table)[] {
+  const photo = block.kind === 'header' ? decodePhoto(block.photoUrl) : null
+  if (photo === null) return blockParagraphs(runs, block)
+  return [headerTable(blockParagraphs(runs, block), photo, block.spaceAfterMm)]
 }
 
 // Klauzula zgody: ostatni akapit (8 pt, przygaszony), tylko gdy widoczna wg tej samej reguły co w podglądzie.
@@ -247,7 +323,7 @@ export async function buildDocx(document: CvDocument): Promise<Buffer> {
             }
           }
         },
-        children: [...blocks.flatMap((block) => blockParagraphs(runs, block)), ...consentParagraphs(runs, document)]
+        children: [...blocks.flatMap((block) => blockChildren(runs, block)), ...consentParagraphs(runs, document)]
       }
     ]
   })
