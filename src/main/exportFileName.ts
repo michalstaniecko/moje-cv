@@ -1,7 +1,7 @@
 import type { InterfaceLanguage } from '../shared/i18n/languages'
 
-// Domyślna nazwa pliku PDF – czysty moduł (bez Electrona), żeby dało się go testować jednostkowo.
-// Kolejność: imię i nazwisko („CV_Anna_Obraztsova.pdf”) → nazwa CV z biblioteki → „CV.pdf”.
+// Domyślna nazwa pliku eksportu (PDF i DOCX) – czysty moduł (bez Electrona), żeby dało się go testować jednostkowo.
+// Kolejność: imię i nazwisko („CV_Anna_Obraztsova.pdf”) → nazwa CV z biblioteki → „CV.pdf” (tak samo z „.docx”).
 // Nazwa zawiera tylko [A-Za-z0-9-] i „_”, żeby plik dało się bez problemu wysłać i otworzyć wszędzie.
 
 const MAX_BASE_LENGTH = 100
@@ -49,18 +49,22 @@ function words(text: string, language: InterfaceLanguage): string[] {
     .filter((word) => /[A-Za-z0-9]/.test(word))
 }
 
-export function pdfFileName({
+export type ExportExtension = 'pdf' | 'docx'
+
+export function exportFileName({
   fullName,
   cvName,
-  language
+  language,
+  extension
 }: {
   fullName: string
   cvName: string
   language: InterfaceLanguage
+  extension: ExportExtension
 }): string {
   const fromName = words(fullName, language)
   const parts = fromName.length > 0 ? fromName : words(cvName, language).filter((word) => word.toLowerCase() !== 'cv')
-  if (parts.length === 0) return 'CV.pdf'
+  if (parts.length === 0) return `CV.${extension}`
   const base = ['CV', ...parts].join('_').slice(0, MAX_BASE_LENGTH).replace(/[_-]+$/, '')
-  return `${base}.pdf`
+  return `${base}.${extension}`
 }

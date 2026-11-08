@@ -5,7 +5,7 @@ import { PDFDocument } from 'pdf-lib'
 import { cvDocumentSchema, type CvDocument } from '../renderer/src/domain/schema'
 import type { ExportPdfResult } from '../shared/api'
 import type { InterfaceLanguageState } from './interfaceLanguage'
-import { pdfFileName } from './pdfFileName'
+import { exportFileName } from './exportFileName'
 import { loadRenderer, secureWebPreferences } from './windows'
 
 // Limit oczekiwania na gotowość strony wydruku. `MOJE_CV_PRINT_TIMEOUT_MS` skraca go w testach e2e.
@@ -40,10 +40,11 @@ export function registerPdfExport(language: InterfaceLanguageState): void {
       throw error
     }
     const pdf = await withMetadata(rendered, document.header.fullName)
-    const fileName = pdfFileName({
+    const fileName = exportFileName({
       fullName: document.header.fullName,
       cvName: document.name,
-      language: document.settings.language
+      language: document.settings.language,
+      extension: 'pdf'
     })
 
     const owner = BrowserWindow.fromWebContents(event.sender)
