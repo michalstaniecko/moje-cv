@@ -9,6 +9,17 @@ Każdy punkt odhacz w kolumnie kanału. „—” oznacza, że punkt nie dotyczy
 
 > **Zasada:** każdy kolejny ticket specu „Gotowość UI/UX do wydania 1.0” (#77) dopisuje tu wiersze dla swojej funkcji. Pozycje dla funkcji jeszcze niewdrożonych są już na liście z numerem ticketu w nawiasie.
 
+## Adresy do App Store Connect
+
+Strony z GitHub Pages (#45, źródło `main` + `/docs`, włączenie w #74). Te same adresy otwiera menu Pomoc (`src/shared/links.ts`).
+
+| Pole w App Store Connect | EN | PL |
+| --- | --- | --- |
+| Privacy Policy URL | `https://michalstaniecko.github.io/moje-cv/privacy/` | `https://michalstaniecko.github.io/moje-cv/pl/privacy/` |
+| Support URL | `https://michalstaniecko.github.io/moje-cv/` | `https://michalstaniecko.github.io/moje-cv/pl/` |
+
+Przed wysłaniem do review sprawdź, że wszystkie cztery strony otwierają się przez HTTPS, przełącznik języka prowadzi do drugiej wersji, a w sekcji „Contact” / „Kontakt” jest prawdziwy adres e-mail.
+
 Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 
 ## Instalacja i pierwsze uruchomienie

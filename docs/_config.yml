@@ -1,0 +1,21 @@
+# GitHub Pages (#45): pomoc i polityka prywatności CV Drawer, źródło `main` + `/docs` (włączenie w #74).
+# Publikowane są tylko strony `index.md`, `privacy/`, `pl/` i `pl/privacy/`. Ścieżki muszą się zgadzać
+# z `src/shared/links.ts` (sprawdza to `src/shared/pagesSite.test.ts`).
+title: CV Drawer
+lang: en
+baseurl: /moje-cv
+url: https://michalstaniecko.github.io
+
+defaults:
+  - scope:
+      path: ''
+    values:
+      layout: default
+
+# Dokumentacja deweloperska zostaje w repo, ale nie trafia na stronę.
+exclude:
+  - adr/
+  - agents/
+  - research/
+  - instalacja.md
+  - release-checklist.md
