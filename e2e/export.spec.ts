@@ -933,6 +933,19 @@ async function docxDocumentXml(filePath: string): Promise<string> {
   return strFromU8(files['word/document.xml']!)
 }
 
+// Fonty osadzone w zapisanym pliku DOCX: rodziny z `word/fontTable.xml` z liczbą osadzonych krojów i pliki `.odttf`.
+async function docxEmbeddedFonts(filePath: string): Promise<{ families: Record<string, number>; files: number }> {
+  const files = unzipSync(new Uint8Array(await readFile(filePath)))
+  const fontTable = strFromU8(files['word/fontTable.xml']!)
+  const families = Object.fromEntries(
+    [...fontTable.matchAll(/<w:font w:name="([^"]+)">(.*?)<\/w:font>/gs)].map(([, name, content]) => [
+      name!,
+      content!.match(/<w:embed\w+ /g)?.length ?? 0
+    ])
+  )
+  return { families, files: Object.keys(files).filter((path) => /^word\/fonts\/[^/]+\.odttf$/.test(path)).length }
+}
+
 test('exports the open CV to an editable DOCX from the toolbar and from File → Export to DOCX…, with a notice about the simplified layout', async () => {
   await openFirstCv()
   await expect(window.locator('.cv-page').first()).toBeVisible()
@@ -955,6 +968,14 @@ test('exports the open CV to an editable DOCX from the toolbar and from File →
   expect(options[0]!.filters).toEqual([{ name: 'Word Document (DOCX)', extensions: ['docx'] }])
   expect(basename(options[0]!.defaultPath!)).toBe('CV_Jane_Example.docx')
   expect(await docxDocumentXml(fromButton)).toContain('Jane Example')
+  // Font CV (Lato) osadzony w 4 krojach – z `resources/fonts` w dev, z `Contents/Resources/fonts` w paczce.
+  expect(await docxEmbeddedFonts(fromButton)).toEqual({ families: { Lato: 4 }, files: 4 })
+  if (packagedExecutable) {
+    const resources = await app.evaluate(() => process.resourcesPath)
+    for (const family of ['lato', 'arimo', 'source-sans-3']) {
+      expect(await readdir(join(resources, 'fonts', family))).toEqual(expect.arrayContaining(['OFL.txt', 'SOURCES.md']))
+    }
+  }
 
   // „Open” i „Show in Finder” działają na zapisanym pliku (biała lista zapisanych plików).
   await app.evaluate(({ shell }) => {
