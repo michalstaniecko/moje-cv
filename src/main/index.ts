@@ -14,6 +14,7 @@ import { createPerfLog, type PerfEntry } from './perfLog'
 import { createInterfaceLanguage, registerInterfaceLanguage, type InterfaceLanguageState } from './interfaceLanguage'
 import { registerAppInfo } from './appInfo'
 import { registerAppMenu } from './menu'
+import { registerDocxExport } from './docxExport'
 import { registerPdfExport } from './pdfExport'
 import { registerPhotoPicker } from './photo'
 import { registerSettings } from './settings'
@@ -105,6 +106,7 @@ app.whenReady().then(async () => {
   const exportedFiles = createExportedFiles(shell)
   registerExportedFiles(ipcMain, exportedFiles)
   registerPdfExport(language, exportedFiles)
+  registerDocxExport(language, exportedFiles)
   registerPhotoPicker(language)
   registerSponsor()
   // Ta sama reguła kanału co Sponsor bar i menu Pomoc: w Mac App Store bez żadnego ruchu sieciowego (ADR-0006).

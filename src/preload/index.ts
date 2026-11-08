@@ -42,6 +42,9 @@ const api: Api = {
   pdf: {
     export: (document) => ipcRenderer.invoke('pdf:export', document)
   },
+  docx: {
+    export: (document) => ipcRenderer.invoke('docx:export', document)
+  },
   exported: {
     open: (filePath) => ipcRenderer.invoke('exported:open', filePath),
     showInFolder: (filePath) => ipcRenderer.invoke('exported:show-in-folder', filePath)
