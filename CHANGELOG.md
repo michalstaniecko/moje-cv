@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.5.0] – 2026-11-08
+
+### Added
+- App icon: CV Press has its own icon in the Dock, Finder, Launchpad, the app switcher (⌘Tab), the "About CV Press" panel and on the `.dmg`, instead of the Electron icon.
+
 ## [0.4.0] – 2026-11-07
 
 ### Added
