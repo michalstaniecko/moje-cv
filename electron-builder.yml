@@ -17,6 +17,23 @@ mac:
   identity: '-'
   # Hardened runtime potrzebny jest tylko do notaryzacji; przy podpisie ad-hoc blokowałby ładowanie frameworków Electrona.
   hardenedRuntime: false
+  # App Sandbox w każdym kanale, ten sam bundle ID i kontener danych (ADR-0003). Pliki entitlements są osobne dla `.dmg`
+  # (tu, z `network.client` do sprawdzania nowej wersji, ADR-0006) i Mac App Store (`build/entitlements.mas*.plist`,
+  # bez sieci); helpery Electrona dziedziczą sandbox (`inherit`). Podpis ad-hoc z sandboksem działa lokalnie.
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
+  # @electron/osx-sign przy sandboksie dopisuje ElectronTeamID i grupę aplikacji z identyfikatora zespołu, którego podpis
+  # ad-hoc nie ma. Przy podpisie Developer ID (#43) do ponownego rozważenia.
+  preAutoEntitlements: false
+  # Zespół Apple Developer: Electron nazywa swoje usługi Mach `<ElectronTeamID>.<appId>.…`, a sandbox pozwala na to tylko
+  # w grupie aplikacji z entitlements (`com.apple.security.application-groups`).
+  extendInfo:
+    ElectronTeamID: 8A9ZJPAGY8
+  # Migracja danych wersji bez sandboksu (`~/Library/Application Support/Moje CV`) do kontenera przy pierwszym
+  # uruchomieniu; system czyta ją z `Contents/Resources`.
+  extraResources:
+    - from: build/container-migration.plist
+      to: container-migration.plist
   target:
     - target: dmg
       arch: universal

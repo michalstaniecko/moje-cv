@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- CV Drawer runs in the macOS App Sandbox. CVs and settings move on first launch from `~/Library/Application Support/Moje CV` into the app's container (`~/Library/Containers/com.michalstaniecko.mojecv`), which the Mac App Store and `.dmg` versions share. The older version no longer sees them afterwards; JSON export and import remain the fallback.
+
 ## [0.6.0] – 2026-11-08
 
 ### Changed

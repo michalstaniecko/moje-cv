@@ -202,6 +202,26 @@ Wymuszenie „nowszej wersji” w spakowanym `.dmg` bez publikowania wydania: w 
 | CV, ustawienia, klauzule, język i wygląd po zamknięciu i ponownym uruchomieniu | [ ] | [ ] |
 | Wspólna biblioteka MAS i `.dmg` na jednym Macu (ADR-0003) | [ ] | [ ] |
 
+## Sandbox i migracja danych (#42, ADR-0003)
+
+Migracja działa tylko raz, przy zakładaniu kontenera, więc sprawdzaj ją na **czystym koncie macOS** (nowy użytkownik w Ustawieniach systemowych → Użytkownicy i grupy), nigdy na swoim: na swoim koncie pierwsze uruchomienie przeniosłoby prawdziwe dane do kontenera.
+
+1. Na czystym koncie zainstaluj wersję bez sandboksu (`.dmg` ad-hoc 0.3.0 albo dowolną do 0.6.0), dodaj 2–3 CV (jedno ze zdjęciem), klauzulę, zmień Interface language i Appearance, zakończ aplikację.
+2. Sprawdź, że dane są w `~/Library/Application Support/Moje CV` (`cvs/`, `settings.json`) i że nie ma `~/Library/Containers/com.michalstaniecko.mojecv`.
+3. Zainstaluj wersję z sandboksem i uruchom ją.
+
+| Sprawdź | MAS | DMG |
+| --- | --- | --- |
+| Podpis: `codesign -d --entitlements - "/Applications/CV Drawer.app"` ma `app-sandbox`, `files.user-selected.read-write` i grupę `8A9ZJPAGY8.com.michalstaniecko.mojecv`, bez `temporary-exception` i bez `network.server`; `network.client` tylko w DMG | [ ] | [ ] |
+| Pakiet ma `Contents/Resources/container-migration.plist` | [ ] | [ ] |
+| Po pierwszym uruchomieniu wszystkie CV z kroku 1 są w bibliotece, ze zdjęciem; klauzula, Interface language i Appearance zachowane | [ ] | [ ] |
+| Dane są teraz w `~/Library/Containers/com.michalstaniecko.mojecv/Data/Library/Application Support/Moje CV`, a w `~/Library/Application Support` nie ma już `Moje CV` | [ ] | [ ] |
+| Monitor aktywności → kolumna „Piaskownica”: CV Drawer i jego procesy pomocnicze mają „Tak” | [ ] | [ ] |
+| Eksport PDF do wybranego folderu (np. Biurko, Dokumenty), potem „Otwórz” i „Pokaż w Finderze” | [ ] | [ ] |
+| Eksport JSON do wybranego folderu i import tego pliku | [ ] | [ ] |
+| Wybór zdjęcia z dowolnego folderu (np. Obrazy, Pobrane) | [ ] | [ ] |
+| Plan B: na drugim czystym koncie najpierw uruchom wersję z sandboksem (pusty kontener), potem starą; eksport CV do `.json` w starej i import w nowej działa (docs/instalacja.md) | [ ] | [ ] |
+
 ## Ruch sieciowy
 
 Sprawdź np. Little Snitch albo Monitorem aktywności.

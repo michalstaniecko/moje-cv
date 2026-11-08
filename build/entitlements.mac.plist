@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements aplikacji w buildzie .dmg (Developer ID, cel `mac`). Ten sam sandbox i bundle ID co Mac App Store,
+  więc oba kanały dzielą jeden kontener danych (ADR-0003). Różnica względem entitlements.mas.plist: `network.client`
+  do sprawdzania nowej wersji w GitHub Releases (ADR-0006). Bez `temporary-exception`.
+-->
+<plist version="1.0">
+  <dict>
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    <!-- Eksport PDF i JSON, import JSON i wybór zdjęcia przez systemowe okna `dialog`. -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <!-- `net.fetch` do api.github.com (powiadomienie o nowej wersji, ADR-0006). Tylko w .dmg. -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <!-- Electron rejestruje usługi Mach jako `<ElectronTeamID>.<bundle ID>.…` (ElectronTeamID w Info.plist,
+         electron-builder.yml); w sandboksie tylko w obrębie tej grupy aplikacji. Identyfikator zespołu Apple Developer. -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+      <string>8A9ZJPAGY8.com.michalstaniecko.mojecv</string>
+    </array>
+    <!-- V8 przy hardened runtime (notaryzacja, #43); bez hardened runtime nie mają znaczenia. -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+  </dict>
+</plist>
