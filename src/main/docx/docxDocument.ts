@@ -13,7 +13,8 @@ import {
   type IRunOptions,
   type IStylesOptions
 } from 'docx'
-import { cvFontFamilies } from '../../shared/cvFonts'
+import { cvFontFamilies, type CvFontId } from '../../shared/cvFonts'
+import { splitByFontCoverage } from './fontCoverage'
 import { exportDocumentTitle } from '../exportDocumentTitle'
 import { docxLanguageTag } from './languageTags'
 import { generateBlocks, type BlockGeometry, type CvBlock } from '../../renderer/src/domain/blocks'
@@ -68,67 +69,93 @@ const twips = (mm: number) => Math.round((mm / 25.4) * 1440)
 // Daty stanowiska i wykształcenia na tabulatorze wyrównanym do prawego marginesu (bez niewidocznej tabeli).
 const datesTabStop = { type: TabStopType.RIGHT, position: twips(CONTENT_WIDTH_MM) }
 
-// Tekst z łamaniami wierszy: każdy kolejny wiersz po miękkim podziale (`w:br`), jak `white-space: pre-line`.
-function lines(content: string, options: Omit<IRunOptions, 'text' | 'break'> = {}): TextRun[] {
-  return content.split('\n').map((line, index) => new TextRun({ ...options, text: line, break: index > 0 ? 1 : undefined }))
+type RunOptions = Omit<IRunOptions, 'text' | 'break' | 'children'>
+
+// Przebiegi tekstu CV: każdy kolejny wiersz po miękkim podziale (`w:br`), jak `white-space: pre-line`, a znaki spoza
+// fontu CV osobnym przebiegiem w foncie zastępczym (po nazwie), jak stos fontów w podglądzie (fontCoverage.ts).
+type Runs = (content: string, options?: RunOptions) => TextRun[]
+
+const FALLBACK_FONT = cvFontFamilies['source-sans-3']
+
+function runsIn(font: CvFontId): Runs {
+  return (content, options = {}) =>
+    content.split('\n').flatMap((line, index) => {
+      const lineBreak = index > 0 ? 1 : undefined
+      const segments = splitByFontCoverage(line, font)
+      if (segments.length === 0) return lineBreak ? [new TextRun({ ...options, text: '', break: lineBreak })] : []
+      return segments.map(
+        (segment, segmentIndex) =>
+          new TextRun({
+            ...options,
+            ...(segment.fallback ? { font: FALLBACK_FONT } : {}),
+            text: segment.text,
+            break: segmentIndex === 0 ? lineBreak : undefined
+          })
+      )
+    })
 }
 
-const bullet = (content: string): IParagraphOptions => ({ numbering: { reference: BULLETS, level: 0 }, children: lines(content) })
+const tab = () => new TextRun({ children: [new Tab()] })
+
+const bullet = (runs: Runs, content: string): IParagraphOptions => ({
+  numbering: { reference: BULLETS, level: 0 },
+  children: runs(content)
+})
 
 // „tekst (pogrubiony) … ⇥ daty”: wiersz stanowiska albo wykształcenia.
-function withDates(bold: string, rest: string, dates: string): IParagraphOptions {
+function withDates(runs: Runs, bold: string, rest: string, dates: string): IParagraphOptions {
   const children: TextRun[] = []
-  if (bold) children.push(new TextRun({ text: bold, bold: true }))
-  if (rest) children.push(new TextRun(bold ? `, ${rest}` : rest))
-  if (dates) children.push(new TextRun({ children: [new Tab(), dates] }))
+  if (bold) children.push(...runs(bold, { bold: true }))
+  if (rest) children.push(...runs(bold ? `, ${rest}` : rest))
+  if (dates) children.push(tab(), ...runs(dates))
   return { tabStops: [datesTabStop], children }
 }
 
-function headerParagraphs(block: Extract<CvBlock, { kind: 'header' }>): IParagraphOptions[] {
+function headerParagraphs(runs: Runs, block: Extract<CvBlock, { kind: 'header' }>): IParagraphOptions[] {
   const paragraphs: IParagraphOptions[] = []
-  if (block.fullName.trim()) paragraphs.push({ heading: HeadingLevel.TITLE, children: [new TextRun(block.fullName)] })
+  if (block.fullName.trim()) paragraphs.push({ heading: HeadingLevel.TITLE, children: runs(block.fullName) })
   for (const contact of block.contacts) {
     paragraphs.push({
       tabStops: [{ type: TabStopType.LEFT, position: twips(CONTACT_TAB_MM) }],
       children: contact.label.trim()
-        ? [new TextRun({ text: contact.label, bold: true }), new TextRun({ children: [new Tab(), contact.value] })]
-        : [new TextRun(contact.value)]
+        ? [...runs(contact.label, { bold: true }), tab(), ...runs(contact.value)]
+        : runs(contact.value)
     })
   }
-  if (block.summary.trim()) paragraphs.push({ children: lines(block.summary, { italics: true }) })
+  if (block.summary.trim()) paragraphs.push({ children: runs(block.summary, { italics: true }) })
   return paragraphs
 }
 
-function experienceParagraphs(block: Extract<CvBlock, { kind: 'experienceEntry' }>): IParagraphOptions[] {
+function experienceParagraphs(runs: Runs, block: Extract<CvBlock, { kind: 'experienceEntry' }>): IParagraphOptions[] {
   const paragraphs: IParagraphOptions[] = []
   // Stanowisko i firma trzymają się następnego wiersza, żeby wpis nie odrywał się od pierwszego punktu.
-  if (block.role.trim() || block.dates) paragraphs.push({ ...withDates(block.role.trim(), '', block.dates), keepNext: true })
-  if (block.companyLine) paragraphs.push({ keepNext: true, children: [new TextRun(block.companyLine)] })
-  if (block.firstBullet !== null) paragraphs.push(bullet(block.firstBullet))
+  if (block.role.trim() || block.dates) paragraphs.push({ ...withDates(runs, block.role.trim(), '', block.dates), keepNext: true })
+  if (block.companyLine) paragraphs.push({ keepNext: true, children: runs(block.companyLine) })
+  if (block.firstBullet !== null) paragraphs.push(bullet(runs, block.firstBullet))
   return paragraphs
 }
 
-function contentParagraphs(block: CvBlock): IParagraphOptions[] {
+function contentParagraphs(runs: Runs, block: CvBlock): IParagraphOptions[] {
   switch (block.kind) {
     case 'header':
-      return headerParagraphs(block)
+      return headerParagraphs(runs, block)
     case 'sectionTitle':
-      return [{ heading: HeadingLevel.HEADING_1, children: [new TextRun(block.title)] }]
+      return [{ heading: HeadingLevel.HEADING_1, children: runs(block.title) }]
     case 'experienceEntry':
-      return experienceParagraphs(block)
+      return experienceParagraphs(runs, block)
     case 'experienceBullet':
-      return [bullet(block.text)]
+      return [bullet(runs, block.text)]
     case 'educationEntry':
-      return [withDates(block.level, block.details, block.dates)]
+      return [withDates(runs, block.level, block.details, block.dates)]
     case 'listRow':
-      return block.items.map((item) => bullet(item.text))
+      return block.items.map((item) => bullet(runs, item.text))
   }
 }
 
 // Akapity bloku z jego regułami podziału stron: wymuszona nowa strona przed pierwszym akapitem, „trzymaj
 // z następnym” i odstęp po bloku na ostatnim.
-function blockParagraphs(block: CvBlock): Paragraph[] {
-  const paragraphs = contentParagraphs(block)
+function blockParagraphs(runs: Runs, block: CvBlock): Paragraph[] {
+  const paragraphs = contentParagraphs(runs, block)
   return paragraphs.map((options, index) => {
     const last = index === paragraphs.length - 1
     return new Paragraph({
@@ -142,13 +169,13 @@ function blockParagraphs(block: CvBlock): Paragraph[] {
 
 // Klauzula zgody: ostatni akapit (8 pt, przygaszony), tylko gdy widoczna wg tej samej reguły co w podglądzie.
 // Bez przypinania do dołu strony – po edycji i tak nie wiadomo, gdzie skończy się dokument.
-function consentParagraphs(document: CvDocument): Paragraph[] {
+function consentParagraphs(runs: Runs, document: CvDocument): Paragraph[] {
   const text = consentText(document)
   if (text === null) return []
   return [
     new Paragraph({
       spacing: { before: twips(CONSENT_GAP_MM), after: 0 },
-      children: lines(text, { size: CONSENT_FONT_HALF_POINTS, color: MUTED_COLOR })
+      children: runs(text, { size: CONSENT_FONT_HALF_POINTS, color: MUTED_COLOR })
     })
   ]
 }
@@ -182,6 +209,7 @@ function styles({ settings }: CvDocument): IStylesOptions {
 export async function buildDocx(document: CvDocument): Promise<Buffer> {
   const blocks = generateBlocks(document, DOCX_BLOCK_GEOMETRY)
   const fullName = document.header.fullName.trim()
+  const runs = runsIn(document.settings.font)
   const docx = new Document({
     // Metadane jak w PDF; puste pola pominięte (bez domyślnego „Un-named” biblioteki), bez nazwy aplikacji.
     title: exportDocumentTitle(fullName),
@@ -219,7 +247,7 @@ export async function buildDocx(document: CvDocument): Promise<Buffer> {
             }
           }
         },
-        children: [...blocks.flatMap(blockParagraphs), ...consentParagraphs(document)]
+        children: [...blocks.flatMap((block) => blockParagraphs(runs, block)), ...consentParagraphs(runs, document)]
       }
     ]
   })

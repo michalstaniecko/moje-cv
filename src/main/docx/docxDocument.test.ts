@@ -205,6 +205,45 @@ describe('buildDocx', () => {
     expect(withStyle(xml, 'Title').map(text)).toEqual([document.header.fullName])
   })
 
+  describe('fallback font for Lato', () => {
+    const russian = (font: CvDocument['settings']['font']): CvDocument => ({
+      ...sampleCvs.ru,
+      settings: { ...sampleCvs.ru.settings, font }
+    })
+
+    test('the Russian Sample CV in Lato writes its Cyrillic in Source Sans 3 runs, the Latin in the default font', async () => {
+      const xml = (await docxParts(russian('lato')))['word/document.xml']!
+      expect(xml).toContain('w:ascii="Source Sans 3"')
+      // Każdy odcinek w Source Sans 3 to cyrylica (albo inne znaki spoza Lato), nigdy łacina.
+      const fallbackRuns = [...xml.matchAll(/<w:r>(?:(?!<\/w:r>).)*?w:ascii="Source Sans 3"(?:(?!<\/w:r>).)*?<\/w:r>/gs)].map(([run]) => text(run))
+      expect(fallbackRuns.length).toBeGreaterThan(0)
+      for (const run of fallbackRuns) expect(run).not.toMatch(/[A-Za-z0-9 ]/)
+      const name = withStyle(xml, 'Title')[0]!
+      expect(text(name)).toBe(sampleCvs.ru.header.fullName)
+      expect(name).toContain('w:ascii="Source Sans 3"')
+    })
+
+    test('the same CV in Arimo has no Source Sans 3 runs', async () => {
+      const xml = (await docxParts(russian('arimo')))['word/document.xml']!
+      expect(xml).not.toContain('Source Sans 3')
+    })
+
+    test('a Latin-only CV in Lato has no Source Sans 3 runs', async () => {
+      expect((await docxParts(sample))['word/document.xml']!).not.toContain('Source Sans 3')
+    })
+
+    test('a contact label and value are split too, keeping the bold label and the tab', async () => {
+      const document = cv({
+        header: { ...sample.header, contacts: [{ id: 'c', label: 'Телефон', value: 'Москва' }] }
+      })
+      const xml = (await docxParts(document))['word/document.xml']!
+      const contact = paragraphWithText(xml, 'Москва')!
+      expect(text(contact)).toBe('Телефон⇥Москва')
+      expect(contact.match(/w:ascii="Source Sans 3"/g)).toHaveLength(2)
+      expect(paragraphWithText(xml, 'Телефон')).toMatch(/<w:b\/>.*?<w:t[^>]*>Телефон</s)
+    })
+  })
+
   describe('consent clause', () => {
     const consent = (enabled: boolean, text: string): CvDocument['consent'] => ({ enabled, clauseId: null, text })
 
