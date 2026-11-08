@@ -17,9 +17,6 @@ import type { CvDocument } from '../domain/schema'
 
 export type Font = CvDocument['settings']['font']
 
-// Nazwa rodziny w CSS – zarazem nazwa fontu pokazywana w formularzu (wspólna z DOCX export, więc w shared).
-export const fontFamilies = cvFontFamilies
-
 // Font zastępczy dla znaków, których nie ma wybrany font (Lato nie ma cyrylicy ani pełnego wietnamskiego):
 // dołączony Source Sans 3 zamiast fontu systemowego, który byłby inny na każdym komputerze.
 const fallbacks: Record<Font, Font[]> = {
@@ -28,7 +25,7 @@ const fallbacks: Record<Font, Font[]> = {
   arimo: []
 }
 
-const families = (font: Font): string[] => [font, ...fallbacks[font]].map((family) => fontFamilies[family])
+const families = (font: Font): string[] => [font, ...fallbacks[font]].map((family) => cvFontFamilies[family])
 
 // Wartość `font-family` CV: wybrany font, jego font zastępczy i w ostateczności sans-serif.
 export const fontStack = (font: Font): string => [...families(font).map((family) => `"${family}"`), 'sans-serif'].join(', ')
