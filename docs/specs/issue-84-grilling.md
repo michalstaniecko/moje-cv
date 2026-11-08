@@ -4,8 +4,9 @@ Sesja „grilling” (z dopisywaniem do glosariusza i ADR) nad issue #84 i resea
 Stan na 2026-11-08, gałąź `feature/issue-84-docx-export`.
 
 **Uwaga:** sesja odbyła się bez właściciela. Każde pytanie ma rekomendację agenta przyjętą jako decyzję roboczą.
-Decyzje oznaczone **[do potwierdzenia]** odchodzą od treści issue albo są decyzjami produktowymi, które właściciel
-powinien świadomie zaakceptować przed `ready-for-agent`.
+Decyzje Q1, Q6, Q14 i Q18 odchodzą od treści issue albo są decyzjami produktowymi; pierwotnie czekały na
+potwierdzenie właściciela. 2026-11-08 właściciel przekazał decyzje agentowi i wszystkie zostały **przyjęte** bez zmian
+(oznaczone **[przyjęte]**), a ADR-0008 ma status *accepted*. Spec opublikowany jako #89.
 
 Przeczytane: `CLAUDE.md`, `docs/agents/*.md`, `GLOSSARY.md`, ADR 0001–0006 (i ADR-0007 z gałęzi
 `feature/issue-41-mac-app-store`, status *proposed*), research, `src/main/pdfExport.ts`, `src/main/pdfFileName.ts`,
@@ -21,7 +22,7 @@ Nowe pojęcie w `GLOSSARY.md`: **DOCX export**. Nowy ADR: `docs/adr/0008-docx-ex
 
 ## A. Czy w ogóle DOCX
 
-**Q1. Czy DOCX jest właściwym MVP, czy zamiast niego „własna sekcja” w aplikacji?** **[do potwierdzenia]**
+**Q1. Czy DOCX jest właściwym MVP, czy zamiast niego „własna sekcja” w aplikacji?** **[przyjęte]**
 Decyzja: DOCX zostaje MVP tego issue. „Własna sekcja” (sekcja z dowolnym tekstem) idzie jako **osobne issue**,
 niezależne od #84, bez blokowania się nawzajem.
 Uzasadnienie: własna sekcja pokrywa tylko „dodam akapit tekstu” w ramach istniejących szablonów i wymaga podbicia
@@ -55,7 +56,7 @@ Uzasadnienie: bloki są jedyną definicją tego, co trafia na dokument (pomijani
 daty z „present” w CV language, `breakBefore`, `keepWithNext`). Własna logika na `CvDocument` szybko by się rozjechała
 z PDF-em. `blocks.ts` jest czystym TS (importuje tylko `shared/i18n` i typy), main już importuje z `domain` (`schema.ts`).
 
-**Q6. Czy potrzebny jest refaktor „geometria szablonów do modułów bez CSS”?** **[do potwierdzenia: odchodzi od issue]**
+**Q6. Czy potrzebny jest refaktor „geometria szablonów do modułów bez CSS”?** **[przyjęte; odchodzi od issue]**
 Decyzja: **nie w MVP.** Układ DOCX ma własną, stałą geometrię (`DOCX_BLOCK_GEOMETRY`: odstępy w mm i
 `listSectionLayout: { title: 'above', columns: 1 }`) oraz własne marginesy strony, w module CSS-free obok buildera.
 Main nie importuje żadnego `template/*/index.ts(x)`. Refaktor (`template/<id>/geometry.ts` + `Record<CvTemplateId, …>`)
@@ -124,7 +125,7 @@ Uzasadnienie: poza asarem, ten sam mechanizm co `container-migration.plist` na g
 licencji przy redystrybucji fontu w oprogramowaniu. Wariant z importem `?asset` w electron-vite odrzucony jako mniej
 przejrzysty przy 12 plikach i zależny od zachowania bundlera.
 
-**Q14. Osadzanie fontów: opcja (domyślnie włączona), opt-in, czy zawsze?** **[do potwierdzenia: odchodzi od issue]**
+**Q14. Osadzanie fontów: opcja (domyślnie włączona), opt-in, czy zawsze?** **[przyjęte; odchodzi od issue]**
 Decyzja: w MVP **zawsze osadzamy**, bez przełącznika w UI. Osadzany jest tylko font CV (4 kroje), a Source Sans 3
 (4 kroje) dodatkowo tylko wtedy, gdy font CV to Lato i tekst rzeczywiście zawiera znaki spoza Lato (Q15). Pełne pliki,
 bez podzbiorów. Test pilnuje budżetu rozmiaru (Q27); przełącznik „bez osadzania” wraca jako osobne zadanie, jeśli
@@ -155,7 +156,7 @@ Decyzja: A4, marginesy 20 mm z każdej strony, bez stopki i numerów stron.
 Uzasadnienie: marginesy szablonów (np. 12/16/10/12 mm w `classic`) są ciasne do dalszej edycji; numer strony ma tylko
 część szablonów (`modern`, `bold`), więc wspólny układ go nie ma (Q30).
 
-**Q18. Konstrukcje Worda: tabele czy przepływ tekstu?** **[do potwierdzenia: częściowo odchodzi od researchu]**
+**Q18. Konstrukcje Worda: tabele czy przepływ tekstu?** **[przyjęte; częściowo odchodzi od researchu]**
 Decyzja: przepływ tekstu wszędzie, gdzie się da; tabela bez obramowań tylko w nagłówku ze zdjęciem.
 - Nazwisko: styl akapitu **Title** (nadpisany: font CV, pogrubienie, rozmiar jak w szablonach ~21 pt).
 - Kontakty: jeden akapit na kontakt, etykieta pogrubiona, wartość po tabulatorze (stały tab ok. 25 mm), więc wartości

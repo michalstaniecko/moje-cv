@@ -1,6 +1,6 @@
 # DOCX export uses one shared layout, built from CV blocks in the main process
 
-Status: proposed, pending confirmation by the owner (decision log: `docs/specs/issue-84-grilling.md`).
+Status: accepted (decision log: `docs/specs/issue-84-grilling.md`).
 
 The DOCX export exists so the user can keep editing their CV in a word processor, not to reproduce a Template. We decided that every Template exports to the same simplified layout (headings as Word heading styles, real bulleted lists, dates on a right-aligned tab stop, a borderless table only for the header with a photo), carrying over only the content, accent colour, font and CV language. The file is built natively with the `docx` library in the main process from `generateBlocks` with a geometry of its own, so the main process never imports Template modules (which import CSS) and a new Template needs no DOCX work. The fonts are embedded from unmodified upstream static TTF files shipped next to their `OFL.txt` as `extraResources`, even though the renderer already bundles the same families as `@fontsource` WOFF2: converting WOFF2 to TTF counts as a modification under the OFL, and Lato and Source Sans 3 carry Reserved Font Names.
 
