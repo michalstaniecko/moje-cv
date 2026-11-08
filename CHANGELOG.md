@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- Export to DOCX: an "Export to DOCX" button next to "Export to PDF" in the CV editor and File → Export to DOCX… save an editable copy of the CV for Word, Pages, LibreOffice or Google Docs. The file uses one simplified layout for every Template (heading styles, real bulleted lists, dates on a right tab stop) with the CV's accent colour, font and CV language; the PDF stays the exact image of the preview.
+- Export to DOCX: an "Export to DOCX" button next to "Export to PDF" in the CV editor and File → Export to DOCX… save an editable copy of the CV for Word, Pages, LibreOffice or Google Docs. The file uses one simplified layout for every Template (heading styles, real bulleted lists, dates on a right tab stop) with the CV's accent colour, font and CV language; the PDF stays the exact image of the preview. The photo (JPEG or PNG) sits next to the name, and with Lato the characters it lacks (Cyrillic, some Vietnamese letters) are written in Source Sans 3, as in the preview.
 
 ## [0.6.0] – 2026-11-08
 
