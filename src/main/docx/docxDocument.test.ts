@@ -367,6 +367,11 @@ describe('buildDocx', () => {
       }
     })
 
+    // Bez tej flagi Word ignoruje osadzone fonty i podstawia własny (docx dodaje ją, gdy lista fontów jest niepusta).
+    test('word/settings.xml tells Word to use the embedded TrueType fonts', async () => {
+      expect((await docxParts(sample))['word/settings.xml']).toContain('<w:embedTrueTypeFonts/>')
+    })
+
     // Budżet rozmiaru pliku z osadzonymi fontami (zob. #93): Sample CV w każdym CV language i w każdym foncie CV.
     test('the Sample CV in every CV language and every CV font fits the size budget', async () => {
       for (const [language, document] of Object.entries(sampleCvs)) {
