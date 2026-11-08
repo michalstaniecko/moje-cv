@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- In German, Italian, Romanian and Russian the "New page before this section" checkbox moves to its own line when it doesn’t fit next to "Hide section", instead of making the CV editor form wider than its column.
+
 ## [0.5.0] – 2026-11-08
 
 ### Added
