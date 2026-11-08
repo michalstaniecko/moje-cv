@@ -3,10 +3,20 @@ import { describe, expect, test } from 'vitest'
 import { sampleCvs } from '../../renderer/src/domain/sampleCv'
 import type { CvDocument } from '../../renderer/src/domain/schema'
 import { buildDocx } from './docxDocument'
+import { FONTS_SOURCE_DIRECTORY, readDocxFonts } from './fontFiles'
+import { cvFontFamilies, cvFontIds, type CvFontId } from '../../shared/cvFonts'
+
+// Budżet rozmiaru DOCX z osadzonymi fontami (#93).
+const DOCX_SIZE_BUDGET_BYTES = 3 * 1024 * 1024
+
+// Fonty z `resources/fonts`, jak w dev – czytane raz dla wszystkich testów.
+const fonts = await readDocxFonts(FONTS_SOURCE_DIRECTORY)
+
+const build = (document: CvDocument) => buildDocx(document, fonts)
 
 // Części pliku DOCX (ZIP) jako tekst: `word/document.xml`, `word/styles.xml`, `docProps/core.xml`…
 async function docxParts(document: CvDocument): Promise<Record<string, string>> {
-  const files = unzipSync(new Uint8Array(await buildDocx(document)))
+  const files = unzipSync(new Uint8Array(await build(document)))
   return Object.fromEntries(Object.entries(files).map(([path, content]) => [path, strFromU8(content)]))
 }
 
@@ -214,7 +224,7 @@ describe('buildDocx', () => {
     const media = (parts: Record<string, string>) => Object.keys(parts).filter((path) => path.startsWith('word/media/'))
 
     test('a JPEG photo sits next to the name, contacts and summary in a borderless two-column table', async () => {
-      const files = unzipSync(new Uint8Array(await buildDocx(withPhoto(dataUrl('image/jpeg', jpeg)))))
+      const files = unzipSync(new Uint8Array(await build(withPhoto(dataUrl('image/jpeg', jpeg)))))
       const images = Object.keys(files).filter((path) => path.startsWith('word/media/'))
       expect(images).toHaveLength(1)
       expect(images[0]).toMatch(/\.jpe?g$/)
@@ -308,6 +318,63 @@ describe('buildDocx', () => {
       expect(text(contact)).toBe('Телефон⇥Москва')
       expect(contact.match(/w:ascii="Source Sans 3"/g)).toHaveLength(2)
       expect(paragraphWithText(xml, 'Телефон')).toMatch(/<w:b\/>.*?<w:t[^>]*>Телефон</s)
+    })
+  })
+
+  describe('embedded fonts', () => {
+    const inFont = (document: CvDocument, font: CvFontId): CvDocument => ({ ...document, settings: { ...document.settings, font } })
+
+    // Rodziny z `word/fontTable.xml` z krojami osadzonymi w każdej z nich.
+    const embeddedFaces = (fontTable: string): Record<string, string[]> =>
+      Object.fromEntries(
+        [...fontTable.matchAll(/<w:font w:name="([^"]+)">(.*?)<\/w:font>/gs)].map(([, name, content]) => [
+          name!,
+          [...content!.matchAll(/<w:(embed\w+) /g)].map(([, face]) => face!).sort()
+        ])
+      )
+
+    const ALL_FACES = ['embedBold', 'embedBoldItalic', 'embedItalic', 'embedRegular']
+
+    // Zaciemnianie (ECMA-376 §17.8.1) zmienia tylko pierwsze 32 bajty pliku, więc reszta identyfikuje krój.
+    const tail = (data: Uint8Array) => Buffer.from(data.subarray(32)).toString('base64')
+    const faceTails = (...ids: CvFontId[]) => ids.flatMap((id) => Object.values(fonts[id]).map(tail)).sort()
+
+    const embeddedFiles = (files: Record<string, Uint8Array>) =>
+      Object.entries(files).filter(([path]) => /^word\/fonts\/[^/]+\.odttf$/.test(path))
+
+    test.each(cvFontIds)('the four faces of the CV font %s are embedded, full files, and nothing else for a Latin CV', async (id) => {
+      const files = unzipSync(new Uint8Array(await build(inFont(sample, id))))
+      expect(embeddedFaces(strFromU8(files['word/fontTable.xml']!))).toEqual({ [cvFontFamilies[id]]: ALL_FACES })
+      const odttf = embeddedFiles(files)
+      expect(odttf.map(([, data]) => tail(data)).sort()).toEqual(faceTails(id))
+      for (const [, data] of odttf) expect(Object.values(fonts[id]).map((face) => face.length)).toContain(data.length)
+    })
+
+    test('Source Sans 3 is embedded as well for the Russian Sample CV in Lato, but not for the English one', async () => {
+      const russian = unzipSync(new Uint8Array(await build(inFont(sampleCvs.ru, 'lato'))))
+      expect(embeddedFaces(strFromU8(russian['word/fontTable.xml']!))).toEqual({ Lato: ALL_FACES, 'Source Sans 3': ALL_FACES })
+      expect(embeddedFiles(russian).map(([, data]) => tail(data)).sort()).toEqual(faceTails('lato', 'source-sans-3'))
+
+      const english = unzipSync(new Uint8Array(await build(inFont(sampleCvs.en, 'lato'))))
+      expect(Object.keys(embeddedFaces(strFromU8(english['word/fontTable.xml']!)))).toEqual(['Lato'])
+      expect(embeddedFiles(english)).toHaveLength(4)
+    })
+
+    test('the Russian Sample CV in Source Sans 3 or Arimo embeds only that font', async () => {
+      for (const id of ['source-sans-3', 'arimo'] as const) {
+        const files = unzipSync(new Uint8Array(await build(inFont(sampleCvs.ru, id))))
+        expect(Object.keys(embeddedFaces(strFromU8(files['word/fontTable.xml']!)))).toEqual([cvFontFamilies[id]])
+      }
+    })
+
+    // Budżet rozmiaru pliku z osadzonymi fontami (zob. #93): Sample CV w każdym CV language i w każdym foncie CV.
+    test('the Sample CV in every CV language and every CV font fits the size budget', async () => {
+      for (const [language, document] of Object.entries(sampleCvs)) {
+        for (const id of cvFontIds) {
+          const size = (await build(inFont(document, id))).length
+          expect(size, `${language} in ${id}`).toBeLessThanOrEqual(DOCX_SIZE_BUDGET_BYTES)
+        }
+      }
     })
   })
 

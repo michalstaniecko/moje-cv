@@ -17,11 +17,13 @@ import {
   TextRun,
   WidthType,
   type IParagraphOptions,
+  type IPropertiesOptions,
   type IRunOptions,
   type IStylesOptions
 } from 'docx'
 import { cvFontFamilies, type CvFontId } from '../../shared/cvFonts'
 import { splitByFontCoverage } from './fontCoverage'
+import type { DocxFonts } from './fontFiles'
 import { exportDocumentTitle } from '../exportDocumentTitle'
 import { docxLanguageTag } from './languageTags'
 import { generateBlocks, type BlockGeometry, type CvBlock } from '../../renderer/src/domain/blocks'
@@ -87,16 +89,20 @@ type RunOptions = Omit<IRunOptions, 'text' | 'break' | 'children'>
 
 // Przebiegi tekstu CV: każdy kolejny wiersz po miękkim podziale (`w:br`), jak `white-space: pre-line`, a znaki spoza
 // fontu CV osobnym przebiegiem w foncie zastępczym (po nazwie), jak stos fontów w podglądzie (fontCoverage.ts).
-type Runs = (content: string, options?: RunOptions) => TextRun[]
+// `usesFallback` mówi, czy któryś przebieg wyszedł w foncie zastępczym – wtedy osadzamy i jego.
+type Runs = ((content: string, options?: RunOptions) => TextRun[]) & { readonly usesFallback: boolean }
 
-const FALLBACK_FONT = cvFontFamilies['source-sans-3']
+const FALLBACK_FONT_ID: CvFontId = 'source-sans-3'
+const FALLBACK_FONT = cvFontFamilies[FALLBACK_FONT_ID]
 
 function runsIn(font: CvFontId): Runs {
-  return (content, options = {}) =>
+  let usesFallback = false
+  const runs = (content: string, options: RunOptions = {}) =>
     content.split('\n').flatMap((line, index) => {
       const lineBreak = index > 0 ? 1 : undefined
       const segments = splitByFontCoverage(line, font)
       if (segments.length === 0) return lineBreak ? [new TextRun({ ...options, text: '', break: lineBreak })] : []
+      if (segments.some((segment) => segment.fallback)) usesFallback = true
       return segments.map(
         (segment, segmentIndex) =>
           new TextRun({
@@ -107,6 +113,7 @@ function runsIn(font: CvFontId): Runs {
           })
       )
     })
+  return Object.defineProperty(runs, 'usesFallback', { get: () => usesFallback }) as Runs
 }
 
 const tab = () => new TextRun({ children: [new Tab()] })
@@ -282,16 +289,32 @@ function styles({ settings }: CvDocument): IStylesOptions {
   }
 }
 
-export async function buildDocx(document: CvDocument): Promise<Buffer> {
+type FontOptions = NonNullable<IPropertiesOptions['fonts']>[number]
+
+// Osadzane fonty: 4 kroje fontu CV (pełne pliki, bez podzbiorów – Microsoft odradza podzbiory przy edycji), a font
+// zastępczy tylko wtedy, gdy rzeczywiście jest w tekście (Lato + znaki spoza Lato, np. cyrylica).
+function embeddedFonts(font: CvFontId, fonts: DocxFonts, withFallback: boolean): FontOptions[] {
+  const ids = withFallback && font !== FALLBACK_FONT_ID ? [font, FALLBACK_FONT_ID] : [font]
+  return ids.map((id) => {
+    const { regular, bold, italic, boldItalic } = fonts[id]
+    return { name: cvFontFamilies[id], data: regular, bold, italic, boldItalic }
+  })
+}
+
+// `fonts` – pliki TTF fontów CV (docxFonts.ts czyta je z zasobów aplikacji); builder sam nie sięga do dysku.
+export async function buildDocx(document: CvDocument, fonts: DocxFonts): Promise<Buffer> {
   const blocks = generateBlocks(document, DOCX_BLOCK_GEOMETRY)
   const fullName = document.header.fullName.trim()
   const runs = runsIn(document.settings.font)
+  // Treść przed `Document`, żeby wiedzieć, czy potrzebny jest font zastępczy.
+  const children = [...blocks.flatMap((block) => blockChildren(runs, block)), ...consentParagraphs(runs, document)]
   const docx = new Document({
     // Metadane jak w PDF; puste pola pominięte (bez domyślnego „Un-named” biblioteki), bez nazwy aplikacji.
     title: exportDocumentTitle(fullName),
     creator: fullName,
     lastModifiedBy: fullName,
     styles: styles(document),
+    fonts: embeddedFonts(document.settings.font, fonts, runs.usesFallback),
     numbering: {
       config: [
         {
@@ -323,7 +346,7 @@ export async function buildDocx(document: CvDocument): Promise<Buffer> {
             }
           }
         },
-        children: [...blocks.flatMap((block) => blockChildren(runs, block)), ...consentParagraphs(runs, document)]
+        children
       }
     ]
   })
