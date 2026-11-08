@@ -12,16 +12,13 @@ import '@fontsource/arimo/400-italic.css'
 import '@fontsource/arimo/700.css'
 import '@fontsource/arimo/700-italic.css'
 
+import { cvFontFamilies } from '../../../shared/cvFonts'
 import type { CvDocument } from '../domain/schema'
 
 export type Font = CvDocument['settings']['font']
 
-// Nazwa rodziny w CSS – zarazem nazwa fontu pokazywana w formularzu.
-export const fontFamilies: Record<Font, string> = {
-  lato: 'Lato',
-  'source-sans-3': 'Source Sans 3',
-  arimo: 'Arimo'
-}
+// Nazwa rodziny w CSS – zarazem nazwa fontu pokazywana w formularzu (wspólna z DOCX export, więc w shared).
+export const fontFamilies = cvFontFamilies
 
 // Font zastępczy dla znaków, których nie ma wybrany font (Lato nie ma cyrylicy ani pełnego wietnamskiego):
 // dołączony Source Sans 3 zamiast fontu systemowego, który byłby inny na każdym komputerze.
