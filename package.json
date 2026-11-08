@@ -3,7 +3,7 @@
   "productName": "CV Drawer",
   "version": "0.6.0",
   "private": true,
-  "description": "CV Drawer – generator CV z podglądem stron A4 i eksportem do PDF",
+  "description": "CV Drawer – generator CV z podglądem stron A4, eksportem do PDF i do edytowalnego DOCX",
   "author": "Michal Staniecko",
   "main": "./out/main/index.js",
   "packageManager": "pnpm@10.34.7",

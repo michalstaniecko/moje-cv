@@ -59,6 +59,7 @@ export type Section = z.infer<typeof sectionSchema>
 //    zmiennych ustawianych przez CvPages: --accent, --on-accent (tekst na akcencie) i marginesów --cv-margin-*,
 // 3. nazwa w `editor.templateNames` w słownikach interfejsu (shared/i18n),
 // 4. podbicie CV_SCHEMA_VERSION z pustą migracją w migrations.ts (ADR 0002).
+// DOCX export celowo nie zależy od szablonu (jeden wspólny układ, ADR-0008) – nowy szablon nie wymaga pracy przy DOCX.
 export const cvTemplateIds = ['classic', 'modern', 'bold'] as const
 export type CvTemplateId = (typeof cvTemplateIds)[number]
 
