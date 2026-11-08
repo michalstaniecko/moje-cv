@@ -21,24 +21,24 @@ function openedBy(label: string): string[] {
 describe('menu Help', () => {
   test('outside the Mac App Store it lists help, privacy, reporting a problem and, after a separator, the update check and support', () => {
     const items = helpMenuItems({ dictionary: en, macAppStore: false, open: () => {}, checkForUpdates: () => {} })
-    expect(visible(items)).toEqual(['CV Press Help', 'Privacy Policy', 'Report a Problem…', '---', 'Check for Updates…', 'Support CV Press…'])
+    expect(visible(items)).toEqual(['CV Drawer Help', 'Privacy Policy', 'Report a Problem…', '---', 'Check for Updates…', 'Support CV Drawer…'])
   })
 
   test('in the Mac App Store it hides the update check, the support item and the separator before them', () => {
     const items = helpMenuItems({ dictionary: en, macAppStore: true, open: () => {}, checkForUpdates: () => {} })
-    expect(visible(items)).toEqual(['CV Press Help', 'Privacy Policy', 'Report a Problem…'])
+    expect(visible(items)).toEqual(['CV Drawer Help', 'Privacy Policy', 'Report a Problem…'])
   })
 
   test('labels follow the interface language', () => {
     const items = helpMenuItems({ dictionary: pl, macAppStore: false, open: () => {}, checkForUpdates: () => {} })
-    expect(visible(items)).toEqual(['Pomoc CV Press', 'Polityka prywatności', 'Zgłoś problem…', '---', 'Sprawdź aktualizacje…', 'Wesprzyj CV Press…'])
+    expect(visible(items)).toEqual(['Pomoc CV Drawer', 'Polityka prywatności', 'Zgłoś problem…', '---', 'Sprawdź aktualizacje…', 'Wesprzyj CV Drawer…'])
   })
 
   test('each item opens exactly its own fixed address', () => {
-    expect(openedBy('CV Press Help')).toEqual(['https://michalstaniecko.github.io/moje-cv/'])
+    expect(openedBy('CV Drawer Help')).toEqual(['https://michalstaniecko.github.io/moje-cv/'])
     expect(openedBy('Privacy Policy')).toEqual(['https://michalstaniecko.github.io/moje-cv/privacy/'])
     expect(openedBy('Report a Problem…')).toEqual(['https://github.com/michalstaniecko/moje-cv/issues/new/choose'])
-    expect(openedBy('Support CV Press…')).toEqual(['https://github.com/sponsors/michalstaniecko'])
+    expect(openedBy('Support CV Drawer…')).toEqual(['https://github.com/sponsors/michalstaniecko'])
   })
 
   test('Check for Updates… checks right away and opens no address itself', () => {

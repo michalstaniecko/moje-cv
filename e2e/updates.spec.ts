@@ -157,7 +157,7 @@ async function savedUpdateCheck(): Promise<{ latestVersion?: string } | undefine
 test('a newer release shows the Update notice; Download opens its release page, and a closed notice stays closed after a restart without asking again within 24 h', async () => {
   await launch()
   await expect(notice()).toBeVisible()
-  await expect(notice().getByRole('status')).toHaveText('A new version of CV Press is available: 99.0.0.')
+  await expect(notice().getByRole('status')).toHaveText('A new version of CV Drawer is available: 99.0.0.')
   await expect(window.getByRole('button', { name: 'New CV' })).not.toBeFocused()
 
   await stubOpenExternal()
@@ -181,7 +181,7 @@ test('a newer release shows the Update notice; Download opens its release page, 
   await clickMenuItem('Help', 'Check for Updates…')
   await expect.poll(messageBoxCalls).toEqual([
     {
-      message: 'A new version of CV Press is available: 99.0.0.',
+      message: 'A new version of CV Drawer is available: 99.0.0.',
       detail: `You have version ${await appVersion()}. Download the new version and replace the app in your Applications folder.`,
       buttons: ['Download', 'Later']
     }
@@ -198,7 +198,7 @@ test('the request carries only the app version: no cookies and no query string',
   expect(requests).toHaveLength(1)
   const [{ url, headers }] = requests as [(typeof requests)[number]]
   expect(url).toBe('/releases/latest')
-  expect(headers['user-agent']).toBe(`CV-Press/${await appVersion()}`)
+  expect(headers['user-agent']).toBe(`CV-Drawer/${await appVersion()}`)
   expect(headers['accept']).toBe('application/vnd.github+json')
   expect(headers['cookie']).toBeUndefined()
   expect(headers['authorization']).toBeUndefined()
@@ -218,7 +218,7 @@ test('with the latest version there is no notice, and Help → Check for Updates
   await stubMessageBox(0)
   await clickMenuItem('Help', 'Check for Updates…')
   await expect.poll(messageBoxCalls).toEqual([
-    { message: `You have the latest version of CV Press (${version}).`, detail: undefined, buttons: ['OK'] }
+    { message: `You have the latest version of CV Drawer (${version}).`, detail: undefined, buttons: ['OK'] }
   ])
 })
 
@@ -253,7 +253,7 @@ test('the Update notice and the menu item follow the interface language', async 
 
   await chooseLanguage('Polski')
 
-  await expect(notice('Nowa wersja').getByRole('status')).toHaveText('Dostępna jest nowa wersja CV Press 99.0.0.')
+  await expect(notice('Nowa wersja').getByRole('status')).toHaveText('Dostępna jest nowa wersja CV Drawer 99.0.0.')
   await expect(notice('Nowa wersja').getByRole('button', { name: 'Pobierz' })).toBeVisible()
   await expect(notice('Nowa wersja').getByRole('button', { name: 'Zamknij' })).toBeVisible()
   await expect.poll(() => helpItems('Pomoc')).toContain('Sprawdź aktualizacje…')
@@ -273,5 +273,5 @@ test('a notice that arrives while the editor is open is shown after going back t
 
   await window.getByRole('button', { name: '← CV library' }).click()
 
-  await expect(notice().getByRole('status')).toHaveText('A new version of CV Press is available: 99.0.0.')
+  await expect(notice().getByRole('status')).toHaveText('A new version of CV Drawer is available: 99.0.0.')
 })

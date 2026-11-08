@@ -24,7 +24,7 @@ export function useAppVersion(): string | null {
   return version
 }
 
-// Dyskretny tekst „CV Press 1.0.0”. Nazwa i numer są takie same we wszystkich językach, więc bez nowego klucza
+// Dyskretny tekst „CV Drawer 1.0.0”. Nazwa i numer są takie same we wszystkich językach, więc bez nowego klucza
 // w słownikach. Zwykły akapit, nie <footer>: landmarkiem `contentinfo` jest już Sponsor bar.
 export function AppVersion({ className }: { className: string }) {
   const version = useAppVersion()

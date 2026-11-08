@@ -1,4 +1,4 @@
-# CV Press
+# CV Drawer
 
 Desktop app for creating, editing and exporting CVs to PDF.
 
@@ -41,7 +41,7 @@ The single-line strip at the bottom of the app window, shown on every screen, te
 _Avoid_: Banner, ad, toast (toasts are the disappearing status messages), donation bar
 
 **Sponsor link**:
-The link that opens the author's GitHub Sponsors page in the system browser: in the Sponsor bar and as "Support CV Press…" in the Help menu (outside the Mac App Store, like the bar). A thank-you, never a payment for a feature: the app works identically whether or not it is used.
+The link that opens the author's GitHub Sponsors page in the system browser: in the Sponsor bar and as "Support CV Drawer…" in the Help menu (outside the Mac App Store, like the bar). A thank-you, never a payment for a feature: the app works identically whether or not it is used.
 _Avoid_: Donate button, buy-me-a-coffee (as the name of the concept), payment
 
 **Update notice**:

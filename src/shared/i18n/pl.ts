@@ -1,7 +1,7 @@
 import type { Dictionary } from './en'
 
 export const pl: Dictionary = {
-  appName: 'CV Press',
+  appName: 'CV Drawer',
   menu: {
     about: (appName) => `O aplikacji ${appName}`,
     services: 'Usługi',
@@ -284,13 +284,13 @@ export const pl: Dictionary = {
   },
   sponsor: {
     bar: (appName) => `Wsparcie ${appName}`,
-    message: (appName) => `${appName} jest darmowe. Jeśli Ci pomogło, możesz podziękować autorowi kawą.`,
+    message: (appName) => `${appName} jest darmowy. Jeśli Ci pomógł, możesz podziękować autorowi kawą.`,
     link: 'Postaw mi kawę',
     more: 'Więcej',
-    dialogTitle: (appName) => `Dlaczego ${appName} jest darmowe`,
+    dialogTitle: (appName) => `Dlaczego ${appName} jest darmowy`,
     paragraphs: (appName) => [
-      `${appName} jest darmowe i takie pozostanie: bez reklam, bez konta, bez płatnych funkcji.`,
-      'Tworzy je jedna osoba w wolnym czasie.',
+      `${appName} jest darmowy i taki pozostanie: bez reklam, bez konta, bez płatnych funkcji.`,
+      'Tworzy go jedna osoba w wolnym czasie.',
       'Jeśli CV zrobione tutaj pomogło Ci dostać pracę albo po prostu aplikacja Ci się przydaje, możesz podziękować, stawiając kawę przez GitHub Sponsors.',
       'To wyłącznie podziękowanie. Niczego nie odblokowuje: aplikacja działa dokładnie tak samo w obu przypadkach.'
     ],

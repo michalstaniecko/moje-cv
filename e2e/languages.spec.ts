@@ -143,7 +143,7 @@ for (const language of interfaceLanguageCodes) {
 
     // Start: dokument i menu w tym języku; menu Language dwujęzyczne (po angielsku samo „Language”).
     await expect(window.locator('html')).toHaveAttribute('lang', language)
-    await expect.poll(() => window.title()).toBe('CV Press')
+    await expect.poll(() => window.title()).toBe('CV Drawer')
     expect(t.menu.language).toEqual(language === 'en' ? 'Language' : expect.stringMatching(/^\S.* \/ Language$/))
     await expect.poll(menu).toEqual({
       top: [t.appName, t.menu.file, t.menu.edit, t.menu.view, t.menu.language, t.menu.appearance, t.menu.window, t.menu.help],

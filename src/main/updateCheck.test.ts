@@ -127,7 +127,7 @@ describe('checking for a new version', () => {
     const [{ url, init }] = fetchCalls as [(typeof fetchCalls)[number]]
     expect(url).toBe(feedUrl)
     expect(new URL(url).search).toBe('')
-    expect(new Headers(init?.headers).get('User-Agent')).toBe('CV-Press/1.0.3')
+    expect(new Headers(init?.headers).get('User-Agent')).toBe('CV-Drawer/1.0.3')
     expect(new Headers(init?.headers).get('Accept')).toBe('application/vnd.github+json')
     expect(init).toMatchObject({ cache: 'no-store', credentials: 'omit' })
   })
