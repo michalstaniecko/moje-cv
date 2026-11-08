@@ -168,7 +168,7 @@ export const de: Dictionary = {
     savedDocx: (fileName) => `DOCX gesichert: ${fileName}`,
     openFile: 'Öffnen',
     showInFolder: 'Im Finder zeigen',
-    exportFailed: 'Das PDF konnte nicht gesichert werden. Versuche es erneut.',
+    exportPdfFailed: 'Das PDF konnte nicht gesichert werden. Versuche es erneut.',
     exportDocxFailed: 'Das DOCX konnte nicht gesichert werden. Versuche es erneut.',
     docxNote: 'Vereinfachtes Layout zum Bearbeiten in Word, Pages, LibreOffice oder Google Docs. Das PDF entspricht der Vorschau.',
     exportCutOff: 'Ein Teil des Inhalts passt nicht auf eine Seite und wird abgeschnitten. Trotzdem exportieren?',

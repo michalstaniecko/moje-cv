@@ -161,7 +161,7 @@ export const pl: Dictionary = {
     savedDocx: (fileName) => `Zapisano DOCX: ${fileName}`,
     openFile: 'Otwórz',
     showInFolder: 'Pokaż w Finderze',
-    exportFailed: 'Nie udało się zapisać PDF. Spróbuj ponownie.',
+    exportPdfFailed: 'Nie udało się zapisać PDF. Spróbuj ponownie.',
     exportDocxFailed: 'Nie udało się zapisać DOCX. Spróbuj ponownie.',
     docxNote: 'Uproszczony układ do edycji w Wordzie, Pages, LibreOffice lub Dokumentach Google. Podglądowi odpowiada PDF.',
     exportCutOff: 'Część treści nie zmieści się na stronie i zostanie ucięta. Eksportować mimo to?',

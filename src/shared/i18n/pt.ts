@@ -161,7 +161,7 @@ export const pt: Dictionary = {
     savedDocx: (fileName) => `DOCX salvo: ${fileName}`,
     openFile: 'Abrir',
     showInFolder: 'Mostrar no Finder',
-    exportFailed: 'Não foi possível salvar o PDF. Tente novamente.',
+    exportPdfFailed: 'Não foi possível salvar o PDF. Tente novamente.',
     exportDocxFailed: 'Não foi possível salvar o DOCX. Tente novamente.',
     docxNote: 'Layout simplificado para edição no Word, Pages, LibreOffice ou Documentos Google. O PDF corresponde à pré-visualização.',
     exportCutOff: 'Parte do conteúdo não cabe em uma página e será cortada. Exportar mesmo assim?',

@@ -161,7 +161,7 @@ export const ro: Dictionary = {
     savedDocx: (fileName) => `DOCX salvat: ${fileName}`,
     openFile: 'Deschide',
     showInFolder: 'Afișează în Finder',
-    exportFailed: 'PDF-ul nu a putut fi salvat. Încearcă din nou.',
+    exportPdfFailed: 'PDF-ul nu a putut fi salvat. Încearcă din nou.',
     exportDocxFailed: 'DOCX-ul nu a putut fi salvat. Încearcă din nou.',
     docxNote: 'Aspect simplificat pentru editare în Word, Pages, LibreOffice sau Google Docs. PDF-ul corespunde previzualizării.',
     exportCutOff: 'O parte din conținut nu încape pe o pagină și va fi tăiată. Exporți totuși?',

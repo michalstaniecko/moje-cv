@@ -161,7 +161,7 @@ export const cs: Dictionary = {
     savedDocx: (fileName) => `DOCX uloženo: ${fileName}`,
     openFile: 'Otevřít',
     showInFolder: 'Zobrazit ve Finderu',
-    exportFailed: 'PDF se nepodařilo uložit. Zkuste to znovu.',
+    exportPdfFailed: 'PDF se nepodařilo uložit. Zkuste to znovu.',
     exportDocxFailed: 'DOCX se nepodařilo uložit. Zkuste to znovu.',
     docxNote: 'Zjednodušené rozvržení pro úpravy ve Wordu, Pages, LibreOffice nebo Dokumentech Google. Náhledu odpovídá PDF.',
     exportCutOff: 'Část obsahu se nevejde na stránku a bude oříznuta. Přesto exportovat?',

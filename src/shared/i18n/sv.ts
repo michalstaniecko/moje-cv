@@ -166,7 +166,7 @@ export const sv: Dictionary = {
     savedDocx: (fileName) => `Sparade DOCX: ${fileName}`,
     openFile: 'Öppna',
     showInFolder: 'Visa i Finder',
-    exportFailed: 'Det gick inte att spara PDF:en. Försök igen.',
+    exportPdfFailed: 'Det gick inte att spara PDF:en. Försök igen.',
     exportDocxFailed: 'Det gick inte att spara DOCX-filen. Försök igen.',
     docxNote: 'Förenklad layout för redigering i Word, Pages, LibreOffice eller Google Dokument. PDF:en motsvarar förhandsvisningen.',
     exportCutOff: 'En del av innehållet får inte plats på en sida och kommer att klippas av. Exportera ändå?',

@@ -161,7 +161,7 @@ export const fr: Dictionary = {
     savedDocx: (fileName) => `DOCX enregistré : ${fileName}`,
     openFile: 'Ouvrir',
     showInFolder: 'Afficher dans le Finder',
-    exportFailed: 'Impossible d’enregistrer le PDF. Réessayez.',
+    exportPdfFailed: 'Impossible d’enregistrer le PDF. Réessayez.',
     exportDocxFailed: 'Impossible d’enregistrer le DOCX. Réessayez.',
     docxNote: 'Mise en page simplifiée pour la modification dans Word, Pages, LibreOffice ou Google Docs. Le PDF correspond à l’aperçu.',
     exportCutOff: 'Une partie du contenu ne tient pas sur une page et sera coupée. Exporter quand même ?',

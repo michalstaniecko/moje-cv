@@ -161,7 +161,7 @@ export const tr: Dictionary = {
     savedDocx: (fileName) => `DOCX kaydedildi: ${fileName}`,
     openFile: 'Aç',
     showInFolder: 'Finder’da Göster',
-    exportFailed: 'PDF kaydedilemedi. Yeniden deneyin.',
+    exportPdfFailed: 'PDF kaydedilemedi. Yeniden deneyin.',
     exportDocxFailed: 'DOCX kaydedilemedi. Yeniden deneyin.',
     docxNote: 'Word, Pages, LibreOffice veya Google Dokümanlar’da düzenleme için sadeleştirilmiş düzen. Önizlemeyle aynı olan PDF’tir.',
     exportCutOff: 'İçeriğin bir kısmı sayfaya sığmıyor ve kesilecek. Yine de dışa aktarılsın mı?',

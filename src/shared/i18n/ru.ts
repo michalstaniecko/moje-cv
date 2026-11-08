@@ -161,7 +161,7 @@ export const ru: Dictionary = {
     savedDocx: (fileName) => `DOCX сохранен: ${fileName}`,
     openFile: 'Открыть',
     showInFolder: 'Показать в Finder',
-    exportFailed: 'Не удалось сохранить PDF. Попробуйте еще раз.',
+    exportPdfFailed: 'Не удалось сохранить PDF. Попробуйте еще раз.',
     exportDocxFailed: 'Не удалось сохранить DOCX. Попробуйте еще раз.',
     docxNote: 'Упрощенный макет для редактирования в Word, Pages, LibreOffice или Google Документах. PDF соответствует предпросмотру.',
     exportCutOff: 'Часть содержимого не помещается на страницу и будет обрезана. Всё равно экспортировать?',

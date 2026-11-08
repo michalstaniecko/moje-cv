@@ -168,7 +168,7 @@ export const nl: Dictionary = {
     savedDocx: (fileName) => `DOCX bewaard: ${fileName}`,
     openFile: 'Open',
     showInFolder: 'Toon in Finder',
-    exportFailed: 'Kan de PDF niet bewaren. Probeer het opnieuw.',
+    exportPdfFailed: 'Kan de PDF niet bewaren. Probeer het opnieuw.',
     exportDocxFailed: 'Kan de DOCX niet bewaren. Probeer het opnieuw.',
     docxNote: 'Vereenvoudigde opmaak om te bewerken in Word, Pages, LibreOffice of Google Documenten. De PDF komt overeen met de voorvertoning.',
     exportCutOff: 'Een deel van de inhoud past niet op een pagina en wordt afgesneden. Toch exporteren?',

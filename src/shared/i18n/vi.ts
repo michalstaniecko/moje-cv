@@ -161,7 +161,7 @@ export const vi: Dictionary = {
     savedDocx: (fileName) => `Đã lưu DOCX: ${fileName}`,
     openFile: 'Mở',
     showInFolder: 'Hiển thị trong Finder',
-    exportFailed: 'Không thể lưu PDF. Hãy thử lại.',
+    exportPdfFailed: 'Không thể lưu PDF. Hãy thử lại.',
     exportDocxFailed: 'Không thể lưu DOCX. Hãy thử lại.',
     docxNote: 'Bố cục đơn giản để chỉnh sửa trong Word, Pages, LibreOffice hoặc Google Tài liệu. Bản PDF khớp với bản xem trước.',
     exportCutOff: 'Một phần nội dung không vừa trên một trang và sẽ bị cắt. Vẫn xuất?',

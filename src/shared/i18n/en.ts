@@ -180,7 +180,7 @@ export const en = {
     savedDocx: (fileName: string) => `Saved DOCX: ${fileName}`,
     openFile: 'Open',
     showInFolder: 'Show in Finder',
-    exportFailed: 'Couldn’t save the PDF. Try again.',
+    exportPdfFailed: 'Couldn’t save the PDF. Try again.',
     exportDocxFailed: 'Couldn’t save the DOCX. Try again.',
     // DOCX export ma uproszczony układ (ADR-0008) – mówi o tym powiadomienie po zapisie.
     docxNote: 'Simplified layout for editing in Word, Pages, LibreOffice or Google Docs. The PDF matches the preview.',

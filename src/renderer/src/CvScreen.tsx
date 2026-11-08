@@ -14,7 +14,7 @@ import { PreviewPane } from './preview/PreviewPane'
 
 // `confirming` – CV ma bloki wyższe niż strona i eksport czeka na „Eksportuj mimo to”; `timed-out` – strona wydruku
 // nie zgłosiła gotowości w czasie (osobny komunikat od innych błędów).
-type ExportState =
+type PdfExportState =
   | { status: 'idle' }
   | { status: 'confirming' }
   | { status: 'exporting' }
@@ -49,7 +49,7 @@ export function CvScreen({
   const [editor] = useState(() => createCvEditor(initial, window.api.cv.update))
   const document = useStore(editor.store, (state) => state.document)
   const saveStatus = useStore(editor.store, (state) => state.saveStatus)
-  const [exportState, setExportState] = useState<ExportState>({ status: 'idle' })
+  const [exportState, setExportState] = useState<PdfExportState>({ status: 'idle' })
   const [jsonExport, setJsonExport] = useState<JsonExportState>({ status: 'idle' })
   const [docxExport, setDocxExport] = useState<DocxExportState>({ status: 'idle' })
   const [clauses, saveClause] = useClauseLibrary()
@@ -190,32 +190,24 @@ export function CvScreen({
         </div>
       )}
       {exportState.status === 'saved' && (
-        <ExportNotice onDismiss={() => setExportState({ status: 'idle' })}>
-          <span>{t.savedPdf(baseName(exportState.filePath))}</span>
-          <button type="button" onClick={() => window.api.exported.open(exportState.filePath)}>
-            {t.openFile}
-          </button>
-          <button type="button" onClick={() => window.api.exported.showInFolder(exportState.filePath)}>
-            {t.showInFolder}
-          </button>
-        </ExportNotice>
+        <SavedFileNotice
+          filePath={exportState.filePath}
+          message={t.savedPdf(baseName(exportState.filePath))}
+          onDismiss={() => setExportState({ status: 'idle' })}
+        />
       )}
       {(exportState.status === 'failed' || exportState.status === 'timed-out') && (
         <ExportNotice error onDismiss={() => setExportState({ status: 'idle' })}>
-          <span>{exportState.status === 'failed' ? t.exportFailed : t.exportTimedOut}</span>
+          <span>{exportState.status === 'failed' ? t.exportPdfFailed : t.exportTimedOut}</span>
         </ExportNotice>
       )}
       {docxExport.status === 'saved' && (
-        <ExportNotice onDismiss={() => setDocxExport({ status: 'idle' })}>
-          <span>{t.savedDocx(baseName(docxExport.filePath))}</span>
-          <button type="button" onClick={() => window.api.exported.open(docxExport.filePath)}>
-            {t.openFile}
-          </button>
-          <button type="button" onClick={() => window.api.exported.showInFolder(docxExport.filePath)}>
-            {t.showInFolder}
-          </button>
-          <span className="export-notice-note">{t.docxNote}</span>
-        </ExportNotice>
+        <SavedFileNotice
+          filePath={docxExport.filePath}
+          message={t.savedDocx(baseName(docxExport.filePath))}
+          note={t.docxNote}
+          onDismiss={() => setDocxExport({ status: 'idle' })}
+        />
       )}
       {docxExport.status === 'failed' && (
         <ExportNotice error onDismiss={() => setDocxExport({ status: 'idle' })}>
@@ -369,6 +361,34 @@ function ExportNotice({ error = false, onDismiss, children }: { error?: boolean;
         ×
       </button>
     </div>
+  )
+}
+
+// Powiadomienie o zapisanym pliku PDF albo DOCX: „Otwórz” i „Pokaż w Finderze” (ścieżka z białej listy procesu głównego)
+// i opcjonalna uwaga pod komunikatem.
+function SavedFileNotice({
+  filePath,
+  message,
+  note,
+  onDismiss
+}: {
+  filePath: string
+  message: string
+  note?: string
+  onDismiss: () => void
+}) {
+  const { editor: t } = useDictionary()
+  return (
+    <ExportNotice onDismiss={onDismiss}>
+      <span>{message}</span>
+      <button type="button" onClick={() => window.api.exported.open(filePath)}>
+        {t.openFile}
+      </button>
+      <button type="button" onClick={() => window.api.exported.showInFolder(filePath)}>
+        {t.showInFolder}
+      </button>
+      {note && <span className="export-notice-note">{note}</span>}
+    </ExportNotice>
   )
 }
 

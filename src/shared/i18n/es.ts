@@ -161,7 +161,7 @@ export const es: Dictionary = {
     savedDocx: (fileName) => `DOCX guardado: ${fileName}`,
     openFile: 'Abrir',
     showInFolder: 'Mostrar en Finder',
-    exportFailed: 'No se ha podido guardar el PDF. Inténtalo de nuevo.',
+    exportPdfFailed: 'No se ha podido guardar el PDF. Inténtalo de nuevo.',
     exportDocxFailed: 'No se ha podido guardar el DOCX. Inténtalo de nuevo.',
     docxNote: 'Diseño simplificado para editar en Word, Pages, LibreOffice o Documentos de Google. El PDF coincide con la vista previa.',
     exportCutOff: 'Parte del contenido no cabe en una página y quedará cortado. ¿Exportar de todos modos?',
