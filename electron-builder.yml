@@ -41,3 +41,23 @@ dmg:
   title: CV Drawer ${version}
   # Plik .blockmap służy tylko do auto-update.
   writeUpdateInfo: false
+# Mac App Store (#44): `pnpm dist:mas` (paczka `.pkg` do App Store Connect) i `pnpm dist:mas-dev` (lokalny test
+# z sandboksem). Numer buildu i profil provisioningowy podaje build/distMas.ts spoza repo; instrukcja wydania:
+# docs/wydanie-mac-app-store.md. electron-builder składa `mas` z `mac` + `mas` (a `mas-dev` jeszcze z `masDev`), więc
+# kategoria, ElectronTeamID i container-migration.plist (użytkownicy `.dmg` sprzed sandboksu, ADR-0003) przechodzą tu
+# bez powtarzania. Build MAS to Electron z `process.mas`: bez Sponsor bara i sprawdzania aktualizacji (ADR-0005/0006).
+mas:
+  # Nie podpis ad-hoc z `mac`: certyfikat „Apple Distribution” / „3rd Party Mac Developer Application” (aplikacja)
+  # i „3rd Party Mac Developer Installer” (`.pkg`) z pęku kluczy, a w `mas-dev` „Apple Development”.
+  identity: Michal Staniecko
+  # Bez sieci (ADR-0006); helpery dziedziczą sandbox.
+  entitlements: build/entitlements.mas.plist
+  entitlementsInherit: build/entitlements.mas.inherit.plist
+  # Identyfikatory aplikacji i zespołu (`application-identifier`, `team-identifier`) z profilu provisioningowego.
+  preAutoEntitlements: true
+  hardenedRuntime: false
+  # LSMinimumSystemVersion zostaje z Info.plist Electrona (45: macOS 13.0), bo niższej wersji Electron nie uruchomi.
+  # App Store Connect bierze stąd minimalną wersję wpisu.
+  extendInfo:
+    # Bez własnej kryptografii (tylko to, co ma system i Electron): App Store Connect nie pyta o eksport przy każdym buildzie.
+    ITSAppUsesNonExemptEncryption: false

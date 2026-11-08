@@ -11,6 +11,8 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "dist:mac": "electron-vite build && electron-builder --mac",
+    "dist:mas": "node --experimental-strip-types --disable-warning=ExperimentalWarning build/distMas.ts mas",
+    "dist:mas-dev": "node --experimental-strip-types --disable-warning=ExperimentalWarning build/distMas.ts mas-dev",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
