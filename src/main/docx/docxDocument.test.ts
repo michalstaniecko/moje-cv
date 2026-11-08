@@ -1,0 +1,227 @@
+import { strFromU8, unzipSync } from 'fflate'
+import { describe, expect, test } from 'vitest'
+import { sampleCvs } from '../../renderer/src/domain/sampleCv'
+import type { CvDocument } from '../../renderer/src/domain/schema'
+import { buildDocx } from './docxDocument'
+
+// Części pliku DOCX (ZIP) jako tekst: `word/document.xml`, `word/styles.xml`, `docProps/core.xml`…
+async function docxParts(document: CvDocument): Promise<Record<string, string>> {
+  const files = unzipSync(new Uint8Array(await buildDocx(document)))
+  return Object.fromEntries(Object.entries(files).map(([path, content]) => [path, strFromU8(content)]))
+}
+
+// Akapity `word/document.xml` w kolejności dokumentu (surowy XML każdego `<w:p>`).
+const paragraphs = (xml: string): string[] => xml.match(/<w:p>.*?<\/w:p>|<w:p [^>]*>.*?<\/w:p>/gs) ?? []
+
+// Widoczny tekst akapitu: przebiegi tekstu, tabulator jako „⇥”, miękki podział jako „↵”.
+const text = (paragraph: string): string =>
+  [...paragraph.matchAll(/<w:t(?: [^>]*)?>([^<]*)<\/w:t>|<w:tab\/>|<w:br\/>/g)]
+    .map(([match, content]) => (match === '<w:tab/>' ? '⇥' : match === '<w:br/>' ? '↵' : unescapeXml(content!)))
+    .join('')
+
+const unescapeXml = (value: string) =>
+  value.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&')
+
+const withStyle = (xml: string, style: string) => paragraphs(xml).filter((p) => p.includes(`<w:pStyle w:val="${style}"/>`))
+
+const paragraphWithText = (xml: string, content: string) => paragraphs(xml).find((p) => text(p).includes(content))
+
+const sample = sampleCvs.en
+
+const cv = (overrides: Partial<CvDocument> = {}): CvDocument => ({ ...sample, ...overrides })
+
+describe('buildDocx', () => {
+  test('the full name is a Title paragraph and every section title a Heading 1', async () => {
+    const xml = (await docxParts(sample))['word/document.xml']!
+    expect(withStyle(xml, 'Title').map(text)).toEqual(['Jane Example'])
+    expect(withStyle(xml, 'Heading1').map(text)).toEqual(['Work experience', 'Education', 'Skills', 'Languages'])
+  })
+
+  test('each contact is its own paragraph: bold label, tab, value; an empty label leaves just the value', async () => {
+    const document = cv({
+      header: {
+        ...sample.header,
+        contacts: [
+          { id: 'c1', label: 'Phone', value: '+1 555 0100' },
+          { id: 'c2', label: '', value: 'jane@example.com' },
+          { id: 'c3', label: 'Fax', value: '  ' }
+        ]
+      }
+    })
+    const xml = (await docxParts(document))['word/document.xml']!
+    const phone = paragraphWithText(xml, '+1 555 0100')!
+    expect(text(phone)).toBe('Phone⇥+1 555 0100')
+    expect(phone).toMatch(/<w:b\/>.*?<w:t[^>]*>Phone</s)
+    expect(phone).toContain('<w:tab w:val="left"')
+    expect(text(paragraphWithText(xml, 'jane@example.com')!)).toBe('jane@example.com')
+    expect(paragraphWithText(xml, 'Fax')).toBeUndefined()
+  })
+
+  test('the summary is an italic paragraph whose line breaks are soft breaks', async () => {
+    const document = cv({ header: { ...sample.header, summary: 'First line\nSecond line' } })
+    const summary = paragraphWithText((await docxParts(document))['word/document.xml']!, 'First line')!
+    expect(text(summary)).toBe('First line↵Second line')
+    expect(summary).toContain('<w:i/>')
+  })
+
+  test('a position: bold role, tab, dates on a right tab stop at the right margin; then company – city; both kept with the next line', async () => {
+    const xml = (await docxParts(sample))['word/document.xml']!
+    const role = paragraphWithText(xml, 'Senior Procurement Specialist')!
+    expect(text(role)).toBe('Senior Procurement Specialist⇥03.2023 – present')
+    expect(role).toMatch(/<w:b\/>.*?<w:t[^>]*>Senior Procurement Specialist</s)
+    // A4 minus marginesy 20 mm = 170 mm = 9638 twipów.
+    expect(role).toContain('<w:tab w:val="right" w:pos="9638"/>')
+    expect(role).toContain('<w:keepNext/>')
+    const company = paragraphs(xml)[paragraphs(xml).indexOf(role) + 1]!
+    expect(text(company)).toBe('Fictional Manufacturing Ltd – Manchester')
+    expect(company).toContain('<w:keepNext/>')
+  })
+
+  test('the bullets of a position and the items of list sections are a real bulleted list', async () => {
+    const xml = (await docxParts(sample))['word/document.xml']!
+    for (const item of [
+      'Negotiating prices and commercial terms with domestic and international suppliers.',
+      'Onboarding new members of the procurement team.',
+      'Commercial negotiation',
+      'German – B2'
+    ]) {
+      expect(text(paragraphWithText(xml, item)!)).toBe(item)
+      expect(paragraphWithText(xml, item)).toContain('<w:numPr>')
+    }
+    expect(paragraphWithText(xml, 'Senior Procurement Specialist')).not.toContain('<w:numPr>')
+  })
+
+  test('a bullet with line breaks keeps them as soft breaks', async () => {
+    const document = cv({
+      sections: [
+        {
+          id: 'x',
+          type: 'experience',
+          title: 'Work',
+          hidden: false,
+          pageBreakBefore: false,
+          items: [
+            {
+              id: 'e',
+              role: 'Buyer',
+              company: '',
+              location: '',
+              start: null,
+              end: null,
+              pageBreakBefore: false,
+              bullets: [{ id: 'b', text: 'One\nTwo' }]
+            }
+          ]
+        }
+      ]
+    })
+    expect(text(paragraphWithText((await docxParts(document))['word/document.xml']!, 'One')!)).toBe('One↵Two')
+  })
+
+  test('an education entry: bold level, field and school, then the dates on the right tab stop', async () => {
+    const xml = (await docxParts(sample))['word/document.xml']!
+    const entry = paragraphWithText(xml, 'Fictional Academy')!
+    expect(text(entry)).toBe('Master’s degree, Logistics, Fictional Academy⇥10.2009 – 06.2014')
+    expect(entry).toMatch(/<w:b\/>.*?<w:t[^>]*>Master’s degree</s)
+    expect(entry).toContain('<w:tab w:val="right" w:pos="9638"/>')
+  })
+
+  test('a page break forced in the CV starts a new page before that section or entry, and nowhere else', async () => {
+    const [experience, education, ...rest] = sample.sections
+    if (experience?.type !== 'experience' || education?.type !== 'education') throw new Error('Unexpected Sample CV')
+    const document = cv({
+      sections: [
+        { ...experience, items: experience.items.map((item, index) => ({ ...item, pageBreakBefore: index === 2 })) },
+        { ...education, pageBreakBefore: true },
+        ...rest
+      ]
+    })
+    const xml = (await docxParts(document))['word/document.xml']!
+    expect(paragraphs(xml).filter((p) => p.includes('<w:pageBreakBefore/>')).map(text)).toEqual([
+      'Procurement Assistant⇥09.2016 – 01.2019',
+      'Education'
+    ])
+  })
+
+  test('empty fields, empty sections and hidden sections are left out', async () => {
+    const [experience, , skills, ...rest] = sample.sections
+    if (experience?.type !== 'experience' || skills?.type !== 'list') throw new Error('Unexpected Sample CV')
+    const document = cv({
+      sections: [
+        { ...experience, items: [{ ...experience.items[0]!, location: '', bullets: [{ id: 'b', text: ' ' }] }] },
+        { ...skills, items: [{ id: 's', text: '' }] },
+        ...rest
+      ]
+    })
+    const xml = (await docxParts(document))['word/document.xml']!
+    expect(withStyle(xml, 'Heading1').map(text)).toEqual(['Work experience', 'Languages'])
+    expect(paragraphWithText(xml, 'Fictional Manufacturing Ltd')!).toSatisfy((p: string) => text(p) === 'Fictional Manufacturing Ltd')
+    expect(xml).not.toContain('This section is hidden')
+    expect(paragraphs(xml).filter((p) => text(p).trim() === '')).toEqual([])
+  })
+
+  test('A4 page with 20 mm margins and no footer', async () => {
+    const xml = (await docxParts(sample))['word/document.xml']!
+    expect(xml).toContain('<w:pgSz w:w="11906" w:h="16838"')
+    expect(xml).toMatch(/<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/)
+    expect(xml).not.toContain('<w:footerReference')
+  })
+
+  test('styles: Heading 1 in the accent colour with a thin bottom border in it; the CV font and language by default', async () => {
+    const document = cv({ settings: { ...sample.settings, accentColor: '#AB12cd', font: 'arimo', language: 'pt' } })
+    const styles = (await docxParts(document))['word/styles.xml']!
+    const heading1 = styles.match(/<w:style [^>]*w:styleId="Heading1".*?<\/w:style>/s)![0]
+    expect(heading1).toContain('<w:color w:val="AB12CD"/>')
+    expect(heading1).toMatch(/<w:pBdr><w:bottom [^>]*w:color="AB12CD"/)
+    const defaults = styles.match(/<w:docDefaults>.*?<\/w:docDefaults>/s)![0]
+    expect(defaults).toContain('w:ascii="Arimo"')
+    expect(defaults).toContain('w:hAnsi="Arimo"')
+    expect(defaults).toContain('w:cs="Arimo"')
+    expect(defaults).toContain('<w:lang w:val="pt-BR"/>')
+    const title = styles.match(/<w:style [^>]*w:styleId="Title".*?<\/w:style>/s)![0]
+    expect(title).toContain('<w:b/>')
+    expect(title).toContain('w:ascii="Arimo"')
+    // Akcent tylko w nagłówkach – nazwisko w kolorze tekstu.
+    expect(title).not.toContain('AB12CD')
+  })
+
+  test('title and author in the file properties are the same as in the PDF, without the app name', async () => {
+    const core = (await docxParts(sample))['docProps/core.xml']!
+    expect(core).toContain('<dc:title>CV – Jane Example</dc:title>')
+    expect(core).toContain('<dc:creator>Jane Example</dc:creator>')
+    expect(core).not.toContain('CV Drawer')
+  })
+
+  test('without a full name the title is just “CV” and there is no author', async () => {
+    const core = (await docxParts(cv({ header: { ...sample.header, fullName: '' } })))['docProps/core.xml']!
+    expect(core).toContain('<dc:title>CV</dc:title>')
+    expect(core).not.toMatch(/<dc:creator>[^<]+<\/dc:creator>/)
+    expect(core).not.toContain('Un-named')
+  })
+
+  test.each(Object.keys(sampleCvs))('the Sample CV in %s builds without errors', async (language) => {
+    const document = sampleCvs[language as keyof typeof sampleCvs]
+    const xml = (await docxParts(document))['word/document.xml']!
+    expect(withStyle(xml, 'Title').map(text)).toEqual([document.header.fullName])
+  })
+
+  describe('consent clause', () => {
+    const consent = (enabled: boolean, text: string): CvDocument['consent'] => ({ enabled, clauseId: null, text })
+
+    test('is the last paragraph, in small muted text, with its line breaks as soft breaks', async () => {
+      const xml = (await docxParts(cv({ consent: consent(true, 'I agree to the processing\nof my data.') })))['word/document.xml']!
+      const last = paragraphs(xml).at(-1)!
+      expect(text(last)).toBe('I agree to the processing↵of my data.')
+      expect(last).toContain('<w:sz w:val="16"/>')
+      expect(last).toMatch(/<w:color w:val="[0-9A-F]{6}"\/>/)
+    })
+
+    test('is left out when switched off or empty', async () => {
+      for (const clause of [consent(false, 'I agree.'), consent(true, '  \n ')]) {
+        const xml = (await docxParts(cv({ consent: clause })))['word/document.xml']!
+        expect(xml).not.toContain('I agree.')
+        expect(text(paragraphs(xml).at(-1)!)).toBe('German – B2')
+      }
+    })
+  })
+})
