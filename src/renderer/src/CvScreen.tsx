@@ -25,6 +25,17 @@ type ExportState =
 // Wynik eksportu otwartego CV do pliku .json z menu Plik.
 type JsonExportState = { status: 'idle' } | { status: 'saved'; fileName: string } | { status: 'failed' }
 
+// DOCX export (osobny stan, jak eksport JSON): bez pytania o uciętą treść – w DOCX tekst przepływa między stronami.
+type DocxExportState =
+  | { status: 'idle' }
+  | { status: 'exporting' }
+  | { status: 'saved'; filePath: string }
+  | { status: 'failed' }
+
+// Trwający eksport nie jest przerywany przez powiadomienie innego eksportu.
+const idleUnlessExporting = <State extends { status: string }>(state: State): State | { status: 'idle' } =>
+  state.status === 'exporting' ? state : { status: 'idle' }
+
 // Otwarte CV: formularz edycji (lewo), podgląd stron (prawo) i eksport do PDF.
 // `onBack` dostaje komendę menu Plik (Nowe CV, Dodaj przykładowe CV, Importuj…), gdy edytor wychodzi, żeby wykonała
 // ją biblioteka CV.
@@ -40,6 +51,7 @@ export function CvScreen({
   const saveStatus = useStore(editor.store, (state) => state.saveStatus)
   const [exportState, setExportState] = useState<ExportState>({ status: 'idle' })
   const [jsonExport, setJsonExport] = useState<JsonExportState>({ status: 'idle' })
+  const [docxExport, setDocxExport] = useState<DocxExportState>({ status: 'idle' })
   const [clauses, saveClause] = useClauseLibrary()
   const { common, editor: t, library } = useDictionary()
   const removal = useRemovalUndo(editor)
@@ -63,6 +75,7 @@ export function CvScreen({
   // czy eksportować uciętą treść. Nowy eksport zastępuje poprzednie powiadomienie.
   const exportPdf = async ({ confirmed = false } = {}) => {
     setJsonExport({ status: 'idle' })
+    setDocxExport(idleUnlessExporting)
     if (!confirmed && oversizedCount.current > 0) {
       setExportState({ status: 'confirming' })
       return
@@ -73,6 +86,19 @@ export function CvScreen({
       setExportState(result.status === 'canceled' ? { status: 'idle' } : result)
     } catch {
       setExportState({ status: 'failed' })
+    }
+  }
+
+  // DOCX export z przycisku i z menu Plik: dokument z edytora (jak PDF), anulowanie okna zapisu bez komunikatu.
+  const exportDocx = async () => {
+    setJsonExport({ status: 'idle' })
+    setExportState(idleUnlessExporting)
+    setDocxExport({ status: 'exporting' })
+    try {
+      const result = await window.api.docx.export(document)
+      setDocxExport(result.status === 'canceled' ? { status: 'idle' } : result)
+    } catch {
+      setDocxExport({ status: 'failed' })
     }
   }
 
@@ -100,6 +126,7 @@ export function CvScreen({
   const exportJson = async () => {
     setExportState({ status: 'idle' })
     setJsonExport({ status: 'idle' })
+    setDocxExport(idleUnlessExporting)
     try {
       await editor.flush()
       if (editor.store.getState().saveStatus === 'failed') {
@@ -118,6 +145,8 @@ export function CvScreen({
   useMenuCommands((command) => {
     if (command === 'export-pdf') {
       if (exportState.status !== 'exporting' && exportState.status !== 'confirming') void exportPdf()
+    } else if (command === 'export-docx') {
+      if (docxExport.status !== 'exporting') void exportDocx()
     } else if (command === 'export-json') void exportJson()
     else void back(command)
   })
@@ -133,6 +162,9 @@ export function CvScreen({
         <span className="toolbar-status" role="status">
           {saveStatus === 'failed' ? '' : t.saveStatus[saveStatus]}
         </span>
+        <button type="button" onClick={() => void exportDocx()} disabled={docxExport.status === 'exporting'}>
+          {docxExport.status === 'exporting' ? t.exporting : t.exportDocx}
+        </button>
         <button
           type="button"
           ref={exportButton}
@@ -171,6 +203,23 @@ export function CvScreen({
       {(exportState.status === 'failed' || exportState.status === 'timed-out') && (
         <ExportNotice error onDismiss={() => setExportState({ status: 'idle' })}>
           <span>{exportState.status === 'failed' ? t.exportFailed : t.exportTimedOut}</span>
+        </ExportNotice>
+      )}
+      {docxExport.status === 'saved' && (
+        <ExportNotice onDismiss={() => setDocxExport({ status: 'idle' })}>
+          <span>{t.savedDocx(baseName(docxExport.filePath))}</span>
+          <button type="button" onClick={() => window.api.exported.open(docxExport.filePath)}>
+            {t.openFile}
+          </button>
+          <button type="button" onClick={() => window.api.exported.showInFolder(docxExport.filePath)}>
+            {t.showInFolder}
+          </button>
+          <span className="export-notice-note">{t.docxNote}</span>
+        </ExportNotice>
+      )}
+      {docxExport.status === 'failed' && (
+        <ExportNotice error onDismiss={() => setDocxExport({ status: 'idle' })}>
+          <span>{t.exportDocxFailed}</span>
         </ExportNotice>
       )}
       {jsonExport.status === 'saved' && (
