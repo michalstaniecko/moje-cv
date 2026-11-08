@@ -69,14 +69,14 @@ async function chooseLanguage(itemLabel: string) {
   )
 }
 
-// Sponsor bar to landmark contentinfo nazwany w Interface language: „Support CV Press”, po polsku „Wsparcie CV Press”.
-const sponsorBar = (name = 'Support CV Press') => window.getByRole('contentinfo', { name, exact: true })
+// Sponsor bar to landmark contentinfo nazwany w Interface language: „Support CV Drawer”, po polsku „Wsparcie CV Drawer”.
+const sponsorBar = (name = 'Support CV Drawer') => window.getByRole('contentinfo', { name, exact: true })
 
 test('on first launch the Sponsor bar is visible on the library screen with the Sponsor link and the More button', async () => {
   await expect(window.getByRole('button', { name: 'New CV' })).toBeVisible()
   const bar = sponsorBar()
   await expect(bar).toBeVisible()
-  await expect(bar).toContainText('CV Press is free')
+  await expect(bar).toContainText('CV Drawer is free')
   await expect(bar.getByRole('button', { name: 'Buy me a coffee' })).toBeVisible()
   await expect(bar.getByRole('button', { name: 'More' })).toBeVisible()
 })
@@ -96,7 +96,7 @@ test('after opening a CV the Sponsor bar is still visible on the editor screen a
 
 test('More opens the dialog explaining why the app is free; Escape, Close and a click on the backdrop close it', async () => {
   await sponsorBar().getByRole('button', { name: 'More' }).click()
-  const dialog = window.getByRole('dialog', { name: 'Why CV Press is free' })
+  const dialog = window.getByRole('dialog', { name: 'Why CV Drawer is free' })
   await expect(dialog).toBeVisible()
   await expect(dialog).toContainText('no ads, no account')
   await expect(dialog).toContainText('It unlocks nothing')
@@ -122,7 +122,7 @@ test('the Sponsor link in the bar and in the dialog opens only the GitHub Sponso
   await expect.poll(openExternalCalls).toEqual([SPONSOR_URL])
 
   await sponsorBar().getByRole('button', { name: 'More' }).click()
-  const dialog = window.getByRole('dialog', { name: 'Why CV Press is free' })
+  const dialog = window.getByRole('dialog', { name: 'Why CV Drawer is free' })
   await dialog.getByRole('button', { name: 'Buy me a coffee' }).click()
   await expect.poll(openExternalCalls).toEqual([SPONSOR_URL, SPONSOR_URL])
 })
@@ -133,15 +133,15 @@ test('the Sponsor bar and the dialog follow the interface language switched in t
   await app.evaluate(({ app }) => {
     app.getPreferredSystemLanguages = () => ['en-US']
   })
-  await expect(sponsorBar()).toContainText('CV Press is free')
+  await expect(sponsorBar()).toContainText('CV Drawer is free')
 
   await chooseLanguage('Polski')
-  await expect(sponsorBar('Support CV Press')).toHaveCount(0)
-  const bar = sponsorBar('Wsparcie CV Press')
-  await expect(bar).toContainText('CV Press jest darmowe')
+  await expect(sponsorBar('Support CV Drawer')).toHaveCount(0)
+  const bar = sponsorBar('Wsparcie CV Drawer')
+  await expect(bar).toContainText('CV Drawer jest darmowy')
   await expect(bar.getByRole('button', { name: 'Postaw mi kawę' })).toBeVisible()
   await bar.getByRole('button', { name: 'Więcej' }).click()
-  const dialog = window.getByRole('dialog', { name: 'Dlaczego CV Press jest darmowe' })
+  const dialog = window.getByRole('dialog', { name: 'Dlaczego CV Drawer jest darmowy' })
   await expect(dialog).toContainText('Niczego nie odblokowuje')
   await dialog.getByRole('button', { name: 'Zamknij' }).click()
   await expect(dialog).toBeHidden()

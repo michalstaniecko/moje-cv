@@ -1,9 +1,9 @@
 {
   "name": "moje-cv",
-  "productName": "CV Press",
-  "version": "0.5.0",
+  "productName": "CV Drawer",
+  "version": "0.6.0",
   "private": true,
-  "description": "CV Press – generator CV z podglądem stron A4 i eksportem do PDF",
+  "description": "CV Drawer – generator CV z podglądem stron A4 i eksportem do PDF",
   "author": "Michal Staniecko",
   "main": "./out/main/index.js",
   "packageManager": "pnpm@10.34.7",
@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
     "test:e2e": "electron-vite build && playwright test",
-    "test:e2e:packaged": "pnpm dist:mac && MOJE_CV_APP=\"dist/mac-universal/CV Press.app/Contents/MacOS/CV Press\" playwright test"
+    "test:e2e:packaged": "pnpm dist:mac && MOJE_CV_APP=\"dist/mac-universal/CV Drawer.app/Contents/MacOS/CV Drawer\" playwright test"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

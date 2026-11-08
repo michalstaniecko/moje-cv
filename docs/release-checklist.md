@@ -32,7 +32,7 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | Tagi i filtr po tagach | [ ] | [ ] |
 | Usuwanie z potwierdzeniem | [ ] | [ ] |
 | Uszkodzony plik CV jest widoczny i da się go usunąć | [ ] | [ ] |
-| Plik CV z nowszej wersji (`"schemaVersion": 99`) ma „Wymaga nowszej wersji CV Press”, nie da się go otworzyć, a usunięcie ma osobne potwierdzenie (#70) | [ ] | [ ] |
+| Plik CV z nowszej wersji (`"schemaVersion": 99`) ma „Wymaga nowszej wersji CV Drawer”, nie da się go otworzyć, a usunięcie ma osobne potwierdzenie (#70) | [ ] | [ ] |
 | Klawiatura: po zamknięciu zmiany nazwy, tagów i potwierdzenia usunięcia fokus wraca na przycisk wiersza; po usunięciu przechodzi na sąsiednie CV (#70) | [ ] | [ ] |
 
 ## Edytor CV
@@ -127,28 +127,28 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | Sponsor bar widoczny na dole okna | — (niewidoczny) | [ ] |
 | Sponsor link otwiera GitHub Sponsors w przeglądarce | — | [ ] |
 | Okno „Więcej” otwiera się i zamyka | — | [ ] |
-| VoiceOver (rotor, punkty orientacyjne): belka to „Wsparcie CV Press”, nie „Sponsor” (#71) | — | [ ] |
+| VoiceOver (rotor, punkty orientacyjne): belka to „Wsparcie CV Drawer”, nie „Sponsor” (#71) | — | [ ] |
 
 ## Menu aplikacji
 
 | Sprawdź | MAS | DMG |
 | --- | --- | --- |
-| Menu: CV Press, Plik, Edycja, Widok, Okno, Language, Wygląd, Pomoc (#63, #64) | [ ] | [ ] |
+| Menu: CV Drawer, Plik, Edycja, Widok, Okno, Language, Wygląd, Pomoc (#63, #64) | [ ] | [ ] |
 | Plik: Nowe CV ⌘N, Dodaj przykładowe CV, Importuj… ⌘O w bibliotece CV i z edytora (powrót do biblioteki) (#63) | [ ] | [ ] |
 | Plik: Eksportuj JSON… i Eksportuj do PDF… ⌘E w edytorze; w bibliotece CV wyszarzone (#63) | [ ] | [ ] |
 | Plik: w bibliotece klauzul tworzenie i import wyszarzone; Zamknij okno ⌘W (#63) | [ ] | [ ] |
 | Widok: pełny ekran ⌃⌘F; w menu Widok tylko jedna pozycja pełnego ekranu (bez systemowego duplikatu) (#63) | [ ] | [ ] |
-| CV Press → Usługi działa na zaznaczonym tekście; Okno → „Przenieś wszystko na wierzch” i lista okien (#63) | [ ] | [ ] |
-| Pomoc: „Sprawdź aktualizacje…” (#78) i „Wesprzyj CV Press…” (#64) | — (brak obu pozycji) | [ ] |
+| CV Drawer → Usługi działa na zaznaczonym tekście; Okno → „Przenieś wszystko na wierzch” i lista okien (#63) | [ ] | [ ] |
+| Pomoc: „Sprawdź aktualizacje…” (#78) i „Wesprzyj CV Drawer…” (#64) | — (brak obu pozycji) | [ ] |
 | Pomoc: strona pomocy, polityka prywatności, zgłaszanie problemu otwierają przeglądarkę (#64) | [ ] | [ ] |
-| Pomoc: trzy pozycje w MAS, pięć w `.dmg` (z separatorem przed „Sprawdź aktualizacje…” i „Wesprzyj CV Press…”); każda otwiera właściwą stronę: pomoc `michalstaniecko.github.io/moje-cv/`, prywatność `…/privacy/`, zgłoszenie `github.com/michalstaniecko/moje-cv/issues/new/choose`, wsparcie GitHub Sponsors (#64) | [ ] | [ ] |
+| Pomoc: trzy pozycje w MAS, pięć w `.dmg` (z separatorem przed „Sprawdź aktualizacje…” i „Wesprzyj CV Drawer…”); każda otwiera właściwą stronę: pomoc `michalstaniecko.github.io/moje-cv/`, prywatność `…/privacy/`, zgłoszenie `github.com/michalstaniecko/moje-cv/issues/new/choose`, wsparcie GitHub Sponsors (#64) | [ ] | [ ] |
 | Pomoc: systemowe pole wyszukiwania pozycji menu; po zmianie Interface language menu Pomoc od razu w nowym języku (#64) | [ ] | [ ] |
 
 ## Wersja
 
 | Sprawdź | MAS | DMG |
 | --- | --- | --- |
-| CV Press → „O aplikacji CV Press”: nazwa, wersja, numer buildu, „© 2026 Michal Staniecko” | [ ] | [ ] |
+| CV Drawer → „O aplikacji CV Drawer”: nazwa, wersja, numer buildu, „© 2026 Michal Staniecko” | [ ] | [ ] |
 | Ta sama wersja w stopce biblioteki CV | [ ] | [ ] |
 | Ta sama wersja w oknie „Więcej” Sponsor bara | — | [ ] |
 | Numer buildu w panelu równy temu z App Store Connect | [ ] | — |
@@ -156,14 +156,14 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 
 ## Powiadomienie o nowej wersji (#78, ADR-0006)
 
-Wymuszenie „nowszej wersji” w spakowanym `.dmg` bez publikowania wydania: w pustym katalogu zapisz plik `latest.json` z treścią `{"tag_name":"v99.0.0"}`, uruchom w nim `python3 -m http.server 8000`, a aplikację z terminala: `MOJE_CV_UPDATE_URL=http://127.0.0.1:8000/latest.json "/Applications/CV Press.app/Contents/MacOS/CV Press"`. Z tym adresem sprawdzenie przy starcie idzie od razu, ale limit 24 h nadal obowiązuje: żeby przy kolejnym starcie znów zapytać serwer, usuń pole `updateCheck` z `settings.json` (w `~/Library/Containers/com.michalstaniecko.mojecv/Data/Library/Application Support/Moje CV/`) albo użyj menu Pomoc. Wariant „masz najnowszą” to tag równy bieżącej wersji, a „nie udało się” to zatrzymany serwer.
+Wymuszenie „nowszej wersji” w spakowanym `.dmg` bez publikowania wydania: w pustym katalogu zapisz plik `latest.json` z treścią `{"tag_name":"v99.0.0"}`, uruchom w nim `python3 -m http.server 8000`, a aplikację z terminala: `MOJE_CV_UPDATE_URL=http://127.0.0.1:8000/latest.json "/Applications/CV Drawer.app/Contents/MacOS/CV Drawer"`. Z tym adresem sprawdzenie przy starcie idzie od razu, ale limit 24 h nadal obowiązuje: żeby przy kolejnym starcie znów zapytać serwer, usuń pole `updateCheck` z `settings.json` (w `~/Library/Containers/com.michalstaniecko.mojecv/Data/Library/Application Support/Moje CV/`) albo użyj menu Pomoc. Wariant „masz najnowszą” to tag równy bieżącej wersji, a „nie udało się” to zatrzymany serwer.
 
 | Sprawdź | MAS | DMG |
 | --- | --- | --- |
-| Przy nowszym wydaniu biblioteka CV pokazuje pasek „Dostępna jest nowa wersja CV Press 99.0.0.” z „Pobierz” i „Zamknij”; pasek nie zabiera fokusu i jest czytelny w jasnym i ciemnym wyglądzie | — | [ ] |
+| Przy nowszym wydaniu biblioteka CV pokazuje pasek „Dostępna jest nowa wersja CV Drawer 99.0.0.” z „Pobierz” i „Zamknij”; pasek nie zabiera fokusu i jest czytelny w jasnym i ciemnym wyglądzie | — | [ ] |
 | „Pobierz” w pasku otwiera w przeglądarce stronę tego wydania (`github.com/michalstaniecko/moje-cv/releases/tag/v99.0.0`) | — | [ ] |
 | „Zamknij” chowa pasek; po restarcie nie wraca, dopóki nie pojawi się kolejna wersja | — | [ ] |
-| Pomoc → „Sprawdź aktualizacje…”: „Masz najnowszą wersję CV Press (…)” [OK] | — | [ ] |
+| Pomoc → „Sprawdź aktualizacje…”: „Masz najnowszą wersję CV Drawer (…)” [OK] | — | [ ] |
 | Pomoc → „Sprawdź aktualizacje…”: „Dostępna jest nowa wersja…” [Pobierz] [Później]; „Pobierz” otwiera stronę wydania | — | [ ] |
 | Pomoc → „Sprawdź aktualizacje…” bez sieci: „Nie udało się sprawdzić aktualizacji.” [Otwórz stronę wydań] [OK]; przycisk otwiera `…/releases/latest` | — | [ ] |
 | Bez internetu przy starcie: żadnego komunikatu ani paska | — | [ ] |

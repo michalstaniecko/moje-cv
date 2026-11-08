@@ -130,7 +130,7 @@ test('a rendering error shows a translated “Something went wrong” screen who
 
   await expect(window.getByRole('alert')).toHaveText('Coś poszło nie tak')
   await expect(window.getByText('Twoje CV są bezpieczne')).toBeVisible()
-  await expect(window.getByRole('contentinfo', { name: 'Support CV Press' })).toBeHidden()
+  await expect(window.getByRole('contentinfo', { name: 'Support CV Drawer' })).toBeHidden()
   const reload = window.getByRole('button', { name: 'Wczytaj ponownie' })
   await expect(reload).toBeFocused()
 
@@ -186,7 +186,7 @@ test('an unexpected error in the main process is reported once in a native error
   await expect.poll(errorBoxCalls).toHaveLength(1)
   const [errorBox] = await errorBoxCalls()
   expect(errorBox!.title).toBe('An unexpected error occurred')
-  expect(errorBox!.content).toContain('CV Press ran into a problem. Your saved CVs are safe.')
+  expect(errorBox!.content).toContain('CV Drawer ran into a problem. Your saved CVs are safe.')
   expect(errorBox!.content).toMatch(/\nDetails: boom$/)
 
   // Drugi błąd w tej samej minucie jest tylko logowany, a aplikacja działa dalej.
@@ -265,9 +265,9 @@ test('after the fourth crash within a minute the app asks whether to reload or q
   await expect.poll(messageBoxCalls).toHaveLength(1)
   const [question] = await messageBoxCalls()
   expect(question).toMatchObject({
-    message: 'The CV Press window stopped working several times in a row.',
+    message: 'The CV Drawer window stopped working several times in a row.',
     detail: 'Your saved CVs are safe. You can reload the window or quit the app.',
-    buttons: ['Reload', 'Quit CV Press']
+    buttons: ['Reload', 'Quit CV Drawer']
   })
   // „Wczytaj ponownie” przeładowuje okno i zeruje licznik: kolejna awaria znów tylko przeładowuje.
   await expect.poll(libraryShown, { timeout: 10_000 }).toBe(true)

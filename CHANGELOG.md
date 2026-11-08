@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.6.0] – 2026-11-08
+
+### Changed
+- The app is now called "CV Drawer" (previously "CV Press"), in every interface language. Existing CVs and settings stay where they were; an older "CV Press" or "Moje CV" in Applications can be deleted.
+
 ## [0.5.0] – 2026-11-08
 
 ### Added

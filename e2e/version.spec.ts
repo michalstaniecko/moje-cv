@@ -45,15 +45,15 @@ const appVersion = () => app.evaluate(({ app }) => app.getVersion())
 test('the CV library shows the app name and version at the bottom, without a second contentinfo landmark', async () => {
   const version = await appVersion()
   await expect(window.getByRole('button', { name: 'New CV' })).toBeVisible()
-  await expect(window.locator('main.library')).toContainText(`CV Press ${version}`)
+  await expect(window.locator('main.library')).toContainText(`CV Drawer ${version}`)
   await expect(window.getByRole('contentinfo')).toHaveCount(1)
 })
 
 test('the More dialog of the Sponsor bar shows the same app name and version', async () => {
   const version = await appVersion()
-  await window.getByRole('contentinfo', { name: 'Support CV Press' }).getByRole('button', { name: 'More' }).click()
-  const dialog = window.getByRole('dialog', { name: 'Why CV Press is free' })
-  await expect(dialog).toContainText(`CV Press ${version}`)
+  await window.getByRole('contentinfo', { name: 'Support CV Drawer' }).getByRole('button', { name: 'More' }).click()
+  const dialog = window.getByRole('dialog', { name: 'Why CV Drawer is free' })
+  await expect(dialog).toContainText(`CV Drawer ${version}`)
 })
 
 // Wybiera język w menu Language w procesie głównym (jak w sponsor.spec.ts) – to przebudowuje menu i panel „O aplikacji”.
@@ -84,5 +84,5 @@ test('the About panel shows the name, version, copyright and help page address, 
     app.evaluate(() => (globalThis as { aboutPanelCalls?: Electron.AboutPanelOptionsOptions[] }).aboutPanelCalls?.at(-1))
   await expect
     .poll(lastOptions)
-    .toMatchObject({ applicationName: 'CV Press', applicationVersion: version, copyright: '© 2026 Michal Staniecko', website: HELP_URL })
+    .toMatchObject({ applicationName: 'CV Drawer', applicationVersion: version, copyright: '© 2026 Michal Staniecko', website: HELP_URL })
 })

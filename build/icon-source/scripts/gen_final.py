@@ -1,4 +1,4 @@
-"""Generate the final CV Press icon files (issue #73, round 9).
+"""Generate the final CV Drawer icon files (issue #73, round 9).
 
 Base design is 07-t1 (see gen_refine.py). This round changes three things:
 

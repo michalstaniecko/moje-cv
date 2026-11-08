@@ -1,7 +1,7 @@
 import type { Dictionary } from './en'
 
 export const fr: Dictionary = {
-  appName: 'CV Press',
+  appName: 'CV Drawer',
   menu: {
     about: (appName) => `À propos de ${appName}`,
     services: 'Services',

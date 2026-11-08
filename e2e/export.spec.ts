@@ -196,19 +196,19 @@ test('the whole menu and the document follow the interface language forced for t
     await app.close()
     await launch({ language })
     await expect(window.locator('html')).toHaveAttribute('lang', language)
-    await expect.poll(() => window.title()).toBe('CV Press')
+    await expect.poll(() => window.title()).toBe('CV Drawer')
   }
 
   await app.close()
   await launch({ language: 'en' })
-  expect((await menuLabels('Edit')).top).toEqual(['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window', 'Help'])
-  expect((await menuLabels('CV Press')).items).toEqual([
-    'About CV Press',
+  expect((await menuLabels('Edit')).top).toEqual(['CV Drawer', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window', 'Help'])
+  expect((await menuLabels('CV Drawer')).items).toEqual([
+    'About CV Drawer',
     'Services',
-    'Hide CV Press',
+    'Hide CV Drawer',
     'Hide Others',
     'Show All',
-    'Quit CV Press'
+    'Quit CV Drawer'
   ])
   expect((await menuLabels('File')).items).toEqual([
     'New CV',
@@ -223,23 +223,23 @@ test('the whole menu and the document follow the interface language forced for t
   expect((await menuLabels('Window')).items).toEqual(['Minimize', 'Zoom', 'Bring All to Front'])
   expect((await menuLabels('Language')).items).toEqual(languageItems('System'))
   expect((await menuLabels('Help')).items).toEqual([
-    'CV Press Help',
+    'CV Drawer Help',
     'Privacy Policy',
     'Report a Problem…',
     'Check for Updates…',
-    'Support CV Press…'
+    'Support CV Drawer…'
   ])
 
   await app.close()
   await launch({ language: 'pl' })
-  expect((await menuLabels('Edycja')).top).toEqual(['CV Press', 'Plik', 'Edycja', 'Widok', 'Język / Language', 'Wygląd', 'Okno', 'Pomoc'])
-  expect((await menuLabels('CV Press')).items).toEqual([
-    'O aplikacji CV Press',
+  expect((await menuLabels('Edycja')).top).toEqual(['CV Drawer', 'Plik', 'Edycja', 'Widok', 'Język / Language', 'Wygląd', 'Okno', 'Pomoc'])
+  expect((await menuLabels('CV Drawer')).items).toEqual([
+    'O aplikacji CV Drawer',
     'Usługi',
-    'Ukryj CV Press',
+    'Ukryj CV Drawer',
     'Ukryj pozostałe',
     'Pokaż wszystkie',
-    'Zakończ CV Press'
+    'Zakończ CV Drawer'
   ])
   expect((await menuLabels('Edycja')).items).toEqual(['Cofnij', 'Ponów', 'Wytnij', 'Kopiuj', 'Wklej', 'Zaznacz wszystko'])
   expect((await menuLabels('Plik')).items).toEqual([
@@ -253,11 +253,11 @@ test('the whole menu and the document follow the interface language forced for t
   expect((await menuLabels('Widok')).items).toEqual(['Przełącz pełny ekran'])
   expect((await menuLabels('Okno')).items).toEqual(['Minimalizuj', 'Zoom', 'Przenieś wszystko na wierzch'])
   expect((await menuLabels('Pomoc')).items).toEqual([
-    'Pomoc CV Press',
+    'Pomoc CV Drawer',
     'Polityka prywatności',
     'Zgłoś problem…',
     'Sprawdź aktualizacje…',
-    'Wesprzyj CV Press…'
+    'Wesprzyj CV Drawer…'
   ])
 })
 
@@ -268,10 +268,10 @@ test('each Help menu item opens exactly its own address in the system browser, a
   await chooseLanguage('English')
   await stubOpenExternal()
   const expected = [
-    ['CV Press Help', HELP_URL],
+    ['CV Drawer Help', HELP_URL],
     ['Privacy Policy', PRIVACY_URL],
     ['Report a Problem…', REPORT_ISSUE_URL],
-    ['Support CV Press…', SPONSOR_URL]
+    ['Support CV Drawer…', SPONSOR_URL]
   ] as const
   for (const [label, url] of expected) {
     await clearOpenExternalCalls()
@@ -281,7 +281,7 @@ test('each Help menu item opens exactly its own address in the system browser, a
 
   await chooseLanguage('Polski')
   await expect.poll(() => menuLabels('Pomoc')).toMatchObject({
-    items: ['Pomoc CV Press', 'Polityka prywatności', 'Zgłoś problem…', 'Sprawdź aktualizacje…', 'Wesprzyj CV Press…']
+    items: ['Pomoc CV Drawer', 'Polityka prywatności', 'Zgłoś problem…', 'Sprawdź aktualizacje…', 'Wesprzyj CV Drawer…']
   })
   await clearOpenExternalCalls()
   await clickMenuItem('Pomoc', 'Zgłoś problem…')
@@ -295,14 +295,14 @@ test('the Language menu switches the menu and the window immediately, the choice
 
   await chooseLanguage('English')
   await expect.poll(() => menuLabels('Language')).toEqual({
-    top: ['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window', 'Help'],
+    top: ['CV Drawer', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window', 'Help'],
     items: languageItems('English')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
 
   await chooseLanguage('Polski')
   await expect.poll(() => menuLabels('Język / Language')).toEqual({
-    top: ['CV Press', 'Plik', 'Edycja', 'Widok', 'Język / Language', 'Wygląd', 'Okno', 'Pomoc'],
+    top: ['CV Drawer', 'Plik', 'Edycja', 'Widok', 'Język / Language', 'Wygląd', 'Okno', 'Pomoc'],
     items: languageItems('Polski')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'pl')
@@ -323,7 +323,7 @@ test('the Language menu switches the menu and the window immediately, the choice
   await stubSystemLanguages(['ja-JP'])
   await chooseLanguage('System')
   await expect.poll(() => menuLabels('Language')).toEqual({
-    top: ['CV Press', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window', 'Help'],
+    top: ['CV Drawer', 'File', 'Edit', 'View', 'Language', 'Appearance', 'Window', 'Help'],
     items: languageItems('System')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'en')
@@ -332,7 +332,7 @@ test('the Language menu switches the menu and the window immediately, the choice
   await stubSystemLanguages(['de-DE', 'en-US'])
   await chooseLanguage('System')
   await expect.poll(() => menuLabels('Sprache / Language')).toEqual({
-    top: ['CV Press', 'Ablage', 'Bearbeiten', 'Darstellung', 'Sprache / Language', 'Erscheinungsbild', 'Fenster', 'Hilfe'],
+    top: ['CV Drawer', 'Ablage', 'Bearbeiten', 'Darstellung', 'Sprache / Language', 'Erscheinungsbild', 'Fenster', 'Hilfe'],
     items: languageItems('System')
   })
   await expect(window.locator('html')).toHaveAttribute('lang', 'de')
@@ -437,7 +437,7 @@ test('native file dialogs get their titles and file-type filters in the interfac
 test('the CV library and the consent clause library are in English', async () => {
 
   // Biblioteka CV: przyciski, wiersz z datą zmiany w formacie angielskim, zmiana nazwy i potwierdzenie usunięcia.
-  await expect(window.getByRole('heading', { name: 'CV Press' })).toBeVisible()
+  await expect(window.getByRole('heading', { name: 'CV Drawer' })).toBeVisible()
   const library = window.getByRole('list', { name: 'CV list' })
   const row = library.getByRole('listitem').first()
   await expect(row).toContainText(/Modified \d{1,2}\/\d{1,2}\/\d{2}, \d{1,2}:\d{2}\s?[AP]M/)
@@ -827,10 +827,10 @@ test('in a Polish run the sample CV, the editor, the menu, the exported PDF and 
 })
 
 // Folder danych („Moje CV”) nie wynika z tej nazwy – jest przypięty w `src/main/index.ts`.
-test('the packaged app identifies itself as „CV Press”', async () => {
+test('the packaged app identifies itself as „CV Drawer”', async () => {
   test.skip(!packagedExecutable, 'dotyczy tylko zbudowanej aplikacji')
   const identity = await app.evaluate(({ app }) => ({ name: app.getName(), isPackaged: app.isPackaged }))
-  expect(identity).toEqual({ name: 'CV Press', isPackaged: true })
+  expect(identity).toEqual({ name: 'CV Drawer', isPackaged: true })
 })
 
 test('on first run opens the sample CV, edits it and exports it to a PDF identical to the preview; the edit survives a restart', async () => {
@@ -2516,7 +2516,7 @@ test('quitting after a failed autosave asks natively, and Back to Editor keeps t
   const [options] = await messageBoxCalls()
   expect(options).toMatchObject({
     message: 'Your changes to the CV weren’t saved.',
-    detail: 'If you quit CV Press now, your latest changes will be lost.',
+    detail: 'If you quit CV Drawer now, your latest changes will be lost.',
     buttons: ['Quit Anyway', 'Back to Editor']
   })
   expect(await appWindowCount()).toBe(1)
@@ -2604,14 +2604,14 @@ test('a CV file from a newer version of the app is marked as needing a newer ver
 
   const future = library.getByRole('listitem').filter({ hasText: 'future.json' })
   const broken = library.getByRole('listitem').filter({ hasText: 'broken.json' })
-  await expect(future).toContainText('Needs a newer version of CV Press')
+  await expect(future).toContainText('Needs a newer version of CV Drawer')
   await expect(future).not.toContainText('Damaged file')
   await expect(future.getByRole('button', { name: 'Open' })).toHaveCount(0)
   await expect(broken).toContainText('Damaged file')
 
   await future.getByRole('button', { name: 'Delete' }).click()
   await expect(future.getByRole('alertdialog')).toContainText(
-    'Delete the file “future.json”? It is a CV from a newer version of CV Press and will be lost. This can’t be undone.'
+    'Delete the file “future.json”? It is a CV from a newer version of CV Drawer and will be lost. This can’t be undone.'
   )
   await future.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
   await expect(future).toHaveCount(0)

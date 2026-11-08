@@ -84,7 +84,7 @@ export function createUpdateCheck({
       headers: {
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
-        'User-Agent': `CV-Press/${currentVersion}`
+        'User-Agent': `CV-Drawer/${currentVersion}`
       },
       cache: 'no-store',
       credentials: 'omit',
