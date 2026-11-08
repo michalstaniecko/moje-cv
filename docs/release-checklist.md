@@ -2,7 +2,7 @@
 
 Ręczny test spakowanej aplikacji przed wysłaniem do review (#48). Przechodzi go człowiek osobno w obu kanałach:
 
-- **MAS**: build Mac App Store (#44), z TestFlight albo instalacja lokalna.
+- **MAS**: build Mac App Store (#44, `docs/wydanie-mac-app-store.md`), z TestFlight albo `mas-dev` na czystym koncie.
 - **DMG**: notaryzowany `.dmg` (#43).
 
 Każdy punkt odhacz w kolumnie kanału. „—” oznacza, że punkt nie dotyczy kanału.
@@ -188,6 +188,7 @@ Build i dane uwierzytelniające: `docs/instalacja.md`, „Dla programisty”. Ko
 | Ta sama wersja w stopce biblioteki CV | [ ] | [ ] |
 | Ta sama wersja w oknie „Więcej” Sponsor bara | — | [ ] |
 | Numer buildu w panelu równy temu z App Store Connect | [ ] | — |
+| `Info.plist` buildu MAS: `ITSAppUsesNonExemptEncryption` = false, `LSMinimumSystemVersion` 13.0, kategoria Productivity; `.pkg` przechodzi walidację w Transporterze (docs/wydanie-mac-app-store.md, #44) | [ ] | — |
 | Pasek o nowej wersji w bibliotece i dialog „Sprawdź aktualizacje…” (#78) | — | [ ] |
 
 ## Powiadomienie o nowej wersji (#78, ADR-0006)
