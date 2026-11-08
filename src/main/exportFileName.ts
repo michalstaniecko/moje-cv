@@ -1,4 +1,4 @@
-import type { InterfaceLanguage } from '../shared/i18n/languages'
+import type { CvLanguage } from '../renderer/src/domain/schema'
 
 // Domyślna nazwa pliku eksportu (PDF i DOCX) – czysty moduł (bez Electrona), żeby dało się go testować jednostkowo.
 // Kolejność: imię i nazwisko („CV_Anna_Obraztsova.pdf”) → nazwa CV z biblioteki → „CV.pdf” (tak samo z „.docx”).
@@ -34,7 +34,7 @@ function mapLetter(letter: string, map: Record<string, string>): string {
 }
 
 // Kolejność ma znaczenie: jawne mapy przed NFD, bo NFD rozłożyłoby „й” i „ё” na literę + znak łączący.
-export function transliterate(text: string, language: InterfaceLanguage): string {
+export function transliterate(text: string, language: CvLanguage): string {
   const cyrillic = language === 'uk' ? UKRAINIAN : CYRILLIC
   return Array.from(text, (letter) => LATIN[letter] ?? mapLetter(letter, cyrillic))
     .join('')
@@ -42,7 +42,7 @@ export function transliterate(text: string, language: InterfaceLanguage): string
     .replace(/[̀-ͯ]/g, '')
 }
 
-function words(text: string, language: InterfaceLanguage): string[] {
+function words(text: string, language: CvLanguage): string[] {
   return transliterate(text, language)
     .split(/\s+/)
     .map((word) => word.replace(/[^A-Za-z0-9-]/g, ''))
@@ -59,7 +59,7 @@ export function exportFileName({
 }: {
   fullName: string
   cvName: string
-  language: InterfaceLanguage
+  language: CvLanguage
   extension: ExportExtension
 }): string {
   const fromName = words(fullName, language)

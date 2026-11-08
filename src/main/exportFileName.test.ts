@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'vitest'
-import type { InterfaceLanguage } from '../shared/i18n/languages'
+import type { CvLanguage } from '../renderer/src/domain/schema'
 import { exportFileName, transliterate } from './exportFileName'
 
-const named = (fullName: string, language: InterfaceLanguage = 'en', cvName = '') =>
+const named = (fullName: string, language: CvLanguage = 'en', cvName = '') =>
   exportFileName({ fullName, cvName, language, extension: 'pdf' })
 
 describe('exportFileName', () => {
-  test.each<[string, InterfaceLanguage, string]>([
+  test.each<[string, CvLanguage, string]>([
     ['Anna Przykładowa', 'pl', 'CV_Anna_Przykladowa.pdf'],
     ['Ewa Nowak-Żelazna', 'pl', 'CV_Ewa_Nowak-Zelazna.pdf'],
     ['Анна Образцова', 'ru', 'CV_Anna_Obraztsova.pdf'],
@@ -42,10 +42,10 @@ describe('exportFileName', () => {
 })
 
 describe('exportFileName for DOCX', () => {
-  const docx = (fullName: string, language: InterfaceLanguage = 'en', cvName = '') =>
+  const docx = (fullName: string, language: CvLanguage = 'en', cvName = '') =>
     exportFileName({ fullName, cvName, language, extension: 'docx' })
 
-  test.each<[string, InterfaceLanguage, string]>([
+  test.each<[string, CvLanguage, string]>([
     ['Anna Przykładowa', 'pl', 'CV_Anna_Przykladowa.docx'],
     ['Анна Образцова', 'ru', 'CV_Anna_Obraztsova.docx'],
     ['Олена Зразкова', 'uk', 'CV_Olena_Zrazkova.docx'],
