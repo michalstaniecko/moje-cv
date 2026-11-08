@@ -21,7 +21,8 @@ import { vi } from './vi'
 // 1. słownik w shared/i18n,
 // 2. jego Sample CV w domain/samples,
 // 3. pozycja tutaj (nazwa, słownik, font startowy CV),
-// 4. podbicie CV_SCHEMA_VERSION z pustą migracją w migrations.ts – CV language jest ścisłym `z.enum`, więc starsza
+// 4. tag języka dla DOCX export (pełny tag BCP 47 z regionem) w main/docx/languageTags.ts – wymuszony kompilacją,
+// 5. podbicie CV_SCHEMA_VERSION z pustą migracją w migrations.ts – CV language jest ścisłym `z.enum`, więc starsza
 //    aplikacja musi zgłosić „plik z nowszej wersji”, a nie „niepoprawny plik” (ADR 0002).
 // Nazwa języka jest zapisana w nim samym, żeby dało się go znaleźć bez znajomości bieżącego języka.
 // Kolejność to kolejność w menu Language i na liście CV language: alfabetycznie według tych nazw (alfabet łaciński
