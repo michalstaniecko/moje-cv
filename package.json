@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
     "test:e2e": "electron-vite build && playwright test",
+    "screenshots": "electron-vite build && playwright test -c screenshots/playwright.config.ts",
     "test:e2e:packaged": "pnpm dist:mac && MOJE_CV_APP=\"dist/mac-universal/CV Drawer.app/Contents/MacOS/CV Drawer\" playwright test"
   },
   "dependencies": {
