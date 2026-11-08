@@ -22,6 +22,31 @@ Przed wysłaniem do review sprawdź, że wszystkie cztery strony otwierają się
 
 Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 
+## Wydanie `.dmg` (Developer ID, #43)
+
+Build i dane uwierzytelniające: `docs/instalacja.md`, „Dla programisty”. Kolejność:
+
+1. `version` w `package.json` = wydawana wersja `X.Y.Z`; wpis w `CHANGELOG.md`.
+2. `pnpm dist:mac` z certyfikatem Developer ID w pęku kluczy i zmiennymi `APPLE_*` → `dist/CV-Drawer-X.Y.Z.dmg`.
+3. Automatyczne sprawdzenie pliku (bez uruchamiania aplikacji):
+   `MOJE_CV_RELEASE_DMG=dist/CV-Drawer-X.Y.Z.dmg MOJE_CV_DIST_APP="dist/mac-universal/CV Drawer.app" pnpm exec playwright test e2e/release.spec.ts e2e/sandbox.spec.ts`
+4. Smoke test z tej listy na czystym koncie macOS (albo innym Macu) z pliku pobranego przez przeglądarkę, czyli z kwarantanną.
+5. GitHub Release w `michalstaniecko/moje-cv`: tag `vX.Y.Z` (równy `version`, bez przyrostków), tytuł `CV Drawer X.Y.Z`, notatki z `CHANGELOG.md`, załącznik `CV-Drawer-X.Y.Z.dmg`; **opublikowany**, nie draft i nie pre-release (inaczej `/releases/latest` go nie zwróci, ADR-0006).
+
+| Sprawdź | DMG |
+| --- | --- |
+| `pnpm dist:mac` bez certyfikatu albo bez zmiennych `APPLE_*` kończy się błędem z listą braków i nie tworzy `.dmg` | [ ] |
+| Nazwa pliku `CV-Drawer-X.Y.Z.dmg`, wersja z `package.json` | [ ] |
+| `xcrun stapler validate dist/CV-Drawer-X.Y.Z.dmg`: „The validate action worked!” | [ ] |
+| `spctl --assess --type open --context context:primary-signature -vv dist/CV-Drawer-X.Y.Z.dmg`: „accepted”, „source=Notarized Developer ID” | [ ] |
+| Aplikacja w `.dmg`: `spctl --assess --type execute -vv` „accepted”, „source=Notarized Developer ID”; `xcrun stapler validate` działa | [ ] |
+| `codesign -dv --verbose=2` aplikacji: `Authority=Developer ID Application: … (8A9ZJPAGY8)`, `TeamIdentifier=8A9ZJPAGY8`, `flags=0x10000(runtime)` | [ ] |
+| `lipo -archs "CV Drawer.app/Contents/MacOS/CV Drawer"`: `x86_64 arm64` | [ ] |
+| `.dmg` pobrany przeglądarką na czystym Macu: otwiera się, a aplikacja z Aplikacji startuje bez ostrzeżenia Gatekeepera (najwyżej „pobrana z internetu… Otwórz”), bez „Otwórz mimo to” | [ ] |
+| Aplikacja startuje też bez sieci (stempel w pakiecie) | [ ] |
+| W Monitorze aktywności CV Drawer i procesy pomocnicze mają „Piaskownica: Tak”; grupa aplikacji `8A9ZJPAGY8.com.michalstaniecko.mojecv` działa pod Developer ID (aplikacja startuje, okno się otwiera; macOS 15+ nie pyta o dostęp do danych innych aplikacji) | [ ] |
+| GitHub Release `vX.Y.Z` opublikowany z załącznikiem `CV-Drawer-X.Y.Z.dmg`; link „Pobierz” z powiadomienia o nowej wersji prowadzi do niego | [ ] |
+
 ## Instalacja i pierwsze uruchomienie
 
 | Sprawdź | MAS | DMG |

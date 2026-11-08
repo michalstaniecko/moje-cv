@@ -11,6 +11,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "dist:mac": "electron-vite build && electron-builder --mac",
+    "dist:mac:local": "electron-vite build && electron-builder --mac --config electron-builder.local.yml",
     "dist:mas": "node --experimental-strip-types --disable-warning=ExperimentalWarning build/distMas.ts mas",
     "dist:mas-dev": "node --experimental-strip-types --disable-warning=ExperimentalWarning build/distMas.ts mas-dev",
     "preview": "electron-vite preview",
@@ -19,7 +20,7 @@
     "test:e2e": "electron-vite build && playwright test",
     "screenshots": "electron-vite build && playwright test -c screenshots/playwright.config.ts",
     "dist:e2e": "electron-vite build && electron-builder --mac --dir --universal --config electron-builder.e2e.yml",
-    "test:e2e:packaged": "pnpm dist:mac && pnpm dist:e2e && MOJE_CV_DIST_APP=\"dist/mac-universal/CV Drawer.app\" MOJE_CV_APP=\"dist-e2e/mac-universal/CV Drawer.app/Contents/MacOS/CV Drawer\" playwright test"
+    "test:e2e:packaged": "pnpm dist:mac:local && pnpm dist:e2e && MOJE_CV_DIST_APP=\"dist-local/mac-universal/CV Drawer.app\" MOJE_CV_APP=\"dist-e2e/mac-universal/CV Drawer.app/Contents/MacOS/CV Drawer\" playwright test"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

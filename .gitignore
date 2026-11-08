@@ -9,3 +9,4 @@ playwright-report
 .claude
 .idea
 dist-e2e
+dist-local
