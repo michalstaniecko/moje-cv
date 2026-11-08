@@ -161,7 +161,7 @@ export const de: Dictionary = {
     exportPdf: 'PDF exportieren',
     exporting: 'Exportieren …',
     savedPdf: (fileName) => `PDF gesichert: ${fileName}`,
-    openPdf: 'Öffnen',
+    openFile: 'Öffnen',
     showInFolder: 'Im Finder zeigen',
     exportFailed: 'Das PDF konnte nicht gesichert werden. Versuche es erneut.',
     exportCutOff: 'Ein Teil des Inhalts passt nicht auf eine Seite und wird abgeschnitten. Trotzdem exportieren?',

@@ -159,7 +159,7 @@ export const sv: Dictionary = {
     exportPdf: 'Exportera PDF',
     exporting: 'Exporterar…',
     savedPdf: (fileName) => `Sparade PDF: ${fileName}`,
-    openPdf: 'Öppna',
+    openFile: 'Öppna',
     showInFolder: 'Visa i Finder',
     exportFailed: 'Det gick inte att spara PDF:en. Försök igen.',
     exportCutOff: 'En del av innehållet får inte plats på en sida och kommer att klippas av. Exportera ändå?',

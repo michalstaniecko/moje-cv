@@ -90,6 +90,10 @@ export type Api = {
   }
   pdf: {
     export: (document: CvDocument) => Promise<ExportPdfResult>
+  }
+  // Plik zapisany przez eksport (PDF, DOCX): otwarcie i pokazanie w Finderze. Proces główny przyjmuje tylko ścieżki,
+  // które sam zapisał.
+  exported: {
     open: (filePath: string) => Promise<void>
     showInFolder: (filePath: string) => Promise<void>
   }

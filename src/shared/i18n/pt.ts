@@ -154,7 +154,7 @@ export const pt: Dictionary = {
     exportPdf: 'Exportar PDF',
     exporting: 'Exportando…',
     savedPdf: (fileName) => `PDF salvo: ${fileName}`,
-    openPdf: 'Abrir',
+    openFile: 'Abrir',
     showInFolder: 'Mostrar no Finder',
     exportFailed: 'Não foi possível salvar o PDF. Tente novamente.',
     exportCutOff: 'Parte do conteúdo não cabe em uma página e será cortada. Exportar mesmo assim?',

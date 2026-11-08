@@ -174,7 +174,7 @@ Każda strona to `div` 210×297 mm z paddingiem marginesów, `overflow: hidden`,
 3. Strona druku sygnalizuje gotowość (fonty załadowane, podział policzony, zdjęcie wczytane).
 4. `webContents.printToPDF({ pageSize: 'A4', margins: { marginType: 'none' }, printBackground: true, preferCSSPageSize: true })`.
 5. pdf-lib ustawia Title („CV – Imię Nazwisko”) i Author (imię i nazwisko).
-6. `dialog.showSaveDialog` z domyślną nazwą `CV_Imie_Nazwisko.pdf` (`src/main/pdfFileName.ts`: transliteracja do `[A-Za-z0-9-]`, słowa rozdzielone `_`; bez imienia i nazwiska nazwa CV, na końcu `CV.pdf`) → zapis → zamykane powiadomienie z „Otwórz” / „Pokaż w Finderze”. Przed krokiem 1 renderer pyta o eksport CV z blokami wyższymi niż strona; od kroku 1 do wyniku widać wskaźnik postępu. Gdy strona druku nie zgłosi gotowości w czasie (30 s, `MOJE_CV_PRINT_TIMEOUT_MS` w e2e), wynik to `timed-out` z osobnym komunikatem.
+6. `dialog.showSaveDialog` z domyślną nazwą `CV_Imie_Nazwisko.pdf` (`exportFileName` w `src/main/exportFileName.ts`: transliteracja do `[A-Za-z0-9-]`, słowa rozdzielone `_`; bez imienia i nazwiska nazwa CV, na końcu `CV.pdf`) → zapis → zamykane powiadomienie z „Otwórz” / „Pokaż w Finderze” (kanały `exported:open` / `exported:show-in-folder`, tylko dla ścieżek z białej listy w `src/main/exportedFiles.ts`). Przed krokiem 1 renderer pyta o eksport CV z blokami wyższymi niż strona; od kroku 1 do wyniku widać wskaźnik postępu. Gdy strona druku nie zgłosi gotowości w czasie (30 s, `MOJE_CV_PRINT_TIMEOUT_MS` w e2e), wynik to `timed-out` z osobnym komunikatem.
 
 ## 6. Architektura
 

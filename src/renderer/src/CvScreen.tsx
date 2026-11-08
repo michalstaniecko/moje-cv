@@ -160,10 +160,10 @@ export function CvScreen({
       {exportState.status === 'saved' && (
         <ExportNotice onDismiss={() => setExportState({ status: 'idle' })}>
           <span>{t.savedPdf(baseName(exportState.filePath))}</span>
-          <button type="button" onClick={() => window.api.pdf.open(exportState.filePath)}>
-            {t.openPdf}
+          <button type="button" onClick={() => window.api.exported.open(exportState.filePath)}>
+            {t.openFile}
           </button>
-          <button type="button" onClick={() => window.api.pdf.showInFolder(exportState.filePath)}>
+          <button type="button" onClick={() => window.api.exported.showInFolder(exportState.filePath)}>
             {t.showInFolder}
           </button>
         </ExportNotice>

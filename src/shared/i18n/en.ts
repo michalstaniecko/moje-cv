@@ -173,7 +173,7 @@ export const en = {
     exportPdf: 'Export to PDF',
     exporting: 'Exporting…',
     savedPdf: (fileName: string) => `Saved PDF: ${fileName}`,
-    openPdf: 'Open',
+    openFile: 'Open',
     showInFolder: 'Show in Finder',
     exportFailed: 'Couldn’t save the PDF. Try again.',
     exportCutOff: 'Some content doesn’t fit on a page and will be cut off. Export anyway?',

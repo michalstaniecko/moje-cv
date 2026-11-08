@@ -154,7 +154,7 @@ export const tr: Dictionary = {
     exportPdf: 'PDF’e aktar',
     exporting: 'Aktarılıyor…',
     savedPdf: (fileName) => `PDF kaydedildi: ${fileName}`,
-    openPdf: 'Aç',
+    openFile: 'Aç',
     showInFolder: 'Finder’da Göster',
     exportFailed: 'PDF kaydedilemedi. Yeniden deneyin.',
     exportCutOff: 'İçeriğin bir kısmı sayfaya sığmıyor ve kesilecek. Yine de dışa aktarılsın mı?',

@@ -161,7 +161,7 @@ export const nl: Dictionary = {
     exportPdf: 'Exporteer PDF',
     exporting: 'Exporteren…',
     savedPdf: (fileName) => `PDF bewaard: ${fileName}`,
-    openPdf: 'Open',
+    openFile: 'Open',
     showInFolder: 'Toon in Finder',
     exportFailed: 'Kan de PDF niet bewaren. Probeer het opnieuw.',
     exportCutOff: 'Een deel van de inhoud past niet op een pagina en wordt afgesneden. Toch exporteren?',

@@ -40,9 +40,11 @@ const api: Api = {
     pick: () => ipcRenderer.invoke('photo:pick')
   },
   pdf: {
-    export: (document) => ipcRenderer.invoke('pdf:export', document),
-    open: (filePath) => ipcRenderer.invoke('pdf:open', filePath),
-    showInFolder: (filePath) => ipcRenderer.invoke('pdf:show-in-folder', filePath)
+    export: (document) => ipcRenderer.invoke('pdf:export', document)
+  },
+  exported: {
+    open: (filePath) => ipcRenderer.invoke('exported:open', filePath),
+    showInFolder: (filePath) => ipcRenderer.invoke('exported:show-in-folder', filePath)
   },
   language: {
     get: () => ipcRenderer.invoke('language:get'),

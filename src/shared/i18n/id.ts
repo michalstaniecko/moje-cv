@@ -154,7 +154,7 @@ export const id: Dictionary = {
     exportPdf: 'Ekspor ke PDF',
     exporting: 'Mengekspor…',
     savedPdf: (fileName) => `PDF disimpan: ${fileName}`,
-    openPdf: 'Buka',
+    openFile: 'Buka',
     showInFolder: 'Tampilkan di Finder',
     exportFailed: 'Tidak dapat menyimpan PDF. Coba lagi.',
     exportCutOff: 'Sebagian konten tidak muat di satu halaman dan akan terpotong. Tetap ekspor?',

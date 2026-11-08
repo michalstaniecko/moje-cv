@@ -154,7 +154,7 @@ export const uk: Dictionary = {
     exportPdf: 'Експорт у PDF',
     exporting: 'Експорт…',
     savedPdf: (fileName) => `PDF збережено: ${fileName}`,
-    openPdf: 'Відкрити',
+    openFile: 'Відкрити',
     showInFolder: 'Показати у Finder',
     exportFailed: 'Не вдалося зберегти PDF. Спробуйте ще раз.',
     exportCutOff: 'Частина вмісту не вміщується на сторінку й буде обрізана. Однаково експортувати?',

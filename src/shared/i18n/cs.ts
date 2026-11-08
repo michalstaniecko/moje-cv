@@ -154,7 +154,7 @@ export const cs: Dictionary = {
     exportPdf: 'Export do PDF',
     exporting: 'Exportování…',
     savedPdf: (fileName) => `PDF uloženo: ${fileName}`,
-    openPdf: 'Otevřít',
+    openFile: 'Otevřít',
     showInFolder: 'Zobrazit ve Finderu',
     exportFailed: 'PDF se nepodařilo uložit. Zkuste to znovu.',
     exportCutOff: 'Část obsahu se nevejde na stránku a bude oříznuta. Přesto exportovat?',

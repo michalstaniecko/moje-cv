@@ -1,12 +1,13 @@
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron'
 import { PDFDocument } from 'pdf-lib'
 import { cvDocumentSchema, type CvDocument } from '../renderer/src/domain/schema'
 import type { ExportPdfResult } from '../shared/api'
 import type { InterfaceLanguageState } from './interfaceLanguage'
 import { exportDocumentTitle } from './exportDocumentTitle'
 import { exportFileName } from './exportFileName'
+import type { ExportedFiles } from './exportedFiles'
 import { loadRenderer, secureWebPreferences } from './windows'
 
 // Limit oczekiwania na gotowość strony wydruku. `MOJE_CV_PRINT_TIMEOUT_MS` skraca go w testach e2e.
@@ -27,10 +28,8 @@ class PrintTimeoutError extends Error {
 
 // Dokumenty czekające na wydruk, według id webContents ukrytego okna.
 const printJobs = new Map<number, { document: CvDocument; ready: () => void }>()
-// Ścieżki zapisanych PDF-ów – tylko je renderer może potem otworzyć lub pokazać w Finderze.
-const exportedPaths = new Set<string>()
 
-export function registerPdfExport(language: InterfaceLanguageState): void {
+export function registerPdfExport(language: InterfaceLanguageState, exportedFiles: ExportedFiles): void {
   ipcMain.handle('pdf:export', async (event, input: unknown): Promise<ExportPdfResult> => {
     const document = cvDocumentSchema.parse(input)
     let rendered: Uint8Array
@@ -61,15 +60,8 @@ export function registerPdfExport(language: InterfaceLanguageState): void {
     if (canceled || !filePath) return { status: 'canceled' }
 
     await writeFile(filePath, pdf)
-    exportedPaths.add(filePath)
+    exportedFiles.remember(filePath)
     return { status: 'saved', filePath }
-  })
-
-  ipcMain.handle('pdf:open', async (_event, filePath: string) => {
-    if (exportedPaths.has(filePath)) await shell.openPath(filePath)
-  })
-  ipcMain.handle('pdf:show-in-folder', (_event, filePath: string) => {
-    if (exportedPaths.has(filePath)) shell.showItemInFolder(filePath)
   })
 
   ipcMain.handle('print:document', (event) => printJob(event).document)

@@ -154,7 +154,7 @@ export const vi: Dictionary = {
     exportPdf: 'Xuất ra PDF',
     exporting: 'Đang xuất…',
     savedPdf: (fileName) => `Đã lưu PDF: ${fileName}`,
-    openPdf: 'Mở',
+    openFile: 'Mở',
     showInFolder: 'Hiển thị trong Finder',
     exportFailed: 'Không thể lưu PDF. Hãy thử lại.',
     exportCutOff: 'Một phần nội dung không vừa trên một trang và sẽ bị cắt. Vẫn xuất?',

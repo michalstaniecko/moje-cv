@@ -154,7 +154,7 @@ export const ro: Dictionary = {
     exportPdf: 'Exportă în PDF',
     exporting: 'Se exportă…',
     savedPdf: (fileName) => `PDF salvat: ${fileName}`,
-    openPdf: 'Deschide',
+    openFile: 'Deschide',
     showInFolder: 'Afișează în Finder',
     exportFailed: 'PDF-ul nu a putut fi salvat. Încearcă din nou.',
     exportCutOff: 'O parte din conținut nu încape pe o pagină și va fi tăiată. Exporți totuși?',
