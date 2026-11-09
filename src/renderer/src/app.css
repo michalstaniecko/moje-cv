@@ -58,6 +58,9 @@ body {
    `color-scheme` tylko tutaj, nigdy na html/body/:root ani na .preview (zawiera strony CV): natywne kontrolki
    (checkbox, select, suwak, pole koloru, pasek przewijania) podążają za wyglądem, a strony CV nie (ADR-0004). */
 .toolbar,
+.editor-alert,
+.export-notice,
+.export-dialog,
 .library,
 .editor-form,
 .preview-bar,

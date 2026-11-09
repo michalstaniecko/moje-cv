@@ -809,6 +809,7 @@ test('in a Polish run the sample CV, the editor, the menu, the exported PDF and 
 
   await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
   await expect(window.getByText('Zapisano PDF: polskie.pdf')).toBeVisible()
+  await expect(window.locator('.export-notice')).toHaveCSS('font-family', await uiFontFamily())
   const pdf = await readPdf(await readFile(pdfPath))
   expect(pdf.pages).toHaveLength(2)
   expect(pdf.pages[0]).toContain('Ewa Nowak')
@@ -933,6 +934,11 @@ async function docxDocumentXml(filePath: string): Promise<string> {
   return strFromU8(files['word/document.xml']!)
 }
 
+// Czcionka interfejsu (z paska narzędzi edytora) – paski komunikatów pod nim mają mieć tę samą.
+function uiFontFamily(): Promise<string> {
+  return window.locator('.toolbar').evaluate((element) => element.ownerDocument.defaultView!.getComputedStyle(element).fontFamily)
+}
+
 // Fonty osadzone w zapisanym pliku DOCX: rodziny z `word/fontTable.xml` z liczbą osadzonych krojów i pliki `.odttf`.
 async function docxEmbeddedFonts(filePath: string): Promise<{ families: Record<string, number>; files: number }> {
   const files = unzipSync(new Uint8Array(await readFile(filePath)))
@@ -961,6 +967,11 @@ test('exports the open CV to an editable DOCX from the toolbar and from File →
   )
   await expect(saved.getByRole('button', { name: 'Open' })).toBeVisible()
   await expect(saved.getByRole('button', { name: 'Show in Finder' })).toBeVisible()
+  // Pasek ma czcionkę interfejsu jak pasek narzędzi (nie domyślną szeryfową), uwaga jest mniejsza i wyciszona.
+  const toolbarFont = await uiFontFamily()
+  await expect(saved).toHaveCSS('font-family', toolbarFont)
+  await expect(saved.getByRole('button', { name: 'Open' })).toHaveCSS('font-family', toolbarFont)
+  await expect(saved.locator('.export-notice-note')).toHaveCSS('font-size', '13px')
   await expect(window.getByRole('button', { name: 'Export to DOCX' })).toBeEnabled()
   const options = await app.evaluate(() => (globalThis as { saveDialogCalls?: Electron.SaveDialogOptions[] }).saveDialogCalls!)
   expect(options).toHaveLength(1)
