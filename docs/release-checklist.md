@@ -29,7 +29,16 @@ Build i dane uwierzytelniające: `docs/instalacja.md`. Kolejność:
 3. Automatyczne sprawdzenie pliku (bez uruchamiania aplikacji):
    `MOJE_CV_RELEASE_DMG=dist/CV-Drawer-X.Y.Z.dmg MOJE_CV_DIST_APP="dist/mac-universal/CV Drawer.app" pnpm exec playwright test e2e/release.spec.ts e2e/sandbox.spec.ts`
 4. Smoke test z tej listy na czystym koncie macOS (albo innym Macu) z pliku pobranego przez przeglądarkę, czyli z kwarantanną.
-5. GitHub Release w `michalstaniecko/moje-cv`: tag `vX.Y.Z` (równy `version`, bez przyrostków), tytuł `CV Drawer X.Y.Z`, notatki z `CHANGELOG.md`, załącznik `CV-Drawer-X.Y.Z.dmg`; **opublikowany**, nie draft i nie pre-release (inaczej `/releases/latest` go nie zwróci, ADR-0006).
+5. GitHub Release w `michalstaniecko/moje-cv`: tag `vX.Y.Z` (równy `version`, bez przyrostków), tytuł `CV Drawer X.Y.Z`, notatki po angielsku z `docs/release-notes/X.Y.Z.md` (krótkie podsumowanie dla klienta na podstawie sekcji wersji w `CHANGELOG.md`, przejrzane w PR-ze), załącznik `CV-Drawer-X.Y.Z.dmg`; **opublikowany**, nie draft i nie pre-release (inaczej `/releases/latest` go nie zwróci, ADR-0006).
+   Tagi `v*` tworzy tylko admin (ruleset). Tag na commicie z `main`, z którego zbudowano `.dmg`:
+
+   ```sh
+   git tag -a vX.Y.Z -m "CV Drawer X.Y.Z" && git push origin vX.Y.Z
+   gh release create vX.Y.Z dist/CV-Drawer-X.Y.Z.dmg --verify-tag --title "CV Drawer X.Y.Z" --notes-file docs/release-notes/X.Y.Z.md
+   gh api repos/michalstaniecko/moje-cv/releases/latest --jq .tag_name   # vX.Y.Z
+   ```
+
+   W dniu wydania wpisz datę w nagłówku wersji w `CHANGELOG.md` (`## [X.Y.Z] – RRRR-MM-DD`).
 
 | Sprawdź | DMG |
 | --- | --- |
@@ -117,6 +126,7 @@ Build i dane uwierzytelniające: `docs/instalacja.md`. Kolejność:
 | Fonty CV z `Contents/Resources/fonts` czytane w App Sandbox: eksport się udaje, w pliku są osadzone fonty (#93) | [ ] | [ ] |
 | Plik otwarty w Wordzie na Windows bez zainstalowanego fontu CV pokazuje font CV (osadzony), nie zastępczy (#93) | [ ] | [ ] |
 | Sample CV ma zdjęcie SVG, więc jego DOCX nie ma zdjęcia – to oczekiwane; zdjęcie wgrane z JPG/PNG jest w DOCX (#89) | [ ] | [ ] |
+| Sprawdź DOCX export w edytorach: plik z tego wydania otwiera się bez ostrzeżeń i napraw w Word (M365), Pages, LibreOffice i Google Docs, a układ zgadza się z macierzą zgodności w `docs/research/editable-export-docx.md` (#94). Wystarczy raz na wydanie, w jednym kanale | — | [ ] |
 
 ## Eksport i import JSON
 

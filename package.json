@@ -1,8 +1,9 @@
 {
   "name": "moje-cv",
   "productName": "CV Drawer",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "description": "CV Drawer – generator CV z podglądem stron A4, eksportem do PDF i do edytowalnego DOCX",
   "author": "Michal Staniecko",
   "main": "./out/main/index.js",

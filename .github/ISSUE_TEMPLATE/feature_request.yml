@@ -1,0 +1,23 @@
+name: Feature request
+description: An idea that would make CV Drawer more useful.
+labels: [enhancement, needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve?
+      description: Describe what you're trying to do and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: How do you imagine it working?
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: CV Drawer version
+      description: Optional. From CV Drawer → About CV Drawer.
+      placeholder: 1.0.0 (12)
