@@ -11,5 +11,5 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["electron.vite.config.ts", "vitest.config.ts", "playwright.config.ts", "e2e/**/*", "src/main/**/*", "src/preload/**/*", "src/shared/**/*", "src/renderer/src/domain/**/*"]
+  "include": ["electron.vite.config.ts", "vitest.config.ts", "playwright.config.ts", "e2e/**/*", "screenshots/**/*", "build/**/*.ts", "src/main/**/*", "src/preload/**/*", "src/shared/**/*", "src/renderer/src/domain/**/*"]
 }

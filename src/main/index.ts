@@ -3,6 +3,7 @@ import { app, BrowserWindow } from 'electron'
 import { sampleCvs } from '../renderer/src/domain/sampleCv'
 import { en } from '../shared/i18n/en'
 import { createAppearance, windowBackground } from './appearance'
+import { prepareForAppSandbox } from './appSandbox'
 import { createWindowStateKeeper, type InitialWindowState, type WindowStateKeeper } from './appWindowState'
 import { isMacAppStore } from './channel'
 import { guardUnsavedChanges } from './closeGuard'
@@ -77,7 +78,9 @@ if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', join(ap
 
 // Jedna instancja aplikacji na folder danych: dwie kopie pisałyby równolegle do tych samych CV i ustawień. Blokada
 // (Chromium `ProcessSingleton`) leży w folderze danych, więc musi być zakładana po jego ustawieniu. Druga kopia kończy
-// się od razu, bez okna i bez Sample CV, a działająca wychodzi na wierzch.
+// się od razu, bez okna i bez Sample CV, a działająca wychodzi na wierzch. W App Sandbox najpierw Seatbelt Chromium
+// i pozostałości blokady po awarii (`appSandbox.ts`).
+prepareForAppSandbox(app.getPath('userData'))
 const primaryInstance = app.requestSingleInstanceLock()
 if (!primaryInstance) app.quit()
 

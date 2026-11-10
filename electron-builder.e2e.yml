@@ -1,0 +1,16 @@
+# Build do testów e2e na spakowanej aplikacji (`pnpm test:e2e:packaged`): ten sam kod, ten sam sandbox co `.dmg`
+# (electron-builder.yml), podpis ad-hoc jak build lokalny (electron-builder.local.yml, bez certyfikatu i notaryzacji),
+# z trzema różnicami, żeby testy nie dotykały danych użytkownika i dało się nimi sterować:
+# - osobny bundle ID, czyli osobny kontener (`~/Library/Containers/com.michalstaniecko.mojecv.e2e`), nigdy ten właściwy;
+# - bez `container-migration.plist`, inaczej pierwsze uruchomienie testów przeniosłoby prawdziwe dane
+#   (`~/Library/Application Support/Moje CV`) do kontenera testowego;
+# - entitlements z `build/entitlements.e2e.plist` (Playwright i katalogi tymczasowe testów).
+# Nie do dystrybucji.
+extends: ./electron-builder.local.yml
+appId: com.michalstaniecko.mojecv.e2e
+directories:
+  output: dist-e2e
+mac:
+  entitlements: build/entitlements.e2e.plist
+  # `null`, bo listy z `extends` się sumują; pusta lista zostawiłaby migrację z electron-builder.yml.
+  extraResources: null

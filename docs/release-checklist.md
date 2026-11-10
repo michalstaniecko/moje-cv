@@ -2,14 +2,48 @@
 
 Ręczny test spakowanej aplikacji przed wysłaniem do review (#48). Przechodzi go człowiek osobno w obu kanałach:
 
-- **MAS**: build Mac App Store (#44), z TestFlight albo instalacja lokalna.
+- **MAS**: build Mac App Store (#44, `docs/wydanie-mac-app-store.md`), z TestFlight albo `mas-dev` na czystym koncie.
 - **DMG**: notaryzowany `.dmg` (#43).
 
 Każdy punkt odhacz w kolumnie kanału. „—” oznacza, że punkt nie dotyczy kanału.
 
 > **Zasada:** każdy kolejny ticket specu „Gotowość UI/UX do wydania 1.0” (#77) dopisuje tu wiersze dla swojej funkcji. Pozycje dla funkcji jeszcze niewdrożonych są już na liście z numerem ticketu w nawiasie.
 
-Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
+## Adresy do App Store Connect
+
+Strona aplikacji na `ihumbak.website`. Te same adresy otwiera menu Pomoc (`src/shared/links.ts`). Strona jest tylko po angielsku, więc w lokalizacji PL wpisz te same adresy.
+
+| Pole w App Store Connect | Adres (EN i PL) |
+| --- | --- |
+| Privacy Policy URL | `https://ihumbak.website/cv-drawer/privacy/` |
+| Support URL | `https://ihumbak.website/cv-drawer/` |
+
+Przed wysłaniem do review sprawdź, że obie strony otwierają się przez HTTPS i mają aktualną treść (polityka prywatności: brak ruchu sieciowego w MAS, sprawdzanie nowej wersji w `.dmg`).
+
+## Wydanie `.dmg` (Developer ID, #43)
+
+Build i dane uwierzytelniające: `docs/instalacja.md`. Kolejność:
+
+1. `version` w `package.json` = wydawana wersja `X.Y.Z`; wpis w `CHANGELOG.md`.
+2. `pnpm dist:mac` z certyfikatem Developer ID w pęku kluczy i zmiennymi `APPLE_*` → `dist/CV-Drawer-X.Y.Z.dmg`.
+3. Automatyczne sprawdzenie pliku (bez uruchamiania aplikacji):
+   `MOJE_CV_RELEASE_DMG=dist/CV-Drawer-X.Y.Z.dmg MOJE_CV_DIST_APP="dist/mac-universal/CV Drawer.app" pnpm exec playwright test e2e/release.spec.ts e2e/sandbox.spec.ts`
+4. Smoke test z tej listy na czystym koncie macOS (albo innym Macu) z pliku pobranego przez przeglądarkę, czyli z kwarantanną.
+5. GitHub Release w `michalstaniecko/moje-cv`: tag `vX.Y.Z` (równy `version`, bez przyrostków), tytuł `CV Drawer X.Y.Z`, notatki z `CHANGELOG.md`, załącznik `CV-Drawer-X.Y.Z.dmg`; **opublikowany**, nie draft i nie pre-release (inaczej `/releases/latest` go nie zwróci, ADR-0006).
+
+| Sprawdź | DMG |
+| --- | --- |
+| `pnpm dist:mac` bez certyfikatu albo bez zmiennych `APPLE_*` kończy się błędem z listą braków i nie tworzy `.dmg` | [ ] |
+| Nazwa pliku `CV-Drawer-X.Y.Z.dmg`, wersja z `package.json` | [ ] |
+| `xcrun stapler validate dist/CV-Drawer-X.Y.Z.dmg`: „The validate action worked!” | [ ] |
+| `spctl --assess --type open --context context:primary-signature -vv dist/CV-Drawer-X.Y.Z.dmg`: „accepted”, „source=Notarized Developer ID” | [ ] |
+| Aplikacja w `.dmg`: `spctl --assess --type execute -vv` „accepted”, „source=Notarized Developer ID”; `xcrun stapler validate` działa | [ ] |
+| `codesign -dv --verbose=2` aplikacji: `Authority=Developer ID Application: … (8A9ZJPAGY8)`, `TeamIdentifier=8A9ZJPAGY8`, `flags=0x10000(runtime)` | [ ] |
+| `lipo -archs "CV Drawer.app/Contents/MacOS/CV Drawer"`: `x86_64 arm64` | [ ] |
+| `.dmg` pobrany przeglądarką na czystym Macu: otwiera się, a aplikacja z Aplikacji startuje bez ostrzeżenia Gatekeepera (najwyżej „pobrana z internetu… Otwórz”), bez „Otwórz mimo to” | [ ] |
+| Aplikacja startuje też bez sieci (stempel w pakiecie) | [ ] |
+| W Monitorze aktywności CV Drawer i procesy pomocnicze mają „Piaskownica: Tak”; grupa aplikacji `8A9ZJPAGY8.com.michalstaniecko.mojecv` działa pod Developer ID (aplikacja startuje, okno się otwiera; macOS 15+ nie pyta o dostęp do danych innych aplikacji) | [ ] |
+| GitHub Release `vX.Y.Z` opublikowany z załącznikiem `CV-Drawer-X.Y.Z.dmg`; link „Pobierz” z powiadomienia o nowej wersji prowadzi do niego | [ ] |
 
 ## Instalacja i pierwsze uruchomienie
 
@@ -141,7 +175,7 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | CV Drawer → Usługi działa na zaznaczonym tekście; Okno → „Przenieś wszystko na wierzch” i lista okien (#63) | [ ] | [ ] |
 | Pomoc: „Sprawdź aktualizacje…” (#78) i „Wesprzyj CV Drawer…” (#64) | — (brak obu pozycji) | [ ] |
 | Pomoc: strona pomocy, polityka prywatności, zgłaszanie problemu otwierają przeglądarkę (#64) | [ ] | [ ] |
-| Pomoc: trzy pozycje w MAS, pięć w `.dmg` (z separatorem przed „Sprawdź aktualizacje…” i „Wesprzyj CV Drawer…”); każda otwiera właściwą stronę: pomoc `michalstaniecko.github.io/moje-cv/`, prywatność `…/privacy/`, zgłoszenie `github.com/michalstaniecko/moje-cv/issues/new/choose`, wsparcie GitHub Sponsors (#64) | [ ] | [ ] |
+| Pomoc: trzy pozycje w MAS, pięć w `.dmg` (z separatorem przed „Sprawdź aktualizacje…” i „Wesprzyj CV Drawer…”); każda otwiera właściwą stronę: pomoc `ihumbak.website/cv-drawer/`, prywatność `…/privacy/`, zgłoszenie `github.com/michalstaniecko/moje-cv/issues/new/choose`, wsparcie GitHub Sponsors (#64) | [ ] | [ ] |
 | Pomoc: systemowe pole wyszukiwania pozycji menu; po zmianie Interface language menu Pomoc od razu w nowym języku (#64) | [ ] | [ ] |
 
 ## Wersja
@@ -152,6 +186,7 @@ Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
 | Ta sama wersja w stopce biblioteki CV | [ ] | [ ] |
 | Ta sama wersja w oknie „Więcej” Sponsor bara | — | [ ] |
 | Numer buildu w panelu równy temu z App Store Connect | [ ] | — |
+| `Info.plist` buildu MAS: `ITSAppUsesNonExemptEncryption` = false, `LSMinimumSystemVersion` 13.0, kategoria Productivity; `.pkg` przechodzi walidację w Transporterze (docs/wydanie-mac-app-store.md, #44) | [ ] | — |
 | Pasek o nowej wersji w bibliotece i dialog „Sprawdź aktualizacje…” (#78) | — | [ ] |
 
 ## Powiadomienie o nowej wersji (#78, ADR-0006)
@@ -190,6 +225,26 @@ Wymuszenie „nowszej wersji” w spakowanym `.dmg` bez publikowania wydania: w 
 | --- | --- | --- |
 | CV, ustawienia, klauzule, język i wygląd po zamknięciu i ponownym uruchomieniu | [ ] | [ ] |
 | Wspólna biblioteka MAS i `.dmg` na jednym Macu (ADR-0003) | [ ] | [ ] |
+
+## Sandbox i migracja danych (#42, ADR-0003)
+
+Migracja działa tylko raz, przy zakładaniu kontenera, więc sprawdzaj ją na **czystym koncie macOS** (nowy użytkownik w Ustawieniach systemowych → Użytkownicy i grupy), nigdy na swoim: na swoim koncie pierwsze uruchomienie przeniosłoby prawdziwe dane do kontenera.
+
+1. Na czystym koncie zainstaluj wersję bez sandboksu (`.dmg` ad-hoc 0.3.0 albo dowolną do 0.6.0), dodaj 2–3 CV (jedno ze zdjęciem), klauzulę, zmień Interface language i Appearance, zakończ aplikację.
+2. Sprawdź, że dane są w `~/Library/Application Support/Moje CV` (`cvs/`, `settings.json`) i że nie ma `~/Library/Containers/com.michalstaniecko.mojecv`.
+3. Zainstaluj wersję z sandboksem i uruchom ją.
+
+| Sprawdź | MAS | DMG |
+| --- | --- | --- |
+| Podpis: `codesign -d --entitlements - "/Applications/CV Drawer.app"` ma `app-sandbox`, `files.user-selected.read-write` i grupę `8A9ZJPAGY8.com.michalstaniecko.mojecv`, bez `temporary-exception` i bez `network.server`; `network.client` tylko w DMG | [ ] | [ ] |
+| Pakiet ma `Contents/Resources/container-migration.plist` | [ ] | [ ] |
+| Po pierwszym uruchomieniu wszystkie CV z kroku 1 są w bibliotece, ze zdjęciem; klauzula, Interface language i Appearance zachowane | [ ] | [ ] |
+| Dane są teraz w `~/Library/Containers/com.michalstaniecko.mojecv/Data/Library/Application Support/Moje CV`, a w `~/Library/Application Support` nie ma już `Moje CV` | [ ] | [ ] |
+| Monitor aktywności → kolumna „Piaskownica”: CV Drawer i jego procesy pomocnicze mają „Tak” | [ ] | [ ] |
+| Eksport PDF do wybranego folderu (np. Biurko, Dokumenty), potem „Otwórz” i „Pokaż w Finderze” | [ ] | [ ] |
+| Eksport JSON do wybranego folderu i import tego pliku | [ ] | [ ] |
+| Wybór zdjęcia z dowolnego folderu (np. Obrazy, Pobrane) | [ ] | [ ] |
+| Plan B: na drugim czystym koncie najpierw uruchom wersję z sandboksem (pusty kontener), potem starą; eksport CV do `.json` w starej i import w nowej działa (strona pomocy, `ihumbak.website/cv-drawer/`) | [ ] | [ ] |
 
 ## Ruch sieciowy
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements procesów pomocniczych Electrona (renderer, GPU, sieć) i frameworków, wspólne dla .dmg (`mac`) i Mac App
+  Store (`mas` dziedziczy `entitlementsInherit` z `mac`). Helpery dziedziczą sandbox aplikacji (`inherit`), z jej
+  dostępem do plików i sieci, i nie dostają żadnych własnych uprawnień. `cs.*` dla V8 przy hardened runtime (.dmg);
+  w buildzie MAS, bez hardened runtime, nie mają znaczenia.
+-->
+<plist version="1.0">
+  <dict>
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    <key>com.apple.security.inherit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+  </dict>
+</plist>
