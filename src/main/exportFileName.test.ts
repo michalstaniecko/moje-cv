@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'vitest'
-import type { InterfaceLanguage } from '../shared/i18n/languages'
-import { pdfFileName, transliterate } from './pdfFileName'
+import type { CvLanguage } from '../renderer/src/domain/schema'
+import { exportFileName, transliterate } from './exportFileName'
 
-const named = (fullName: string, language: InterfaceLanguage = 'en', cvName = '') =>
-  pdfFileName({ fullName, cvName, language })
+const named = (fullName: string, language: CvLanguage = 'en', cvName = '') =>
+  exportFileName({ fullName, cvName, language, extension: 'pdf' })
 
-describe('pdfFileName', () => {
-  test.each<[string, InterfaceLanguage, string]>([
+describe('exportFileName', () => {
+  test.each<[string, CvLanguage, string]>([
     ['Anna Przykładowa', 'pl', 'CV_Anna_Przykladowa.pdf'],
     ['Ewa Nowak-Żelazna', 'pl', 'CV_Ewa_Nowak-Zelazna.pdf'],
     ['Анна Образцова', 'ru', 'CV_Anna_Obraztsova.pdf'],
@@ -38,6 +38,31 @@ describe('pdfFileName', () => {
     const name = named('Bartholomew '.repeat(20))
     expect(name).toMatch(/^CV_Bartholomew_/)
     expect(name).toHaveLength(100 + '.pdf'.length)
+  })
+})
+
+describe('exportFileName for DOCX', () => {
+  const docx = (fullName: string, language: CvLanguage = 'en', cvName = '') =>
+    exportFileName({ fullName, cvName, language, extension: 'docx' })
+
+  test.each<[string, CvLanguage, string]>([
+    ['Anna Przykładowa', 'pl', 'CV_Anna_Przykladowa.docx'],
+    ['Анна Образцова', 'ru', 'CV_Anna_Obraztsova.docx'],
+    ['Олена Зразкова', 'uk', 'CV_Olena_Zrazkova.docx'],
+    ['Nguyễn Thu Hà', 'vi', 'CV_Nguyen_Thu_Ha.docx']
+  ])('%s (%s) → %s', (fullName, language, expected) => {
+    expect(docx(fullName, language)).toBe(expected)
+  })
+
+  test('falls back to the CV name and then to CV.docx', () => {
+    expect(docx('', 'en', 'CV – Talent Partners')).toBe('CV_Talent_Partners.docx')
+    expect(docx('王芳', 'en', '简历')).toBe('CV.docx')
+  })
+
+  test('limits the part before .docx to 100 characters', () => {
+    const name = docx('Bartholomew '.repeat(20))
+    expect(name).toMatch(/^CV_Bartholomew_/)
+    expect(name).toHaveLength(100 + '.docx'.length)
   })
 })
 

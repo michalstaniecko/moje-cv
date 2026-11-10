@@ -1,11 +1,12 @@
-import { writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent } from 'electron'
+import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from 'electron'
 import { PDFDocument } from 'pdf-lib'
 import { cvDocumentSchema, type CvDocument } from '../renderer/src/domain/schema'
 import type { ExportPdfResult } from '../shared/api'
 import type { InterfaceLanguageState } from './interfaceLanguage'
-import { pdfFileName } from './pdfFileName'
+import { exportDocumentTitle } from './exportDocumentTitle'
+import { exportFileName } from './exportFileName'
+import type { ExportedFiles } from './exportedFiles'
+import { saveExportedFile } from './saveExportedFile'
 import { loadRenderer, secureWebPreferences } from './windows'
 
 // Limit oczekiwania na gotowość strony wydruku. `MOJE_CV_PRINT_TIMEOUT_MS` skraca go w testach e2e.
@@ -26,10 +27,8 @@ class PrintTimeoutError extends Error {
 
 // Dokumenty czekające na wydruk, według id webContents ukrytego okna.
 const printJobs = new Map<number, { document: CvDocument; ready: () => void }>()
-// Ścieżki zapisanych PDF-ów – tylko je renderer może potem otworzyć lub pokazać w Finderze.
-const exportedPaths = new Set<string>()
 
-export function registerPdfExport(language: InterfaceLanguageState): void {
+export function registerPdfExport(language: InterfaceLanguageState, exportedFiles: ExportedFiles): void {
   ipcMain.handle('pdf:export', async (event, input: unknown): Promise<ExportPdfResult> => {
     const document = cvDocumentSchema.parse(input)
     let rendered: Uint8Array
@@ -40,34 +39,23 @@ export function registerPdfExport(language: InterfaceLanguageState): void {
       throw error
     }
     const pdf = await withMetadata(rendered, document.header.fullName)
-    const fileName = pdfFileName({
+    const fileName = exportFileName({
       fullName: document.header.fullName,
       cvName: document.name,
-      language: document.settings.language
+      language: document.settings.language,
+      extension: 'pdf'
     })
 
-    const owner = BrowserWindow.fromWebContents(event.sender)
     const { dialogs } = language.dictionary()
-    const options = {
+    return saveExportedFile({
+      event,
+      data: pdf,
+      fileName,
+      extension: 'pdf',
       title: dialogs.exportPdf,
-      defaultPath: join(app.getPath('documents'), fileName),
-      filters: [{ name: dialogs.pdfFilter, extensions: ['pdf'] }]
-    }
-    const { canceled, filePath } = owner
-      ? await dialog.showSaveDialog(owner, options)
-      : await dialog.showSaveDialog(options)
-    if (canceled || !filePath) return { status: 'canceled' }
-
-    await writeFile(filePath, pdf)
-    exportedPaths.add(filePath)
-    return { status: 'saved', filePath }
-  })
-
-  ipcMain.handle('pdf:open', async (_event, filePath: string) => {
-    if (exportedPaths.has(filePath)) await shell.openPath(filePath)
-  })
-  ipcMain.handle('pdf:show-in-folder', (_event, filePath: string) => {
-    if (exportedPaths.has(filePath)) shell.showItemInFolder(filePath)
+      filterName: dialogs.pdfFilter,
+      exportedFiles
+    })
   })
 
   ipcMain.handle('print:document', (event) => printJob(event).document)
@@ -123,7 +111,7 @@ async function renderPdf(document: CvDocument): Promise<Uint8Array> {
 
 async function withMetadata(pdf: Uint8Array, fullName: string): Promise<Uint8Array> {
   const document = await PDFDocument.load(pdf)
-  document.setTitle(fullName ? `CV – ${fullName}` : 'CV', { showInWindowTitleBar: true })
+  document.setTitle(exportDocumentTitle(fullName), { showInWindowTitleBar: true })
   document.setAuthor(fullName)
   document.setCreator('CV Drawer')
   return document.save()

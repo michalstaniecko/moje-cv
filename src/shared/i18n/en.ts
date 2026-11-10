@@ -20,6 +20,7 @@ export const en = {
     importCv: 'Import…',
     exportJson: 'Export JSON…',
     exportPdf: 'Export to PDF…',
+    exportDocx: 'Export to DOCX…',
     edit: 'Edit',
     undo: 'Undo',
     redo: 'Redo',
@@ -54,7 +55,9 @@ export const en = {
   // Tytuły i filtry systemowych okien plików (przyciski w nich są w języku systemu).
   dialogs: {
     exportPdf: 'Export to PDF',
+    exportDocx: 'Export to DOCX',
     pdfFilter: 'PDF',
+    docxFilter: 'Word Document (DOCX)',
     choosePhoto: 'Choose Photo',
     imagesFilter: 'Images',
     exportCv: 'Export CV to File',
@@ -171,11 +174,16 @@ export const en = {
   editor: {
     saveStatus: { idle: '', pending: 'Saving…', saved: 'Changes saved', failed: 'Couldn’t save changes' },
     exportPdf: 'Export to PDF',
+    exportDocx: 'Export to DOCX',
     exporting: 'Exporting…',
     savedPdf: (fileName: string) => `Saved PDF: ${fileName}`,
-    openPdf: 'Open',
+    savedDocx: (fileName: string) => `Saved DOCX: ${fileName}`,
+    openFile: 'Open',
     showInFolder: 'Show in Finder',
-    exportFailed: 'Couldn’t save the PDF. Try again.',
+    exportPdfFailed: 'Couldn’t save the PDF. Try again.',
+    exportDocxFailed: 'Couldn’t save the DOCX. Try again.',
+    // DOCX export ma uproszczony układ (ADR-0008) – mówi o tym powiadomienie po zapisie.
+    docxNote: 'Simplified layout for editing in Word, Pages, LibreOffice or Google Docs. The PDF matches the preview.',
     exportCutOff: 'Some content doesn’t fit on a page and will be cut off. Export anyway?',
     exportCutOffHint: 'The fragments that are too long are highlighted in the preview.',
     exportAnyway: 'Export anyway',

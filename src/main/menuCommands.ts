@@ -1,7 +1,7 @@
 import type { AppScreen, MenuCommand } from '../shared/api'
 
 const createCommands: MenuCommand[] = ['new-cv', 'add-sample', 'import']
-const exportCommands: MenuCommand[] = ['export-json', 'export-pdf']
+const exportCommands: MenuCommand[] = ['export-json', 'export-pdf', 'export-docx']
 
 // Aktywne komendy menu Plik na danym ekranie okna. Tworzenie i import działają w bibliotece CV i w edytorze (który
 // najpierw wraca do biblioteki), eksport tylko w edytorze (w bibliotece żadne CV nie jest zaznaczone). W bibliotece

@@ -10,6 +10,11 @@ directories:
 files:
   - out/**/*
   - package.json
+# Fonty osadzane w DOCX export (niezmienione TTF od upstreamu z `OFL.txt` i `SOURCES.md`) poza archiwum asar:
+# `Contents/Resources/fonts`, skąd czyta je src/main/docx/docxFonts.ts (ADR-0008).
+extraResources:
+  - from: resources/fonts
+    to: fonts
 # Bez auto-update. Powiadomienie o nowej wersji (bez pobierania): ADR-0006.
 publish: null
 # Wydanie bez podpisu kończy się błędem, zamiast dać niepodpisany plik.

@@ -108,6 +108,16 @@ Build i dane uwierzytelniające: `docs/instalacja.md`. Kolejność:
 | CV z za długim fragmentem (np. bardzo długie podsumowanie): eksport pyta „Eksportować mimo to?”; „Anuluj” i Escape nie otwierają okna zapisu, „Eksportuj mimo to” zapisuje PDF (#68) | [ ] | [ ] |
 | W trakcie przygotowania PDF widać pasek postępu i „Przygotowywanie PDF…”; VoiceOver ogłasza postęp i wynik (#68) | [ ] | [ ] |
 
+## Eksport do DOCX
+
+| Sprawdź | MAS | DMG |
+| --- | --- | --- |
+| Przycisk „Eksportuj do DOCX” w pasku narzędzi i Plik → Eksportuj do DOCX… zapisują plik `CV_Imie_Nazwisko.docx` (#89) | [ ] | [ ] |
+| Powiadomienie „Zapisano DOCX” z „Otwórz” i „Pokaż w Finderze” oraz uwagą o uproszczonym układzie; × zamyka powiadomienie (#89) | [ ] | [ ] |
+| Fonty CV z `Contents/Resources/fonts` czytane w App Sandbox: eksport się udaje, w pliku są osadzone fonty (#93) | [ ] | [ ] |
+| Plik otwarty w Wordzie na Windows bez zainstalowanego fontu CV pokazuje font CV (osadzony), nie zastępczy (#93) | [ ] | [ ] |
+| Sample CV ma zdjęcie SVG, więc jego DOCX nie ma zdjęcia – to oczekiwane; zdjęcie wgrane z JPG/PNG jest w DOCX (#89) | [ ] | [ ] |
+
 ## Eksport i import JSON
 
 | Sprawdź | MAS | DMG |

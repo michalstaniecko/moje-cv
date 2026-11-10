@@ -24,6 +24,10 @@ _Avoid_: Example, demo, template (that is the visual design), placeholder
 One of the predefined visual designs a CV document is rendered with: page arrangement, typography and decoration. Built into the app and chosen per CV; the user cannot edit templates. Concerns only the look, never the CV's content: switching templates loses nothing.
 _Avoid_: Theme, layout, skin, style (as names for the whole design)
 
+**DOCX export**:
+A copy of a single CV saved as a DOCX file for further editing in a word processor (Word, Pages, LibreOffice, Google Docs). It uses one simplified layout shared by every Template and carries over only the content, the accent colour, the font and the CV language, so it never reproduces a Template exactly: the PDF stays the faithful rendering of the CV pages. One-way: the app never reads a DOCX back.
+_Avoid_: Word export, editable PDF, DOCX template, conversion
+
 **Tag**:
 A short, user-chosen label attached to a CV to organise the CV library (e.g. "frontend", "EN", "Allegro"). Private metadata: never shown on the CV document itself. A tag exists only as long as at least one CV carries it. Independent of the CV language, even when it names a language.
 _Avoid_: Label (as a separate concept), keyword, skill, category

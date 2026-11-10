@@ -1,11 +1,12 @@
 import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useStore } from 'zustand'
+import { cvFontFamilies } from '../../../shared/cvFonts'
 import type { Dictionary } from '../../../shared/i18n/en'
 import { interfaceLanguages } from '../../../shared/i18n/languages'
 import { isEndBeforeStart } from '../domain/dates'
 import { clauseName, cvLanguageCodes, type Clause, type ClauseContent, type CvDocument, type CvLanguage, type EducationItem, type ExperienceItem, type Section, type TextItem } from '../domain/schema'
 import { useDictionary } from '../i18n'
-import { fontFamilies, type Font } from '../template/fonts'
+import type { Font } from '../template/fonts'
 import type { CvEditor } from './cvEditor'
 import {
   addBullet,
@@ -102,7 +103,7 @@ function CvDesignFields({ editor, document }: { editor: CvEditor; document: CvDo
               editor.edit(updateSettings({ font: event.target.value as Font }))
             }
           >
-            {Object.entries(fontFamilies).map(([font, name]) => (
+            {Object.entries(cvFontFamilies).map(([font, name]) => (
               <option key={font} value={font}>
                 {name}
               </option>

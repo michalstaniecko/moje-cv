@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process'
 import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
+import { strFromU8, unzipSync } from 'fflate'
 import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
 import { PX_PER_MM } from '../src/renderer/src/domain/templateGeometry'
 import { isAppearance, type Appearance } from '../src/shared/appearance'
@@ -216,6 +217,7 @@ test('the whole menu and the document follow the interface language forced for t
     'Import…',
     'Export JSON…',
     'Export to PDF…',
+    'Export to DOCX…',
     'Close Window'
   ])
   expect((await menuLabels('Edit')).items).toEqual(['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All'])
@@ -248,6 +250,7 @@ test('the whole menu and the document follow the interface language forced for t
     'Importuj…',
     'Eksportuj JSON…',
     'Eksportuj do PDF…',
+    'Eksportuj do DOCX…',
     'Zamknij okno'
   ])
   expect((await menuLabels('Widok')).items).toEqual(['Przełącz pełny ekran'])
@@ -806,6 +809,7 @@ test('in a Polish run the sample CV, the editor, the menu, the exported PDF and 
 
   await window.getByRole('button', { name: 'Eksportuj do PDF' }).click()
   await expect(window.getByText('Zapisano PDF: polskie.pdf')).toBeVisible()
+  await expect(window.locator('.export-notice')).toHaveCSS('font-family', await uiFontFamily())
   const pdf = await readPdf(await readFile(pdfPath))
   expect(pdf.pages).toHaveLength(2)
   expect(pdf.pages[0]).toContain('Ewa Nowak')
@@ -922,6 +926,114 @@ async function moveUpWithKeyboard(expected: {
   expect(announcements.join(' ')).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/)
   expect(announcements.join(' ')).not.toMatch(/draggable|droppable/i)
 }
+
+// `word/document.xml` z zapisanego pliku DOCX (ZIP).
+async function docxDocumentXml(filePath: string): Promise<string> {
+  const files = unzipSync(new Uint8Array(await readFile(filePath)))
+  expect(Object.keys(files)).toContain('word/document.xml')
+  return strFromU8(files['word/document.xml']!)
+}
+
+// Czcionka interfejsu (z paska narzędzi edytora) – paski komunikatów pod nim mają mieć tę samą.
+function uiFontFamily(): Promise<string> {
+  return window.locator('.toolbar').evaluate((element) => element.ownerDocument.defaultView!.getComputedStyle(element).fontFamily)
+}
+
+// Fonty osadzone w zapisanym pliku DOCX: rodziny z `word/fontTable.xml` z liczbą osadzonych krojów i pliki `.odttf`.
+async function docxEmbeddedFonts(filePath: string): Promise<{ families: Record<string, number>; files: number }> {
+  const files = unzipSync(new Uint8Array(await readFile(filePath)))
+  const fontTable = strFromU8(files['word/fontTable.xml']!)
+  const families = Object.fromEntries(
+    [...fontTable.matchAll(/<w:font w:name="([^"]+)">(.*?)<\/w:font>/gs)].map(([, name, content]) => [
+      name!,
+      content!.match(/<w:embed\w+ /g)?.length ?? 0
+    ])
+  )
+  return { families, files: Object.keys(files).filter((path) => /^word\/fonts\/[^/]+\.odttf$/.test(path)).length }
+}
+
+test('exports the open CV to an editable DOCX from the toolbar and from File → Export to DOCX…, with a notice about the simplified layout', async () => {
+  await openFirstCv()
+  await expect(window.locator('.cv-page').first()).toBeVisible()
+
+  // Przycisk w pasku narzędzi: okno zapisu z tytułem, filtrem i domyślną nazwą jak dla PDF.
+  const fromButton = join(outputDir, 'button.docx')
+  await stubSaveDialog(fromButton)
+  await window.getByRole('button', { name: 'Export to DOCX' }).click()
+  const saved = window.getByRole('status').filter({ hasText: 'Saved DOCX: button.docx' })
+  await expect(saved).toBeVisible()
+  await expect(saved).toContainText(
+    'Simplified layout for editing in Word, Pages, LibreOffice or Google Docs. The PDF matches the preview.'
+  )
+  await expect(saved.getByRole('button', { name: 'Open' })).toBeVisible()
+  await expect(saved.getByRole('button', { name: 'Show in Finder' })).toBeVisible()
+  // Pasek ma czcionkę interfejsu jak pasek narzędzi (nie domyślną szeryfową), uwaga jest mniejsza i wyciszona.
+  const toolbarFont = await uiFontFamily()
+  await expect(saved).toHaveCSS('font-family', toolbarFont)
+  await expect(saved.getByRole('button', { name: 'Open' })).toHaveCSS('font-family', toolbarFont)
+  await expect(saved.locator('.export-notice-note')).toHaveCSS('font-size', '13px')
+  await expect(window.getByRole('button', { name: 'Export to DOCX' })).toBeEnabled()
+  const options = await app.evaluate(() => (globalThis as { saveDialogCalls?: Electron.SaveDialogOptions[] }).saveDialogCalls!)
+  expect(options).toHaveLength(1)
+  expect(options[0]!.title).toBe('Export to DOCX')
+  expect(options[0]!.filters).toEqual([{ name: 'Word Document (DOCX)', extensions: ['docx'] }])
+  expect(basename(options[0]!.defaultPath!)).toBe('CV_Jane_Example.docx')
+  expect(await docxDocumentXml(fromButton)).toContain('Jane Example')
+  // Font CV (Lato) osadzony w 4 krojach – z `resources/fonts` w dev, z `Contents/Resources/fonts` w paczce.
+  expect(await docxEmbeddedFonts(fromButton)).toEqual({ families: { Lato: 4 }, files: 4 })
+  if (packagedExecutable) {
+    const resources = await app.evaluate(() => process.resourcesPath)
+    for (const family of ['lato', 'arimo', 'source-sans-3']) {
+      expect(await readdir(join(resources, 'fonts', family))).toEqual(expect.arrayContaining(['OFL.txt', 'SOURCES.md']))
+    }
+  }
+
+  // „Open” i „Show in Finder” działają na zapisanym pliku (biała lista zapisanych plików).
+  await app.evaluate(({ shell }) => {
+    const calls: string[] = []
+    ;(globalThis as { shellCalls?: string[] }).shellCalls = calls
+    shell.openPath = async (path) => {
+      calls.push(`open ${path}`)
+      return ''
+    }
+    shell.showItemInFolder = (path) => void calls.push(`show ${path}`)
+  })
+  await saved.getByRole('button', { name: 'Open' }).click()
+  await saved.getByRole('button', { name: 'Show in Finder' }).click()
+  await expect
+    .poll(() => app.evaluate(() => (globalThis as { shellCalls?: string[] }).shellCalls))
+    .toEqual([`open ${fromButton}`, `show ${fromButton}`])
+
+  // Menu Plik robi to samo.
+  const fromMenu = join(outputDir, 'menu.docx')
+  await stubSaveDialog(fromMenu)
+  await clickMenuItem('File', 'Export to DOCX…')
+  await expect(window.getByRole('status').filter({ hasText: 'Saved DOCX: menu.docx' })).toBeVisible()
+  expect(await docxDocumentXml(fromMenu)).toContain('Jane Example')
+
+  // Anulowanie okna zapisu: bez pliku, bez powiadomienia i bez błędu.
+  await window.getByRole('status').filter({ hasText: 'Saved DOCX' }).getByRole('button', { name: 'Dismiss message' }).click()
+  await app.evaluate(({ dialog }) => {
+    dialog.showSaveDialog = (async () => ({ canceled: true, filePath: '' })) as typeof dialog.showSaveDialog
+  })
+  await window.getByRole('button', { name: 'Export to DOCX' }).click()
+  await expect(window.getByRole('button', { name: 'Export to DOCX' })).toBeEnabled()
+  await expect(window.getByText('Saved DOCX')).toHaveCount(0)
+  await expect(window.getByRole('alert')).toHaveCount(0)
+  expect((await readdir(outputDir)).filter((file) => file.endsWith('.docx')).sort()).toEqual(['button.docx', 'menu.docx'])
+
+  // Nieudany zapis: komunikat błędu, który da się zamknąć.
+  await app.evaluate(({ dialog }) => {
+    dialog.showSaveDialog = (async () => {
+      throw new Error('disk full')
+    }) as typeof dialog.showSaveDialog
+  })
+  await window.getByRole('button', { name: 'Export to DOCX' }).click()
+  const failed = window.getByRole('alert').filter({ hasText: 'Couldn’t save the DOCX. Try again.' })
+  await expect(failed).toBeVisible()
+  await failed.getByRole('button', { name: 'Dismiss message' }).click()
+  await expect(failed).toHaveCount(0)
+})
 
 test('reordering with the keyboard tells the screen reader what was picked up, where it moves and where it was dropped, in English and in Polish', async () => {
   await openFirstCv()
@@ -2246,6 +2358,7 @@ test('File menu: creating and importing in the CV library and the editor, export
     'Import…': create,
     'Export JSON…': exports,
     'Export to PDF…': exports,
+    'Export to DOCX…': exports,
     'Close Window': true
   })
   await expect(window.getByRole('list', { name: 'CV list' })).toBeVisible()

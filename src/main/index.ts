@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { sampleCvs } from '../renderer/src/domain/sampleCv'
 import { en } from '../shared/i18n/en'
 import { createAppearance, windowBackground } from './appearance'
@@ -9,11 +9,13 @@ import { isMacAppStore } from './channel'
 import { guardUnsavedChanges } from './closeGuard'
 import { reloadAfterRendererCrash, reportMainProcessErrors } from './crashHandling'
 import { createCvRepository } from './cvRepository'
+import { createExportedFiles, registerExportedFiles } from './exportedFiles'
 import { registerCvLibrary } from './cvLibrary'
 import { createPerfLog, type PerfEntry } from './perfLog'
 import { createInterfaceLanguage, registerInterfaceLanguage, type InterfaceLanguageState } from './interfaceLanguage'
 import { registerAppInfo } from './appInfo'
 import { registerAppMenu } from './menu'
+import { registerDocxExport } from './docxExport'
 import { registerPdfExport } from './pdfExport'
 import { registerPhotoPicker } from './photo'
 import { registerSettings } from './settings'
@@ -104,7 +106,10 @@ app.whenReady().then(async () => {
   registerInterfaceLanguage(language)
   registerCvLibrary(repository, settings, language, perf)
   registerSettings(settings)
-  registerPdfExport(language)
+  const exportedFiles = createExportedFiles(shell)
+  registerExportedFiles(ipcMain, exportedFiles)
+  registerPdfExport(language, exportedFiles)
+  registerDocxExport(language, exportedFiles)
   registerPhotoPicker(language)
   registerSponsor()
   // Ta sama reguła kanału co Sponsor bar i menu Pomoc: w Mac App Store bez żadnego ruchu sieciowego (ADR-0006).

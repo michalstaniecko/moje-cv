@@ -3,3 +3,10 @@
 export const cvFontIds = ['lato', 'source-sans-3', 'arimo'] as const
 
 export type CvFontId = (typeof cvFontIds)[number]
+
+// Nazwa rodziny fontu – w CSS podglądu, w formularzu i w DOCX export (font po nazwie).
+export const cvFontFamilies: Record<CvFontId, string> = {
+  lato: 'Lato',
+  'source-sans-3': 'Source Sans 3',
+  arimo: 'Arimo'
+}

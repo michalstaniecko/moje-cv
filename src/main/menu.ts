@@ -117,6 +117,7 @@ function menuTemplate(
       { type: 'separator' },
       { label: menu.exportJson, ...menuCommand('export-json', enabled) },
       { label: menu.exportPdf, accelerator: 'CmdOrCtrl+E', ...menuCommand('export-pdf', enabled) },
+      { label: menu.exportDocx, ...menuCommand('export-docx', enabled) },
       { type: 'separator' },
       { role: 'close', label: menu.closeWindow, accelerator: 'CmdOrCtrl+W' }
     ]

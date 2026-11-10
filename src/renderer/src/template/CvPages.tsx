@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { onAccentColor } from '../domain/accentColor'
 import { generateBlocks, type CvBlock } from '../domain/blocks'
+import { consentText } from '../domain/consent'
 import { paginate, type PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import { contentAreaMm, pageMetricsPx, type TemplateGeometry } from '../domain/templateGeometry'
@@ -14,7 +15,7 @@ import { templates } from './templates'
 function usePagination(
   blocks: CvBlock[],
   font: CvDocument['settings']['font'],
-  consentText: string | null,
+  consent: string | null,
   geometry: TemplateGeometry
 ) {
   const blockElements = useRef(new Map<string, HTMLDivElement>())
@@ -36,14 +37,14 @@ function usePagination(
             breakBefore: block.breakBefore
           })),
           pageHeight: metrics.contentHeight,
-          consent: consentText === null ? null : { height: height(consentElement.current), gap: metrics.consentGap }
+          consent: consent === null ? null : { height: height(consentElement.current), gap: metrics.consentGap }
         })
       )
     })
     return () => {
       cancelled = true
     }
-  }, [blocks, font, consentText, geometry])
+  }, [blocks, font, consent, geometry])
 
   const measureRef = (id: string) => (element: HTMLDivElement | null) => {
     if (element) blockElements.current.set(id, element)
@@ -96,8 +97,8 @@ export function CvPages({
 }) {
   const { geometry, blockViews: views, PageFooter } = template
   const blocks = useMemo(() => generateBlocks(document, geometry), [document, geometry])
-  const consentText = document.consent.enabled && document.consent.text.trim() ? document.consent.text : null
-  const { layout, measureRef, consentElement } = usePagination(blocks, document.settings.font, consentText, geometry)
+  const consent = consentText(document)
+  const { layout, measureRef, consentElement } = usePagination(blocks, document.settings.font, consent, geometry)
   const blocksById = useMemo(() => new Map(blocks.map((block) => [block.id, block])), [blocks])
   const pagesElement = useRef<HTMLDivElement>(null)
   useReadySignal(layout, pagesElement, onReady)
@@ -130,9 +131,9 @@ export function CvPages({
         {blocks.map((block) => (
           <CvBlockView key={block.id} block={block} views={views} ref={measureRef(block.id)} />
         ))}
-        {consentText !== null && (
+        {consent !== null && (
           <p ref={consentElement} className="cv-consent">
-            {consentText}
+            {consent}
           </p>
         )}
       </div>
@@ -153,8 +154,8 @@ export function CvPages({
                     {oversizedMessage}
                   </p>
                 )}
-                {consentText !== null && index === pageCount - 1 && (
-                  <p className="cv-consent">{consentText}</p>
+                {consent !== null && index === pageCount - 1 && (
+                  <p className="cv-consent">{consent}</p>
                 )}
               </div>
               {PageFooter && <PageFooter fullName={document.header.fullName} pageNumber={index + 1} pageCount={pageCount} />}
