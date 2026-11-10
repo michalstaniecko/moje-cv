@@ -1,7 +1,7 @@
 # CV Drawer – specyfikacja v1
 
 Lokalna aplikacja desktopowa do tworzenia CV z podglądem stron A4 na żywo i eksportem do PDF.
-Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: `.docs/brief/CV_Magdalena_Czerwinska.html`.
+Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: prawdziwe CV w `.docs/brief/` (nieśledzone).
 
 ## 1. Decyzje
 
