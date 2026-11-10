@@ -1,0 +1,62 @@
+name: Bug report
+description: Something in CV Drawer doesn't work as expected.
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem.
+
+        **Issues are public.** Please don't attach your real CV or anything with your personal data. If the problem depends on the CV content, reproduce it on the Sample CV or export a CV with made-up data as JSON (File → Export JSON…) and attach that.
+  - type: input
+    id: app-version
+    attributes:
+      label: CV Drawer version
+      description: From CV Drawer → About CV Drawer, including the number in brackets.
+      placeholder: 1.0.0 (12)
+    validations:
+      required: true
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      description: From Apple menu → About This Mac.
+      placeholder: macOS 15.1
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Where did you install CV Drawer from?
+      options:
+        - Mac App Store
+        - .dmg from GitHub Releases
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the Sample CV
+        2. Click …
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Optional. Drag images here; make sure they show no personal data.

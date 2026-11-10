@@ -1,5 +1,8 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
+  - name: CV Drawer Help
+    url: https://ihumbak.website/cv-drawer/
+    about: Installing, first launch, where your CVs are stored and answers to common questions.
   - name: Report a security vulnerability
     url: https://github.com/michalstaniecko/moje-cv/security/advisories/new
     about: Please report security issues privately, not in a public issue. See SECURITY.md.
