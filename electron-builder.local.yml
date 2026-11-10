@@ -1,0 +1,18 @@
+# Build lokalny `.dmg` bez certyfikatu Developer ID i bez notaryzacji (`pnpm dist:mac:local`): podpis ad-hoc, ten sam
+# sandbox, bundle ID i migracja danych co wydanie (electron-builder.yml). Do sprawdzania pakietu na tym Macu
+# (`pnpm test:e2e:packaged`), nie do dystrybucji: na innym Macu Gatekeeper go zablokuje. Wynik w `dist-local/`, z
+# dopiskiem `-local` w nazwie, żeby nie pomylić go z wydaniem w `dist/`.
+extends: ./electron-builder.yml
+artifactName: CV-Drawer-${version}-local.${ext}
+directories:
+  output: dist-local
+forceCodeSigning: false
+mac:
+  # Podpis ad-hoc („-”): bez żadnego podpisu macOS na Apple Silicon nie uruchomi aplikacji.
+  identity: '-'
+  # Przy podpisie ad-hoc hardened runtime blokowałby ładowanie frameworków Electrona (inny „zespół” niż aplikacja).
+  hardenedRuntime: false
+  # Wyłącza też hooki notaryzacji z build/notarize.mjs.
+  notarize: false
+dmg:
+  sign: false

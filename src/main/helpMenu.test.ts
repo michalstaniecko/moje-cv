@@ -35,8 +35,8 @@ describe('menu Help', () => {
   })
 
   test('each item opens exactly its own fixed address', () => {
-    expect(openedBy('CV Drawer Help')).toEqual(['https://michalstaniecko.github.io/moje-cv/'])
-    expect(openedBy('Privacy Policy')).toEqual(['https://michalstaniecko.github.io/moje-cv/privacy/'])
+    expect(openedBy('CV Drawer Help')).toEqual(['https://ihumbak.website/cv-drawer/'])
+    expect(openedBy('Privacy Policy')).toEqual(['https://ihumbak.website/cv-drawer/privacy/'])
     expect(openedBy('Report a Problem…')).toEqual(['https://github.com/michalstaniecko/moje-cv/issues/new/choose'])
     expect(openedBy('Support CV Drawer…')).toEqual(['https://github.com/sponsors/michalstaniecko'])
   })
