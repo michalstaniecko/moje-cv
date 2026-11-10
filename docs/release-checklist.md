@@ -244,7 +244,7 @@ Migracja działa tylko raz, przy zakładaniu kontenera, więc sprawdzaj ją na *
 | Eksport PDF do wybranego folderu (np. Biurko, Dokumenty), potem „Otwórz” i „Pokaż w Finderze” | [ ] | [ ] |
 | Eksport JSON do wybranego folderu i import tego pliku | [ ] | [ ] |
 | Wybór zdjęcia z dowolnego folderu (np. Obrazy, Pobrane) | [ ] | [ ] |
-| Plan B: na drugim czystym koncie najpierw uruchom wersję z sandboksem (pusty kontener), potem starą; eksport CV do `.json` w starej i import w nowej działa (strona pomocy, `docs/pl/index.md`) | [ ] | [ ] |
+| Plan B: na drugim czystym koncie najpierw uruchom wersję z sandboksem (pusty kontener), potem starą; eksport CV do `.json` w starej i import w nowej działa (strona pomocy, `ihumbak.website/cv-drawer/`) | [ ] | [ ] |
 
 ## Ruch sieciowy
 
