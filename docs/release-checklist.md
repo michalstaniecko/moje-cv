@@ -11,16 +11,14 @@ Każdy punkt odhacz w kolumnie kanału. „—” oznacza, że punkt nie dotyczy
 
 ## Adresy do App Store Connect
 
-Strony z GitHub Pages (#45, źródło `main` + `/docs`, włączenie w #74). Te same adresy otwiera menu Pomoc (`src/shared/links.ts`).
+Strona aplikacji na `ihumbak.website`. Te same adresy otwiera menu Pomoc (`src/shared/links.ts`). Strona jest tylko po angielsku, więc w lokalizacji PL wpisz te same adresy.
 
-| Pole w App Store Connect | EN | PL |
-| --- | --- | --- |
-| Privacy Policy URL | `https://michalstaniecko.github.io/moje-cv/privacy/` | `https://michalstaniecko.github.io/moje-cv/pl/privacy/` |
-| Support URL | `https://michalstaniecko.github.io/moje-cv/` | `https://michalstaniecko.github.io/moje-cv/pl/` |
+| Pole w App Store Connect | Adres (EN i PL) |
+| --- | --- |
+| Privacy Policy URL | `https://ihumbak.website/cv-drawer/privacy/` |
+| Support URL | `https://ihumbak.website/cv-drawer/` |
 
-Przed wysłaniem do review sprawdź, że wszystkie cztery strony otwierają się przez HTTPS, przełącznik języka prowadzi do drugiej wersji, a w sekcji „Contact” / „Kontakt” jest prawdziwy adres e-mail.
-
-Wersja: ______ Build MAS: ______ Build DMG: ______ macOS: ______ Data: ______
+Przed wysłaniem do review sprawdź, że obie strony otwierają się przez HTTPS i mają aktualną treść (polityka prywatności: brak ruchu sieciowego w MAS, sprawdzanie nowej wersji w `.dmg`).
 
 ## Wydanie `.dmg` (Developer ID, #43)
 
@@ -177,7 +175,7 @@ Build i dane uwierzytelniające: `docs/instalacja.md`. Kolejność:
 | CV Drawer → Usługi działa na zaznaczonym tekście; Okno → „Przenieś wszystko na wierzch” i lista okien (#63) | [ ] | [ ] |
 | Pomoc: „Sprawdź aktualizacje…” (#78) i „Wesprzyj CV Drawer…” (#64) | — (brak obu pozycji) | [ ] |
 | Pomoc: strona pomocy, polityka prywatności, zgłaszanie problemu otwierają przeglądarkę (#64) | [ ] | [ ] |
-| Pomoc: trzy pozycje w MAS, pięć w `.dmg` (z separatorem przed „Sprawdź aktualizacje…” i „Wesprzyj CV Drawer…”); każda otwiera właściwą stronę: pomoc `michalstaniecko.github.io/moje-cv/`, prywatność `…/privacy/`, zgłoszenie `github.com/michalstaniecko/moje-cv/issues/new/choose`, wsparcie GitHub Sponsors (#64) | [ ] | [ ] |
+| Pomoc: trzy pozycje w MAS, pięć w `.dmg` (z separatorem przed „Sprawdź aktualizacje…” i „Wesprzyj CV Drawer…”); każda otwiera właściwą stronę: pomoc `ihumbak.website/cv-drawer/`, prywatność `…/privacy/`, zgłoszenie `github.com/michalstaniecko/moje-cv/issues/new/choose`, wsparcie GitHub Sponsors (#64) | [ ] | [ ] |
 | Pomoc: systemowe pole wyszukiwania pozycji menu; po zmianie Interface language menu Pomoc od razu w nowym języku (#64) | [ ] | [ ] |
 
 ## Wersja

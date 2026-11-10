@@ -1,6 +1,6 @@
 # CV Drawer – budowanie i podpis `.dmg` (macOS, dla programisty)
 
-Instrukcje dla użytkownika (instalacja, pierwsze uruchomienie, gdzie są dane, aktualizacja, przeniesienie CV ze starszej wersji) są na stronie pomocy: [michalstaniecko.github.io/moje-cv](https://michalstaniecko.github.io/moje-cv/) (po polsku: [/pl/](https://michalstaniecko.github.io/moje-cv/pl/)), źródła w `docs/index.md` i `docs/pl/index.md`. Wydanie Mac App Store: `docs/wydanie-mac-app-store.md`.
+Instrukcje dla użytkownika (instalacja, pierwsze uruchomienie, gdzie są dane, aktualizacja, przeniesienie CV ze starszej wersji) są na stronie pomocy: [ihumbak.website/cv-drawer](https://ihumbak.website/cv-drawer/). Wydanie Mac App Store: `docs/wydanie-mac-app-store.md`.
 
 ## Wydanie (Developer ID, notaryzacja)
 

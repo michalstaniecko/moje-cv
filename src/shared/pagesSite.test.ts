@@ -1,18 +1,12 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { HELP_URL, PRIVACY_URL } from './links'
 
-// Strony pomocy i polityki prywatności publikuje GitHub Pages z katalogu `docs/` (#45). Adresy w aplikacji
-// (`./links`) i ścieżki stron muszą się zgadzać, bo inaczej menu Pomoc otwiera 404.
+// Źródła stron pomocy i polityki prywatności dla GitHub Pages w katalogu `docs/` (#45). Aplikacja otwiera dziś
+// strony z `ihumbak.website` (`./links`), więc ten test sprawdza tylko spójność samych źródeł w `docs/`.
 const DOCS = join(__dirname, '../../docs')
-const PAGES_BASE = 'https://michalstaniecko.github.io/moje-cv/'
-
-// Ścieżka na stronach Pages (np. `/privacy/`) dla adresu z aplikacji.
-function sitePath(url: string): string {
-  expect(url.startsWith(PAGES_BASE)).toBe(true)
-  return `/${url.slice(PAGES_BASE.length)}`
-}
+const HELP_PATH = '/'
+const PRIVACY_PATH = '/privacy/'
 
 // Plik źródłowy Jekylla, z którego powstaje strona pod daną ścieżką (`/pl/privacy/` → `docs/pl/privacy/index.md`).
 function pageFile(path: string): string {
@@ -32,32 +26,30 @@ function frontMatter(file: string): Record<string, string> {
 }
 
 describe('GitHub Pages site', () => {
-  test('the English help page is published at the help URL', () => {
-    const path = sitePath(HELP_URL)
-    expect(path).toBe('/')
+  test('the English help page is published at /', () => {
+    const path = HELP_PATH
     expect(existsSync(pageFile(path))).toBe(true)
     expect(frontMatter(pageFile(path))).toMatchObject({ permalink: path, lang: 'en' })
   })
 
-  test('the English privacy policy is published at the privacy URL', () => {
-    const path = sitePath(PRIVACY_URL)
-    expect(path).toBe('/privacy/')
+  test('the English privacy policy is published at /privacy/', () => {
+    const path = PRIVACY_PATH
     expect(existsSync(pageFile(path))).toBe(true)
     expect(frontMatter(pageFile(path))).toMatchObject({ permalink: path, lang: 'en' })
   })
 
   test.each([
-    ['help', HELP_URL, '/pl/'],
-    ['privacy policy', PRIVACY_URL, '/pl/privacy/']
-  ])('the Polish %s is published under /pl/', (_name, url, polishPath) => {
-    expect(`/pl${sitePath(url)}`).toBe(polishPath)
+    ['help', HELP_PATH, '/pl/'],
+    ['privacy policy', PRIVACY_PATH, '/pl/privacy/']
+  ])('the Polish %s is published under /pl/', (_name, path, polishPath) => {
+    expect(`/pl${path}`).toBe(polishPath)
     expect(existsSync(pageFile(polishPath))).toBe(true)
     expect(frontMatter(pageFile(polishPath))).toMatchObject({ permalink: polishPath, lang: 'pl' })
   })
 
   test.each([
-    [sitePath(HELP_URL), '/pl/'],
-    [sitePath(PRIVACY_URL), '/pl/privacy/']
+    [HELP_PATH, '/pl/'],
+    [PRIVACY_PATH, '/pl/privacy/']
   ])('the language switcher links %s and %s to each other', (english, polish) => {
     expect(frontMatter(pageFile(english)).translation).toBe(polish)
     expect(frontMatter(pageFile(polish)).translation).toBe(english)
