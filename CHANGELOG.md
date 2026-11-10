@@ -1,11 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.0] – Unreleased
 
 ### Added
 - Export to DOCX: an "Export to DOCX" button next to "Export to PDF" in the CV editor and File → Export to DOCX… save an editable copy of the CV for Word, Pages, LibreOffice or Google Docs. The file uses one simplified layout for every Template (heading styles, real bulleted lists, dates on a right tab stop) with the CV's accent colour, font and CV language; the PDF stays the exact image of the preview. The photo (JPEG or PNG) sits next to the name, and with Lato the characters it lacks (Cyrillic, some Vietnamese letters) are written in Source Sans 3, as in the preview. The CV's font is embedded in the file, so Word on Windows shows it without installing anything; the fonts ship with the app as unmodified files from their authors, with their SIL Open Font License (`Contents/Resources/fonts`).
 
 ### Changed
+- First release in the Mac App Store, alongside the `.dmg` on GitHub Releases. Both versions are free and share the same CV library on your Mac.
 - The `.dmg` is signed with an Apple Developer ID certificate and notarized by Apple, so macOS opens CV Drawer without the "Open Anyway" procedure in System Settings.
 - CV Drawer runs in the macOS App Sandbox. CVs and settings move on first launch from `~/Library/Application Support/Moje CV` into the app's container (`~/Library/Containers/com.michalstaniecko.mojecv`), which the Mac App Store and `.dmg` versions share. The older version no longer sees them afterwards; JSON export and import remain the fallback.
 
