@@ -1,6 +1,6 @@
 # The Developer ID build turns off Chromium's own sandbox and relies on App Sandbox
 
-Status: proposed, pending confirmation by the owner.
+Status: accepted (2026-11-10).
 
 The regular (non-MAS) Electron build confines its helper processes (renderer, GPU, network) in Chromium's own Seatbelt sandbox. A process that already runs inside App Sandbox (ADR-0003) cannot apply a second Seatbelt profile, so with App Sandbox on, every helper of the Developer ID `.dmg` exits at start ("sandbox initialization failed: Operation not permitted") and the window never opens. We decided that the sandboxed `.dmg` starts Chromium with `no-sandbox` (`src/main/appSandbox.ts`, only when `APP_SANDBOX_CONTAINER_ID` is set and `process.mas` is false), so its renderers are confined only by App Sandbox, which every helper inherits through `com.apple.security.inherit` (`build/entitlements.inherit.plist`). This is how the Mac App Store Electron build works anyway: it ships without Chromium's sandbox and relies on App Sandbox alone. Both channels therefore get the same confinement.
 
