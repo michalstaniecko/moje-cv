@@ -175,6 +175,7 @@ export const uk: Dictionary = {
     leaveUnsaved: 'Зміни не збережено. Усе одно вийти?',
     leaveAnyway: 'Усе одно вийти',
     stayInEditor: 'Залишитися в редакторі',
+    resizePanes: 'Змінити ширину форми й попереднього перегляду',
     renameCv: (name) => `Перейменувати резюме: ${name}`,
     removed: 'Видалено.',
     undoRemoval: 'Відмінити',

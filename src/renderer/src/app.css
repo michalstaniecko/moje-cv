@@ -523,14 +523,34 @@ textarea:focus-visible {
 }
 
 .editor-panes {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(360px, 440px) 1fr;
+  /* --form-width ustawia separator (editor/PaneSeparator.tsx) w granicach formularza i podglądu. */
+  grid-template-columns: var(--form-width, 440px) minmax(0, 1fr);
   flex: 1;
   min-height: 0;
 }
 
-.editor-panes > * {
+.editor-panes > :not(.pane-separator) {
   overflow: auto;
+}
+
+/* Separator leży na krawędzi formularza i nie zajmuje kolumny; szerszy od linii obramowania, żeby łatwo go chwycić. */
+.pane-separator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--form-width, 440px) - 3px);
+  z-index: 1;
+  width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.pane-separator:hover,
+.pane-separator:focus-visible {
+  background: var(--ui-focus-ring);
+  outline: none;
 }
 
 .toolbar-status {

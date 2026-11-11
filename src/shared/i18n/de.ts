@@ -182,6 +182,7 @@ export const de: Dictionary = {
     leaveUnsaved: 'Deine Änderungen wurden nicht gesichert. Trotzdem verlassen?',
     leaveAnyway: 'Trotzdem verlassen',
     stayInEditor: 'Im Editor bleiben',
+    resizePanes: 'Breite von Formular und Vorschau ändern',
     renameCv: (name) => `Lebenslauf umbenennen: ${name}`,
     removed: 'Entfernt.',
     undoRemoval: 'Widerrufen',

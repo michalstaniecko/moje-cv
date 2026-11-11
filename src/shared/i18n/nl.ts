@@ -182,6 +182,7 @@ export const nl: Dictionary = {
     leaveUnsaved: 'Je wijzigingen zijn niet bewaard. Toch verlaten?',
     leaveAnyway: 'Toch verlaten',
     stayInEditor: 'In de editor blijven',
+    resizePanes: 'Breedte van formulier en voorvertoning aanpassen',
     renameCv: (name) => `Naam van cv wijzigen: ${name}`,
     removed: 'Verwijderd.',
     undoRemoval: 'Herstel',

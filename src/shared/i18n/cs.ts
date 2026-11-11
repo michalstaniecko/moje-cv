@@ -175,6 +175,7 @@ export const cs: Dictionary = {
     leaveUnsaved: 'Změny nebyly uloženy. Přesto odejít?',
     leaveAnyway: 'Přesto odejít',
     stayInEditor: 'Zůstat v editoru',
+    resizePanes: 'Změnit šířku formuláře a náhledu',
     renameCv: (name) => `Přejmenovat CV: ${name}`,
     removed: 'Odstraněno.',
     undoRemoval: 'Odvolat',

@@ -175,6 +175,7 @@ export const pt: Dictionary = {
     leaveUnsaved: 'Suas alterações não foram salvas. Sair mesmo assim?',
     leaveAnyway: 'Sair mesmo assim',
     stayInEditor: 'Ficar no editor',
+    resizePanes: 'Redimensionar o formulário e a pré-visualização',
     renameCv: (name) => `Renomear o currículo: ${name}`,
     removed: 'Removido.',
     undoRemoval: 'Desfazer',

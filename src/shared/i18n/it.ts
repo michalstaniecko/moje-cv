@@ -175,6 +175,7 @@ export const it: Dictionary = {
     leaveUnsaved: 'Le modifiche non sono state salvate. Uscire comunque?',
     leaveAnyway: 'Esci comunque',
     stayInEditor: 'Resta nell’editor',
+    resizePanes: 'Ridimensiona il modulo e l’anteprima',
     renameCv: (name) => `Rinomina il CV: ${name}`,
     removed: 'Rimosso.',
     undoRemoval: 'Annulla',
