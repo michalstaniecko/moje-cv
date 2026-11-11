@@ -9,7 +9,10 @@ type ListField = HTMLInputElement | HTMLTextAreaElement
 //   w pustym elemencie (także z samych spacji) nic nie robi,
 // - Shift+Enter łamie wiersz w polu wielowierszowym (`multiline`), a w jednowierszowym nic nie robi,
 // - Backspace w pustym elemencie, który nie jest pierwszy (`previousId`), usuwa go bez „Usunięto. Cofnij” (`remove`)
-//   i przenosi fokus na koniec poprzedniego.
+//   i przenosi fokus na koniec poprzedniego,
+// - ⌥⇧↑/↓ przenosi wiersz o jedną pozycję (`moveBy`, jak „Przenieś wyżej/niżej” w menu wiersza); fokus i zaznaczenie
+//   zostają w przeniesionym polu. Na krańcu listy nic nie robi. Skrót świadomie zastępuje systemowe „zaznacz do
+//   początku/końca akapitu”.
 // Zmiana dokumentu idzie bez klucza scalania, więc jest osobnym krokiem cofania, nie częścią wcześniejszego pisania.
 export function handleListFieldKeyDown(
   event: KeyboardEvent<ListField>,
@@ -17,11 +20,30 @@ export function handleListFieldKeyDown(
     multiline,
     previousId,
     split,
-    remove
-  }: { multiline: boolean; previousId: string | undefined; split: (at: TextSplit) => void; remove: () => void }
+    remove,
+    moveBy
+  }: {
+    multiline: boolean
+    previousId: string | undefined
+    split: (at: TextSplit) => void
+    remove: () => void
+    moveBy: (offset: -1 | 1) => boolean
+  }
 ) {
   // Klawisz w trakcie kompozycji znaków (IME, klawisz martwy) należy do kompozycji.
   if (event.nativeEvent.isComposing || event.keyCode === 229) return
+  const offset = moveShortcutOffset(event)
+  if (offset) {
+    event.preventDefault()
+    const field = event.currentTarget
+    const selection = { start: field.selectionStart ?? 0, end: field.selectionEnd ?? 0 }
+    // `moveBy` przestawia węzły w DOM synchronicznie (`flushSync`), co może zgubić fokus – pole zostaje to samo.
+    if (moveBy(offset)) {
+      field.focus()
+      field.setSelectionRange(selection.start, selection.end)
+    }
+    return
+  }
   if (event.altKey || event.metaKey || event.ctrlKey) return
   const field = event.currentTarget
   const empty = field.value.trim() === ''
@@ -49,4 +71,12 @@ function focusEntryField(entryId: string, caret: 'start' | 'end') {
   field.focus()
   const position = caret === 'start' ? 0 : field.value.length
   field.setSelectionRange(position, position)
+}
+
+// ⌥⇧↑ → −1, ⌥⇧↓ → 1 (skrót przenoszenia wiersza listy, w polu i na uchwycie), inny klawisz albo klawisz w trakcie
+// kompozycji znaków → `undefined`.
+export function moveShortcutOffset(event: KeyboardEvent): -1 | 1 | undefined {
+  if (event.nativeEvent.isComposing || event.keyCode === 229) return undefined
+  if (!event.altKey || !event.shiftKey || event.metaKey || event.ctrlKey) return undefined
+  return event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : undefined
 }

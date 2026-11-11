@@ -1167,6 +1167,71 @@ test('moving a section, position, bullet or list item from its row menu reorders
   await expect(languages.getByRole('textbox', { name: 'Item 2', exact: true })).toHaveValue('German – B2!')
 })
 
+test('Alt+Shift+↑/↓ on a row handle moves a section, position, education entry, bullet or list item, keeping the focus on the handle', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  const sectionTitles = preview.locator('.cv-page .cv-section-title')
+
+  // Sekcja: w górę o jedną pozycję, fokus na uchwycie, komunikat jak z menu, menu się nie otwiera.
+  const languagesHandle = rowHandle(window, 'section “Languages”')
+  await languagesHandle.focus()
+  await window.keyboard.press('Alt+Shift+ArrowUp')
+  await expect(sectionTitles).toHaveText(['Work experience', 'Education', 'Languages', 'Skills'])
+  await expect(languagesHandle).toBeFocused()
+  await expect(rowMenu()).toHaveCount(0)
+  await expect(announcement('Moved section “Languages” to position 3 of 5.')).toHaveCount(1)
+  await window.keyboard.press('Alt+Shift+ArrowDown')
+  await expect(sectionTitles).toHaveText(['Work experience', 'Education', 'Skills', 'Languages'])
+  await expect(languagesHandle).toBeFocused()
+
+  // Stanowisko: na krańcu (pierwsze) nic się nie zmienia.
+  const roles = preview.locator('.cv-page .cv-role')
+  const senior = rowHandle(window, 'position “Senior Procurement Specialist”')
+  const rolesBefore = await roles.allTextContents()
+  await senior.focus()
+  await window.keyboard.press('Alt+Shift+ArrowUp')
+  await expect(roles).toHaveText(rolesBefore)
+  await expect(senior).toBeFocused()
+  await window.keyboard.press('Alt+Shift+ArrowDown')
+  await expect(roles.nth(1)).toHaveText('Senior Procurement Specialist')
+  await expect(senior).toBeFocused()
+
+  // Wykształcenie.
+  const education = window.getByRole('region', { name: 'Education', exact: true })
+  const educationHandles = education.getByRole('button', { name: /^Actions for entry / })
+  const firstEducation = await educationHandles.first().getAttribute('aria-label')
+  await educationHandles.first().focus()
+  await window.keyboard.press('Alt+Shift+ArrowDown')
+  await expect(educationHandles.nth(1)).toHaveAttribute('aria-label', firstEducation!)
+  await expect(educationHandles.nth(1)).toBeFocused()
+
+  // Punkt stanowiska: uchwyt nazwany numerem punktu, więc po przeniesieniu fokus jest na „bullet 3”.
+  const position = window.locator('.form fieldset', { hasText: 'Senior Procurement Specialist' })
+  const secondBullet = 'Managing a portfolio of more than 60 suppliers of components and auxiliary materials.'
+  await rowHandle(position, 'bullet 2').focus()
+  await window.keyboard.press('Alt+Shift+ArrowDown')
+  await expect(position.getByLabel('Bullet 3', { exact: true })).toHaveValue(secondBullet)
+  await expect(rowHandle(position, 'bullet 3')).toBeFocused()
+  await expect(announcement(/^Moved bullet 2 to position 3 of \d+\.$/)).toHaveCount(1)
+
+  // Element sekcji-listy; jedno Cmd+Z cofa przeniesienie, Cmd+Shift+Z je ponawia.
+  const languages = window.getByRole('region', { name: 'Languages', exact: true })
+  const item1 = languages.getByRole('textbox', { name: 'Item 1', exact: true })
+  await rowHandle(languages, 'item 2').focus()
+  await window.keyboard.press('Alt+Shift+ArrowUp')
+  await expect(item1).toHaveValue('German – B2')
+  await expect(rowHandle(languages, 'item 1')).toBeFocused()
+  await expect(announcement('Moved item 2 to position 1 of 2.')).toHaveCount(1)
+  await window.keyboard.press('Meta+z')
+  await expect(item1).toHaveValue('English – native')
+  await window.keyboard.press('Meta+Shift+z')
+  await expect(item1).toHaveValue('German – B2')
+
+  // W trakcie kompozycji znaków skrót jest ignorowany.
+  await pressMoveShortcutWhileComposing(rowHandle(languages, 'item 1'), 'ArrowDown')
+  await expect(item1).toHaveValue('German – B2')
+})
+
 test('the row menu and its announcement are translated, and the menu is not cut off by the scrolled form panel', async () => {
   await app.close()
   await rm(join(outputDir, 'user-data'), { recursive: true })
@@ -2420,6 +2485,77 @@ test('Enter splits a bullet or a list item at the cursor and Backspace removes a
   await expect(item(3)).toBeFocused()
   expect(await caret(item(3))).toEqual(['German – B2'.length, 'German – B2'.length])
   await expect(removed).toHaveCount(0)
+})
+
+// ⌥⇧ + strzałka w trakcie kompozycji znaków (IME) – Playwright nie ustawia `isComposing`, więc zdarzenie jest
+// wysyłane wprost.
+const pressMoveShortcutWhileComposing = (target: Locator, key: 'ArrowUp' | 'ArrowDown') =>
+  target.evaluate((element, key) => {
+    const { KeyboardEvent } = globalThis as unknown as { KeyboardEvent: new (type: string, init: object) => unknown }
+    const init = { key, altKey: true, shiftKey: true, isComposing: true, bubbles: true, cancelable: true }
+    ;(element as unknown as { dispatchEvent: (event: unknown) => void }).dispatchEvent(new KeyboardEvent('keydown', init))
+  }, key)
+
+test('Alt+Shift+↑/↓ in a bullet or list item field moves that row, keeping the focus and the cursor in the moved field', async () => {
+  await openFirstCv()
+  const position = window.locator('.form fieldset', { hasText: 'Senior Procurement Specialist' })
+  const bullet = (number: number) => position.getByLabel(`Bullet ${number}`, { exact: true })
+  const previewBullets = window.locator('.preview .cv-page .cv-bullets li')
+  const secondBullet = 'Managing a portfolio of more than 60 suppliers of components and auxiliary materials.'
+  const firstBullet = await bullet(1).inputValue()
+
+  // W dół: punkt 2 staje się punktem 3, fokus i zaznaczenie zostają w nim.
+  await bullet(2).focus()
+  await bullet(2).evaluate((element) => (element as unknown as TextField).setSelectionRange(9, 15))
+  await window.keyboard.press('Alt+Shift+ArrowDown')
+  await expect(bullet(3)).toHaveValue(secondBullet)
+  await expect(bullet(3)).toBeFocused()
+  expect(await caret(bullet(3))).toEqual([9, 15])
+  await expect(previewBullets.nth(2)).toHaveText(secondBullet)
+  await expect(announcement(/^Moved bullet 2 to position 3 of \d+\.$/)).toHaveCount(1)
+
+  // W górę dwa razy: na pierwsze miejsce.
+  await window.keyboard.press('Alt+Shift+ArrowUp')
+  await window.keyboard.press('Alt+Shift+ArrowUp')
+  await expect(bullet(1)).toHaveValue(secondBullet)
+  await expect(bullet(1)).toBeFocused()
+  expect(await caret(bullet(1))).toEqual([9, 15])
+  await expect(bullet(2)).toHaveValue(firstBullet)
+  await expect(announcement(/^Moved bullet 2 to position 1 of \d+\.$/)).toHaveCount(1)
+
+  // Na krańcu listy nic się nie zmienia, także zaznaczenie (systemowe „zaznacz do początku akapitu” zablokowane).
+  await window.keyboard.press('Alt+Shift+ArrowUp')
+  await expect(bullet(1)).toHaveValue(secondBullet)
+  await expect(bullet(1)).toBeFocused()
+  expect(await caret(bullet(1))).toEqual([9, 15])
+
+  // Klawisz w trakcie kompozycji znaków (IME) jest ignorowany.
+  await pressMoveShortcutWhileComposing(bullet(1), 'ArrowDown')
+  await expect(bullet(1)).toHaveValue(secondBullet)
+
+  // Element sekcji-listy; przeniesienie tuż po wpisaniu tekstu to osobny krok cofania.
+  const languages = window.getByRole('region', { name: 'Languages', exact: true })
+  const item = (number: number) => languages.getByRole('textbox', { name: `Item ${number}`, exact: true })
+  await item(1).focus()
+  await window.keyboard.press('Meta+ArrowRight')
+  await window.keyboard.type('!')
+  await placeCaret(item(1), 3)
+  await window.keyboard.press('Alt+Shift+ArrowDown')
+  await expect(item(2)).toHaveValue('English – native!')
+  await expect(item(2)).toBeFocused()
+  expect(await caret(item(2))).toEqual([3, 3])
+  await expect(window.locator('.preview .cv-page .cv-plain-list li').last()).toHaveText('English – native!')
+  await expect(announcement('Moved item 1 to position 2 of 2.')).toHaveCount(1)
+  // Na krańcu: nic.
+  await window.keyboard.press('Alt+Shift+ArrowDown')
+  await expect(item(2)).toHaveValue('English – native!')
+  expect(await caret(item(2))).toEqual([3, 3])
+  // Jedno Cmd+Z cofa samo przeniesienie, Cmd+Shift+Z je ponawia.
+  await window.keyboard.press('Meta+z')
+  await expect(item(1)).toHaveValue('English – native!')
+  await window.keyboard.press('Meta+Shift+z')
+  await expect(item(2)).toHaveValue('English – native!')
+  await expect(item(1)).toHaveValue('German – B2')
 })
 
 test('a second removal replaces the “Removed.” message and its Undo brings back only the second item', async () => {

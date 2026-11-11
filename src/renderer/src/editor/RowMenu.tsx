@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type Ref } from 'react'
+import { moveShortcutOffset } from './listFieldKeys'
 import type { DragHandleProps } from './SortableList'
 
 // Pozycja menu wiersza. `run` wykonuje się po zamknięciu menu i sam decyduje o fokusie (np. przeniesienie wraca na
@@ -10,19 +11,22 @@ export type RowMenuAction = { label: string; disabled?: boolean; run: () => void
 // - fokus przy otwarciu na pierwszej dostępnej pozycji, strzałki ↑/↓ (oraz Home/End) między dostępnymi pozycjami,
 //   Enter/spacja wybiera,
 // - Escape i kliknięcie poza menu zamykają je i wracają na uchwyt (kliknięte pole i tak przejmie fokus),
-//   przejście fokusu poza menu (Tab) zamyka je bez przenoszenia fokusu.
+//   przejście fokusu poza menu (Tab) zamyka je bez przenoszenia fokusu,
+// - ⌥⇧↑/↓ na uchwycie przenosi wiersz od razu (`onMoveShortcut`), bez otwierania menu.
 // Menu jest w warstwie górnej (`popover`) i ma pozycję liczoną od uchwytu, więc przewijany panel formularza go nie
 // ucina; przy braku miejsca pod uchwytem otwiera się nad nim.
 export function RowMenu({
   label,
   actions,
   handleRef,
-  handleProps
+  handleProps,
+  onMoveShortcut
 }: {
   label: string
   actions: RowMenuAction[]
   handleRef: Ref<HTMLButtonElement>
   handleProps: DragHandleProps
+  onMoveShortcut: (offset: -1 | 1) => void
 }) {
   const [open, setOpen] = useState(false)
   const handle = useRef<HTMLButtonElement | null>(null)
@@ -98,6 +102,13 @@ export function RowMenu({
         aria-expanded={open}
         {...handleProps.listeners}
         onClick={() => setOpen((wasOpen) => !wasOpen)}
+        onKeyDown={(event) => {
+          const offset = moveShortcutOffset(event)
+          if (!offset) return
+          // Na krańcu listy nic się nie dzieje, ale strzałka i tak nie przewija panelu.
+          event.preventDefault()
+          onMoveShortcut(offset)
+        }}
       >
         <svg viewBox="0 0 10 16" width="10" height="16" aria-hidden="true" focusable="false">
           {[3, 8, 13].map((y) =>

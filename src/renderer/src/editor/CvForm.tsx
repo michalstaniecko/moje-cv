@@ -386,7 +386,8 @@ function ExperienceItemFields({
                     multiline: true,
                     previousId: item.bullets[index - 1]?.id,
                     split: (at) => editor.edit(splitBullet(sectionId, item.id, bullet.id, at)),
-                    remove: () => editor.edit(removeBullet(sectionId, item.id, bullet.id))
+                    remove: () => editor.edit(removeBullet(sectionId, item.id, bullet.id)),
+                    moveBy: row.moveBy
                   })
                 }
               />
@@ -511,7 +512,8 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
                   multiline: false,
                   previousId: items[index - 1]?.id,
                   split: (at) => editor.edit(splitListItem(sectionId, item.id, at)),
-                  remove: () => editor.edit(removeListItem(sectionId, item.id))
+                  remove: () => editor.edit(removeListItem(sectionId, item.id)),
+                  moveBy: row.moveBy
                 })
               }
             />

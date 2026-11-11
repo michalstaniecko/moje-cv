@@ -17,7 +17,7 @@ import { RowMenu, type RowMenuAction } from './RowMenu'
 
 // Sterowanie kolejnością jednego wiersza, przekazywane do `children`:
 // - `handle` – uchwyt do umieszczenia w wierszu: przeciągnięcie myszą zmienia kolejność, kliknięcie (albo Enter/spacja)
-//   otwiera menu wiersza („Przenieś wyżej/niżej”),
+//   otwiera menu wiersza („Przenieś wyżej/niżej”), a ⌥⇧↑/↓ na nim przenosi wiersz od razu (fokus zostaje na uchwycie),
 // - `moveBy(offset)` – przenosi wiersz o `offset` pozycji (−1 w górę, 1 w dół) jako osobny krok cofania i ogłasza nową
 //   pozycję czytnikowi ekranu; na krańcu listy nic nie robi i zwraca `false`. Fokusu nie zmienia – o nim decyduje
 //   wywołujący (menu wraca na uchwyt, pole tekstowe może zostać w sobie).
@@ -137,6 +137,7 @@ export function SortableList<T extends { id: string }>({
                         actions={actions}
                         handleRef={handleRef(item.id)}
                         handleProps={dragHandle}
+                        onMoveShortcut={moveAndRefocus}
                       />
                     ),
                     moveBy: (offset) => moveBy(index, offset)
