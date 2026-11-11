@@ -2177,6 +2177,132 @@ test('removing a position says “Removed.” with Undo, which brings it back wi
   await expect(window.locator('.preview')).toContainText('German – B2')
 })
 
+// Pole tekstowe (input/textarea) od strony zaznaczenia – w testach bez typów DOM.
+type TextField = { selectionStart: number | null; selectionEnd: number | null; setSelectionRange(start: number, end: number): void }
+
+// Pozycja kursora w polu: [początek, koniec] zaznaczenia.
+const caret = (field: Locator) =>
+  field.evaluate((element) => [(element as unknown as TextField).selectionStart, (element as unknown as TextField).selectionEnd])
+
+// Stawia kursor w polu z fokusem na podanej pozycji.
+const placeCaret = (field: Locator, position: number) =>
+  field.evaluate((element, at) => (element as unknown as TextField).setSelectionRange(at, at), position)
+
+test('Enter splits a bullet or a list item at the cursor and Backspace removes an empty one, as in a word processor', async () => {
+  await openFirstCv()
+  const position = window.locator('.form fieldset').filter({ has: window.getByLabel('Job title') }).nth(1)
+  const bullets = position.getByLabel(/^Bullet \d+$/)
+  const bullet = (number: number) => position.getByLabel(`Bullet ${number}`, { exact: true })
+  const previewBullets = window.locator('.preview .cv-page .cv-bullets li')
+  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+  await expect(bullets).toHaveCount(7)
+
+  // Enter na końcu punktu: nowy, pusty punkt tuż pod nim, z fokusem.
+  await bullet(3).focus()
+  await window.keyboard.press('Meta+ArrowDown')
+  await window.keyboard.press('Enter')
+  await expect(bullets).toHaveCount(8)
+  await expect(bullet(3)).toHaveValue('Negotiating framework agreements and payment terms.')
+  await expect(bullet(4)).toHaveValue('')
+  await expect(bullet(4)).toBeFocused()
+  await expect(bullet(5)).toHaveValue('Tracking on-time delivery and solving logistics issues.')
+
+  // Enter w pustym punkcie (także z samych spacji) nic nie robi.
+  await window.keyboard.press('Enter')
+  await window.keyboard.type('  ')
+  await window.keyboard.press('Enter')
+  await expect(bullets).toHaveCount(8)
+  await expect(bullet(4)).toHaveValue('  ')
+
+  // Shift+Enter łamie wiersz w tym samym punkcie.
+  await window.keyboard.type('Cutting payment times')
+  await window.keyboard.press('Shift+Enter')
+  await window.keyboard.type('by 30 days.')
+  await expect(bullets).toHaveCount(8)
+  await expect(bullet(4)).toHaveValue('  Cutting payment times\nby 30 days.')
+  await expect(previewBullets.filter({ hasText: 'Cutting payment times' })).toHaveCount(1)
+
+  // Enter w środku punktu: tekst za kursorem trafia do nowego punktu, kursor na jego początek, podgląd od razu.
+  await bullet(3).focus()
+  await placeCaret(bullet(3), 33)
+  await window.keyboard.press('Enter')
+  await expect(bullets).toHaveCount(9)
+  await expect(bullet(3)).toHaveValue('Negotiating framework agreements ')
+  await expect(bullet(4)).toHaveValue('and payment terms.')
+  await expect(bullet(4)).toBeFocused()
+  expect(await caret(bullet(4))).toEqual([0, 0])
+  await expect(previewBullets.filter({ hasText: /^and payment terms\.$/ })).toHaveCount(1)
+
+  // Jedno Cmd+Z cofa sam podział (bez wcześniejszego pisania w tym polu), Cmd+Shift+Z go ponawia.
+  await bullet(3).focus()
+  await window.keyboard.press('Meta+ArrowDown')
+  await window.keyboard.type('!')
+  await window.keyboard.press('Meta+ArrowUp')
+  await window.keyboard.press('Enter')
+  await expect(bullets).toHaveCount(10)
+  await window.keyboard.press('Meta+z')
+  await expect(bullets).toHaveCount(9)
+  await expect(bullet(3)).toHaveValue('Negotiating framework agreements !')
+  await window.keyboard.press('Meta+Shift+z')
+  await expect(bullets).toHaveCount(10)
+  await expect(bullet(3)).toHaveValue('')
+  await expect(bullet(4)).toHaveValue('Negotiating framework agreements !')
+
+  // Backspace w pustym punkcie usuwa go bez „Removed.”, a kursor staje na końcu poprzedniego.
+  await bullet(3).focus()
+  await window.keyboard.press('Backspace')
+  await expect(bullets).toHaveCount(9)
+  await expect(bullet(2)).toBeFocused()
+  const previous = 'Sourcing and qualifying new suppliers in Europe and Asia.'
+  await expect(bullet(2)).toHaveValue(previous)
+  expect(await caret(bullet(2))).toEqual([previous.length, previous.length])
+  await expect(removed).toHaveCount(0)
+  // …i Cmd+Z go przywraca.
+  await window.keyboard.press('Meta+z')
+  await expect(bullets).toHaveCount(10)
+  await expect(bullet(3)).toHaveValue('')
+
+  // Backspace w pierwszym, pustym punkcie nic nie robi.
+  await bullet(1).focus()
+  await window.keyboard.press('Meta+ArrowUp')
+  await window.keyboard.press('Enter')
+  await expect(bullets).toHaveCount(11)
+  await expect(bullet(1)).toHaveValue('')
+  await bullet(1).focus()
+  await window.keyboard.press('Backspace')
+  await expect(bullets).toHaveCount(11)
+  await expect(bullet(1)).toBeFocused()
+
+  // Elementy sekcji-listy działają tak samo; Shift+Enter w nich nic nie robi.
+  const languages = window.getByRole('region', { name: 'Languages', exact: true })
+  const items = languages.getByLabel(/^Item \d+$/)
+  const item = (number: number) => languages.getByLabel(`Item ${number}`, { exact: true })
+  await item(1).focus()
+  await placeCaret(item(1), 10)
+  await window.keyboard.press('Shift+Enter')
+  await expect(items).toHaveCount(2)
+  await window.keyboard.press('Enter')
+  await expect(items).toHaveCount(3)
+  await expect(item(1)).toHaveValue('English – ')
+  await expect(item(2)).toHaveValue('native')
+  await expect(item(2)).toBeFocused()
+  expect(await caret(item(2))).toEqual([0, 0])
+  await expect(window.locator('.preview .cv-page .cv-plain-list li').filter({ hasText: /^native$/ })).toHaveCount(1)
+
+  await item(3).focus()
+  await window.keyboard.press('Meta+ArrowRight')
+  await window.keyboard.press('Enter')
+  await expect(items).toHaveCount(4)
+  await expect(item(4)).toBeFocused()
+  await window.keyboard.press('Enter')
+  await expect(items).toHaveCount(4)
+  await window.keyboard.press('Backspace')
+  await expect(items).toHaveCount(3)
+  await expect(item(3)).toBeFocused()
+  expect(await caret(item(3))).toEqual(['German – B2'.length, 'German – B2'.length])
+  await expect(removed).toHaveCount(0)
+})
+
 test('a second removal replaces the “Removed.” message and its Undo brings back only the second item', async () => {
   await openFirstCv()
   const preview = window.locator('.preview')

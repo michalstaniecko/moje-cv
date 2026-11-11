@@ -23,6 +23,8 @@ import {
   removeEducationItem,
   removeExperienceItem,
   removeListItem,
+  splitBullet,
+  splitListItem,
   updateBullet,
   updateConsent,
   updateContact,
@@ -33,6 +35,7 @@ import {
   updateSection,
   updateSettings
 } from './documentEdits'
+import { handleListFieldKeyDown } from './listFieldKeys'
 import { MonthField } from './MonthField'
 import { PhotoField } from './PhotoField'
 import { RemoveProvider, useRemove, type RemoveWithUndo } from './removalUndo'
@@ -378,6 +381,14 @@ function ExperienceItemFields({
                     mergeKey(`bullet:${bullet.id}`)
                   )
                 }
+                onKeyDown={(event) =>
+                  handleListFieldKeyDown(event, {
+                    multiline: true,
+                    previousId: item.bullets[index - 1]?.id,
+                    split: (at) => editor.edit(splitBullet(sectionId, item.id, bullet.id, at)),
+                    remove: () => editor.edit(removeBullet(sectionId, item.id, bullet.id))
+                  })
+                }
               />
               <RowRemoveButton
                 label={t.removeBullet(index + 1)}
@@ -494,6 +505,14 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
               value={item.text}
               onChange={(event) =>
                 editor.edit(updateListItem(sectionId, item.id, event.target.value), `list:${item.id}:text`)
+              }
+              onKeyDown={(event) =>
+                handleListFieldKeyDown(event, {
+                  multiline: false,
+                  previousId: items[index - 1]?.id,
+                  split: (at) => editor.edit(splitListItem(sectionId, item.id, at)),
+                  remove: () => editor.edit(removeListItem(sectionId, item.id))
+                })
               }
             />
             <RowRemoveButton

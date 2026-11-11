@@ -17,6 +17,22 @@ const moveById = <T extends { id: string }>(items: T[], id: string, toIndex: num
 
 const newId = (): string => crypto.randomUUID()
 
+// Dzieli element tekstowy w miejscu kursora jak edytor tekstu: element zostaje z tekstem przed `from`, a tekst za `to`
+// trafia do nowego elementu `newItemId` wstawionego tuż za nim. `from < to` to zaznaczony zakres, który znika.
+const splitById = <T extends { id: string; text: string }>(
+  items: T[],
+  id: string,
+  { from, to, newItemId }: TextSplit
+): T[] =>
+  items.flatMap((item) =>
+    item.id === id ? [{ ...item, text: item.text.slice(0, from) }, { id: newItemId, text: item.text.slice(to) } as T] : [item]
+  )
+
+// Miejsce podziału (kursor albo zaznaczenie od `from` do `to`) i id nowego elementu – formularz przenosi na niego fokus.
+export type TextSplit = { from: number; to: number; newItemId: string }
+
+export const textSplit = (from: number, to: number = from, newItemId: string = newId()): TextSplit => ({ from, to, newItemId })
+
 // Nazwa CV z nagłówka edytora. Ta sama reguła co zmiana nazwy w bibliotece CV: nazwa przycięta, a pusta (lub z samych
 // spacji) niczego nie zmienia – CV zostaje przy poprzedniej nazwie.
 export const updateName =
@@ -106,6 +122,10 @@ export const addBullet = (sectionId: string, itemId: string): Change<CvDocument>
 export const updateBullet = (sectionId: string, itemId: string, bulletId: string, text: string): Change<CvDocument> =>
   updateBullets(sectionId, itemId, (bullets) => replaceById(bullets, bulletId, (bullet) => ({ ...bullet, text })))
 
+// Enter w punkcie: podział w miejscu kursora. Nowy punkt jest tuż za bieżącym.
+export const splitBullet = (sectionId: string, itemId: string, bulletId: string, split: TextSplit): Change<CvDocument> =>
+  updateBullets(sectionId, itemId, (bullets) => splitById(bullets, bulletId, split))
+
 export const removeBullet = (sectionId: string, itemId: string, bulletId: string): Change<CvDocument> =>
   updateBullets(sectionId, itemId, (bullets) => bullets.filter((bullet) => bullet.id !== bulletId))
 
@@ -148,6 +168,10 @@ export const addListItem = (sectionId: string): Change<CvDocument> =>
 
 export const updateListItem = (sectionId: string, itemId: string, text: string): Change<CvDocument> =>
   updateListItems(sectionId, (items) => replaceById(items, itemId, (item) => ({ ...item, text })))
+
+// Enter w elemencie sekcji-listy: podział jak w `splitBullet`.
+export const splitListItem = (sectionId: string, itemId: string, split: TextSplit): Change<CvDocument> =>
+  updateListItems(sectionId, (items) => splitById(items, itemId, split))
 
 export const removeListItem = (sectionId: string, itemId: string): Change<CvDocument> =>
   updateListItems(sectionId, (items) => items.filter((item) => item.id !== itemId))
