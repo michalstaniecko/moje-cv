@@ -1,0 +1,32 @@
+CV Drawer is a Mac app for writing a CV with a live preview of its A4 pages. You fill in a form, and right next to it you see exactly what goes into the PDF.
+
+LIVE A4 PREVIEW
+• The preview updates as you type.
+• A page count, and a warning when the CV runs longer than two pages or something doesn't fit on a page.
+• Zoom, and page breaks where you want them.
+
+EXPORT TO PDF AND DOCX
+• The PDF is an exact image of the preview, with text you can select and copy.
+• The DOCX is an editable copy for Word, Pages, LibreOffice or Google Docs, with the CV's font embedded.
+• File names from your name, e.g. CV_Anna_Smith.pdf.
+
+CV DESIGN
+• Three templates: Classic, Modern and Bold.
+• Accent colour and font.
+• A header photo with cropping.
+• Reorder sections and entries by dragging or with the keyboard.
+
+CV LIBRARY
+• As many CVs as you need, e.g. a separate version for each job offer.
+• Tags and filtering by tag, duplicating and renaming.
+• Autosave and undo (⌘Z).
+• A library of consent clauses, such as data processing consent, with a default clause for new CVs.
+• Export and import CVs as JSON files.
+
+16 LANGUAGES
+The interface is available in English, Polish, Spanish, French, German, Portuguese, Italian, Dutch, Russian, Ukrainian, Turkish, Indonesian, Vietnamese, Czech, Romanian and Swedish. Each language comes with its own sample CV, and every CV can have its own document language.
+
+PRIVACY
+Your CVs stay on your Mac. CV Drawer has no account, collects no data and never connects to the internet. It runs in the macOS App Sandbox, so it can only reach the files you choose.
+
+Light and dark appearance, keyboard and VoiceOver support. Requires macOS 13 Ventura or later, on Apple Silicon and Intel Macs.

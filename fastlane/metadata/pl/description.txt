@@ -1,0 +1,32 @@
+CV Drawer to aplikacja na Maca do pisania CV z podglądem gotowych stron A4 na żywo. Wypełniasz formularz, a obok widzisz dokładnie to, co trafi do PDF.
+
+PODGLĄD STRON A4
+• Podgląd odświeża się w trakcie pisania.
+• Licznik stron i ostrzeżenie, gdy CV ma więcej niż dwie strony albo fragment nie mieści się na stronie.
+• Powiększanie podglądu i podział na strony tam, gdzie chcesz.
+
+EKSPORT DO PDF I DOCX
+• PDF to wierne odwzorowanie podglądu, z tekstem do zaznaczenia i kopiowania.
+• DOCX to edytowalna kopia do Worda, Pages, LibreOffice albo Dokumentów Google, z osadzonym fontem CV.
+• Nazwa pliku z imienia i nazwiska, np. CV_Anna_Kowalska.pdf.
+
+WYGLĄD CV
+• Trzy szablony: Klasyczny, Nowoczesny i Wyrazisty.
+• Kolor akcentu i font.
+• Zdjęcie w nagłówku z kadrowaniem.
+• Kolejność sekcji i pozycji zmieniasz przeciąganiem albo z klawiatury.
+
+BIBLIOTEKA CV
+• Dowolna liczba CV, np. osobne wersje pod różne oferty pracy.
+• Tagi i filtrowanie po tagach, duplikowanie i zmiana nazwy.
+• Autozapis i cofanie zmian (⌘Z).
+• Biblioteka klauzul, np. zgody na przetwarzanie danych osobowych, z klauzulą domyślną dla nowych CV.
+• Eksport i import CV w pliku JSON.
+
+16 JĘZYKÓW
+Interfejs po polsku, angielsku, hiszpańsku, francusku, niemiecku, portugalsku, włosku, niderlandzku, rosyjsku, ukraińsku, turecku, indonezyjsku, wietnamsku, czesku, rumuńsku i szwedzku. W każdym języku jest przykładowe CV na start, a każde CV może mieć własny język dokumentu.
+
+PRYWATNOŚĆ
+Twoje CV zostają na Twoim Macu. CV Drawer nie ma konta, nie zbiera danych i nie łączy się z internetem. Działa w piaskownicy macOS (App Sandbox), więc widzi tylko pliki, które sam wybierzesz.
+
+Jasny i ciemny wygląd, obsługa klawiatury i VoiceOver. Wymaga macOS 13 Ventura lub nowszego, na Macach z Apple Silicon i Intel.

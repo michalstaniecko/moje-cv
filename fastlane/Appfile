@@ -1,0 +1,3 @@
+# Aplikacja w App Store Connect (ten sam bundle ID co `appId` w electron-builder.yml). Logowanie kluczem API, nie Apple ID:
+# patrz `asc_api_key` w Fastfile.
+app_identifier("com.michalstaniecko.cvdrawer")
