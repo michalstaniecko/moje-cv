@@ -2,7 +2,7 @@
 # wysyłane przez App Store Connect API. Instrukcja: docs/wydanie-mac-app-store.md ("Wpis w App Store Connect").
 #
 #   fastlane mac metadata      # opisy, słowa kluczowe, adresy, kategoria, copyright
-#   fastlane mac screenshots   # zrzuty z dist/screenshots/{pl,en} (najpierw `pnpm screenshots`)
+#   fastlane mac screenshots   # zrzuty z dist/screenshots/{pl,en}, en do en-GB i en-US (najpierw `pnpm screenshots`)
 #
 # Wersja w App Store Connect to `version` z package.json; jeśli nie ma jeszcze edytowalnej wersji o tym numerze,
 # deliver ją tworzy.
@@ -12,7 +12,8 @@ require "json"
 ROOT = File.expand_path("..", __dir__)
 
 # Języki zrzutów z screenshots/appStore.spec.ts → lokalizacje App Store Connect (te same co w fastlane/metadata).
-SCREENSHOT_LOCALES = { "pl" => "pl", "en" => "en-US" }.freeze
+# en-GB to język główny wpisu; en-US ma ten sam tekst i zrzuty.
+SCREENSHOT_LOCALES = { "pl" => ["pl"], "en" => ["en-GB", "en-US"] }.freeze
 
 default_platform(:mac)
 
@@ -34,14 +35,34 @@ platform :mac do
     JSON.parse(File.read(File.join(ROOT, "package.json"))).fetch("version")
   end
 
+  # Sekcja App Review: notatka z fastlane/app_review_notes.txt i kontakt ze zmiennych `APP_REVIEW_FIRST_NAME`,
+  # `APP_REVIEW_LAST_NAME`, `APP_REVIEW_EMAIL`, `APP_REVIEW_PHONE` (np. +48 600 000 000) – dane osobowe, poza repo.
+  # App Store Connect przyjmuje zmianę tej sekcji tylko z pełnym kontaktem, więc bez niego jest pomijana.
+  private_lane :app_review_information do
+    contact = {
+      first_name: ENV["APP_REVIEW_FIRST_NAME"].to_s.strip,
+      last_name: ENV["APP_REVIEW_LAST_NAME"].to_s.strip,
+      email_address: ENV["APP_REVIEW_EMAIL"].to_s.strip,
+      phone_number: ENV["APP_REVIEW_PHONE"].to_s.strip
+    }
+    if contact.values.any?(&:empty?)
+      UI.important("Pomijam sekcję App Review: brak APP_REVIEW_FIRST_NAME, APP_REVIEW_LAST_NAME, APP_REVIEW_EMAIL albo APP_REVIEW_PHONE.")
+      next nil
+    end
+    contact.merge(notes: File.read(File.join(ROOT, "fastlane/app_review_notes.txt")).strip)
+  end
+
   desc "Wysyła metadane wpisu (fastlane/metadata) do App Store Connect, bez zrzutów i binarki"
   lane :metadata do
-    deliver(
+    options = {
       api_key: asc_api_key,
       app_version: app_version,
       metadata_path: File.join(ROOT, "fastlane/metadata"),
       skip_screenshots: true
-    )
+    }
+    review = app_review_information
+    options[:app_review_information] = review if review
+    deliver(**options)
   end
 
   desc "Zastępuje zrzuty ekranu w App Store Connect zrzutami z dist/screenshots (pnpm screenshots)"
@@ -49,11 +70,13 @@ platform :mac do
     source = File.join(ROOT, "dist/screenshots")
     staging = File.join(ROOT, "dist/fastlane-screenshots")
     FileUtils.rm_rf(staging)
-    SCREENSHOT_LOCALES.each do |language, locale|
+    SCREENSHOT_LOCALES.each do |language, locales|
       files = Dir[File.join(source, language, "*.png")].sort
       UI.user_error!("Brak zrzutów w #{File.join(source, language)}. Najpierw `pnpm screenshots`.") if files.empty?
-      FileUtils.mkdir_p(File.join(staging, locale))
-      FileUtils.cp(files, File.join(staging, locale))
+      locales.each do |locale|
+        FileUtils.mkdir_p(File.join(staging, locale))
+        FileUtils.cp(files, File.join(staging, locale))
+      end
     end
     deliver(
       api_key: asc_api_key,

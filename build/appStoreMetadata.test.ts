@@ -6,7 +6,8 @@ import { HELP_URL, PRIVACY_URL } from '../src/shared/links'
 // Metadane wpisu w Mac App Store wysyłane przez `fastlane mac metadata` (fastlane/Fastfile). Limity App Store Connect
 // sprawdzone tutaj, a nie dopiero przy wysyłce, która odrzuca całą lokalizację.
 const metadataDir = join(__dirname, '../fastlane/metadata')
-const locales = ['pl', 'en-US']
+// en-GB to język główny wpisu w App Store Connect.
+const locales = ['en-GB', 'en-US', 'pl']
 
 function field(locale: string, name: string): string {
   return readFileSync(join(metadataDir, locale, `${name}.txt`), 'utf8').trim()
@@ -21,9 +22,13 @@ const limits: Record<string, number> = {
 }
 
 describe('App Store metadata', () => {
+  test('British and American English share the same listing', () => {
+    for (const name of readdirSync(join(metadataDir, 'en-GB'))) expect(field('en-US', name.replace(/\.txt$/, '')), name).toBe(field('en-GB', name.replace(/\.txt$/, '')))
+  })
+
   test('every locale has the same fields', () => {
     const files = locales.map((locale) => readdirSync(join(metadataDir, locale)).sort())
-    expect(files[1]).toEqual(files[0])
+    for (const other of files.slice(1)) expect(other).toEqual(files[0])
     expect(files[0]).toEqual(expect.arrayContaining([...Object.keys(limits), 'support_url', 'privacy_url'].map((name) => `${name}.txt`)))
   })
 
