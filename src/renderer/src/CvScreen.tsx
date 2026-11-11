@@ -6,7 +6,8 @@ import { cvDisplayName, type Clause, type ClauseContent, type CvDocument } from 
 import { createCvEditor, type CvEditor } from './editor/cvEditor'
 import { CvForm } from './editor/CvForm'
 import { updateName } from './editor/documentEdits'
-import { PaneSeparator, useFormWidth } from './editor/PaneSeparator'
+import { PaneSeparator } from './editor/PaneSeparator'
+import { useFormWidth } from './editor/useFormWidth'
 import { RemovalMessage, useRemovalUndo } from './editor/removalUndo'
 import { useDictionary } from './i18n'
 import { useMenuCommands } from './menuCommands'
@@ -236,7 +237,7 @@ export function CvScreen({
           <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} onRemove={removal.remove} />
           <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
         </aside>
-        <PaneSeparator width={formWidth.width} panesWidth={formWidth.panesWidth} onChange={formWidth.change} />
+        <PaneSeparator formWidth={formWidth} />
         <PreviewPane document={document} onLayout={onLayout} />
       </div>
     </div>

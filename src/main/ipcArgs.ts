@@ -11,11 +11,6 @@ export function requireBoolean(value: unknown): boolean {
   return value
 }
 
-export function requirePositiveInt(value: unknown): number {
-  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) throw new Error('Expected a positive integer')
-  return value
-}
-
 export function requireStringArray(value: unknown): string[] {
   if (!Array.isArray(value) || !value.every((item) => typeof item === 'string')) throw new Error('Expected an array of strings')
   return value

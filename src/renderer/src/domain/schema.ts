@@ -123,6 +123,9 @@ export const cvDisplayName = (name: string, untitled: string) => name.trim() || 
 // Nazwa klauzuli do wyświetlenia – dla klauzuli bez nazwy `untitled` w języku interfejsu.
 export const clauseName = (clause: Pick<Clause, 'name'>, untitled: string) => clause.name.trim() || untitled
 
+// Szerokość formularza w edytorze CV w px (separator między formularzem a podglądem).
+export const formWidthSchema = z.int().positive()
+
 export const appSettingsSchema = z.object({
   schemaVersion: z.literal(1),
   clauses: z.array(clauseSchema),
@@ -144,7 +147,7 @@ export const appSettingsSchema = z.object({
     .optional(),
   // Szerokość formularza w edytorze CV w px (separator między formularzem a podglądem) – jedna dla całej aplikacji.
   // Brak pola = szerokość domyślna (bez podbijania wersji schematu).
-  formWidth: z.int().positive().optional(),
+  formWidth: formWidthSchema.optional(),
   // Stan sprawdzania nowej wersji w `.dmg` (ADR-0006): kiedy ostatnio się udało, jaka wersja była wtedy najnowsza
   // i którą wersję użytkownik zamknął w pasku. Brak pola = sprawdzenie nigdy się nie odbyło (bez podbijania wersji schematu).
   updateCheck: z
