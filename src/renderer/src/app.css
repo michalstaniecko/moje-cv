@@ -152,8 +152,12 @@ textarea:focus-visible {
   width: 100%;
 }
 
+/* Pole tekstowe rośnie razem z treścią, bez górnego limitu (przewija się cały formularz), także po zmianie
+   szerokości panelu. `rows` z atrybutu to wysokość pustego pola: wiersze tekstu + odstępy (2 × 5px) + ramka (2 × 1px). */
 .form textarea {
-  resize: vertical;
+  field-sizing: content;
+  min-height: calc(attr(rows type(<number>), 2) * 1lh + 12px);
+  resize: none;
 }
 
 .form input[type='color'] {

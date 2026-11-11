@@ -551,7 +551,7 @@ test('the CV editor is in English, including the save status, photo cropping and
   const consent = window.getByRole('region', { name: 'Consent clause' })
   await consent.getByLabel('Show the clause at the bottom of the last page').check()
   await expect(consent.getByLabel('Clause from the library')).toContainText('The library is empty')
-  await expect(consent.getByLabel('Text in this CV')).toBeVisible()
+  await expect(consent.getByRole('textbox', { name: 'Text in this CV' })).toBeVisible()
   await consent.getByLabel('Text in this CV').fill('I agree.')
   await consent.getByRole('button', { name: 'Save as new clause' }).click()
   await expect(consent.getByLabel('New clause name')).toHaveAttribute('placeholder', 'Name, e.g. Talent Partners')
@@ -2030,6 +2030,54 @@ test('an end date before the start date shows a warning under the dates, without
   await expect(graduation).toHaveAccessibleDescription(warning)
   await entry.getByLabel('From (optional)').fill('2007-10')
   await expect(entry.getByText(warning)).toHaveCount(0)
+})
+
+// Wysokość pola tekstowego: obecna, wysokość treści i wysokość pustego pola wyliczona przez przeglądarkę z `rows`
+// (kopia pola o stałym rozmiarze, bez wysokości minimalnej) – czyli dotychczasowa wysokość pola.
+async function textareaHeights(field: Locator) {
+  return field.evaluate((element: HTMLTextAreaElement) => {
+    const reference = element.cloneNode() as HTMLTextAreaElement
+    reference.value = ''
+    reference.style.fieldSizing = 'fixed'
+    reference.style.minHeight = '0'
+    element.after(reference)
+    const rowsHeight = reference.offsetHeight
+    reference.remove()
+    return {
+      height: element.offsetHeight,
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+      rowsHeight,
+      resize: getComputedStyle(element).resize
+    }
+  })
+}
+
+// Pole tekstowe rośnie razem z treścią (bez przewijania w środku), a puste ma dotychczasową wysokość z `rows`.
+async function expectGrowsWithContent(field: Locator) {
+  await field.fill('')
+  const empty = await textareaHeights(field)
+  expect(empty.resize).toBe('none')
+  expect(Math.abs(empty.height - empty.rowsHeight)).toBeLessThanOrEqual(1)
+
+  await field.fill(Array.from({ length: 24 }, (_, line) => `Line ${line + 1} of a long text that also wraps inside the field`).join('\n'))
+  const full = await textareaHeights(field)
+  expect(full.height).toBeGreaterThan(empty.height * 2)
+  expect(full.scrollHeight).toBeLessThanOrEqual(full.clientHeight)
+}
+
+test('summary, bullet, consent and clause text fields grow with their content instead of scrolling inside', async () => {
+  await openFirstCv()
+  await expectGrowsWithContent(window.getByRole('textbox', { name: 'Summary', exact: true }))
+  await expectGrowsWithContent(window.getByRole('textbox', { name: 'Bullet 1', exact: true }).first())
+  const consent = window.getByRole('region', { name: 'Consent clause' })
+  await consent.getByLabel('Show the clause at the bottom of the last page').check()
+  await expectGrowsWithContent(consent.getByLabel('Text in this CV'))
+
+  await window.getByRole('button', { name: '← CV library' }).click()
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
+  await window.getByRole('button', { name: 'Add clause' }).click()
+  await expectGrowsWithContent(window.getByRole('form', { name: 'Clause' }).getByRole('textbox', { name: 'Text' }))
 })
 
 test('removing a position says “Removed.” with Undo, which brings it back with its bullets; any later change hides the message', async () => {
