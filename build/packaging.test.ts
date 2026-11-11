@@ -50,7 +50,7 @@ describe('sandbox entitlements', () => {
   // Electron rejestruje usługi Mach pod nazwą `<ElectronTeamID>.<bundle ID>.…`; w sandboksie wolno to tylko w obrębie
   // grupy aplikacji o tej nazwie, inaczej aplikacja kończy się przy starcie.
   test.each(['entitlements.mac.plist', 'entitlements.mas.plist'])('%s has the app group Electron needs in the sandbox', (name) => {
-    expect(plist(name)['com.apple.security.application-groups']).toEqual(['8A9ZJPAGY8.com.michalstaniecko.mojecv'])
+    expect(plist(name)['com.apple.security.application-groups']).toEqual(['8A9ZJPAGY8.com.michalstaniecko.cvdrawer'])
   })
 
   test('Electron helpers in both channels inherit the sandbox of the app and get no access of their own', () => {

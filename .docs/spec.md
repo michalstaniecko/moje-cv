@@ -36,7 +36,7 @@ Użytkownik docelowy: osoba nietechniczna na macOS. Wzorzec wyglądu: prawdziwe 
 | Q27 | Skalowanie | Dopasowanie do szerokości panelu + przyciski +, −, 100%. |
 | Q28 | Stos | electron-vite, pnpm, Zustand + zundo, Zod, Radix/shadcn, dnd-kit, Vitest, Playwright (Electron), pdf-lib (metadane). |
 | Q29 | Proces | Spec → akceptacja → `git init` → etapy pionowe (sekcja 7). |
-| Q30 | Nazwa | **CV Drawer** (wcześniej „Moje CV”, potem „CV Press” – odrzucona jako zbyt bliska PressCV; issue #47, #83), ta sama w PL i EN: `productName` „CV Drawer”, `appId` `com.michalstaniecko.mojecv` (bez zmian, ADR-0003), artefakt `CV-Drawer-<wersja>.dmg`, tytuł okna „CV Drawer”. Folder danych przypięty do `Moje CV` niezależnie od `productName`. Repo: `github.com/michalstaniecko/moje-cv`. |
+| Q30 | Nazwa | **CV Drawer** (wcześniej „Moje CV”, potem „CV Press” – odrzucona jako zbyt bliska PressCV; issue #47, #83), ta sama w PL i EN: `productName` „CV Drawer”, `appId` `com.michalstaniecko.cvdrawer` (wcześniej `com.michalstaniecko.mojecv`, zmienione przed pierwszym wydaniem, #103), artefakt `CV-Drawer-<wersja>.dmg`, tytuł okna „CV Drawer”. Folder danych przypięty do `Moje CV` niezależnie od `productName`. Repo: `github.com/michalstaniecko/moje-cv`. |
 
 ## 2. Model danych
 

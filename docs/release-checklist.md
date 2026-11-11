@@ -51,7 +51,7 @@ Build i dane uwierzytelniające: `docs/instalacja.md`. Kolejność:
 | `lipo -archs "CV Drawer.app/Contents/MacOS/CV Drawer"`: `x86_64 arm64` | [ ] |
 | `.dmg` pobrany przeglądarką na czystym Macu: otwiera się, a aplikacja z Aplikacji startuje bez ostrzeżenia Gatekeepera (najwyżej „pobrana z internetu… Otwórz”), bez „Otwórz mimo to” | [ ] |
 | Aplikacja startuje też bez sieci (stempel w pakiecie) | [ ] |
-| W Monitorze aktywności CV Drawer i procesy pomocnicze mają „Piaskownica: Tak”; grupa aplikacji `8A9ZJPAGY8.com.michalstaniecko.mojecv` działa pod Developer ID (aplikacja startuje, okno się otwiera; macOS 15+ nie pyta o dostęp do danych innych aplikacji) | [ ] |
+| W Monitorze aktywności CV Drawer i procesy pomocnicze mają „Piaskownica: Tak”; grupa aplikacji `8A9ZJPAGY8.com.michalstaniecko.cvdrawer` działa pod Developer ID (aplikacja startuje, okno się otwiera; macOS 15+ nie pyta o dostęp do danych innych aplikacji) | [ ] |
 | GitHub Release `vX.Y.Z` opublikowany z załącznikiem `CV-Drawer-X.Y.Z.dmg`; link „Pobierz” z powiadomienia o nowej wersji prowadzi do niego | [ ] |
 
 ## Instalacja i pierwsze uruchomienie
@@ -211,7 +211,7 @@ Build i dane uwierzytelniające: `docs/instalacja.md`. Kolejność:
 
 ## Powiadomienie o nowej wersji (#78, ADR-0006)
 
-Wymuszenie „nowszej wersji” w spakowanym `.dmg` bez publikowania wydania: w pustym katalogu zapisz plik `latest.json` z treścią `{"tag_name":"v99.0.0"}`, uruchom w nim `python3 -m http.server 8000`, a aplikację z terminala: `MOJE_CV_UPDATE_URL=http://127.0.0.1:8000/latest.json "/Applications/CV Drawer.app/Contents/MacOS/CV Drawer"`. Z tym adresem sprawdzenie przy starcie idzie od razu, ale limit 24 h nadal obowiązuje: żeby przy kolejnym starcie znów zapytać serwer, usuń pole `updateCheck` z `settings.json` (w `~/Library/Containers/com.michalstaniecko.mojecv/Data/Library/Application Support/Moje CV/`) albo użyj menu Pomoc. Wariant „masz najnowszą” to tag równy bieżącej wersji, a „nie udało się” to zatrzymany serwer.
+Wymuszenie „nowszej wersji” w spakowanym `.dmg` bez publikowania wydania: w pustym katalogu zapisz plik `latest.json` z treścią `{"tag_name":"v99.0.0"}`, uruchom w nim `python3 -m http.server 8000`, a aplikację z terminala: `MOJE_CV_UPDATE_URL=http://127.0.0.1:8000/latest.json "/Applications/CV Drawer.app/Contents/MacOS/CV Drawer"`. Z tym adresem sprawdzenie przy starcie idzie od razu, ale limit 24 h nadal obowiązuje: żeby przy kolejnym starcie znów zapytać serwer, usuń pole `updateCheck` z `settings.json` (w `~/Library/Containers/com.michalstaniecko.cvdrawer/Data/Library/Application Support/Moje CV/`) albo użyj menu Pomoc. Wariant „masz najnowszą” to tag równy bieżącej wersji, a „nie udało się” to zatrzymany serwer.
 
 | Sprawdź | MAS | DMG |
 | --- | --- | --- |
@@ -251,15 +251,15 @@ Wymuszenie „nowszej wersji” w spakowanym `.dmg` bez publikowania wydania: w 
 Migracja działa tylko raz, przy zakładaniu kontenera, więc sprawdzaj ją na **czystym koncie macOS** (nowy użytkownik w Ustawieniach systemowych → Użytkownicy i grupy), nigdy na swoim: na swoim koncie pierwsze uruchomienie przeniosłoby prawdziwe dane do kontenera.
 
 1. Na czystym koncie zainstaluj wersję bez sandboksu (`.dmg` ad-hoc 0.3.0 albo dowolną do 0.6.0), dodaj 2–3 CV (jedno ze zdjęciem), klauzulę, zmień Interface language i Appearance, zakończ aplikację.
-2. Sprawdź, że dane są w `~/Library/Application Support/Moje CV` (`cvs/`, `settings.json`) i że nie ma `~/Library/Containers/com.michalstaniecko.mojecv`.
+2. Sprawdź, że dane są w `~/Library/Application Support/Moje CV` (`cvs/`, `settings.json`) i że nie ma `~/Library/Containers/com.michalstaniecko.cvdrawer`.
 3. Zainstaluj wersję z sandboksem i uruchom ją.
 
 | Sprawdź | MAS | DMG |
 | --- | --- | --- |
-| Podpis: `codesign -d --entitlements - "/Applications/CV Drawer.app"` ma `app-sandbox`, `files.user-selected.read-write` i grupę `8A9ZJPAGY8.com.michalstaniecko.mojecv`, bez `temporary-exception` i bez `network.server`; `network.client` tylko w DMG | [ ] | [ ] |
+| Podpis: `codesign -d --entitlements - "/Applications/CV Drawer.app"` ma `app-sandbox`, `files.user-selected.read-write` i grupę `8A9ZJPAGY8.com.michalstaniecko.cvdrawer`, bez `temporary-exception` i bez `network.server`; `network.client` tylko w DMG | [ ] | [ ] |
 | Pakiet ma `Contents/Resources/container-migration.plist` | [ ] | [ ] |
 | Po pierwszym uruchomieniu wszystkie CV z kroku 1 są w bibliotece, ze zdjęciem; klauzula, Interface language i Appearance zachowane | [ ] | [ ] |
-| Dane są teraz w `~/Library/Containers/com.michalstaniecko.mojecv/Data/Library/Application Support/Moje CV`, a w `~/Library/Application Support` nie ma już `Moje CV` | [ ] | [ ] |
+| Dane są teraz w `~/Library/Containers/com.michalstaniecko.cvdrawer/Data/Library/Application Support/Moje CV`, a w `~/Library/Application Support` nie ma już `Moje CV` | [ ] | [ ] |
 | Monitor aktywności → kolumna „Piaskownica”: CV Drawer i jego procesy pomocnicze mają „Tak” | [ ] | [ ] |
 | Eksport PDF do wybranego folderu (np. Biurko, Dokumenty), potem „Otwórz” i „Pokaż w Finderze” | [ ] | [ ] |
 | Eksport JSON do wybranego folderu i import tego pliku | [ ] | [ ] |

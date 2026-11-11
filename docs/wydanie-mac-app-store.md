@@ -14,7 +14,7 @@ Na developer.apple.com (zespół `8A9ZJPAGY8`), w pęku kluczy Maca, z którego 
    - **Apple Development** – tylko do `mas-dev`.
 
    electron-builder wybiera je po nazwie „Michal Staniecko” (`mas.identity`). Sprawdzenie: `security find-identity -v`.
-2. App ID `com.michalstaniecko.mojecv` (explicit). Grupa aplikacji `8A9ZJPAGY8.com.michalstaniecko.mojecv`
+2. App ID `com.michalstaniecko.cvdrawer` (explicit). Grupa aplikacji `8A9ZJPAGY8.com.michalstaniecko.cvdrawer`
    z entitlements ma prefiks zespołu, więc na macOS nie trzeba jej rejestrować w profilu.
 3. Profile provisioningowe dla tego App ID, **poza repo** (np. `~/Developer/profiles/`):
    - typ **Mac App Store Connect** (dystrybucja) → `MOJE_CV_MAS_PROVISIONING_PROFILE`;
@@ -92,7 +92,7 @@ Wynik: `dist/mas-dev-universal/CV Drawer.app`, podpisana certyfikatem Apple Deve
 build sklepowy. `MOJE_CV_BUILD_NUMBER` jest tu opcjonalny.
 
 > **Uruchamiaj ją tylko na czystym koncie macOS** (jak test migracji w checkliście). Ma prawdziwy bundle ID
-> `com.michalstaniecko.mojecv` i `container-migration.plist`, więc pierwsze uruchomienie na Twoim koncie przeniosłoby
+> `com.michalstaniecko.cvdrawer` i `container-migration.plist`, więc pierwsze uruchomienie na Twoim koncie przeniosłoby
 > Twoją bibliotekę CV z `~/Library/Application Support/Moje CV` do kontenera.
 
 Na czystym koncie sprawdź co najmniej: edycję CV, eksport PDF, eksport i import JSON, wybór zdjęcia, brak Sponsor bara
