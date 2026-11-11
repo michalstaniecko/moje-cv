@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { dictionaryFor, interfaceLanguageCodes } from '../../../shared/i18n/languages'
-import { sampleCvs } from './sampleCv'
+import { sampleCvs, templateThumbnailCv } from './sampleCv'
 import type { CvDocument } from './schema'
 
 // Cyrylica i pełny wietnamski są poza Lato, więc te Sample CV startują z Source Sans 3 (issue #57).
@@ -88,5 +88,20 @@ describe('Sample CV', () => {
     for (const language of interfaceLanguageCodes.filter((language) => language !== 'pl')) {
       expect(sampleCvs[language].consent).toEqual({ enabled: false, clauseId: null, text: '' })
     }
+  })
+})
+
+describe('Template thumbnail', () => {
+  const settings = { accentColor: '#aa3300', font: 'source-sans-3', language: 'pl' } as const
+
+  test('always shows the Sample CV in the CV language', () => {
+    const cv = templateThumbnailCv(settings)
+    expect(cv.header).toEqual(sampleCvs.pl.header)
+    expect(cv.sections).toEqual(sampleCvs.pl.sections)
+    expect(templateThumbnailCv({ ...settings, language: 'de' }).header).toEqual(sampleCvs.de.header)
+  })
+
+  test('takes the accent colour and font from the CV being edited', () => {
+    expect(templateThumbnailCv(settings).settings).toEqual({ ...sampleCvs.pl.settings, accentColor: '#aa3300', font: 'source-sans-3' })
   })
 })
