@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron'
-import { clauseContentSchema } from '../renderer/src/domain/schema'
-import { requirePositiveInt, requireString } from './ipcArgs'
+import { clauseContentSchema, formWidthSchema } from '../renderer/src/domain/schema'
+import { requireString } from './ipcArgs'
 import type { SettingsRepository } from './settingsRepository'
 
 // Biblioteka klauzul zgody i szerokość formularza w edytorze dostępne dla renderera. Argumenty z IPC są weryfikowane przed użyciem.
@@ -14,5 +14,5 @@ export function registerSettings(settings: SettingsRepository): void {
   ipcMain.handle('settings:set-default-clause', (_event, id: unknown) =>
     settings.setDefaultClause(id === null ? null : requireString(id))
   )
-  ipcMain.handle('settings:set-form-width', (_event, width: unknown) => settings.setFormWidth(requirePositiveInt(width)))
+  ipcMain.handle('settings:set-form-width', (_event, width: unknown) => settings.setFormWidth(formWidthSchema.parse(width)))
 }
