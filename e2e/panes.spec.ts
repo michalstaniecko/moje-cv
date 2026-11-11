@@ -152,3 +152,22 @@ test('in fit mode the preview rescales while the separator moves; a chosen zoom 
   await window.keyboard.press('Shift+ArrowRight')
   await expect.poll(pageWidth).toBeCloseTo(793.7, 0)
 })
+
+test('a long bullet field fits its text again after the separator moves: shorter in a wider form, taller in a narrower one', async () => {
+  await setWindowWidth(1280)
+  await openFirstCv()
+  const bullet = window.getByRole('textbox', { name: 'Bullet 1', exact: true }).first()
+  await bullet.fill('A long bullet that wraps over several lines in a narrow form, '.repeat(6))
+  const fits = () => bullet.evaluate((element) => element.scrollHeight <= element.clientHeight)
+  const height = async () => (await bullet.boundingBox())!.height
+
+  await separator().focus()
+  await window.keyboard.press('Home')
+  await expect.poll(formWidth).toBeCloseTo(360, 0)
+  const narrow = await height()
+  expect(await fits()).toBe(true)
+
+  await window.keyboard.press('End')
+  await expect.poll(height).toBeLessThan(narrow)
+  expect(await fits()).toBe(true)
+})
