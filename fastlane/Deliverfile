@@ -1,0 +1,9 @@
+# Wspólne ustawienia `deliver` dla lane'ów z Fastfile. Wpis Mac App Store; binarkę (.pkg) wysyła się osobno
+# (Transporter albo `xcrun altool`, docs/wydanie-mac-app-store.md), a do review – ręcznie w App Store Connect.
+platform("osx")
+skip_binary_upload(true)
+submit_for_review(false)
+automatic_release(false)
+run_precheck_before_submit(false)
+# Bez podglądu HTML i pytania o potwierdzenie: treść przegląda się w PR-ze.
+force(true)

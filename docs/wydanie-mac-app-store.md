@@ -81,6 +81,38 @@ xcrun altool --upload-app   -f dist/mas-universal/CV-Drawer-<wersja>.pkg -t maco
 Build pojawia się w App Store Connect (TestFlight) po przetworzeniu, zwykle kilkanaście minut; uwagi Apple przychodzą
 mailem. Dalej: test z TestFlight według checklisty i wysyłka do review (#48).
 
+## Wpis w App Store Connect
+
+Treść wpisu jest w repo, w `fastlane/metadata/<lokalizacja>/*.txt` (`en-GB` – język główny wpisu, `en-US` z tym samym tekstem, `pl`), i zmienia się ją przez PR. Do App Store
+Connect wysyła ją fastlane (`brew install fastlane`) przez App Store Connect API. Klucz API to ten sam co do notaryzacji
+i `altool`, z rolą co najmniej **App Manager**:
+
+```sh
+export APPLE_API_KEY_ID=<KEY_ID> APPLE_API_ISSUER=<ISSUER_ID>
+# opcjonalnie APPLE_API_KEY=<ścieżka do .p8>; domyślnie ~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8
+
+fastlane mac metadata      # nazwa, podtytuł, opis, słowa kluczowe, tekst promocyjny, adresy, kategoria, copyright
+pnpm screenshots           # zrzuty 2880×1800 do dist/screenshots/{pl,en}
+fastlane mac screenshots   # zastępuje wszystkie zrzuty w App Store Connect tymi z dist/screenshots (en → en-GB i en-US)
+```
+
+Obie komendy edytują wersję w App Store Connect o numerze `version` z `package.json`. Jeśli nie ma jeszcze takiej
+edytowalnej wersji, tworzą ją. Nie wysyłają binarki ani nie przesyłają do review.
+
+- Limity pól (np. podtytuł 30 znaków, słowa kluczowe 100) i adresy z `src/shared/links.ts` sprawdza
+  `build/appStoreMetadata.test.ts` (`pnpm test`).
+- **„What's New”** (`release_notes.txt`) nie istnieje dla pierwszej wersji w sklepie. Od 1.1 dodaj
+  `release_notes.txt` w każdej lokalizacji (na podstawie `CHANGELOG.md`) i usuń warunek z testu.
+- Sekcja App Review: notatka dla recenzenta jest w `fastlane/app_review_notes.txt`, a kontakt (dane osobowe, poza
+  repo) w zmiennych `APP_REVIEW_FIRST_NAME`, `APP_REVIEW_LAST_NAME`, `APP_REVIEW_EMAIL` i `APP_REVIEW_PHONE` (z
+  numerem kierunkowym, np. `+48 …`). App Store Connect przyjmuje zmianę tej sekcji tylko z pełnym kontaktem, więc bez
+  tych zmiennych `fastlane mac metadata` ją pomija.
+- Nowa lokalizacja to nowy katalog w `fastlane/metadata/` z tymi samymi plikami (kody lokalizacji App Store Connect, np.
+  `de-DE`), dopisany do `locales` w teście.
+
+Ręcznie w App Store Connect, bo tego nie obejmuje ten skrypt: utworzenie rekordu aplikacji, App Privacy („Data Not
+Collected”), kategoria wiekowa, cena i dostępność, wybór buildu i przesłanie do review.
+
 ## Lokalny test z sandboksem (`mas-dev`)
 
 ```sh

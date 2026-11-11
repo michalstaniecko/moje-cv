@@ -10,3 +10,7 @@ playwright-report
 .idea
 dist-e2e
 dist-local
+
+# fastlane: generowane raporty i README
+fastlane/report.xml
+fastlane/README.md
