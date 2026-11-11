@@ -250,11 +250,19 @@ export const en = {
     addListItem: 'Add item',
     // Elementy list z ręczną kolejnością w etykiecie uchwytu i komunikatach (np. „Actions for section “Languages””).
     order: {
-      // Uchwyt wiersza (przycisk menu) i pozycje menu wiersza.
-      actions: (item: string) => `Actions for ${item}`,
+      // Nazwa uchwytu wiersza (przycisku menu), osobno dla każdego rodzaju wiersza: w językach z przypadkami element
+      // stoi tu w innym przypadku niż w komunikatach niżej (pl „Działania: sekcja …”, ale „Przeniesiono sekcję …”).
+      handle: {
+        section: (name: string) => `Actions for section “${name}”`,
+        position: (name: string) => `Actions for position “${name}”`,
+        education: (name: string) => `Actions for entry “${name}”`,
+        bullet: (number: number) => `Actions for bullet ${number}`,
+        listItem: (number: number) => `Actions for item ${number}`
+      },
       moveUp: 'Move up',
       moveDown: 'Move down',
       remove: 'Remove',
+      // Element w komunikatach (biernik: „Moved <item> to …”).
       section: (name: string) => `section “${name}”`,
       position: (name: string) => `position “${name}”`,
       education: (name: string) => `entry “${name}”`,

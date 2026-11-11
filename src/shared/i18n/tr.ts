@@ -227,7 +227,13 @@ export const tr: Dictionary = {
     listItem: (number) => `Öğe ${number}`,
     addListItem: 'Öğe ekle',
     order: {
-      actions: (item) => `${item}: işlemler`,
+      handle: {
+        section: (name) => `“${name}” bölümü: işlemler`,
+        position: (name) => `“${name}” pozisyonu: işlemler`,
+        education: (name) => `“${name}” kaydı: işlemler`,
+        bullet: (number) => `${number}. madde: işlemler`,
+        listItem: (number) => `${number}. öğe: işlemler`
+      },
       moveUp: 'Yukarı taşı',
       moveDown: 'Aşağı taşı',
       remove: 'Kaldır',

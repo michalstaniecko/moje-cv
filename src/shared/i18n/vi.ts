@@ -227,7 +227,13 @@ export const vi: Dictionary = {
     listItem: (number) => `Mục ${number}`,
     addListItem: 'Thêm mục',
     order: {
-      actions: (item) => `Thao tác cho ${item}`,
+      handle: {
+        section: (name) => `Thao tác cho mục “${name}”`,
+        position: (name) => `Thao tác cho vị trí “${name}”`,
+        education: (name) => `Thao tác cho mục nhập “${name}”`,
+        bullet: (number) => `Thao tác cho ý ${number}`,
+        listItem: (number) => `Thao tác cho mục ${number}`
+      },
       moveUp: 'Chuyển lên',
       moveDown: 'Chuyển xuống',
       remove: 'Xóa',

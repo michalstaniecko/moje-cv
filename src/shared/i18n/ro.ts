@@ -227,7 +227,13 @@ export const ro: Dictionary = {
     listItem: (number) => `Elementul ${number}`,
     addListItem: 'Adaugă element',
     order: {
-      actions: (item) => `Acțiuni pentru ${item}`,
+      handle: {
+        section: (name) => `Acțiuni pentru secțiunea „${name}”`,
+        position: (name) => `Acțiuni pentru postul „${name}”`,
+        education: (name) => `Acțiuni pentru intrarea „${name}”`,
+        bullet: (number) => `Acțiuni pentru punctul ${number}`,
+        listItem: (number) => `Acțiuni pentru elementul ${number}`
+      },
       moveUp: 'Mută în sus',
       moveDown: 'Mută în jos',
       remove: 'Elimină',

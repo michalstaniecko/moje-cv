@@ -71,6 +71,7 @@ export function CvForm({
         <SortableList
           items={document.sections}
           label={(section) => t.order.section(sectionName(section, t))}
+          handleLabel={(section) => t.order.handle.section(sectionName(section, t))}
           onMove={(id, toIndex) => editor.edit(moveSection(id, toIndex))}
         >
           {(section, row) => <SectionFields editor={editor} section={section} handle={row.handle} />}
@@ -265,7 +266,12 @@ function SectionItems({ editor, section }: { editor: CvEditor; section: Section 
     case 'experience':
       return (
         <>
-          <SortableList items={section.items} label={(item) => t.order.position(entryName(item.role, t.newPosition))} onMove={onMove}>
+          <SortableList
+            items={section.items}
+            label={(item) => t.order.position(entryName(item.role, t.newPosition))}
+            handleLabel={(item) => t.order.handle.position(entryName(item.role, t.newPosition))}
+            onMove={onMove}
+          >
             {(item, row) => (
               <ExperienceItemFields editor={editor} sectionId={section.id} item={item} handle={row.handle} />
             )}
@@ -278,7 +284,12 @@ function SectionItems({ editor, section }: { editor: CvEditor; section: Section 
     case 'education':
       return (
         <>
-          <SortableList items={section.items} label={(item) => t.order.education(educationName(item, t))} onMove={onMove}>
+          <SortableList
+            items={section.items}
+            label={(item) => t.order.education(educationName(item, t))}
+            handleLabel={(item) => t.order.handle.education(educationName(item, t))}
+            onMove={onMove}
+          >
             {(item, row) => (
               <EducationItemFields editor={editor} sectionId={section.id} item={item} handle={row.handle} />
             )}
@@ -366,6 +377,7 @@ function ExperienceItemFields({
         <SortableList
           items={item.bullets}
           label={(_bullet, index) => t.order.bullet(index + 1)}
+          handleLabel={(_bullet, index) => t.order.handle.bullet(index + 1)}
           onMove={(bulletId, toIndex) => editor.edit(moveBullet(sectionId, item.id, bulletId, toIndex))}
           onRemove={(bullet) =>
             remove(removeBullet(sectionId, item.id, bullet.id), { entryId: bullet.id, listId: `bullets:${item.id}` })
@@ -493,6 +505,7 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
       <SortableList
         items={items}
         label={(_item, index) => t.order.listItem(index + 1)}
+        handleLabel={(_item, index) => t.order.handle.listItem(index + 1)}
         onMove={(id, toIndex) => editor.edit(moveItem(sectionId, id, toIndex))}
         onRemove={(item) => remove(removeListItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
       >

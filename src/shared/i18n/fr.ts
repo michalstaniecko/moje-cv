@@ -227,7 +227,13 @@ export const fr: Dictionary = {
     listItem: (number) => `Élément ${number}`,
     addListItem: 'Ajouter un élément',
     order: {
-      actions: (item) => `Actions pour ${item}`,
+      handle: {
+        section: (name) => `Actions pour la section « ${name} »`,
+        position: (name) => `Actions pour le poste « ${name} »`,
+        education: (name) => `Actions pour l’entrée « ${name} »`,
+        bullet: (number) => `Actions pour la puce ${number}`,
+        listItem: (number) => `Actions pour l’élément ${number}`
+      },
       moveUp: 'Monter',
       moveDown: 'Descendre',
       remove: 'Retirer',

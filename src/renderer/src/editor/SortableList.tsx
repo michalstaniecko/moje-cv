@@ -34,13 +34,17 @@ export type SortableRow = {
 export function SortableList<T extends { id: string }>({
   items,
   label,
+  handleLabel,
   onMove,
   onRemove,
   children
 }: {
   items: T[]
-  // Nazwa elementu w etykiecie uchwytu i komunikatach, np. „section “Languages”” → „Actions for section “Languages””.
+  // Nazwa elementu w komunikatach dla czytnika ekranu, np. „section “Languages”” → „Moved section “Languages” to…”.
   label: (item: T, index: number) => string
+  // Nazwa uchwytu (przycisku menu) wiersza, np. „Actions for section “Languages””. Osobno od `label`, bo w językach
+  // z przypadkami element stoi w niej w innym przypadku (pl „Działania: sekcja …”, ale „Przeniesiono sekcję …”).
+  handleLabel: (item: T, index: number) => string
   onMove: (id: string, toIndex: number) => void
   onRemove?: (item: T) => void
   children: (item: T, row: SortableRow, index: number) => ReactNode
@@ -122,7 +126,6 @@ export function SortableList<T extends { id: string }>({
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} accessibility={accessibility}>
       <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
         {items.map((item, index) => {
-          const name = label(item, index)
           const moveAndRefocus = (offset: -1 | 1) => {
             if (moveBy(index, offset)) focusHandle(item.id)
           }
@@ -139,7 +142,7 @@ export function SortableList<T extends { id: string }>({
                   {
                     handle: (
                       <RowMenu
-                        label={order.actions(name)}
+                        label={handleLabel(item, index)}
                         actions={actions}
                         handleRef={handleRef(item.id)}
                         handleProps={dragHandle}

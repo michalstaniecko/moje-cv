@@ -227,7 +227,13 @@ export const cs: Dictionary = {
     listItem: (number) => `Položka ${number}`,
     addListItem: 'Přidat položku',
     order: {
-      actions: (item) => `Akce pro ${item}`,
+      handle: {
+        section: (name) => `Akce pro sekci „${name}“`,
+        position: (name) => `Akce pro pozici „${name}“`,
+        education: (name) => `Akce pro položku „${name}“`,
+        bullet: (number) => `Akce pro bod ${number}`,
+        listItem: (number) => `Akce pro položku ${number}`
+      },
       moveUp: 'Posunout nahoru',
       moveDown: 'Posunout dolů',
       remove: 'Odstranit',

@@ -227,7 +227,13 @@ export const id: Dictionary = {
     listItem: (number) => `Item ${number}`,
     addListItem: 'Tambah item',
     order: {
-      actions: (item) => `Tindakan untuk ${item}`,
+      handle: {
+        section: (name) => `Tindakan untuk bagian “${name}”`,
+        position: (name) => `Tindakan untuk posisi “${name}”`,
+        education: (name) => `Tindakan untuk entri “${name}”`,
+        bullet: (number) => `Tindakan untuk poin ${number}`,
+        listItem: (number) => `Tindakan untuk item ${number}`
+      },
       moveUp: 'Pindahkan ke atas',
       moveDown: 'Pindahkan ke bawah',
       remove: 'Hapus',

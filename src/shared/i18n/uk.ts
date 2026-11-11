@@ -227,7 +227,13 @@ export const uk: Dictionary = {
     listItem: (number) => `Елемент ${number}`,
     addListItem: 'Додати елемент',
     order: {
-      actions: (item) => `Дії: ${item}`,
+      handle: {
+        section: (name) => `Дії: розділ «${name}»`,
+        position: (name) => `Дії: посада «${name}»`,
+        education: (name) => `Дії: запис «${name}»`,
+        bullet: (number) => `Дії: пункт ${number}`,
+        listItem: (number) => `Дії: елемент ${number}`
+      },
       moveUp: 'Перемістити вгору',
       moveDown: 'Перемістити вниз',
       remove: 'Видалити',

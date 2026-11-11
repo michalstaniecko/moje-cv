@@ -234,7 +234,13 @@ export const nl: Dictionary = {
     listItem: (number) => `Item ${number}`,
     addListItem: 'Voeg item toe',
     order: {
-      actions: (item) => `Acties voor ${item}`,
+      handle: {
+        section: (name) => `Acties voor sectie “${name}”`,
+        position: (name) => `Acties voor functie “${name}”`,
+        education: (name) => `Acties voor item “${name}”`,
+        bullet: (number) => `Acties voor punt ${number}`,
+        listItem: (number) => `Acties voor item ${number}`
+      },
       moveUp: 'Omhoog verplaatsen',
       moveDown: 'Omlaag verplaatsen',
       remove: 'Verwijderen',

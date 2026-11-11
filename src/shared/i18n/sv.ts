@@ -232,7 +232,13 @@ export const sv: Dictionary = {
     listItem: (number) => `Post ${number}`,
     addListItem: 'Lägg till post',
     order: {
-      actions: (item) => `Åtgärder för ${item}`,
+      handle: {
+        section: (name) => `Åtgärder för avsnittet ”${name}”`,
+        position: (name) => `Åtgärder för tjänsten ”${name}”`,
+        education: (name) => `Åtgärder för posten ”${name}”`,
+        bullet: (number) => `Åtgärder för punkt ${number}`,
+        listItem: (number) => `Åtgärder för post ${number}`
+      },
       moveUp: 'Flytta uppåt',
       moveDown: 'Flytta nedåt',
       remove: 'Ta bort',

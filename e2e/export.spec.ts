@@ -1243,7 +1243,7 @@ test('the row menu and its announcement are translated, and the menu is not cut 
   await launch({ language: 'pl' })
   await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
 
-  const handle = window.getByRole('button', { name: 'Działania: sekcję „Języki”', exact: true })
+  const handle = window.getByRole('button', { name: 'Działania: sekcja „Języki”', exact: true })
   await expect(handle).toHaveAccessibleDescription(
     'Przeciągnij myszą, aby zmienić kolejność, albo naciśnij Spację lub Enter, aby otworzyć menu.'
   )
