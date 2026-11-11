@@ -2369,6 +2369,9 @@ test('the row menu of a bullet or a list item has Remove, which says “Removed.
   await expect(rowMenu()).toHaveCount(0)
   await expect(removed).toBeVisible()
   await expect(removed.getByRole('button', { name: 'Undo' })).not.toBeFocused()
+  // Fokus po „Remove” jak dawniej po ✕: uchwyt znika razem z wierszem, a fokus nie trafia na inny element formularza
+  // (ani na sąsiedni punkt, ani na „Undo”).
+  await expect(window.locator('.form :focus')).toHaveCount(0)
   // „Undo” przywraca punkt na jego miejscu i wraca fokusem do jego pola.
   await removed.getByRole('button', { name: 'Undo' }).click()
   await expect(bullets).toHaveCount(bulletCount)
@@ -2387,6 +2390,7 @@ test('the row menu of a bullet or a list item has Remove, which says “Removed.
   await expect(languages.getByLabel(/^Item \d+$/)).toHaveCount(1)
   await expect(preview).not.toContainText('German – B2')
   await expect(removed).toBeVisible()
+  await expect(window.locator('.form :focus')).toHaveCount(0)
   await removed.getByRole('button', { name: 'Undo' }).click()
   await expect(languages.getByRole('textbox', { name: 'Item 2', exact: true })).toHaveValue('German – B2')
   await expect(languages.getByRole('textbox', { name: 'Item 2', exact: true })).toBeFocused()
