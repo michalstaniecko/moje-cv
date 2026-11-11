@@ -103,6 +103,8 @@ edytowalnej wersji, tworzą ją. Nie wysyłają binarki ani nie przesyłają do 
   `build/appStoreMetadata.test.ts` (`pnpm test`).
 - **„What's New”** (`release_notes.txt`) nie istnieje dla pierwszej wersji w sklepie. Od 1.1 dodaj
   `release_notes.txt` w każdej lokalizacji (na podstawie `CHANGELOG.md`) i usuń warunek z testu.
+- Notatka dla App Review jest w `fastlane/metadata/review_information/notes.txt`. Bez niej deliver nie utworzy sekcji
+  App Review w pierwszej wersji i kończy się błędem „No data”.
 - Nowa lokalizacja to nowy katalog w `fastlane/metadata/` z tymi samymi plikami (kody lokalizacji App Store Connect, np.
   `de-DE`), dopisany do `locales` w teście.
 

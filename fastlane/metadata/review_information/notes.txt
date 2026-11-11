@@ -1,0 +1,1 @@
+CV Drawer works fully offline and needs no account or sign-in. On first launch the CV library contains a sample CV in the system language; open it to see the editor with the live A4 preview, then use "Export to PDF" or "Export to DOCX" in the toolbar. The Mac App Store build makes no network requests.
