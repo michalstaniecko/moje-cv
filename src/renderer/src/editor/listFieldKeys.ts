@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { textSplit, type TextSplit } from './documentEdits'
+import { isComposing, moveShortcutOffset, type MoveOffset } from './moveShortcut'
 
 type ListField = HTMLInputElement | HTMLTextAreaElement
 
@@ -27,11 +28,10 @@ export function handleListFieldKeyDown(
     previousId: string | undefined
     split: (at: TextSplit) => void
     remove: () => void
-    moveBy: (offset: -1 | 1) => boolean
+    moveBy: (offset: MoveOffset) => boolean
   }
 ) {
-  // Klawisz w trakcie kompozycji znaków (IME, klawisz martwy) należy do kompozycji.
-  if (event.nativeEvent.isComposing || event.keyCode === 229) return
+  if (isComposing(event)) return
   const offset = moveShortcutOffset(event)
   if (offset) {
     event.preventDefault()
@@ -71,12 +71,4 @@ function focusEntryField(entryId: string, caret: 'start' | 'end') {
   field.focus()
   const position = caret === 'start' ? 0 : field.value.length
   field.setSelectionRange(position, position)
-}
-
-// ⌥⇧↑ → −1, ⌥⇧↓ → 1 (skrót przenoszenia wiersza listy, w polu i na uchwycie), inny klawisz albo klawisz w trakcie
-// kompozycji znaków → `undefined`.
-export function moveShortcutOffset(event: KeyboardEvent): -1 | 1 | undefined {
-  if (event.nativeEvent.isComposing || event.keyCode === 229) return undefined
-  if (!event.altKey || !event.shiftKey || event.metaKey || event.ctrlKey) return undefined
-  return event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : undefined
 }

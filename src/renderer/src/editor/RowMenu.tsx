@@ -1,10 +1,18 @@
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type Ref } from 'react'
-import { moveShortcutOffset } from './listFieldKeys'
-import type { DragHandleProps } from './SortableList'
+import type { useSortable } from '@dnd-kit/sortable'
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { moveShortcutOffset, type MoveOffset } from './moveShortcut'
 
 // Pozycja menu wiersza. `run` wykonuje się po zamknięciu menu i sam decyduje o fokusie (np. przeniesienie wraca na
 // uchwyt przeniesionego wiersza); wyłączona pozycja jest widoczna, ale pomijana przez strzałki.
 export type RowMenuAction = { label: string; disabled?: boolean; run: () => void }
+
+// Atrybuty i obsługa zdarzeń dnd-kit dla uchwytu. Z atrybutów dnd-kit zostaje tylko opis (instrukcja przeciągania):
+// uchwyt jest przyciskiem menu, nie „sortowalnym” przyciskiem przełączanym (`aria-roledescription`, `aria-pressed`).
+export type DragHandleProps = {
+  setActivatorNodeRef: (element: HTMLElement | null) => void
+  describedBy: string
+  listeners: ReturnType<typeof useSortable>['listeners']
+}
 
 // Uchwyt wiersza listy będący zarazem przyciskiem menu (wzór: menu przy „Nowe CV” w bibliotece).
 // - przeciągnięcie myszą zmienia kolejność (zdarzenia dnd-kit z `handleProps`), kliknięcie, Enter i spacja otwierają menu,
@@ -24,9 +32,9 @@ export function RowMenu({
 }: {
   label: string
   actions: RowMenuAction[]
-  handleRef: Ref<HTMLButtonElement>
+  handleRef: (element: HTMLButtonElement | null) => void
   handleProps: DragHandleProps
-  onMoveShortcut: (offset: -1 | 1) => void
+  onMoveShortcut: (offset: MoveOffset) => void
 }) {
   const [open, setOpen] = useState(false)
   const handle = useRef<HTMLButtonElement | null>(null)
@@ -90,8 +98,7 @@ export function RowMenu({
         ref={(element) => {
           handle.current = element
           handleProps.setActivatorNodeRef(element)
-          if (typeof handleRef === 'function') handleRef(element)
-          else if (handleRef) handleRef.current = element
+          handleRef(element)
         }}
         type="button"
         className="row-handle"

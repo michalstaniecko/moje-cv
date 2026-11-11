@@ -10,10 +10,11 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { useDictionary } from '../i18n'
-import { RowMenu, type RowMenuAction } from './RowMenu'
+import type { MoveOffset } from './moveShortcut'
+import { RowMenu, type DragHandleProps, type RowMenuAction } from './RowMenu'
 
 // Sterowanie kolejnością jednego wiersza, przekazywane do `children`:
 // - `handle` – uchwyt do umieszczenia w wierszu: przeciągnięcie myszą zmienia kolejność, kliknięcie (albo Enter/spacja)
@@ -24,7 +25,7 @@ import { RowMenu, type RowMenuAction } from './RowMenu'
 //   wywołujący (menu wraca na uchwyt, pole tekstowe może zostać w sobie).
 export type SortableRow = {
   handle: ReactNode
-  moveBy: (offset: -1 | 1) => boolean
+  moveBy: (offset: MoveOffset) => boolean
 }
 
 // Lista z ręczną kolejnością: przeciąganie za uchwyt myszą i menu wiersza pod uchwytem (także z klawiatury).
@@ -98,7 +99,7 @@ export function SortableList<T extends { id: string }>({
   // Komunikat po przeniesieniu z menu (albo `moveBy`). Ten sam tekst drugi raz (np. dwa razy z rzędu na tę samą
   // pozycję w innej liście) też ma zostać przeczytany, więc region dostaje nowy węzeł przy każdym komunikacie.
   const [moved, setMoved] = useState<{ text: string; key: number } | null>(null)
-  const moveBy = (index: number, offset: -1 | 1) => {
+  const moveBy = (index: number, offset: MoveOffset) => {
     const item = items[index]
     const toIndex = index + offset
     if (!item || toIndex < 0 || toIndex >= items.length) return false
@@ -113,20 +114,17 @@ export function SortableList<T extends { id: string }>({
   // Uchwyty wierszy po identyfikatorze elementu – po przeniesieniu z menu fokus wraca na uchwyt w nowym miejscu
   // (przestawienie węzłów w DOM gubi fokus).
   const handles = useRef(new Map<string, HTMLButtonElement>())
-  const handleRef = useCallback(
-    (id: string) => (element: HTMLButtonElement | null) => {
-      if (element) handles.current.set(id, element)
-      else handles.current.delete(id)
-    },
-    []
-  )
+  const handleRef = (id: string) => (element: HTMLButtonElement | null) => {
+    if (element) handles.current.set(id, element)
+    else handles.current.delete(id)
+  }
   const focusHandle = (id: string) => handles.current.get(id)?.focus()
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} accessibility={accessibility}>
       <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
         {items.map((item, index) => {
-          const moveAndRefocus = (offset: -1 | 1) => {
+          const moveAndRefocus = (offset: MoveOffset) => {
             if (moveBy(index, offset)) focusHandle(item.id)
           }
           const actions: RowMenuAction[] = [
@@ -163,14 +161,6 @@ export function SortableList<T extends { id: string }>({
       </div>
     </DndContext>
   )
-}
-
-// Atrybuty i obsługa zdarzeń dnd-kit dla uchwytu. Z atrybutów dnd-kit zostaje tylko opis (instrukcja przeciągania):
-// uchwyt jest przyciskiem menu, nie „sortowalnym” przyciskiem przełączanym (`aria-roledescription`, `aria-pressed`).
-export type DragHandleProps = {
-  setActivatorNodeRef: (element: HTMLElement | null) => void
-  describedBy: string
-  listeners: ReturnType<typeof useSortable>['listeners']
 }
 
 function SortableItem({ id, children }: { id: string; children: (dragHandle: DragHandleProps) => ReactNode }) {
