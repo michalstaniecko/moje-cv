@@ -123,17 +123,25 @@ textarea:focus-visible {
 }
 
 /* ---------- Pola formularzy ----------
-   Jeden styl dla pól w .form (edytor, formularz klauzul, dialog kadrowania) i w formularzach inline biblioteki. */
+   Jeden styl dla pól w .form (edytor, formularz klauzul, dialog kadrowania) i w formularzach inline biblioteki.
+   Odstęp i ramka pól są zmiennymi, bo z nich liczona jest też minimalna wysokość pola tekstowego. */
+.form,
+.library-item-form {
+  --ui-field-padding-y: 5px;
+  --ui-field-padding-x: 7px;
+  --ui-field-border-width: 1px;
+}
+
 .form input:not([type='checkbox']):not([type='range']):not([type='radio']),
 .form select,
 .form textarea,
 .library-item-form input {
   box-sizing: border-box;
   min-width: 0;
-  padding: 5px 7px;
+  padding: var(--ui-field-padding-y) var(--ui-field-padding-x);
   font: inherit;
   color: var(--ui-text);
-  border: 1px solid var(--ui-border);
+  border: var(--ui-field-border-width) solid var(--ui-border);
   border-radius: 4px;
   background: var(--ui-panel-bg);
 }
@@ -152,8 +160,12 @@ textarea:focus-visible {
   width: 100%;
 }
 
+/* Pole tekstowe rośnie razem z treścią, bez górnego limitu (przewija się cały formularz), także po zmianie
+   szerokości panelu. `rows` z atrybutu to wysokość pustego pola: wiersze tekstu + odstępy + ramka (góra i dół). */
 .form textarea {
-  resize: vertical;
+  field-sizing: content;
+  min-height: calc(attr(rows type(<number>), 2) * 1lh + 2 * (var(--ui-field-padding-y) + var(--ui-field-border-width)));
+  resize: none;
 }
 
 .form input[type='color'] {
@@ -519,14 +531,34 @@ textarea:focus-visible {
 }
 
 .editor-panes {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(360px, 440px) 1fr;
+  /* --form-width ustawia separator (editor/PaneSeparator.tsx) w granicach formularza i podglądu. */
+  grid-template-columns: var(--form-width, 440px) minmax(0, 1fr);
   flex: 1;
   min-height: 0;
 }
 
-.editor-panes > * {
+.editor-panes > :not(.pane-separator) {
   overflow: auto;
+}
+
+/* Separator leży na krawędzi formularza i nie zajmuje kolumny; szerszy od linii obramowania, żeby łatwo go chwycić. */
+.pane-separator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--form-width, 440px) - 3px);
+  z-index: 1;
+  width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.pane-separator:hover,
+.pane-separator:focus-visible {
+  background: var(--ui-focus-ring);
+  outline: none;
 }
 
 .toolbar-status {
@@ -641,6 +673,9 @@ textarea:focus-visible {
 }
 
 .form-group legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 0 4px;
   font-weight: 600;
 }
@@ -767,18 +802,34 @@ textarea:focus-visible {
   padding-top: 0;
 }
 
-/* Kompaktowe przyciski kolejności i uchwyt przeciągania. */
+/* Kompaktowe sterowanie kolejnością: wąska kolumna z uchwytem, a pod nim strzałkami ↑ i ↓, żeby pole obok
+   zajmowało resztę szerokości wiersza. */
 .order-controls {
   display: inline-flex;
+  flex-direction: column;
+  align-items: center;
   flex-shrink: 0;
-  gap: 2px;
-  margin-right: 6px;
-  vertical-align: middle;
+  gap: 1px;
 }
 
 .order-controls button {
-  min-width: 24px;
-  padding: 1px 4px;
+  width: 20px;
+  min-width: 0;
+  padding: 0;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+/* Usunięcie elementu w wierszu listy: sama ikona ✕ (etykieta w podpowiedzi i dla czytnika ekranu). */
+.row-remove {
+  width: 24px;
+  padding: 3px 0;
+  color: var(--ui-text-muted);
+}
+
+.row-remove:hover:not(:disabled) {
+  color: var(--ui-error);
+  border-color: var(--ui-error);
 }
 
 .drag-handle {

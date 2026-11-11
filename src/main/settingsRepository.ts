@@ -9,7 +9,7 @@ export type SettingsRepository = ReturnType<typeof createSettingsRepository>
 
 const emptySettings: AppSettings = { schemaVersion: 1, clauses: [], defaultClauseId: null }
 
-// Ustawienia globalne (biblioteka klauzul zgody, język interfejsu, wygląd interfejsu, stan okna) w jednym pliku JSON, zapisywanym atomowo.
+// Ustawienia globalne (biblioteka klauzul zgody, język interfejsu, wygląd interfejsu, szerokość formularza, stan okna) w jednym pliku JSON, zapisywanym atomowo.
 // Uszkodzonego pliku (niepoprawny JSON lub niezgodność ze schematem) nie da się odczytać ani nadpisać.
 export function createSettingsRepository(path: string) {
   async function get(): Promise<AppSettings> {
@@ -77,6 +77,11 @@ export function createSettingsRepository(path: string) {
 
     async setWindowState(windowState: WindowState): Promise<AppSettings> {
       return change((settings) => ({ ...settings, windowState }))
+    },
+
+    // Szerokość formularza w edytorze CV (preferencja interfejsu, nie geometria okna).
+    async setFormWidth(formWidth: number): Promise<AppSettings> {
+      return change((settings) => ({ ...settings, formWidth }))
     },
 
     // Wynik udanego sprawdzenia nowej wersji (ADR-0006). Zamknięta wersja zostaje.
