@@ -229,9 +229,9 @@ export const cs: Dictionary = {
     removeListItem: (number) => `Odstranit položku ${number}`,
     addListItem: 'Přidat položku',
     order: {
-      moveUp: (item) => `Posunout ${item} nahoru`,
-      moveDown: (item) => `Posunout ${item} dolů`,
-      drag: (item) => `Přetáhněte ${item} pro změnu pořadí`,
+      actions: (item) => `Akce pro ${item}`,
+      moveUp: 'Posunout nahoru',
+      moveDown: 'Posunout dolů',
       section: (name) => `sekci „${name}“`,
       position: (name) => `pozici „${name}“`,
       education: (name) => `položku „${name}“`,
@@ -240,8 +240,9 @@ export const cs: Dictionary = {
       pickedUp: (item) => `Zvedli jste ${item}.`,
       movedOver: (item, position, total) => `Přesouváte ${item}: pozice ${position} z ${total}.`,
       dropped: (item, position, total) => `Položili jste ${item} na pozici ${position} z ${total}.`,
+      moved: (item, position, total) => `Přesunuli jste ${item} na pozici ${position} z ${total}.`,
       cancelled: (item) => `Vrátili jste ${item} na původní místo.`,
-      instructions: 'Položku zvednete mezerníkem nebo Enterem. Šipkami ji přesunete, mezerníkem nebo Enterem ji položíte a Escape přesun zruší.'
+      instructions: 'Pořadí změníte přetažením myší, menu otevřete mezerníkem nebo Enterem.'
     },
     consent: {
       title: 'Souhlas se zpracováním údajů',

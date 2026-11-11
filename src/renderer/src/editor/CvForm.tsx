@@ -73,7 +73,7 @@ export function CvForm({
           label={(section) => t.order.section(sectionName(section, t))}
           onMove={(id, toIndex) => editor.edit(moveSection(id, toIndex))}
         >
-          {(section, orderControls) => <SectionFields editor={editor} section={section} orderControls={orderControls} />}
+          {(section, row) => <SectionFields editor={editor} section={section} handle={row.handle} />}
         </SortableList>
         <ConsentFields editor={editor} consent={document.consent} clauses={clauses} onSaveClause={onSaveClause} />
       </div>
@@ -224,14 +224,14 @@ function Checkbox({ label, checked, onChange }: { label: string; checked: boolea
 
 // Sekcja w formularzu: tytuł, kolejność, ukrycie i nowa strona, a pod nimi wpisy zależne od typu sekcji.
 // Ukryta sekcja zostaje w formularzu, ale znika z podglądu i PDF.
-function SectionFields({ editor, section, orderControls }: { editor: CvEditor; section: Section; orderControls: ReactNode }) {
+function SectionFields({ editor, section, handle }: { editor: CvEditor; section: Section; handle: ReactNode }) {
   const t = useDictionary().editor
   const name = sectionName(section, t)
 
   return (
     <section className={section.hidden ? 'form-section form-section--hidden' : 'form-section'} aria-label={name}>
       <div className="form-section-header">
-        {orderControls}
+        {handle}
         <input
           className="form-section-title-input"
           aria-label={t.sectionTitle(name)}
@@ -266,8 +266,8 @@ function SectionItems({ editor, section }: { editor: CvEditor; section: Section 
       return (
         <>
           <SortableList items={section.items} label={(item) => t.order.position(entryName(item.role, t.newPosition))} onMove={onMove}>
-            {(item, orderControls) => (
-              <ExperienceItemFields editor={editor} sectionId={section.id} item={item} orderControls={orderControls} />
+            {(item, row) => (
+              <ExperienceItemFields editor={editor} sectionId={section.id} item={item} handle={row.handle} />
             )}
           </SortableList>
           <button type="button" data-add-for={section.id} onClick={() => editor.edit(addExperienceItem(section.id))}>
@@ -279,8 +279,8 @@ function SectionItems({ editor, section }: { editor: CvEditor; section: Section 
       return (
         <>
           <SortableList items={section.items} label={(item) => t.order.education(educationName(item, t))} onMove={onMove}>
-            {(item, orderControls) => (
-              <EducationItemFields editor={editor} sectionId={section.id} item={item} orderControls={orderControls} />
+            {(item, row) => (
+              <EducationItemFields editor={editor} sectionId={section.id} item={item} handle={row.handle} />
             )}
           </SortableList>
           <button type="button" data-add-for={section.id} onClick={() => editor.edit(addEducationItem(section.id))}>
@@ -302,12 +302,12 @@ function ExperienceItemFields({
   editor,
   sectionId,
   item,
-  orderControls
+  handle
 }: {
   editor: CvEditor
   sectionId: string
   item: ExperienceItem
-  orderControls: ReactNode
+  handle: ReactNode
 }) {
   const t = useDictionary().editor
   const remove = useRemove()
@@ -340,7 +340,7 @@ function ExperienceItemFields({
   return (
     <fieldset className="form-group" data-entry-id={item.id}>
       <legend>
-        {orderControls}
+        {handle}
         {entryName(item.role, t.newPosition)}
       </legend>
       {textField(t.role, 'role')}
@@ -368,9 +368,9 @@ function ExperienceItemFields({
           label={(_bullet, index) => t.order.bullet(index + 1)}
           onMove={(bulletId, toIndex) => editor.edit(moveBullet(sectionId, item.id, bulletId, toIndex))}
         >
-          {(bullet, orderControls, index) => (
+          {(bullet, row, index) => (
             <div className="form-row" data-entry-id={bullet.id}>
-              {orderControls}
+              {row.handle}
               <textarea
                 rows={2}
                 aria-label={t.bullet(index + 1)}
@@ -426,12 +426,12 @@ function EducationItemFields({
   editor,
   sectionId,
   item,
-  orderControls
+  handle
 }: {
   editor: CvEditor
   sectionId: string
   item: EducationItem
-  orderControls: ReactNode
+  handle: ReactNode
 }) {
   const t = useDictionary().editor
   const remove = useRemove()
@@ -453,7 +453,7 @@ function EducationItemFields({
   return (
     <fieldset className="form-group" data-entry-id={item.id}>
       <legend>
-        {orderControls}
+        {handle}
         {educationName(item, t)}
       </legend>
       {textField(t.level, 'level', t.levelPlaceholder)}
@@ -497,9 +497,9 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
         label={(_item, index) => t.order.listItem(index + 1)}
         onMove={(id, toIndex) => editor.edit(moveItem(sectionId, id, toIndex))}
       >
-        {(item, orderControls, index) => (
+        {(item, row, index) => (
           <div className="form-row" data-entry-id={item.id}>
-            {orderControls}
+            {row.handle}
             <input
               aria-label={t.listItem(index + 1)}
               value={item.text}

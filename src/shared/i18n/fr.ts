@@ -229,9 +229,9 @@ export const fr: Dictionary = {
     removeListItem: (number) => `Retirer l’élément ${number}`,
     addListItem: 'Ajouter un élément',
     order: {
-      moveUp: (item) => `Monter ${item}`,
-      moveDown: (item) => `Descendre ${item}`,
-      drag: (item) => `Faites glisser ${item} pour réordonner`,
+      actions: (item) => `Actions pour ${item}`,
+      moveUp: 'Monter',
+      moveDown: 'Descendre',
       section: (name) => `la section « ${name} »`,
       position: (name) => `le poste « ${name} »`,
       education: (name) => `l’entrée « ${name} »`,
@@ -240,8 +240,9 @@ export const fr: Dictionary = {
       pickedUp: (item) => `Vous avez saisi ${item}.`,
       movedOver: (item, position, total) => `Vous déplacez ${item} : position ${position} sur ${total}.`,
       dropped: (item, position, total) => `Vous avez déposé ${item} en position ${position} sur ${total}.`,
+      moved: (item, position, total) => `Vous avez déplacé ${item} en position ${position} sur ${total}.`,
       cancelled: (item) => `Vous avez remis ${item} à sa place.`,
-      instructions: 'Pour saisir un élément, appuyez sur Espace ou Entrée. Déplacez-le avec les flèches, déposez-le avec Espace ou Entrée, ou annulez avec Échap.'
+      instructions: 'Faites glisser avec la souris pour réordonner, ou appuyez sur Espace ou Entrée pour ouvrir le menu.'
     },
     consent: {
       title: 'Clause de consentement',

@@ -229,9 +229,9 @@ export const ro: Dictionary = {
     removeListItem: (number) => `Elimină elementul ${number}`,
     addListItem: 'Adaugă element',
     order: {
-      moveUp: (item) => `Mută în sus ${item}`,
-      moveDown: (item) => `Mută în jos ${item}`,
-      drag: (item) => `Trage ${item} pentru a reordona`,
+      actions: (item) => `Acțiuni pentru ${item}`,
+      moveUp: 'Mută în sus',
+      moveDown: 'Mută în jos',
       section: (name) => `secțiunea „${name}”`,
       position: (name) => `postul „${name}”`,
       education: (name) => `intrarea „${name}”`,
@@ -240,8 +240,9 @@ export const ro: Dictionary = {
       pickedUp: (item) => `Ai ridicat ${item}.`,
       movedOver: (item, position, total) => `Muți ${item}: poziția ${position} din ${total}.`,
       dropped: (item, position, total) => `Ai plasat ${item} pe poziția ${position} din ${total}.`,
+      moved: (item, position, total) => `Ai mutat ${item} pe poziția ${position} din ${total}.`,
       cancelled: (item) => `Ai pus ${item} înapoi la locul său.`,
-      instructions: 'Pentru a ridica un element, apasă Spațiu sau Enter. Mută-l cu tastele săgeți, plasează-l cu Spațiu sau Enter, iar Escape anulează.'
+      instructions: 'Trage cu mouse-ul pentru a reordona sau apasă Spațiu sau Enter pentru a deschide meniul.'
     },
     consent: {
       title: 'Clauză de acord',

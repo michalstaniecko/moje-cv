@@ -1,7 +1,6 @@
 import {
   closestCenter,
   DndContext,
-  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -9,14 +8,26 @@ import {
   type DragEndEvent,
   type UniqueIdentifier
 } from '@dnd-kit/core'
-import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useMemo, useRef, type ReactNode } from 'react'
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
+import { flushSync } from 'react-dom'
 import { useDictionary } from '../i18n'
+import { RowMenu, type RowMenuAction } from './RowMenu'
 
-// Lista z ręczną kolejnością: przeciąganie za uchwyt (mysz lub klawiatura) i strzałki góra/dół.
-// `onMove(id, toIndex)` – element ma trafić na pozycję `toIndex`. `children` dostaje gotowe
-// elementy sterujące kolejnością (uchwyt + strzałki) do umieszczenia w wierszu elementu.
+// Sterowanie kolejnością jednego wiersza, przekazywane do `children`:
+// - `handle` – uchwyt do umieszczenia w wierszu: przeciągnięcie myszą zmienia kolejność, kliknięcie (albo Enter/spacja)
+//   otwiera menu wiersza („Przenieś wyżej/niżej”),
+// - `moveBy(offset)` – przenosi wiersz o `offset` pozycji (−1 w górę, 1 w dół) jako osobny krok cofania i ogłasza nową
+//   pozycję czytnikowi ekranu; na krańcu listy nic nie robi i zwraca `false`. Fokusu nie zmienia – o nim decyduje
+//   wywołujący (menu wraca na uchwyt, pole tekstowe może zostać w sobie).
+export type SortableRow = {
+  handle: ReactNode
+  moveBy: (offset: -1 | 1) => boolean
+}
+
+// Lista z ręczną kolejnością: przeciąganie za uchwyt myszą i menu wiersza pod uchwytem (także z klawiatury).
+// `onMove(id, toIndex)` – element ma trafić na pozycję `toIndex`; `children` dostaje sterowanie wiersza (`SortableRow`).
 export function SortableList<T extends { id: string }>({
   items,
   label,
@@ -24,18 +35,17 @@ export function SortableList<T extends { id: string }>({
   children
 }: {
   items: T[]
-  // Nazwa elementu w etykietach przycisków, np. „section “Languages”” → „Move section “Languages” up”.
+  // Nazwa elementu w etykiecie uchwytu i komunikatach, np. „section “Languages”” → „Actions for section “Languages””.
   label: (item: T, index: number) => string
   onMove: (id: string, toIndex: number) => void
-  children: (item: T, orderControls: ReactNode, index: number) => ReactNode
+  children: (item: T, row: SortableRow, index: number) => ReactNode
 }) {
   const { order } = useDictionary().editor
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  )
-  // Komunikaty dla czytnika ekranu w Interface language: element opisany tą samą etykietą co w przyciskach strzałek
-  // (nie identyfikatorem z dokumentu), pozycja liczona od 1 z liczby elementów listy. dnd-kit zgłasza `onDragOver`
+  // Tylko mysz: czujnik klawiatury dnd-kit zastępuje menu wiersza (Enter i spacja na uchwycie je otwierają).
+  // Próg przesunięcia odróżnia kliknięcie (menu) od przeciągania.
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
+  // Komunikaty dla czytnika ekranu w Interface language: element opisany tą samą etykietą co uchwyt (nie
+  // identyfikatorem z dokumentu), pozycja liczona od 1 z liczby elementów listy. dnd-kit zgłasza `onDragOver`
   // także zaraz po podniesieniu (element nad samym sobą), co zagłuszyłoby „Podniesiono…”, więc pozycja jest
   // ogłaszana dopiero, gdy element nad którym jest przeciągany się zmieni.
   const announcedOver = useRef<UniqueIdentifier | null>(null)
@@ -76,46 +86,85 @@ export function SortableList<T extends { id: string }>({
     if (toIndex !== -1) onMove(String(active.id), toIndex)
   }
 
+  // Komunikat po przeniesieniu z menu (albo `moveBy`). Ten sam tekst drugi raz (np. dwa razy z rzędu na tę samą
+  // pozycję w innej liście) też ma zostać przeczytany, więc region dostaje nowy węzeł przy każdym komunikacie.
+  const [moved, setMoved] = useState<{ text: string; key: number } | null>(null)
+  const moveBy = (index: number, offset: -1 | 1) => {
+    const item = items[index]
+    const toIndex = index + offset
+    if (!item || toIndex < 0 || toIndex >= items.length) return false
+    const text = order.moved(label(item, index), toIndex + 1, items.length)
+    flushSync(() => {
+      onMove(item.id, toIndex)
+      setMoved((previous) => ({ text, key: (previous?.key ?? 0) + 1 }))
+    })
+    return true
+  }
+
+  // Uchwyty wierszy po identyfikatorze elementu – po przeniesieniu z menu fokus wraca na uchwyt w nowym miejscu
+  // (przestawienie węzłów w DOM gubi fokus).
+  const handles = useRef(new Map<string, HTMLButtonElement>())
+  const handleRef = useCallback(
+    (id: string) => (element: HTMLButtonElement | null) => {
+      if (element) handles.current.set(id, element)
+      else handles.current.delete(id)
+    },
+    []
+  )
+  const focusHandle = (id: string) => handles.current.get(id)?.focus()
+
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} accessibility={accessibility}>
       <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
-        {items.map((item, index) => (
-          <SortableRow key={item.id} id={item.id}>
-            {(handle) =>
-              children(
-                item,
-                <span className="order-controls">
-                  {handle(label(item, index))}
-                  <button
-                    type="button"
-                    aria-label={order.moveUp(label(item, index))}
-                    disabled={index === 0}
-                    onClick={() => onMove(item.id, index - 1)}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={order.moveDown(label(item, index))}
-                    disabled={index === items.length - 1}
-                    onClick={() => onMove(item.id, index + 1)}
-                  >
-                    ↓
-                  </button>
-                </span>,
-                index
-              )
-            }
-          </SortableRow>
-        ))}
+        {items.map((item, index) => {
+          const name = label(item, index)
+          const moveAndRefocus = (offset: -1 | 1) => {
+            if (moveBy(index, offset)) focusHandle(item.id)
+          }
+          const actions: RowMenuAction[] = [
+            { label: order.moveUp, disabled: index === 0, run: () => moveAndRefocus(-1) },
+            { label: order.moveDown, disabled: index === items.length - 1, run: () => moveAndRefocus(1) }
+          ]
+          return (
+            <SortableItem key={item.id} id={item.id}>
+              {(dragHandle) =>
+                children(
+                  item,
+                  {
+                    handle: (
+                      <RowMenu
+                        label={order.actions(name)}
+                        actions={actions}
+                        handleRef={handleRef(item.id)}
+                        handleProps={dragHandle}
+                      />
+                    ),
+                    moveBy: (offset) => moveBy(index, offset)
+                  },
+                  index
+                )
+              }
+            </SortableItem>
+          )
+        })}
       </SortableContext>
+      <div className="visually-hidden" aria-live="polite" aria-atomic="true">
+        {moved && <span key={moved.key}>{moved.text}</span>}
+      </div>
     </DndContext>
   )
 }
 
-function SortableRow({ id, children }: { id: string; children: (handle: (label: string) => ReactNode) => ReactNode }) {
+// Atrybuty i obsługa zdarzeń dnd-kit dla uchwytu. Z atrybutów dnd-kit zostaje tylko opis (instrukcja przeciągania):
+// uchwyt jest przyciskiem menu, nie „sortowalnym” przyciskiem przełączanym (`aria-roledescription`, `aria-pressed`).
+export type DragHandleProps = {
+  setActivatorNodeRef: (element: HTMLElement | null) => void
+  describedBy: string
+  listeners: ReturnType<typeof useSortable>['listeners']
+}
+
+function SortableItem({ id, children }: { id: string; children: (dragHandle: DragHandleProps) => ReactNode }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id })
-  const { order } = useDictionary().editor
   const style = {
     transform: CSS.Translate.toString(transform),
     transition,
@@ -126,18 +175,7 @@ function SortableRow({ id, children }: { id: string; children: (handle: (label: 
 
   return (
     <div ref={setNodeRef} style={style}>
-      {children((label) => (
-        <button
-          type="button"
-          ref={setActivatorNodeRef}
-          className="drag-handle"
-          {...attributes}
-          {...listeners}
-          aria-label={order.drag(label)}
-        >
-          ⠿
-        </button>
-      ))}
+      {children({ setActivatorNodeRef, describedBy: attributes['aria-describedby'], listeners })}
     </div>
   )
 }

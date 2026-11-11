@@ -234,9 +234,9 @@ export const sv: Dictionary = {
     removeListItem: (number) => `Ta bort post ${number}`,
     addListItem: 'Lägg till post',
     order: {
-      moveUp: (item) => `Flytta ${item} uppåt`,
-      moveDown: (item) => `Flytta ${item} nedåt`,
-      drag: (item) => `Dra ${item} för att ändra ordning`,
+      actions: (item) => `Åtgärder för ${item}`,
+      moveUp: 'Flytta uppåt',
+      moveDown: 'Flytta nedåt',
       section: (name) => `avsnittet ”${name}”`,
       position: (name) => `tjänsten ”${name}”`,
       education: (name) => `posten ”${name}”`,
@@ -245,8 +245,9 @@ export const sv: Dictionary = {
       pickedUp: (item) => `Du har lyft ${item}.`,
       movedOver: (item, position, total) => `Du flyttar ${item}: position ${position} av ${total}.`,
       dropped: (item, position, total) => `Du har släppt ${item} på position ${position} av ${total}.`,
+      moved: (item, position, total) => `Du har flyttat ${item} till position ${position} av ${total}.`,
       cancelled: (item) => `Du har lagt tillbaka ${item} på sin plats.`,
-      instructions: 'Tryck på blanksteg eller Retur för att lyfta ett objekt. Flytta det med piltangenterna, släpp det med blanksteg eller Retur och avbryt med Escape.'
+      instructions: 'Dra med musen för att ändra ordning, eller tryck på blanksteg eller Retur för att öppna menyn.'
     },
     consent: {
       title: 'Samtyckesklausul',

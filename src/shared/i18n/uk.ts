@@ -229,9 +229,9 @@ export const uk: Dictionary = {
     removeListItem: (number) => `Видалити елемент ${number}`,
     addListItem: 'Додати елемент',
     order: {
-      moveUp: (item) => `Перемістити ${item} вгору`,
-      moveDown: (item) => `Перемістити ${item} вниз`,
-      drag: (item) => `Перетягніть ${item}, щоб змінити порядок`,
+      actions: (item) => `Дії: ${item}`,
+      moveUp: 'Перемістити вгору',
+      moveDown: 'Перемістити вниз',
       section: (name) => `розділ «${name}»`,
       position: (name) => `посаду «${name}»`,
       education: (name) => `запис «${name}»`,
@@ -240,8 +240,9 @@ export const uk: Dictionary = {
       pickedUp: (item) => `Ви взяли ${item}.`,
       movedOver: (item, position, total) => `Ви переміщуєте ${item}: позиція ${position} з ${total}.`,
       dropped: (item, position, total) => `Ви поставили ${item} на позицію ${position} з ${total}.`,
+      moved: (item, position, total) => `Ви перемістили ${item} на позицію ${position} з ${total}.`,
       cancelled: (item) => `Ви повернули ${item} на попереднє місце.`,
-      instructions: 'Щоб взяти елемент, натисніть Пробіл або Enter. Переміщуйте його клавішами зі стрілками, поставте Пробілом або Enter, Escape скасовує.'
+      instructions: 'Перетягніть мишею, щоб змінити порядок, або натисніть Пробіл чи Enter, щоб відкрити меню.'
     },
     consent: {
       title: 'Згода на обробку даних',

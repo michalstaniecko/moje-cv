@@ -250,11 +250,12 @@ export const en = {
     listItem: (number: number) => `Item ${number}`,
     removeListItem: (number: number) => `Remove item ${number}`,
     addListItem: 'Add item',
-    // Elementy list z ręczną kolejnością w etykietach przycisków (np. „Move section “Languages” up”).
+    // Elementy list z ręczną kolejnością w etykiecie uchwytu i komunikatach (np. „Actions for section “Languages””).
     order: {
-      moveUp: (item: string) => `Move ${item} up`,
-      moveDown: (item: string) => `Move ${item} down`,
-      drag: (item: string) => `Drag ${item} to reorder`,
+      // Uchwyt wiersza (przycisk menu) i pozycje menu wiersza.
+      actions: (item: string) => `Actions for ${item}`,
+      moveUp: 'Move up',
+      moveDown: 'Move down',
       section: (name: string) => `section “${name}”`,
       position: (name: string) => `position “${name}”`,
       education: (name: string) => `entry “${name}”`,
@@ -264,8 +265,10 @@ export const en = {
       pickedUp: (item: string) => `Picked up ${item}.`,
       movedOver: (item: string, position: number, total: number) => `Moving ${item}: position ${position} of ${total}.`,
       dropped: (item: string, position: number, total: number) => `Dropped ${item} at position ${position} of ${total}.`,
+      // Po przeniesieniu z menu wiersza.
+      moved: (item: string, position: number, total: number) => `Moved ${item} to position ${position} of ${total}.`,
       cancelled: (item: string) => `Put ${item} back in its place.`,
-      instructions: 'To pick up an item, press Space or Enter. Use the arrow keys to move it, Space or Enter to drop it, and Escape to cancel.'
+      instructions: 'Drag with the mouse to reorder, or press Space or Enter to open the menu.'
     },
     consent: {
       title: 'Consent clause',

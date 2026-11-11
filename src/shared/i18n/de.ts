@@ -236,9 +236,9 @@ export const de: Dictionary = {
     removeListItem: (number) => `Eintrag ${number} entfernen`,
     addListItem: 'Eintrag hinzufügen',
     order: {
-      moveUp: (item) => `${item} nach oben verschieben`,
-      moveDown: (item) => `${item} nach unten verschieben`,
-      drag: (item) => `${item} ziehen, um die Reihenfolge zu ändern`,
+      actions: (item) => `Aktionen für ${item}`,
+      moveUp: 'Nach oben verschieben',
+      moveDown: 'Nach unten verschieben',
       section: (name) => `Abschnitt „${name}“`,
       position: (name) => `Position „${name}“`,
       education: (name) => `Eintrag „${name}“`,
@@ -247,8 +247,9 @@ export const de: Dictionary = {
       pickedUp: (item) => `${item} aufgenommen.`,
       movedOver: (item, position, total) => `${item} wird verschoben: Position ${position} von ${total}.`,
       dropped: (item, position, total) => `${item} an Position ${position} von ${total} abgelegt.`,
+      moved: (item, position, total) => `${item} an Position ${position} von ${total} verschoben.`,
       cancelled: (item) => `${item} an den ursprünglichen Platz zurückgelegt.`,
-      instructions: 'Zum Aufnehmen eines Eintrags die Leertaste oder die Eingabetaste drücken. Mit den Pfeiltasten verschieben, mit der Leertaste oder der Eingabetaste ablegen, mit Escape abbrechen.'
+      instructions: 'Zum Ändern der Reihenfolge mit der Maus ziehen oder mit der Leertaste oder der Eingabetaste das Menü öffnen.'
     },
     consent: {
       title: 'Einwilligungserklärung',

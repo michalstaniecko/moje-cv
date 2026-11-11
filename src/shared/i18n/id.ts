@@ -229,9 +229,9 @@ export const id: Dictionary = {
     removeListItem: (number) => `Hapus item ${number}`,
     addListItem: 'Tambah item',
     order: {
-      moveUp: (item) => `Pindahkan ${item} ke atas`,
-      moveDown: (item) => `Pindahkan ${item} ke bawah`,
-      drag: (item) => `Seret ${item} untuk mengubah urutan`,
+      actions: (item) => `Tindakan untuk ${item}`,
+      moveUp: 'Pindahkan ke atas',
+      moveDown: 'Pindahkan ke bawah',
       section: (name) => `bagian “${name}”`,
       position: (name) => `posisi “${name}”`,
       education: (name) => `entri “${name}”`,
@@ -240,8 +240,9 @@ export const id: Dictionary = {
       pickedUp: (item) => `Mengambil ${item}.`,
       movedOver: (item, position, total) => `Memindahkan ${item}: posisi ${position} dari ${total}.`,
       dropped: (item, position, total) => `Meletakkan ${item} di posisi ${position} dari ${total}.`,
+      moved: (item, position, total) => `Memindahkan ${item} ke posisi ${position} dari ${total}.`,
       cancelled: (item) => `Mengembalikan ${item} ke tempat semula.`,
-      instructions: 'Untuk mengambil item, tekan Spasi atau Enter. Gunakan tombol panah untuk memindahkannya, Spasi atau Enter untuk meletakkannya, dan Escape untuk membatalkan.'
+      instructions: 'Seret dengan mouse untuk mengubah urutan, atau tekan Spasi atau Enter untuk membuka menu.'
     },
     consent: {
       title: 'Klausul persetujuan',

@@ -229,9 +229,9 @@ export const tr: Dictionary = {
     removeListItem: (number) => `${number}. öğeyi kaldır`,
     addListItem: 'Öğe ekle',
     order: {
-      moveUp: (item) => `${item}: yukarı taşı`,
-      moveDown: (item) => `${item}: aşağı taşı`,
-      drag: (item) => `${item}: sıralamak için sürükle`,
+      actions: (item) => `${item}: işlemler`,
+      moveUp: 'Yukarı taşı',
+      moveDown: 'Aşağı taşı',
       section: (name) => `“${name}” bölümü`,
       position: (name) => `“${name}” pozisyonu`,
       education: (name) => `“${name}” kaydı`,
@@ -240,8 +240,9 @@ export const tr: Dictionary = {
       pickedUp: (item) => `${item} alındı.`,
       movedOver: (item, position, total) => `${item} taşınıyor: konum ${position} / ${total}.`,
       dropped: (item, position, total) => `${item} bırakıldı: konum ${position} / ${total}.`,
+      moved: (item, position, total) => `${item} taşındı: konum ${position} / ${total}.`,
       cancelled: (item) => `${item} eski yerine geri kondu.`,
-      instructions: 'Bir öğeyi almak için Boşluk veya Enter tuşuna basın. Ok tuşlarıyla taşıyın, Boşluk veya Enter ile bırakın, Escape ile iptal edin.'
+      instructions: 'Sıralamak için fareyle sürükleyin veya menüyü açmak için Boşluk ya da Enter tuşuna basın.'
     },
     consent: {
       title: 'Onay metni',

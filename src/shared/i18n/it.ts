@@ -229,9 +229,9 @@ export const it: Dictionary = {
     removeListItem: (number) => `Rimuovi voce ${number}`,
     addListItem: 'Aggiungi voce',
     order: {
-      moveUp: (item) => `Sposta su ${item}`,
-      moveDown: (item) => `Sposta giù ${item}`,
-      drag: (item) => `Trascina ${item} per riordinare`,
+      actions: (item) => `Azioni per ${item}`,
+      moveUp: 'Sposta su',
+      moveDown: 'Sposta giù',
       section: (name) => `la sezione «${name}»`,
       position: (name) => `la posizione «${name}»`,
       education: (name) => `la voce «${name}»`,
@@ -240,8 +240,9 @@ export const it: Dictionary = {
       pickedUp: (item) => `Hai preso ${item}.`,
       movedOver: (item, position, total) => `Stai spostando ${item}: posizione ${position} di ${total}.`,
       dropped: (item, position, total) => `Hai rilasciato ${item} in posizione ${position} di ${total}.`,
+      moved: (item, position, total) => `Hai spostato ${item} in posizione ${position} di ${total}.`,
       cancelled: (item) => `Hai rimesso ${item} al suo posto.`,
-      instructions: 'Per prendere un elemento, premi Spazio o Invio. Spostalo con i tasti freccia, rilascialo con Spazio o Invio, oppure annulla con Esc.'
+      instructions: 'Trascina con il mouse per riordinare, oppure premi Spazio o Invio per aprire il menu.'
     },
     consent: {
       title: 'Clausola di consenso',

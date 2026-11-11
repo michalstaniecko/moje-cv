@@ -229,9 +229,9 @@ export const pl: Dictionary = {
     removeListItem: (number) => `Usuń element ${number}`,
     addListItem: 'Dodaj element',
     order: {
-      moveUp: (item) => `Przesuń ${item} w górę`,
-      moveDown: (item) => `Przesuń ${item} w dół`,
-      drag: (item) => `Przeciągnij ${item}, aby zmienić kolejność`,
+      actions: (item) => `Działania: ${item}`,
+      moveUp: 'Przenieś wyżej',
+      moveDown: 'Przenieś niżej',
       section: (name) => `sekcję „${name}”`,
       position: (name) => `stanowisko „${name}”`,
       education: (name) => `wpis „${name}”`,
@@ -240,8 +240,9 @@ export const pl: Dictionary = {
       pickedUp: (item) => `Podniesiono ${item}.`,
       movedOver: (item, position, total) => `Przesuwasz ${item}: pozycja ${position} z ${total}.`,
       dropped: (item, position, total) => `Upuszczono ${item} na pozycji ${position} z ${total}.`,
+      moved: (item, position, total) => `Przeniesiono ${item} na pozycję ${position} z ${total}.`,
       cancelled: (item) => `Odłożono ${item} na poprzednie miejsce.`,
-      instructions: 'Aby podnieść element, naciśnij Spację lub Enter. Strzałkami przesuń go, Spacją lub Enterem upuść, Escape anuluje.'
+      instructions: 'Przeciągnij myszą, aby zmienić kolejność, albo naciśnij Spację lub Enter, aby otworzyć menu.'
     },
     consent: {
       title: 'Klauzula zgody',

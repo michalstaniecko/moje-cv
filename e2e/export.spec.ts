@@ -522,8 +522,7 @@ test('the CV editor is in English, including the save status, photo cropping and
   await expect(window.getByLabel('Font')).toHaveValue('lato')
   await expect(window.getByRole('button', { name: 'Remove contact 1' })).toBeVisible()
   await expect(window.getByRole('button', { name: 'Add contact' })).toBeVisible()
-  await expect(window.getByRole('button', { name: /^Move section “.+” down$/ }).first()).toBeVisible()
-  await expect(window.getByRole('button', { name: /^Drag section “.+” to reorder$/ }).first()).toBeVisible()
+  await expect(window.getByRole('button', { name: /^Actions for section “.+”$/ }).first()).toBeVisible()
   await expect(window.getByLabel(/^Section title “.+”$/).first()).toBeVisible()
   await expect(window.getByLabel('Hide section').first()).toBeVisible()
   await expect(window.getByLabel('New page before this section').first()).toBeVisible()
@@ -531,7 +530,7 @@ test('the CV editor is in English, including the save status, photo cropping and
   for (const label of ['Job title', 'Company', 'City', 'From', 'To', 'I currently work here', 'Bullet 1', 'New page before this entry']) {
     await expect(position.getByLabel(label, { exact: true })).toBeVisible()
   }
-  for (const name of ['Remove bullet 1', 'Move bullet 2 up', 'Drag bullet 1 to reorder', 'Add bullet', 'Remove position']) {
+  for (const name of ['Remove bullet 1', 'Actions for bullet 2', 'Add bullet', 'Remove position']) {
     await expect(position.getByRole('button', { name, exact: true })).toBeVisible()
   }
   await window.getByRole('button', { name: 'Add education' }).click()
@@ -901,38 +900,13 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
-// Ogłoszenia dnd-kit dla czytnika ekranu: regiony aria-live (po jednym na listę) poza widokiem, szukane po treści.
-const dragAnnouncement = (text: string) => window.locator('[aria-live]').filter({ hasText: text })
+// Ogłoszenia dla czytnika ekranu: regiony aria-live (dnd-kit i menu wiersza, po jednym na listę) poza widokiem,
+// szukane po treści.
+const announcement = (text: string | RegExp) => window.locator('[aria-live]').filter({ hasText: text })
 
-// Podnosi element z klawiatury (Spacja na uchwycie z fokusem). dnd-kit mierzy listę i podpina obsługę strzałek
-// chwilę po podniesieniu, więc strzałka wciśnięta od razu po ogłoszeniu bywa gubiona.
-async function pickUpWithKeyboard(announcement: string) {
-  await window.keyboard.press('Space')
-  await expect(dragAnnouncement(announcement)).toHaveCount(1)
-  await window.waitForTimeout(200)
-}
-
-// Przenosi element z klawiatury o jedno miejsce w górę i sprawdza, co po kolei słyszy czytnik ekranu.
-async function moveUpWithKeyboard(expected: {
-  handle: string
-  instructions: string
-  pickedUp: string
-  moving: string
-  dropped: string
-}) {
-  const handle = window.getByRole('button', { name: expected.handle, exact: true })
-  await expect(handle).toHaveAccessibleDescription(expected.instructions)
-  await handle.focus()
-  await pickUpWithKeyboard(expected.pickedUp)
-  await window.keyboard.press('ArrowUp')
-  await expect(dragAnnouncement(expected.moving)).toHaveCount(1)
-  await window.keyboard.press('Space')
-  await expect(dragAnnouncement(expected.dropped)).toHaveCount(1)
-  // Żadne ogłoszenie nie zawiera identyfikatora elementu z dokumentu.
-  const announcements = await window.locator('[aria-live]').allTextContents()
-  expect(announcements.join(' ')).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/)
-  expect(announcements.join(' ')).not.toMatch(/draggable|droppable/i)
-}
+// Uchwyt wiersza listy z ręczną kolejnością („Actions for …”) i jego menu.
+const rowHandle = (scope: Page | Locator, item: string) => scope.getByRole('button', { name: `Actions for ${item}`, exact: true })
+const rowMenu = () => window.getByRole('menu')
 
 // `word/document.xml` z zapisanego pliku DOCX (ZIP).
 async function docxDocumentXml(filePath: string): Promise<string> {
@@ -1042,41 +1016,188 @@ test('exports the open CV to an editable DOCX from the toolbar and from File →
   await expect(failed).toHaveCount(0)
 })
 
-test('reordering with the keyboard tells the screen reader what was picked up, where it moves and where it was dropped, in English and in Polish', async () => {
+test('clicking a row handle opens its menu; Escape and a click outside close it and return focus to the handle', async () => {
+  await openFirstCv()
+  const handle = rowHandle(window, 'section “Languages”')
+  await expect(handle).toHaveAttribute('aria-haspopup', 'menu')
+  await expect(handle).toHaveAttribute('aria-expanded', 'false')
+  await expect(handle).toHaveAttribute('title', 'Actions for section “Languages”')
+
+  await handle.click()
+  await expect(handle).toHaveAttribute('aria-expanded', 'true')
+  await expect(rowMenu()).toHaveAccessibleName('Actions for section “Languages”')
+  await expect(rowMenu().getByRole('menuitem')).toHaveText(['Move up', 'Move down'])
+  await expect(rowMenu().getByRole('menuitem', { name: 'Move up' })).toBeFocused()
+
+  await window.keyboard.press('Escape')
+  await expect(rowMenu()).toHaveCount(0)
+  await expect(handle).toHaveAttribute('aria-expanded', 'false')
+  await expect(handle).toBeFocused()
+
+  // Kliknięcie poza menu (w puste miejsce panelu formularza) też zamyka i wraca na uchwyt.
+  await handle.click()
+  await expect(rowMenu()).toBeVisible()
+  const form = (await window.locator('.editor-form').boundingBox())!
+  await window.mouse.click(form.x + form.width - 4, form.y + form.height / 2)
+  await expect(rowMenu()).toHaveCount(0)
+  await expect(handle).toBeFocused()
+
+  // Ponowne kliknięcie uchwytu zamyka otwarte menu.
+  await handle.click()
+  await expect(rowMenu()).toBeVisible()
+  await handle.click()
+  await expect(rowMenu()).toHaveCount(0)
+})
+
+test('the row menu works from the keyboard: Enter or Space opens it, the arrows skip the disabled item at the end of the list, Enter picks', async () => {
   await openFirstCv()
   const preview = window.locator('.preview')
-  // Sekcje przykładowego CV: Work experience, Education, Skills, Languages, Interests.
-  await moveUpWithKeyboard({
-    handle: 'Drag section “Languages” to reorder',
-    instructions:
-      'To pick up an item, press Space or Enter. Use the arrow keys to move it, Space or Enter to drop it, and Escape to cancel.',
-    pickedUp: 'Picked up section “Languages”.',
-    moving: 'Moving section “Languages”: position 3 of 5.',
-    dropped: 'Dropped section “Languages” at position 3 of 5.'
-  })
-  await expect(preview.locator('.cv-page .cv-section-title').nth(2)).toHaveText('Languages')
+  const moveUp = rowMenu().getByRole('menuitem', { name: 'Move up' })
+  const moveDown = rowMenu().getByRole('menuitem', { name: 'Move down' })
 
-  // Escape odkłada element na miejsce i mówi o tym.
-  const handle = window.getByRole('button', { name: 'Drag section “Skills” to reorder', exact: true })
-  await handle.focus()
-  await pickUpWithKeyboard('Picked up section “Skills”.')
-  await window.keyboard.press('ArrowUp')
-  await expect(dragAnnouncement('Moving section “Skills”: position 3 of 5.')).toHaveCount(1)
+  // Pierwsza sekcja: „Move up” wyłączone, fokus od razu na „Move down”, strzałki zostają na jedynej dostępnej pozycji.
+  const first = rowHandle(window, 'section “Work experience”')
+  await first.focus()
+  await window.keyboard.press('Enter')
+  await expect(moveUp).toBeDisabled()
+  await expect(moveDown).toBeFocused()
+  await window.keyboard.press('ArrowDown')
+  await expect(moveDown).toBeFocused()
   await window.keyboard.press('Escape')
-  await expect(dragAnnouncement('Put section “Skills” back in its place.')).toHaveCount(1)
+  await expect(first).toBeFocused()
 
+  // Ostatnia sekcja: „Move down” wyłączone.
+  const last = rowHandle(window, 'section “Interests”')
+  await last.focus()
+  await window.keyboard.press('Space')
+  await expect(moveDown).toBeDisabled()
+  await expect(moveUp).toBeFocused()
+  await window.keyboard.press('Escape')
+
+  // Środkowa sekcja: strzałki przechodzą między pozycjami (w kółko), Enter wybiera.
+  const skills = rowHandle(window, 'section “Skills”')
+  await skills.focus()
+  await window.keyboard.press('Space')
+  await expect(moveUp).toBeFocused()
+  await window.keyboard.press('ArrowDown')
+  await expect(moveDown).toBeFocused()
+  await window.keyboard.press('ArrowDown')
+  await expect(moveUp).toBeFocused()
+  await window.keyboard.press('ArrowUp')
+  await expect(moveDown).toBeFocused()
+  await window.keyboard.press('Enter')
+  await expect(rowMenu()).toHaveCount(0)
+  await expect(preview.locator('.cv-page .cv-section-title')).toHaveText(['Work experience', 'Education', 'Languages', 'Skills'])
+  await expect(skills).toBeFocused()
+
+  // Tab z menu zamyka je.
+  await window.keyboard.press('Enter')
+  await expect(rowMenu()).toBeVisible()
+  await window.keyboard.press('Tab')
+  await expect(rowMenu()).toHaveCount(0)
+})
+
+test('moving a section, position, bullet or list item from its row menu reorders the form and the preview, keeps focus on the handle, tells the screen reader and is one Cmd+Z step', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  const sectionTitles = preview.locator('.cv-page .cv-section-title')
+  const pick = async (handle: Locator, item: 'Move up' | 'Move down') => {
+    await handle.click()
+    await rowMenu().getByRole('menuitem', { name: item }).click()
+    await expect(rowMenu()).toHaveCount(0)
+  }
+
+  // Sekcja: nowa kolejność, fokus na uchwycie przeniesionej sekcji, komunikat o nowej pozycji.
+  const languagesHandle = rowHandle(window, 'section “Languages”')
+  await pick(languagesHandle, 'Move up')
+  await expect(sectionTitles).toHaveText(['Work experience', 'Education', 'Languages', 'Skills'])
+  await expect(languagesHandle).toBeFocused()
+  await expect(announcement('Moved section “Languages” to position 3 of 5.')).toHaveCount(1)
+  // Żaden komunikat nie zawiera identyfikatora elementu z dokumentu.
+  expect((await window.locator('[aria-live]').allTextContents()).join(' ')).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/)
+  // Od razu dalej, z klawiatury.
+  await window.keyboard.press('Enter')
+  await window.keyboard.press('Enter')
+  await expect(sectionTitles).toHaveText(['Work experience', 'Languages', 'Education', 'Skills'])
+  await expect(languagesHandle).toBeFocused()
+  await expect(announcement('Moved section “Languages” to position 2 of 5.')).toHaveCount(1)
+
+  // Stanowisko.
+  const roles = preview.locator('.cv-page .cv-role')
+  const assistant = rowHandle(window, 'position “Procurement Assistant”')
+  await pick(assistant, 'Move up')
+  await expect(roles).toHaveText([
+    'Senior Procurement Specialist',
+    'Procurement Assistant',
+    'Procurement Specialist',
+    'Junior Customer Service Specialist'
+  ])
+  await expect(assistant).toBeFocused()
+  await expect(announcement('Moved position “Procurement Assistant” to position 2 of 4.')).toHaveCount(1)
+
+  // Punkt stanowiska: uchwyt nazwany numerem punktu, więc po przeniesieniu w dół fokus jest na „bullet 3”.
+  const position = window.locator('.form fieldset', { hasText: 'Senior Procurement Specialist' })
+  const secondBullet = 'Managing a portfolio of more than 60 suppliers of components and auxiliary materials.'
+  await expect(position.getByLabel('Bullet 2', { exact: true })).toHaveValue(secondBullet)
+  await pick(rowHandle(position, 'bullet 2'), 'Move down')
+  await expect(position.getByLabel('Bullet 3', { exact: true })).toHaveValue(secondBullet)
+  await expect(preview.locator('.cv-page .cv-bullets li').nth(2)).toHaveText(secondBullet)
+  await expect(rowHandle(position, 'bullet 3')).toBeFocused()
+  await expect(announcement(/^Moved bullet 2 to position 3 of \d+\.$/)).toHaveCount(1)
+
+  // Element sekcji-listy.
+  const languages = window.getByRole('region', { name: 'Languages', exact: true })
+  await pick(rowHandle(languages, 'item 2'), 'Move up')
+  await expect(languages.getByRole('textbox', { name: 'Item 1', exact: true })).toHaveValue('German – B2')
+  await expect(preview.locator('.cv-page .cv-plain-list li').first()).toHaveText('German – B2')
+  await expect(rowHandle(languages, 'item 1')).toBeFocused()
+  await expect(announcement('Moved item 2 to position 1 of 2.')).toHaveCount(1)
+
+  // Przeniesienie tuż po wpisaniu tekstu w tym samym wierszu: jedno Cmd+Z cofa samo przeniesienie, Cmd+Shift+Z je ponawia.
+  const item1 = languages.getByRole('textbox', { name: 'Item 1', exact: true })
+  await item1.click()
+  await window.keyboard.press('Meta+ArrowRight')
+  await window.keyboard.type('!')
+  await pick(rowHandle(languages, 'item 1'), 'Move down')
+  await expect(languages.getByRole('textbox', { name: 'Item 2', exact: true })).toHaveValue('German – B2!')
+  await window.keyboard.press('Meta+z')
+  await expect(item1).toHaveValue('German – B2!')
+  await expect(preview.locator('.cv-page .cv-plain-list li').first()).toHaveText('German – B2!')
+  await window.keyboard.press('Meta+Shift+z')
+  await expect(languages.getByRole('textbox', { name: 'Item 2', exact: true })).toHaveValue('German – B2!')
+})
+
+test('the row menu and its announcement are translated, and the menu is not cut off by the scrolled form panel', async () => {
   await app.close()
   await rm(join(outputDir, 'user-data'), { recursive: true })
   await launch({ language: 'pl' })
   await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
-  await moveUpWithKeyboard({
-    handle: 'Przeciągnij sekcję „Języki”, aby zmienić kolejność',
-    instructions:
-      'Aby podnieść element, naciśnij Spację lub Enter. Strzałkami przesuń go, Spacją lub Enterem upuść, Escape anuluje.',
-    pickedUp: 'Podniesiono sekcję „Języki”.',
-    moving: 'Przesuwasz sekcję „Języki”: pozycja 3 z 5.',
-    dropped: 'Upuszczono sekcję „Języki” na pozycji 3 z 5.'
-  })
+
+  const handle = window.getByRole('button', { name: 'Działania: sekcję „Języki”', exact: true })
+  await expect(handle).toHaveAccessibleDescription(
+    'Przeciągnij myszą, aby zmienić kolejność, albo naciśnij Spację lub Enter, aby otworzyć menu.'
+  )
+  await handle.click()
+  await expect(rowMenu().getByRole('menuitem')).toHaveText(['Przenieś wyżej', 'Przenieś niżej'])
+  await rowMenu().getByRole('menuitem', { name: 'Przenieś wyżej' }).click()
+  await expect(announcement('Przeniesiono sekcję „Języki” na pozycję 3 z 5.')).toHaveCount(1)
+
+  // Uchwyt ostatniej umiejętności przy dolnej krawędzi przewiniętego panelu: menu otwiera się nad nim i jest całe
+  // widoczne w oknie.
+  const skills = window.getByRole('region', { name: 'Umiejętności', exact: true })
+  const lastHandle = skills.getByRole('button', { name: 'Działania: element 5', exact: true })
+  await lastHandle.scrollIntoViewIfNeeded()
+  await window.locator('.editor-form').evaluate((form, handleTop) => {
+    form.scrollTop += handleTop - form.getBoundingClientRect().bottom + 40
+  }, (await lastHandle.boundingBox())!.y)
+  await lastHandle.click()
+  const menuBox = (await rowMenu().boundingBox())!
+  const formBox = (await window.locator('.editor-form').boundingBox())!
+  const viewportHeight = await window.evaluate(() => (globalThis as unknown as { innerHeight: number }).innerHeight)
+  expect(menuBox.y).toBeGreaterThanOrEqual(0)
+  expect(menuBox.y + menuBox.height).toBeLessThanOrEqual(Math.min(viewportHeight, formBox.y + formBox.height))
+  await expect(rowMenu().getByRole('menuitem', { name: 'Przenieś wyżej' })).toBeFocused()
+  await expect(rowMenu().getByRole('menuitem', { name: 'Przenieś niżej' })).toBeDisabled()
 })
 
 test('edits education and lists, reorders and hides sections, and forces page breaks in the preview and PDF', async () => {
@@ -1104,28 +1225,35 @@ test('edits education and lists, reorders and hides sections, and forces page br
   await languages.getByRole('button', { name: 'Remove item 2' }).click()
   await expect(preview).not.toContainText('German – B2')
 
-  // Kolejność sekcji, wpisów i punktów strzałkami.
-  await window.getByRole('button', { name: 'Move section “Languages” up' }).click()
+  // Kolejność sekcji, wpisów i punktów z menu wiersza.
+  const moveUp = async (handle: Locator) => {
+    await handle.click()
+    await rowMenu().getByRole('menuitem', { name: 'Move up' }).click()
+  }
+  await moveUp(rowHandle(window, 'section “Languages”'))
   await expect(preview.locator('.cv-page .cv-section-title')).toHaveText(['Work experience', 'Schooling', 'Languages', 'Skills'])
-  await window.getByRole('button', { name: 'Move position “Procurement Assistant” up' }).click()
+  await moveUp(rowHandle(window, 'position “Procurement Assistant”'))
   await expect(preview.locator('.cv-page .cv-role')).toHaveText([
     'Senior Procurement Specialist',
     'Procurement Assistant',
     'Procurement Specialist',
     'Junior Customer Service Specialist'
   ])
-  await window.locator('.form fieldset', { hasText: 'Senior Procurement Specialist' }).getByRole('button', { name: 'Move bullet 2 up' }).click()
+  await moveUp(rowHandle(window.locator('.form fieldset', { hasText: 'Senior Procurement Specialist' }), 'bullet 2'))
   await expect(preview.locator('.cv-page .cv-bullets li').first()).toHaveText(
     'Managing a portfolio of more than 60 suppliers of components and auxiliary materials.'
   )
 
-  // Przeciąganie za uchwyt: ostatnia umiejętność na pierwsze miejsce.
+  // Przeciąganie za uchwyt myszą: ostatnia umiejętność na pierwsze miejsce, bez otwierania menu, z komunikatem
+  // dla czytnika ekranu jak dotąd.
   const skills = window.getByRole('region', { name: 'Skills', exact: true })
-  await dragOnto(
-    skills.getByRole('button', { name: 'Drag item 5 to reorder' }),
-    skills.getByRole('button', { name: 'Drag item 1 to reorder' })
+  await expect(rowHandle(skills, 'item 5')).toHaveAccessibleDescription(
+    'Drag with the mouse to reorder, or press Space or Enter to open the menu.'
   )
+  await dragOnto(rowHandle(skills, 'item 5'), rowHandle(skills, 'item 1'))
   await expect(skills.getByRole('textbox', { name: 'Item 1', exact: true })).toHaveValue('Driving licence (category B)')
+  await expect(rowMenu()).toHaveCount(0)
+  await expect(announcement('Dropped item 5 at position 1 of 5.')).toHaveCount(1)
   await expect(preview.locator('.cv-page .cv-two-col', { hasText: 'Skills' })).toContainText('Driving licence (category B)')
 
   // Ukryta sekcja znika z podglądu, ale zostaje w formularzu.
@@ -2081,17 +2209,19 @@ test('summary, bullet, consent and clause text fields grow with their content in
   await expectGrowsWithContent(window.getByRole('form', { name: 'Clause' }).getByRole('textbox', { name: 'Text' }))
 })
 
-// Sterowanie kolejnością w wąskiej kolumnie: uchwyt, pod nim ↑, pod nią ↓, wyśrodkowane jedno pod drugim.
-async function expectOrderColumn(drag: Locator, up: Locator, down: Locator) {
-  const [handle, upBox, downBox] = await Promise.all([drag.boundingBox(), up.boundingBox(), down.boundingBox()])
-  const centre = (box: { x: number; width: number }) => box.x + box.width / 2
-  expect(upBox!.y).toBeGreaterThanOrEqual(handle!.y + handle!.height - 1)
-  expect(downBox!.y).toBeGreaterThanOrEqual(upBox!.y + upBox!.height - 1)
-  expect(Math.abs(centre(upBox!) - centre(handle!))).toBeLessThanOrEqual(1)
-  expect(Math.abs(centre(downBox!) - centre(handle!))).toBeLessThanOrEqual(1)
+// Uchwyt wiersza: sama ikona SVG bez ramki, cel kliknięcia co najmniej 24×24 px, podpowiedź z nazwą dostępności.
+async function expectRowHandle(handle: Locator) {
+  const box = (await handle.boundingBox())!
+  expect(box.width).toBeGreaterThanOrEqual(24)
+  expect(box.height).toBeGreaterThanOrEqual(24)
+  await expect(handle.locator('svg')).toHaveCount(1)
+  await expect(handle).toHaveText('')
+  await expect(handle).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
+  await expect(handle).toHaveCSS('cursor', 'grab')
+  await expect(handle).toHaveAttribute('title', (await handle.getAttribute('aria-label'))!)
 }
 
-test('list rows keep their order controls in a narrow column and remove with ✕, so a bullet gets most of the row', async () => {
+test('list rows have one handle instead of arrows and remove with ✕, so a bullet gets most of the row', async () => {
   await openFirstCv()
   const position = window.locator('.form fieldset').filter({ has: window.getByLabel('Job title') }).first()
 
@@ -2103,34 +2233,23 @@ test('list rows keep their order controls in a narrow column and remove with ✕
   const removeBullet = position.getByRole('button', { name: 'Remove bullet 2', exact: true })
   await expect(removeBullet).toHaveText('✕')
   await expect(removeBullet).toHaveAttribute('title', 'Remove bullet 2')
-  await expectOrderColumn(
-    position.getByRole('button', { name: 'Drag bullet 2 to reorder' }),
-    position.getByRole('button', { name: 'Move bullet 2 up' }),
-    position.getByRole('button', { name: 'Move bullet 2 down' })
-  )
+  // W wierszu: uchwyt, pole i ✕ – bez strzałek.
+  await expect(row.getByRole('button')).toHaveCount(2)
+  const handle = rowHandle(position, 'bullet 2')
+  await expectRowHandle(handle)
+  // Uchwyt ma wysokość jednowierszowego pola i stoi przy jego pierwszej linii.
+  const handleBox = (await handle.boundingBox())!
+  expect(Math.abs(handleBox.y - bulletBox!.y)).toBeLessThanOrEqual(1)
+  const singleLine = (await window.getByLabel('Full name').boundingBox())!.height
+  expect(Math.abs(handleBox.height - singleLine)).toBeLessThanOrEqual(1)
 
-  // Pozostałe listy: sekcje, stanowiska, wykształcenie, pozycje listy i kontakty.
-  await expectOrderColumn(
-    window.getByRole('button', { name: /^Drag section “.+” to reorder$/ }).nth(1),
-    window.getByRole('button', { name: /^Move section “.+” up$/ }).nth(1),
-    window.getByRole('button', { name: /^Move section “.+” down$/ }).nth(1)
-  )
-  await expectOrderColumn(
-    window.getByRole('button', { name: /^Drag position “.+” to reorder$/ }).first(),
-    window.getByRole('button', { name: /^Move position “.+” up$/ }).first(),
-    window.getByRole('button', { name: /^Move position “.+” down$/ }).first()
-  )
-  await expectOrderColumn(
-    window.getByRole('button', { name: /^Drag entry “.+” to reorder$/ }).first(),
-    window.getByRole('button', { name: /^Move entry “.+” up$/ }).first(),
-    window.getByRole('button', { name: /^Move entry “.+” down$/ }).first()
-  )
+  // Pozostałe listy: sekcje, stanowiska, wykształcenie i pozycje listy.
+  await expectRowHandle(window.getByRole('button', { name: /^Actions for section “.+”$/ }).nth(1))
+  await expectRowHandle(window.getByRole('button', { name: /^Actions for position “.+”$/ }).first())
+  await expectRowHandle(window.getByRole('button', { name: /^Actions for entry “.+”$/ }).first())
   const languages = window.getByRole('region', { name: 'Languages', exact: true })
-  await expectOrderColumn(
-    languages.getByRole('button', { name: 'Drag item 2 to reorder' }),
-    languages.getByRole('button', { name: 'Move item 2 up' }),
-    languages.getByRole('button', { name: 'Move item 2 down' })
-  )
+  await expectRowHandle(rowHandle(languages, 'item 2'))
+  await expect(window.getByRole('button', { name: /^(Move .+ (up|down)|Drag .+ to reorder)$/ })).toHaveCount(0)
   for (const remove of [
     languages.getByRole('button', { name: 'Remove item 2', exact: true }),
     window.getByRole('button', { name: 'Remove contact 1', exact: true })

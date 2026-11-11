@@ -229,9 +229,9 @@ export const es: Dictionary = {
     removeListItem: (number) => `Quitar el elemento ${number}`,
     addListItem: 'Añadir elemento',
     order: {
-      moveUp: (item) => `Subir ${item}`,
-      moveDown: (item) => `Bajar ${item}`,
-      drag: (item) => `Arrastra ${item} para reordenar`,
+      actions: (item) => `Acciones para ${item}`,
+      moveUp: 'Subir',
+      moveDown: 'Bajar',
       section: (name) => `la sección «${name}»`,
       position: (name) => `el puesto «${name}»`,
       education: (name) => `la entrada «${name}»`,
@@ -240,8 +240,9 @@ export const es: Dictionary = {
       pickedUp: (item) => `Has tomado ${item}.`,
       movedOver: (item, position, total) => `Moviendo ${item}: posición ${position} de ${total}.`,
       dropped: (item, position, total) => `Has soltado ${item} en la posición ${position} de ${total}.`,
+      moved: (item, position, total) => `Has movido ${item} a la posición ${position} de ${total}.`,
       cancelled: (item) => `Has devuelto ${item} a su sitio.`,
-      instructions: 'Para tomar un elemento, pulsa Espacio o Intro. Muévelo con las flechas, suéltalo con Espacio o Intro y cancela con Escape.'
+      instructions: 'Arrastra con el ratón para reordenar, o pulsa Espacio o Intro para abrir el menú.'
     },
     consent: {
       title: 'Cláusula de consentimiento',
