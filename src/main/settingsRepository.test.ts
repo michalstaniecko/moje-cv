@@ -294,6 +294,25 @@ describe('update check state', () => {
   })
 })
 
+describe('form width preference', () => {
+  test('is not set before the form has been resized', async () => {
+    expect((await repository.get()).formWidth).toBeUndefined()
+  })
+
+  test('a chosen form width is kept in the settings file next to the other preferences', async () => {
+    await repository.setAppearance('dark')
+    await repository.setFormWidth(520)
+
+    expect(await createSettingsRepository(settingsPath).get()).toMatchObject({ appearance: 'dark', formWidth: 520 })
+    expect(JSON.parse(await readFile(settingsPath, 'utf8')).formWidth).toBe(520)
+  })
+
+  test('a width that is not a positive whole number is rejected and not saved', async () => {
+    for (const width of [0, -10, 12.5]) await expect(repository.setFormWidth(width)).rejects.toThrow()
+    expect((await repository.get()).formWidth).toBeUndefined()
+  })
+})
+
 describe('damaged settings file', () => {
   const damagedFiles = {
     'invalid JSON': '{ "schemaVersion": 1, "clauses": ',
@@ -313,6 +332,7 @@ describe('damaged settings file', () => {
       await expect(repository.setAppearance('dark')).rejects.toThrow()
       await expect(repository.setAppearance(null)).rejects.toThrow()
       await expect(repository.setWindowState({ x: 0, y: 0, width: 1000, height: 700, maximized: false })).rejects.toThrow()
+      await expect(repository.setFormWidth(520)).rejects.toThrow()
 
       expect(await readFile(settingsPath, 'utf8')).toBe(content)
     })

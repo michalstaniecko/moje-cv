@@ -142,6 +142,9 @@ export const appSettingsSchema = z.object({
       maximized: z.boolean()
     })
     .optional(),
+  // Szerokość formularza w edytorze CV w px (separator między formularzem a podglądem) – jedna dla całej aplikacji.
+  // Brak pola = szerokość domyślna (bez podbijania wersji schematu).
+  formWidth: z.int().positive().optional(),
   // Stan sprawdzania nowej wersji w `.dmg` (ADR-0006): kiedy ostatnio się udało, jaka wersja była wtedy najnowsza
   // i którą wersję użytkownik zamknął w pasku. Brak pola = sprawdzenie nigdy się nie odbyło (bez podbijania wersji schematu).
   updateCheck: z

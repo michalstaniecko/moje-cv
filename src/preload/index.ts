@@ -34,7 +34,8 @@ const api: Api = {
     addClause: (content) => ipcRenderer.invoke('settings:add-clause', content),
     updateClause: (id, content) => ipcRenderer.invoke('settings:update-clause', id, content),
     deleteClause: (id) => ipcRenderer.invoke('settings:delete-clause', id),
-    setDefaultClause: (id) => ipcRenderer.invoke('settings:set-default-clause', id)
+    setDefaultClause: (id) => ipcRenderer.invoke('settings:set-default-clause', id),
+    setFormWidth: (width) => ipcRenderer.invoke('settings:set-form-width', width)
   },
   photo: {
     pick: () => ipcRenderer.invoke('photo:pick')
