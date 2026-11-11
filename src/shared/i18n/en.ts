@@ -195,6 +195,7 @@ export const en = {
     leaveUnsaved: 'Your changes weren’t saved. Leave anyway?',
     leaveAnyway: 'Leave anyway',
     stayInEditor: 'Stay in the editor',
+    resizePanes: 'Resize the form and the preview',
     renameCv: (name: string) => `Rename CV: ${name}`,
     removed: 'Removed.',
     undoRemoval: 'Undo',

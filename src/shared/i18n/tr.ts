@@ -175,6 +175,7 @@ export const tr: Dictionary = {
     leaveUnsaved: 'Değişiklikleriniz kaydedilmedi. Yine de çıkılsın mı?',
     leaveAnyway: 'Yine de çık',
     stayInEditor: 'Düzenleyicide kal',
+    resizePanes: 'Form ve önizleme genişliğini değiştir',
     renameCv: (name) => `CV’yi yeniden adlandır: ${name}`,
     removed: 'Kaldırıldı.',
     undoRemoval: 'Geri Al',

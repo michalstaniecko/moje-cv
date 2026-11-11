@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useStore } from 'zustand'
 import type { MenuCommand } from '../../shared/api'
 import type { PaginateResult } from './domain/paginate'
@@ -6,6 +6,7 @@ import { cvDisplayName, type Clause, type ClauseContent, type CvDocument } from 
 import { createCvEditor, type CvEditor } from './editor/cvEditor'
 import { CvForm } from './editor/CvForm'
 import { updateName } from './editor/documentEdits'
+import { PaneSeparator, useFormWidth } from './editor/PaneSeparator'
 import { RemovalMessage, useRemovalUndo } from './editor/removalUndo'
 import { useDictionary } from './i18n'
 import { useMenuCommands } from './menuCommands'
@@ -65,6 +66,8 @@ export function CvScreen({
     oversizedCount.current = layout.oversizedIds.length
   }, [])
   useEditorLifecycle(editor)
+  const panes = useRef<HTMLDivElement>(null)
+  const formWidth = useFormWidth(panes)
 
   // Ponowiony albo kolejny zapis kończy pytanie o wyjście; przy następnym błędzie pasek wraca do zwykłego komunikatu.
   useEffect(() => {
@@ -227,12 +230,13 @@ export function CvScreen({
       {exportState.status === 'confirming' && (
         <ExportCutOffDialog onExport={() => void exportPdf({ confirmed: true })} onCancel={cancelExport} />
       )}
-      <div className="editor-panes">
+      <div ref={panes} className="editor-panes" style={{ '--form-width': `${formWidth.width}px` } as CSSProperties}>
         {/* Początek pomiaru odpowiedzi podglądu na klawisz (preview/keystrokeTiming.ts). */}
         <aside className="editor-form" onInput={(event) => markInput(event.timeStamp)}>
           <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} onRemove={removal.remove} />
           <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
         </aside>
+        <PaneSeparator width={formWidth.width} panesWidth={formWidth.panesWidth} onChange={formWidth.change} />
         <PreviewPane document={document} onLayout={onLayout} />
       </div>
     </div>
