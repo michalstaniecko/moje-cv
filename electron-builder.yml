@@ -2,7 +2,7 @@
 # notaryzacja i stempel; wymaga certyfikatu w pęku kluczy i zmiennych `APPLE_*`, patrz docs/instalacja.md).
 # Build lokalny bez certyfikatu: `pnpm dist:mac:local` (electron-builder.local.yml).
 # Cele Windows/Linux można dopisać obok `mac` – reszta konfiguracji jest wspólna.
-appId: com.michalstaniecko.mojecv
+appId: com.michalstaniecko.cvdrawer
 artifactName: CV-Drawer-${version}.${ext}
 directories:
   output: dist

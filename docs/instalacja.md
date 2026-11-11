@@ -42,7 +42,7 @@ Wynik: `dist-local/CV-Drawer-<wersja>-local.dmg`. Ten sam sandbox, bundle ID i m
 
 Entitlements sandboksu: `build/entitlements.mac.plist` (`.dmg`), `build/entitlements.mas.plist` (Mac App Store, bez dostępu do sieci) i wspólny dla obu `build/entitlements.inherit.plist` (procesy pomocnicze Electrona). Wpisy `cs.allow-jit` i `cs.allow-unsigned-executable-memory` pozwalają V8 działać z hardened runtime. `build/container-migration.plist` trafia do `Contents/Resources` i przenosi dane wersji bez sandboksu do kontenera (ADR-0003).
 
-`pnpm test:e2e:packaged` nie wymaga certyfikatu: buduje lokalny `.dmg` (`pnpm dist:mac:local`), sprawdza podpis aplikacji z niego (sandbox, entitlements, migracja) i uruchamia testy e2e na spakowanej aplikacji (w tym eksport PDF z osadzonymi fontami). Testy idą na osobnym buildzie testowym (`pnpm dist:e2e`, `electron-builder.e2e.yml`, wynik w `dist-e2e/`): ten sam sandbox, ale osobny bundle ID `com.michalstaniecko.mojecv.e2e` (osobny kontener), bez migracji danych i z dwoma dodatkami dla Playwrighta (`build/entitlements.e2e.plist`). Dzięki temu testy nigdy nie przenoszą ani nie zmieniają Twoich prawdziwych CV.
+`pnpm test:e2e:packaged` nie wymaga certyfikatu: buduje lokalny `.dmg` (`pnpm dist:mac:local`), sprawdza podpis aplikacji z niego (sandbox, entitlements, migracja) i uruchamia testy e2e na spakowanej aplikacji (w tym eksport PDF z osadzonymi fontami). Testy idą na osobnym buildzie testowym (`pnpm dist:e2e`, `electron-builder.e2e.yml`, wynik w `dist-e2e/`): ten sam sandbox, ale osobny bundle ID `com.michalstaniecko.cvdrawer.e2e` (osobny kontener), bez migracji danych i z dwoma dodatkami dla Playwrighta (`build/entitlements.e2e.plist`). Dzięki temu testy nigdy nie przenoszą ani nie zmieniają Twoich prawdziwych CV.
 
 **Uwaga:** nie uruchamiaj na swoim koncie `dist/mac-universal/CV Drawer.app`, `dist-local/mac-universal/CV Drawer.app` ani `.dmg` z sandboksem „na próbę”, jeśli zależy Ci na danych w `~/Library/Application Support/Moje CV`: pierwsze uruchomienie zakłada kontener i od razu przenosi do niego ten folder (dawne wersje, `pnpm dev` i `pnpm test:e2e` przestaną go widzieć). Migrację testuj na osobnym koncie macOS (`docs/release-checklist.md`).
 
@@ -51,6 +51,6 @@ Testy e2e (`pnpm test:e2e`) domyślnie uruchamiają aplikację w tle: okno jest 
 ## Dane aplikacji i sandbox
 
 CV Drawer działa w App Sandbox w każdym kanale (ADR-0003), więc dane leżą w kontenerze:
-`~/Library/Containers/com.michalstaniecko.mojecv/Data/Library/Application Support/Moje CV` (nazwa folderu przypięta do „Moje CV”, niezależnie od `productName`). Wersja z Mac App Store i z `.dmg` dzielą ten kontener.
+`~/Library/Containers/com.michalstaniecko.cvdrawer/Data/Library/Application Support/Moje CV` (nazwa folderu przypięta do „Moje CV”, niezależnie od `productName`). Wersja z Mac App Store i z `.dmg` dzielą ten kontener.
 
 Wersje bez sandboksu (do 0.6.0) trzymały dane w `~/Library/Application Support/Moje CV`. Przy pierwszym uruchomieniu wersji z sandboksem macOS przenosi ten folder do kontenera (`build/container-migration.plist`); dzieje się to tylko raz, przy zakładaniu kontenera. Plan B dla użytkownika (eksport do `.json` w starej wersji i import w nowej) opisuje strona pomocy.

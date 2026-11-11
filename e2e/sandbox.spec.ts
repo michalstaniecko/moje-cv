@@ -41,7 +41,7 @@ test.describe('the distributed .dmg app', () => {
 
   test('keeps the shared bundle ID of both channels', () => {
     const info = plist(readFileSync(join(distributedApp!, 'Contents/Info.plist'), 'utf8'))
-    expect(info['CFBundleIdentifier']).toBe('com.michalstaniecko.mojecv')
+    expect(info['CFBundleIdentifier']).toBe('com.michalstaniecko.cvdrawer')
   })
 
   test('lets Electron helpers inherit the sandbox of the app', () => {

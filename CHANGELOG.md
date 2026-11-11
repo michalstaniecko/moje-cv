@@ -8,7 +8,7 @@
 ### Changed
 - First release in the Mac App Store, alongside the `.dmg` on GitHub Releases. Both versions are free and share the same CV library on your Mac.
 - The `.dmg` is signed with an Apple Developer ID certificate and notarized by Apple, so macOS opens CV Drawer without the "Open Anyway" procedure in System Settings.
-- CV Drawer runs in the macOS App Sandbox. CVs and settings are stored in the app's container (`~/Library/Containers/com.michalstaniecko.mojecv`), which the Mac App Store and `.dmg` versions share.
+- CV Drawer runs in the macOS App Sandbox. CVs and settings are stored in the app's container (`~/Library/Containers/com.michalstaniecko.cvdrawer`), which the Mac App Store and `.dmg` versions share.
 - Template thumbnails in the CV editor always show the Sample CV in the CV language, in the CV's accent colour and font, so they show how the Templates differ even for a new, empty CV.
 
 ## [0.6.0] – 2026-11-08

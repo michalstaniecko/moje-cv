@@ -19,7 +19,7 @@
          electron-builder.yml); w sandboksie tylko w obrębie tej grupy aplikacji. Identyfikator zespołu Apple Developer. -->
     <key>com.apple.security.application-groups</key>
     <array>
-      <string>8A9ZJPAGY8.com.michalstaniecko.mojecv</string>
+      <string>8A9ZJPAGY8.com.michalstaniecko.cvdrawer</string>
     </array>
     <!-- V8 przy hardened runtime (notaryzacja, #43); bez hardened runtime nie mają znaczenia. -->
     <key>com.apple.security.cs.allow-jit</key>
