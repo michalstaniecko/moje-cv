@@ -645,6 +645,9 @@ textarea:focus-visible {
 }
 
 .form-group legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 0 4px;
   font-weight: 600;
 }
@@ -771,18 +774,34 @@ textarea:focus-visible {
   padding-top: 0;
 }
 
-/* Kompaktowe przyciski kolejności i uchwyt przeciągania. */
+/* Kompaktowe sterowanie kolejnością: wąska kolumna z uchwytem, a pod nim strzałkami ↑ i ↓, żeby pole obok
+   zajmowało resztę szerokości wiersza. */
 .order-controls {
   display: inline-flex;
+  flex-direction: column;
+  align-items: center;
   flex-shrink: 0;
-  gap: 2px;
-  margin-right: 6px;
-  vertical-align: middle;
+  gap: 1px;
 }
 
 .order-controls button {
-  min-width: 24px;
-  padding: 1px 4px;
+  width: 20px;
+  min-width: 0;
+  padding: 0;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+/* Usunięcie elementu w wierszu listy: sama ikona ✕ (etykieta w podpowiedzi i dla czytnika ekranu). */
+.row-remove {
+  width: 24px;
+  padding: 3px 0;
+  color: var(--ui-text-muted);
+}
+
+.row-remove:hover:not(:disabled) {
+  color: var(--ui-error);
+  border-color: var(--ui-error);
 }
 
 .drag-handle {

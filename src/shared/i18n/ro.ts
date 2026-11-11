@@ -178,7 +178,6 @@ export const ro: Dictionary = {
     renameCv: (name) => `Redenumește CV-ul: ${name}`,
     removed: 'Eliminat.',
     undoRemoval: 'Anulează',
-    remove: 'Elimină',
     cvDesign: 'Designul CV-ului',
     accentColor: 'Culoare de accent',
     font: 'Font',

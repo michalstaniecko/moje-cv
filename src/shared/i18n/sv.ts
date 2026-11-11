@@ -183,7 +183,6 @@ export const sv: Dictionary = {
     renameCv: (name) => `Byt namn på cv: ${name}`,
     removed: 'Borttaget.',
     undoRemoval: 'Ångra',
-    remove: 'Ta bort',
     cvDesign: 'Cv-design',
     accentColor: 'Accentfärg',
     font: 'Typsnitt',

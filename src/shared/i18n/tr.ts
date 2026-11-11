@@ -178,7 +178,6 @@ export const tr: Dictionary = {
     renameCv: (name) => `CV’yi yeniden adlandır: ${name}`,
     removed: 'Kaldırıldı.',
     undoRemoval: 'Geri Al',
-    remove: 'Kaldır',
     cvDesign: 'CV tasarımı',
     accentColor: 'Vurgu rengi',
     font: 'Yazı tipi',

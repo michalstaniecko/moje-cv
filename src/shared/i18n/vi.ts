@@ -178,7 +178,6 @@ export const vi: Dictionary = {
     renameCv: (name) => `Đổi tên CV: ${name}`,
     removed: 'Đã xóa.',
     undoRemoval: 'Hoàn tác',
-    remove: 'Xóa',
     cvDesign: 'Thiết kế CV',
     accentColor: 'Màu nhấn',
     font: 'Phông chữ',

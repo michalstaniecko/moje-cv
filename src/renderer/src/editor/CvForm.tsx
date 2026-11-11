@@ -176,13 +176,10 @@ function HeaderFields({ editor, header }: { editor: CvEditor; header: CvDocument
                 editor.edit(updateContact(contact.id, { value: event.target.value }), `contact:${contact.id}:value`)
               }
             />
-            <button
-              type="button"
-              aria-label={t.removeContact(index + 1)}
+            <RowRemoveButton
+              label={t.removeContact(index + 1)}
               onClick={() => remove(removeContact(contact.id), { entryId: contact.id, listId: 'contacts' })}
-            >
-              {t.remove}
-            </button>
+            />
           </div>
         ))}
         <button type="button" data-add-for="contacts" onClick={() => editor.edit(addContact())}>
@@ -382,15 +379,12 @@ function ExperienceItemFields({
                   )
                 }
               />
-              <button
-                type="button"
-                aria-label={t.removeBullet(index + 1)}
+              <RowRemoveButton
+                label={t.removeBullet(index + 1)}
                 onClick={() =>
                   remove(removeBullet(sectionId, item.id, bullet.id), { entryId: bullet.id, listId: `bullets:${item.id}` })
                 }
-              >
-                {t.remove}
-              </button>
+              />
             </div>
           )}
         </SortableList>
@@ -502,13 +496,10 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
                 editor.edit(updateListItem(sectionId, item.id, event.target.value), `list:${item.id}:text`)
               }
             />
-            <button
-              type="button"
-              aria-label={t.removeListItem(index + 1)}
+            <RowRemoveButton
+              label={t.removeListItem(index + 1)}
               onClick={() => remove(removeListItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
-            >
-              {t.remove}
-            </button>
+            />
           </div>
         )}
       </SortableList>
@@ -641,5 +632,15 @@ function SaveAsNewClause({ text, onSave }: { text: string; onSave: (name: string
         </span>
       )}
     </form>
+  )
+}
+
+// Usunięcie elementu w wierszu listy: kompaktowa ikona ✕ z podpowiedzią, która powtarza etykietę dostępności
+// (np. „Usuń punkt 3”). Usuwanie całych wpisów (stanowisko, wykształcenie) zostaje tekstowe.
+function RowRemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" className="row-remove" aria-label={label} title={label} onClick={onClick}>
+      ✕
+    </button>
   )
 }
