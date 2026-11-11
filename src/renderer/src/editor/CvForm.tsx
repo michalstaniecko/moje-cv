@@ -367,6 +367,9 @@ function ExperienceItemFields({
           items={item.bullets}
           label={(_bullet, index) => t.order.bullet(index + 1)}
           onMove={(bulletId, toIndex) => editor.edit(moveBullet(sectionId, item.id, bulletId, toIndex))}
+          onRemove={(bullet) =>
+            remove(removeBullet(sectionId, item.id, bullet.id), { entryId: bullet.id, listId: `bullets:${item.id}` })
+          }
         >
           {(bullet, row, index) => (
             <div className="form-row" data-entry-id={bullet.id}>
@@ -388,12 +391,6 @@ function ExperienceItemFields({
                     split: (at) => editor.edit(splitBullet(sectionId, item.id, bullet.id, at)),
                     remove: () => editor.edit(removeBullet(sectionId, item.id, bullet.id))
                   })
-                }
-              />
-              <RowRemoveButton
-                label={t.removeBullet(index + 1)}
-                onClick={() =>
-                  remove(removeBullet(sectionId, item.id, bullet.id), { entryId: bullet.id, listId: `bullets:${item.id}` })
                 }
               />
             </div>
@@ -496,6 +493,7 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
         items={items}
         label={(_item, index) => t.order.listItem(index + 1)}
         onMove={(id, toIndex) => editor.edit(moveItem(sectionId, id, toIndex))}
+        onRemove={(item) => remove(removeListItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
       >
         {(item, row, index) => (
           <div className="form-row" data-entry-id={item.id}>
@@ -514,10 +512,6 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
                   remove: () => editor.edit(removeListItem(sectionId, item.id))
                 })
               }
-            />
-            <RowRemoveButton
-              label={t.removeListItem(index + 1)}
-              onClick={() => remove(removeListItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
             />
           </div>
         )}
@@ -654,8 +648,8 @@ function SaveAsNewClause({ text, onSave }: { text: string; onSave: (name: string
   )
 }
 
-// Usunięcie elementu w wierszu listy: kompaktowa ikona ✕ z podpowiedzią, która powtarza etykietę dostępności
-// (np. „Usuń punkt 3”). Usuwanie całych wpisów (stanowisko, wykształcenie) zostaje tekstowe.
+// Usunięcie kontaktu: kompaktowa ikona ✕ z podpowiedzią, która powtarza etykietę dostępności (np. „Usuń kontakt 3”).
+// Punkty i elementy list usuwa się z menu wiersza, a całe wpisy (stanowisko, wykształcenie) tekstowym przyciskiem.
 function RowRemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button type="button" className="row-remove" aria-label={label} title={label} onClick={onClick}>

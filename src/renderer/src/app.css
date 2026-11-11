@@ -878,7 +878,7 @@ textarea:focus-visible {
   white-space: nowrap;
 }
 
-/* Usunięcie elementu w wierszu listy: sama ikona ✕ (etykieta w podpowiedzi i dla czytnika ekranu). */
+/* Usunięcie kontaktu: sama ikona ✕ (etykieta w podpowiedzi i dla czytnika ekranu). */
 .row-remove {
   width: 24px;
   padding: 3px 0;
