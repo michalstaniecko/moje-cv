@@ -24,6 +24,10 @@ _Avoid_: Example, demo, template (that is the visual design), placeholder
 One of the predefined visual designs a CV document is rendered with: page arrangement, typography and decoration. Built into the app and chosen per CV; the user cannot edit templates. Concerns only the look, never the CV's content: switching templates loses nothing.
 _Avoid_: Theme, layout, skin, style (as names for the whole design)
 
+**Template thumbnail**:
+The reduced first page shown for each Template where the user chooses one. Always shows the Sample CV in the CV language, in the accent colour and font of the CV being edited, so it looks the same whether that CV is empty or full and never shows the CV's own content.
+_Avoid_: Theme preview, live preview (that is the full-size view of the CV being edited)
+
 **DOCX export**:
 A copy of a single CV saved as a DOCX file for further editing in a word processor (Word, Pages, LibreOffice, Google Docs). It uses one simplified layout shared by every Template and carries over only the content, the accent colour, the font and the CV language, so it never reproduces a Template exactly: the PDF stays the faithful rendering of the CV pages. One-way: the app never reads a DOCX back.
 _Avoid_: Word export, editable PDF, DOCX template, conversion

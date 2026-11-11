@@ -653,6 +653,8 @@ test('Default content follows the interface language at creation and never chang
   await expect(window.getByRole('heading', { name: 'New CV' })).toBeVisible()
   await expect.poll(() => inputValues(window.locator('.form-contact-label'))).toEqual(['Phone', 'Email', 'LinkedIn', 'City'])
   await expect.poll(() => inputValues(window.getByLabel(/^Section title/))).toEqual(['Work experience', 'Education', 'Skills', 'Languages'])
+  // Puste CV, a Template thumbnails i tak pokazują Sample CV w CV language (#99).
+  await expect(window.locator('.template-thumbnail .cv-page .cv-name')).toHaveText(['Jane Example', 'Jane Example', 'Jane Example'])
   await window.getByRole('button', { name: '← CV library' }).click()
 
   // Po zmianie języka istniejące CV są bez zmian, a nowe treści powstają po polsku.
@@ -669,6 +671,7 @@ test('Default content follows the interface language at creation and never chang
   await polishRows.filter({ hasText: 'Nowe CV' }).getByRole('button', { name: 'Otwórz' }).click()
   await expect.poll(() => inputValues(window.locator('.form-contact-label'))).toEqual(['Tel', 'E-mail', 'LinkedIn', 'Miasto'])
   await expect.poll(() => inputValues(window.getByLabel(/^Tytuł sekcji/))).toEqual(['Doświadczenie zawodowe', 'Wykształcenie', 'Umiejętności', 'Języki'])
+  await expect(window.locator('.template-thumbnail .cv-page .cv-name')).toHaveText(['Anna Przykładowa', 'Anna Przykładowa', 'Anna Przykładowa'])
 })
 
 test('the arrow next to New CV adds the Sample CV again in the interface language, clearing the tag filter', async () => {
@@ -1270,7 +1273,7 @@ test('Cyrillic text in a Lato CV is rendered with the bundled Source Sans 3, not
   expect(pdf.embeddedFonts.every((name) => name.includes('Lato') || name.includes('SourceSans3'))).toBe(true)
 })
 
-test('picks the Template next to the colour and font from a live thumbnail of the CV, without changing the preview or the PDF', async () => {
+test('picks the Template next to the colour and font from a thumbnail of the Sample CV in the CV colour and font, without changing the preview or the PDF', async () => {
   const pdfPath = join(outputDir, 'template.pdf')
   await stubSaveDialog(pdfPath)
   await openFirstCv()
@@ -1286,7 +1289,8 @@ test('picks the Template next to the colour and font from a live thumbnail of th
   await window.keyboard.press('Tab')
   await expect(classic).toBeFocused()
 
-  // Miniatura: pomniejszona pierwsza strona bieżącego CV w tym szablonie, odświeżana po edycji treści, koloru i fontu.
+  // Template thumbnail: pomniejszona pierwsza strona Sample CV w tym szablonie, w kolorze i foncie bieżącego CV;
+  // treść bieżącego CV do niej nie trafia (#99).
   const thumbnail = picker
     .locator('label', { has: window.getByRole('radio', { name: 'Classic' }) })
     .locator('.cv.cv-template-classic')
@@ -1308,7 +1312,8 @@ test('picks the Template next to the colour and font from a live thumbnail of th
   expect(thumbnailBox!.width).toBeLessThan(previewPageBox!.width / 2)
 
   await window.getByLabel('Full name').fill('Ewa Nowak')
-  await expect(thumbnail.locator('.cv-page .cv-name')).toHaveText('Ewa Nowak')
+  await expect(preview.locator('.cv-page .cv-name')).toHaveText('Ewa Nowak')
+  await expect(thumbnail.locator('.cv-page .cv-name')).toHaveText('Jane Example')
   await window.getByLabel('Accent color').fill('#8a2be2')
   await expect(thumbnail.locator('.cv-page .cv-name')).toHaveCSS('color', 'rgb(138, 43, 226)')
   await window.getByLabel('Font').selectOption('arimo')

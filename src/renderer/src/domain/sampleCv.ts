@@ -154,3 +154,14 @@ const texts: Record<InterfaceLanguage, SampleCvText> = { cs, de, en, es, fr, id,
 export const sampleCvs = Object.fromEntries(
   Object.entries(texts).map(([language, text]) => [language, sampleCv(language as InterfaceLanguage, text)])
 ) as Record<InterfaceLanguage, CvDocument>
+
+// Dokument dla Template thumbnail: zawsze Sample CV w CV language edytowanego CV, z jego kolorem akcentu i fontem.
+// Funkcja nie dostaje treści edytowanego CV – miniatury wyglądają tak samo przy pustym i pełnym CV.
+export function templateThumbnailCv({
+  accentColor,
+  font,
+  language
+}: Pick<CvDocument['settings'], 'accentColor' | 'font' | 'language'>): CvDocument {
+  const sample = sampleCvs[language]
+  return { ...sample, settings: { ...sample.settings, accentColor, font } }
+}
