@@ -269,6 +269,10 @@ test('each Help menu item opens exactly its own address in the system browser, a
   await app.close()
   await launch({ language: null })
   await chooseLanguage('English')
+  // Menu przebudowuje się dopiero po zapisaniu wyboru na dysk, więc na systemie po polsku trzeba poczekać na angielską Pomoc.
+  await expect.poll(() => menuLabels('Help')).toMatchObject({
+    items: ['CV Drawer Help', 'Privacy Policy', 'Report a Problem…', 'Check for Updates…', 'Support CV Drawer…']
+  })
   await stubOpenExternal()
   const expected = [
     ['CV Drawer Help', HELP_URL],
