@@ -211,7 +211,6 @@ export const it: Dictionary = {
     currentlyWorkHere: 'Lavoro ancora qui',
     bullets: 'Punti elenco',
     bullet: (number) => `Punto ${number}`,
-    removeBullet: (number) => `Rimuovi punto ${number}`,
     addBullet: 'Aggiungi punto',
     newEducation: 'Nuovo titolo di studio',
     addEducation: 'Aggiungi titolo di studio',
@@ -226,12 +225,18 @@ export const it: Dictionary = {
     graduation: 'Data di conseguimento',
     endBeforeStart: 'La data di fine è precedente alla data di inizio.',
     listItem: (number) => `Voce ${number}`,
-    removeListItem: (number) => `Rimuovi voce ${number}`,
     addListItem: 'Aggiungi voce',
     order: {
-      moveUp: (item) => `Sposta su ${item}`,
-      moveDown: (item) => `Sposta giù ${item}`,
-      drag: (item) => `Trascina ${item} per riordinare`,
+      handle: {
+        section: (name) => `Azioni per la sezione «${name}»`,
+        position: (name) => `Azioni per la posizione «${name}»`,
+        education: (name) => `Azioni per la voce «${name}»`,
+        bullet: (number) => `Azioni per il punto ${number}`,
+        listItem: (number) => `Azioni per la voce ${number}`
+      },
+      moveUp: 'Sposta su',
+      moveDown: 'Sposta giù',
+      remove: 'Rimuovi',
       section: (name) => `la sezione «${name}»`,
       position: (name) => `la posizione «${name}»`,
       education: (name) => `la voce «${name}»`,
@@ -240,8 +245,9 @@ export const it: Dictionary = {
       pickedUp: (item) => `Hai preso ${item}.`,
       movedOver: (item, position, total) => `Stai spostando ${item}: posizione ${position} di ${total}.`,
       dropped: (item, position, total) => `Hai rilasciato ${item} in posizione ${position} di ${total}.`,
+      moved: (item, position, total) => `Hai spostato ${item} in posizione ${position} di ${total}.`,
       cancelled: (item) => `Hai rimesso ${item} al suo posto.`,
-      instructions: 'Per prendere un elemento, premi Spazio o Invio. Spostalo con i tasti freccia, rilascialo con Spazio o Invio, oppure annulla con Esc.'
+      instructions: 'Trascina con il mouse per riordinare, oppure premi Spazio o Invio per aprire il menu.'
     },
     consent: {
       title: 'Clausola di consenso',

@@ -211,7 +211,6 @@ export const es: Dictionary = {
     currentlyWorkHere: 'Trabajo aquí actualmente',
     bullets: 'Viñetas',
     bullet: (number) => `Viñeta ${number}`,
-    removeBullet: (number) => `Quitar la viñeta ${number}`,
     addBullet: 'Añadir viñeta',
     newEducation: 'Nueva formación',
     addEducation: 'Añadir formación',
@@ -226,12 +225,18 @@ export const es: Dictionary = {
     graduation: 'Fecha de finalización',
     endBeforeStart: 'La fecha de fin es anterior a la fecha de inicio.',
     listItem: (number) => `Elemento ${number}`,
-    removeListItem: (number) => `Quitar el elemento ${number}`,
     addListItem: 'Añadir elemento',
     order: {
-      moveUp: (item) => `Subir ${item}`,
-      moveDown: (item) => `Bajar ${item}`,
-      drag: (item) => `Arrastra ${item} para reordenar`,
+      handle: {
+        section: (name) => `Acciones para la sección «${name}»`,
+        position: (name) => `Acciones para el puesto «${name}»`,
+        education: (name) => `Acciones para la entrada «${name}»`,
+        bullet: (number) => `Acciones para la viñeta ${number}`,
+        listItem: (number) => `Acciones para el elemento ${number}`
+      },
+      moveUp: 'Subir',
+      moveDown: 'Bajar',
+      remove: 'Quitar',
       section: (name) => `la sección «${name}»`,
       position: (name) => `el puesto «${name}»`,
       education: (name) => `la entrada «${name}»`,
@@ -240,8 +245,9 @@ export const es: Dictionary = {
       pickedUp: (item) => `Has tomado ${item}.`,
       movedOver: (item, position, total) => `Moviendo ${item}: posición ${position} de ${total}.`,
       dropped: (item, position, total) => `Has soltado ${item} en la posición ${position} de ${total}.`,
+      moved: (item, position, total) => `Has movido ${item} a la posición ${position} de ${total}.`,
       cancelled: (item) => `Has devuelto ${item} a su sitio.`,
-      instructions: 'Para tomar un elemento, pulsa Espacio o Intro. Muévelo con las flechas, suéltalo con Espacio o Intro y cancela con Escape.'
+      instructions: 'Arrastra con el ratón para reordenar, o pulsa Espacio o Intro para abrir el menú.'
     },
     consent: {
       title: 'Cláusula de consentimiento',

@@ -211,7 +211,6 @@ export const pl: Dictionary = {
     currentlyWorkHere: 'Nadal tu pracuję',
     bullets: 'Punkty',
     bullet: (number) => `Punkt ${number}`,
-    removeBullet: (number) => `Usuń punkt ${number}`,
     addBullet: 'Dodaj punkt',
     newEducation: 'Nowe wykształcenie',
     addEducation: 'Dodaj wykształcenie',
@@ -226,12 +225,18 @@ export const pl: Dictionary = {
     graduation: 'Data ukończenia',
     endBeforeStart: 'Data zakończenia jest wcześniejsza niż data rozpoczęcia.',
     listItem: (number) => `Element ${number}`,
-    removeListItem: (number) => `Usuń element ${number}`,
     addListItem: 'Dodaj element',
     order: {
-      moveUp: (item) => `Przesuń ${item} w górę`,
-      moveDown: (item) => `Przesuń ${item} w dół`,
-      drag: (item) => `Przeciągnij ${item}, aby zmienić kolejność`,
+      handle: {
+        section: (name) => `Działania: sekcja „${name}”`,
+        position: (name) => `Działania: stanowisko „${name}”`,
+        education: (name) => `Działania: wpis „${name}”`,
+        bullet: (number) => `Działania: punkt ${number}`,
+        listItem: (number) => `Działania: element ${number}`
+      },
+      moveUp: 'Przenieś wyżej',
+      moveDown: 'Przenieś niżej',
+      remove: 'Usuń',
       section: (name) => `sekcję „${name}”`,
       position: (name) => `stanowisko „${name}”`,
       education: (name) => `wpis „${name}”`,
@@ -240,8 +245,9 @@ export const pl: Dictionary = {
       pickedUp: (item) => `Podniesiono ${item}.`,
       movedOver: (item, position, total) => `Przesuwasz ${item}: pozycja ${position} z ${total}.`,
       dropped: (item, position, total) => `Upuszczono ${item} na pozycji ${position} z ${total}.`,
+      moved: (item, position, total) => `Przeniesiono ${item} na pozycję ${position} z ${total}.`,
       cancelled: (item) => `Odłożono ${item} na poprzednie miejsce.`,
-      instructions: 'Aby podnieść element, naciśnij Spację lub Enter. Strzałkami przesuń go, Spacją lub Enterem upuść, Escape anuluje.'
+      instructions: 'Przeciągnij myszą, aby zmienić kolejność, albo naciśnij Spację lub Enter, aby otworzyć menu.'
     },
     consent: {
       title: 'Klauzula zgody',

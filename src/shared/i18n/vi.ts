@@ -211,7 +211,6 @@ export const vi: Dictionary = {
     currentlyWorkHere: 'Tôi vẫn đang làm việc ở đây',
     bullets: 'Các ý chính',
     bullet: (number) => `Ý ${number}`,
-    removeBullet: (number) => `Xóa ý ${number}`,
     addBullet: 'Thêm ý',
     newEducation: 'Học vấn mới',
     addEducation: 'Thêm học vấn',
@@ -226,12 +225,18 @@ export const vi: Dictionary = {
     graduation: 'Ngày tốt nghiệp',
     endBeforeStart: 'Ngày kết thúc sớm hơn ngày bắt đầu.',
     listItem: (number) => `Mục ${number}`,
-    removeListItem: (number) => `Xóa mục ${number}`,
     addListItem: 'Thêm mục',
     order: {
-      moveUp: (item) => `Chuyển ${item} lên`,
-      moveDown: (item) => `Chuyển ${item} xuống`,
-      drag: (item) => `Kéo ${item} để sắp xếp lại`,
+      handle: {
+        section: (name) => `Thao tác cho mục “${name}”`,
+        position: (name) => `Thao tác cho vị trí “${name}”`,
+        education: (name) => `Thao tác cho mục nhập “${name}”`,
+        bullet: (number) => `Thao tác cho ý ${number}`,
+        listItem: (number) => `Thao tác cho mục ${number}`
+      },
+      moveUp: 'Chuyển lên',
+      moveDown: 'Chuyển xuống',
+      remove: 'Xóa',
       section: (name) => `mục “${name}”`,
       position: (name) => `vị trí “${name}”`,
       education: (name) => `mục nhập “${name}”`,
@@ -240,8 +245,9 @@ export const vi: Dictionary = {
       pickedUp: (item) => `Đã nhấc ${item}.`,
       movedOver: (item, position, total) => `Đang di chuyển ${item}: vị trí ${position} trên ${total}.`,
       dropped: (item, position, total) => `Đã thả ${item} tại vị trí ${position} trên ${total}.`,
+      moved: (item, position, total) => `Đã chuyển ${item} đến vị trí ${position} trên ${total}.`,
       cancelled: (item) => `Đã đặt ${item} về chỗ cũ.`,
-      instructions: 'Để nhấc một mục, nhấn Phím cách hoặc Enter. Dùng các phím mũi tên để di chuyển, Phím cách hoặc Enter để thả và Escape để hủy.'
+      instructions: 'Kéo bằng chuột để sắp xếp lại, hoặc nhấn Phím cách hoặc Enter để mở menu.'
     },
     consent: {
       title: 'Điều khoản đồng ý',

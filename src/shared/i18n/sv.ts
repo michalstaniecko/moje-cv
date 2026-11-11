@@ -216,7 +216,6 @@ export const sv: Dictionary = {
     currentlyWorkHere: 'Jag arbetar här fortfarande',
     bullets: 'Punkter',
     bullet: (number) => `Punkt ${number}`,
-    removeBullet: (number) => `Ta bort punkt ${number}`,
     addBullet: 'Lägg till punkt',
     newEducation: 'Ny utbildning',
     addEducation: 'Lägg till utbildning',
@@ -231,12 +230,18 @@ export const sv: Dictionary = {
     graduation: 'Examensdatum',
     endBeforeStart: 'Slutdatumet är tidigare än startdatumet.',
     listItem: (number) => `Post ${number}`,
-    removeListItem: (number) => `Ta bort post ${number}`,
     addListItem: 'Lägg till post',
     order: {
-      moveUp: (item) => `Flytta ${item} uppåt`,
-      moveDown: (item) => `Flytta ${item} nedåt`,
-      drag: (item) => `Dra ${item} för att ändra ordning`,
+      handle: {
+        section: (name) => `Åtgärder för avsnittet ”${name}”`,
+        position: (name) => `Åtgärder för tjänsten ”${name}”`,
+        education: (name) => `Åtgärder för posten ”${name}”`,
+        bullet: (number) => `Åtgärder för punkt ${number}`,
+        listItem: (number) => `Åtgärder för post ${number}`
+      },
+      moveUp: 'Flytta uppåt',
+      moveDown: 'Flytta nedåt',
+      remove: 'Ta bort',
       section: (name) => `avsnittet ”${name}”`,
       position: (name) => `tjänsten ”${name}”`,
       education: (name) => `posten ”${name}”`,
@@ -245,8 +250,9 @@ export const sv: Dictionary = {
       pickedUp: (item) => `Du har lyft ${item}.`,
       movedOver: (item, position, total) => `Du flyttar ${item}: position ${position} av ${total}.`,
       dropped: (item, position, total) => `Du har släppt ${item} på position ${position} av ${total}.`,
+      moved: (item, position, total) => `Du har flyttat ${item} till position ${position} av ${total}.`,
       cancelled: (item) => `Du har lagt tillbaka ${item} på sin plats.`,
-      instructions: 'Tryck på blanksteg eller Retur för att lyfta ett objekt. Flytta det med piltangenterna, släpp det med blanksteg eller Retur och avbryt med Escape.'
+      instructions: 'Dra med musen för att ändra ordning, eller tryck på blanksteg eller Retur för att öppna menyn.'
     },
     consent: {
       title: 'Samtyckesklausul',

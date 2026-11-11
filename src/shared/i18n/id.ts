@@ -211,7 +211,6 @@ export const id: Dictionary = {
     currentlyWorkHere: 'Saya masih bekerja di sini',
     bullets: 'Poin',
     bullet: (number) => `Poin ${number}`,
-    removeBullet: (number) => `Hapus poin ${number}`,
     addBullet: 'Tambah poin',
     newEducation: 'Pendidikan baru',
     addEducation: 'Tambah pendidikan',
@@ -226,12 +225,18 @@ export const id: Dictionary = {
     graduation: 'Tanggal lulus',
     endBeforeStart: 'Tanggal selesai lebih awal dari tanggal mulai.',
     listItem: (number) => `Item ${number}`,
-    removeListItem: (number) => `Hapus item ${number}`,
     addListItem: 'Tambah item',
     order: {
-      moveUp: (item) => `Pindahkan ${item} ke atas`,
-      moveDown: (item) => `Pindahkan ${item} ke bawah`,
-      drag: (item) => `Seret ${item} untuk mengubah urutan`,
+      handle: {
+        section: (name) => `Tindakan untuk bagian “${name}”`,
+        position: (name) => `Tindakan untuk posisi “${name}”`,
+        education: (name) => `Tindakan untuk entri “${name}”`,
+        bullet: (number) => `Tindakan untuk poin ${number}`,
+        listItem: (number) => `Tindakan untuk item ${number}`
+      },
+      moveUp: 'Pindahkan ke atas',
+      moveDown: 'Pindahkan ke bawah',
+      remove: 'Hapus',
       section: (name) => `bagian “${name}”`,
       position: (name) => `posisi “${name}”`,
       education: (name) => `entri “${name}”`,
@@ -240,8 +245,9 @@ export const id: Dictionary = {
       pickedUp: (item) => `Mengambil ${item}.`,
       movedOver: (item, position, total) => `Memindahkan ${item}: posisi ${position} dari ${total}.`,
       dropped: (item, position, total) => `Meletakkan ${item} di posisi ${position} dari ${total}.`,
+      moved: (item, position, total) => `Memindahkan ${item} ke posisi ${position} dari ${total}.`,
       cancelled: (item) => `Mengembalikan ${item} ke tempat semula.`,
-      instructions: 'Untuk mengambil item, tekan Spasi atau Enter. Gunakan tombol panah untuk memindahkannya, Spasi atau Enter untuk meletakkannya, dan Escape untuk membatalkan.'
+      instructions: 'Seret dengan mouse untuk mengubah urutan, atau tekan Spasi atau Enter untuk membuka menu.'
     },
     consent: {
       title: 'Klausul persetujuan',

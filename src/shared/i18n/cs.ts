@@ -211,7 +211,6 @@ export const cs: Dictionary = {
     currentlyWorkHere: 'Stále zde pracuji',
     bullets: 'Body',
     bullet: (number) => `Bod ${number}`,
-    removeBullet: (number) => `Odstranit bod ${number}`,
     addBullet: 'Přidat bod',
     newEducation: 'Nové vzdělání',
     addEducation: 'Přidat vzdělání',
@@ -226,12 +225,18 @@ export const cs: Dictionary = {
     graduation: 'Datum ukončení',
     endBeforeStart: 'Datum ukončení je dřívější než datum zahájení.',
     listItem: (number) => `Položka ${number}`,
-    removeListItem: (number) => `Odstranit položku ${number}`,
     addListItem: 'Přidat položku',
     order: {
-      moveUp: (item) => `Posunout ${item} nahoru`,
-      moveDown: (item) => `Posunout ${item} dolů`,
-      drag: (item) => `Přetáhněte ${item} pro změnu pořadí`,
+      handle: {
+        section: (name) => `Akce pro sekci „${name}“`,
+        position: (name) => `Akce pro pozici „${name}“`,
+        education: (name) => `Akce pro položku „${name}“`,
+        bullet: (number) => `Akce pro bod ${number}`,
+        listItem: (number) => `Akce pro položku ${number}`
+      },
+      moveUp: 'Posunout nahoru',
+      moveDown: 'Posunout dolů',
+      remove: 'Odstranit',
       section: (name) => `sekci „${name}“`,
       position: (name) => `pozici „${name}“`,
       education: (name) => `položku „${name}“`,
@@ -240,8 +245,9 @@ export const cs: Dictionary = {
       pickedUp: (item) => `Zvedli jste ${item}.`,
       movedOver: (item, position, total) => `Přesouváte ${item}: pozice ${position} z ${total}.`,
       dropped: (item, position, total) => `Položili jste ${item} na pozici ${position} z ${total}.`,
+      moved: (item, position, total) => `Přesunuli jste ${item} na pozici ${position} z ${total}.`,
       cancelled: (item) => `Vrátili jste ${item} na původní místo.`,
-      instructions: 'Položku zvednete mezerníkem nebo Enterem. Šipkami ji přesunete, mezerníkem nebo Enterem ji položíte a Escape přesun zruší.'
+      instructions: 'Pořadí změníte přetažením myší, menu otevřete mezerníkem nebo Enterem.'
     },
     consent: {
       title: 'Souhlas se zpracováním údajů',

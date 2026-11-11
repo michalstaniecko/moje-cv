@@ -211,7 +211,6 @@ export const fr: Dictionary = {
     currentlyWorkHere: 'J’occupe toujours ce poste',
     bullets: 'Puces',
     bullet: (number) => `Puce ${number}`,
-    removeBullet: (number) => `Retirer la puce ${number}`,
     addBullet: 'Ajouter une puce',
     newEducation: 'Nouvelle formation',
     addEducation: 'Ajouter une formation',
@@ -226,12 +225,18 @@ export const fr: Dictionary = {
     graduation: 'Date d’obtention',
     endBeforeStart: 'La date de fin est antérieure à la date de début.',
     listItem: (number) => `Élément ${number}`,
-    removeListItem: (number) => `Retirer l’élément ${number}`,
     addListItem: 'Ajouter un élément',
     order: {
-      moveUp: (item) => `Monter ${item}`,
-      moveDown: (item) => `Descendre ${item}`,
-      drag: (item) => `Faites glisser ${item} pour réordonner`,
+      handle: {
+        section: (name) => `Actions pour la section « ${name} »`,
+        position: (name) => `Actions pour le poste « ${name} »`,
+        education: (name) => `Actions pour l’entrée « ${name} »`,
+        bullet: (number) => `Actions pour la puce ${number}`,
+        listItem: (number) => `Actions pour l’élément ${number}`
+      },
+      moveUp: 'Monter',
+      moveDown: 'Descendre',
+      remove: 'Retirer',
       section: (name) => `la section « ${name} »`,
       position: (name) => `le poste « ${name} »`,
       education: (name) => `l’entrée « ${name} »`,
@@ -240,8 +245,9 @@ export const fr: Dictionary = {
       pickedUp: (item) => `Vous avez saisi ${item}.`,
       movedOver: (item, position, total) => `Vous déplacez ${item} : position ${position} sur ${total}.`,
       dropped: (item, position, total) => `Vous avez déposé ${item} en position ${position} sur ${total}.`,
+      moved: (item, position, total) => `Vous avez déplacé ${item} en position ${position} sur ${total}.`,
       cancelled: (item) => `Vous avez remis ${item} à sa place.`,
-      instructions: 'Pour saisir un élément, appuyez sur Espace ou Entrée. Déplacez-le avec les flèches, déposez-le avec Espace ou Entrée, ou annulez avec Échap.'
+      instructions: 'Faites glisser avec la souris pour réordonner, ou appuyez sur Espace ou Entrée pour ouvrir le menu.'
     },
     consent: {
       title: 'Clause de consentement',

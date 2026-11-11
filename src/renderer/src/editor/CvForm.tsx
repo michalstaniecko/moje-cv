@@ -71,9 +71,10 @@ export function CvForm({
         <SortableList
           items={document.sections}
           label={(section) => t.order.section(sectionName(section, t))}
+          handleLabel={(section) => t.order.handle.section(sectionName(section, t))}
           onMove={(id, toIndex) => editor.edit(moveSection(id, toIndex))}
         >
-          {(section, orderControls) => <SectionFields editor={editor} section={section} orderControls={orderControls} />}
+          {(section, row) => <SectionFields editor={editor} section={section} handle={row.handle} />}
         </SortableList>
         <ConsentFields editor={editor} consent={document.consent} clauses={clauses} onSaveClause={onSaveClause} />
       </div>
@@ -224,14 +225,14 @@ function Checkbox({ label, checked, onChange }: { label: string; checked: boolea
 
 // Sekcja w formularzu: tytuł, kolejność, ukrycie i nowa strona, a pod nimi wpisy zależne od typu sekcji.
 // Ukryta sekcja zostaje w formularzu, ale znika z podglądu i PDF.
-function SectionFields({ editor, section, orderControls }: { editor: CvEditor; section: Section; orderControls: ReactNode }) {
+function SectionFields({ editor, section, handle }: { editor: CvEditor; section: Section; handle: ReactNode }) {
   const t = useDictionary().editor
   const name = sectionName(section, t)
 
   return (
     <section className={section.hidden ? 'form-section form-section--hidden' : 'form-section'} aria-label={name}>
       <div className="form-section-header">
-        {orderControls}
+        {handle}
         <input
           className="form-section-title-input"
           aria-label={t.sectionTitle(name)}
@@ -265,9 +266,14 @@ function SectionItems({ editor, section }: { editor: CvEditor; section: Section 
     case 'experience':
       return (
         <>
-          <SortableList items={section.items} label={(item) => t.order.position(entryName(item.role, t.newPosition))} onMove={onMove}>
-            {(item, orderControls) => (
-              <ExperienceItemFields editor={editor} sectionId={section.id} item={item} orderControls={orderControls} />
+          <SortableList
+            items={section.items}
+            label={(item) => t.order.position(entryName(item.role, t.newPosition))}
+            handleLabel={(item) => t.order.handle.position(entryName(item.role, t.newPosition))}
+            onMove={onMove}
+          >
+            {(item, row) => (
+              <ExperienceItemFields editor={editor} sectionId={section.id} item={item} handle={row.handle} />
             )}
           </SortableList>
           <button type="button" data-add-for={section.id} onClick={() => editor.edit(addExperienceItem(section.id))}>
@@ -278,9 +284,14 @@ function SectionItems({ editor, section }: { editor: CvEditor; section: Section 
     case 'education':
       return (
         <>
-          <SortableList items={section.items} label={(item) => t.order.education(educationName(item, t))} onMove={onMove}>
-            {(item, orderControls) => (
-              <EducationItemFields editor={editor} sectionId={section.id} item={item} orderControls={orderControls} />
+          <SortableList
+            items={section.items}
+            label={(item) => t.order.education(educationName(item, t))}
+            handleLabel={(item) => t.order.handle.education(educationName(item, t))}
+            onMove={onMove}
+          >
+            {(item, row) => (
+              <EducationItemFields editor={editor} sectionId={section.id} item={item} handle={row.handle} />
             )}
           </SortableList>
           <button type="button" data-add-for={section.id} onClick={() => editor.edit(addEducationItem(section.id))}>
@@ -302,12 +313,12 @@ function ExperienceItemFields({
   editor,
   sectionId,
   item,
-  orderControls
+  handle
 }: {
   editor: CvEditor
   sectionId: string
   item: ExperienceItem
-  orderControls: ReactNode
+  handle: ReactNode
 }) {
   const t = useDictionary().editor
   const remove = useRemove()
@@ -340,7 +351,7 @@ function ExperienceItemFields({
   return (
     <fieldset className="form-group" data-entry-id={item.id}>
       <legend>
-        {orderControls}
+        {handle}
         {entryName(item.role, t.newPosition)}
       </legend>
       {textField(t.role, 'role')}
@@ -366,11 +377,15 @@ function ExperienceItemFields({
         <SortableList
           items={item.bullets}
           label={(_bullet, index) => t.order.bullet(index + 1)}
+          handleLabel={(_bullet, index) => t.order.handle.bullet(index + 1)}
           onMove={(bulletId, toIndex) => editor.edit(moveBullet(sectionId, item.id, bulletId, toIndex))}
+          onRemove={(bullet) =>
+            remove(removeBullet(sectionId, item.id, bullet.id), { entryId: bullet.id, listId: `bullets:${item.id}` })
+          }
         >
-          {(bullet, orderControls, index) => (
+          {(bullet, row, index) => (
             <div className="form-row" data-entry-id={bullet.id}>
-              {orderControls}
+              {row.handle}
               <textarea
                 rows={2}
                 aria-label={t.bullet(index + 1)}
@@ -386,14 +401,9 @@ function ExperienceItemFields({
                     multiline: true,
                     previousId: item.bullets[index - 1]?.id,
                     split: (at) => editor.edit(splitBullet(sectionId, item.id, bullet.id, at)),
-                    remove: () => editor.edit(removeBullet(sectionId, item.id, bullet.id))
+                    remove: () => editor.edit(removeBullet(sectionId, item.id, bullet.id)),
+                    moveBy: row.moveBy
                   })
-                }
-              />
-              <RowRemoveButton
-                label={t.removeBullet(index + 1)}
-                onClick={() =>
-                  remove(removeBullet(sectionId, item.id, bullet.id), { entryId: bullet.id, listId: `bullets:${item.id}` })
                 }
               />
             </div>
@@ -426,12 +436,12 @@ function EducationItemFields({
   editor,
   sectionId,
   item,
-  orderControls
+  handle
 }: {
   editor: CvEditor
   sectionId: string
   item: EducationItem
-  orderControls: ReactNode
+  handle: ReactNode
 }) {
   const t = useDictionary().editor
   const remove = useRemove()
@@ -453,7 +463,7 @@ function EducationItemFields({
   return (
     <fieldset className="form-group" data-entry-id={item.id}>
       <legend>
-        {orderControls}
+        {handle}
         {educationName(item, t)}
       </legend>
       {textField(t.level, 'level', t.levelPlaceholder)}
@@ -495,11 +505,13 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
       <SortableList
         items={items}
         label={(_item, index) => t.order.listItem(index + 1)}
+        handleLabel={(_item, index) => t.order.handle.listItem(index + 1)}
         onMove={(id, toIndex) => editor.edit(moveItem(sectionId, id, toIndex))}
+        onRemove={(item) => remove(removeListItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
       >
-        {(item, orderControls, index) => (
+        {(item, row, index) => (
           <div className="form-row" data-entry-id={item.id}>
-            {orderControls}
+            {row.handle}
             <input
               aria-label={t.listItem(index + 1)}
               value={item.text}
@@ -511,13 +523,10 @@ function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; secti
                   multiline: false,
                   previousId: items[index - 1]?.id,
                   split: (at) => editor.edit(splitListItem(sectionId, item.id, at)),
-                  remove: () => editor.edit(removeListItem(sectionId, item.id))
+                  remove: () => editor.edit(removeListItem(sectionId, item.id)),
+                  moveBy: row.moveBy
                 })
               }
-            />
-            <RowRemoveButton
-              label={t.removeListItem(index + 1)}
-              onClick={() => remove(removeListItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
             />
           </div>
         )}
@@ -654,8 +663,8 @@ function SaveAsNewClause({ text, onSave }: { text: string; onSave: (name: string
   )
 }
 
-// Usunięcie elementu w wierszu listy: kompaktowa ikona ✕ z podpowiedzią, która powtarza etykietę dostępności
-// (np. „Usuń punkt 3”). Usuwanie całych wpisów (stanowisko, wykształcenie) zostaje tekstowe.
+// Usunięcie kontaktu: kompaktowa ikona ✕ z podpowiedzią, która powtarza etykietę dostępności (np. „Usuń kontakt 3”).
+// Punkty i elementy list usuwa się z menu wiersza, a całe wpisy (stanowisko, wykształcenie) tekstowym przyciskiem.
 function RowRemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button type="button" className="row-remove" aria-label={label} title={label} onClick={onClick}>

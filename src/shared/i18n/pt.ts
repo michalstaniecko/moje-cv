@@ -211,7 +211,6 @@ export const pt: Dictionary = {
     currentlyWorkHere: 'Trabalho aqui atualmente',
     bullets: 'Tópicos',
     bullet: (number) => `Tópico ${number}`,
-    removeBullet: (number) => `Remover tópico ${number}`,
     addBullet: 'Adicionar tópico',
     newEducation: 'Nova formação',
     addEducation: 'Adicionar formação',
@@ -226,12 +225,18 @@ export const pt: Dictionary = {
     graduation: 'Data de conclusão',
     endBeforeStart: 'A data de término é anterior à data de início.',
     listItem: (number) => `Item ${number}`,
-    removeListItem: (number) => `Remover item ${number}`,
     addListItem: 'Adicionar item',
     order: {
-      moveUp: (item) => `Mover ${item} para cima`,
-      moveDown: (item) => `Mover ${item} para baixo`,
-      drag: (item) => `Arraste ${item} para reordenar`,
+      handle: {
+        section: (name) => `Ações para a seção “${name}”`,
+        position: (name) => `Ações para o cargo “${name}”`,
+        education: (name) => `Ações para o item “${name}”`,
+        bullet: (number) => `Ações para o tópico ${number}`,
+        listItem: (number) => `Ações para o item ${number}`
+      },
+      moveUp: 'Mover para cima',
+      moveDown: 'Mover para baixo',
+      remove: 'Remover',
       section: (name) => `a seção “${name}”`,
       position: (name) => `o cargo “${name}”`,
       education: (name) => `o item “${name}”`,
@@ -240,8 +245,9 @@ export const pt: Dictionary = {
       pickedUp: (item) => `Você pegou ${item}.`,
       movedOver: (item, position, total) => `Movendo ${item}: posição ${position} de ${total}.`,
       dropped: (item, position, total) => `Você soltou ${item} na posição ${position} de ${total}.`,
+      moved: (item, position, total) => `Você moveu ${item} para a posição ${position} de ${total}.`,
       cancelled: (item) => `Você devolveu ${item} ao lugar original.`,
-      instructions: 'Para pegar um item, pressione Espaço ou Enter. Use as setas para movê-lo, Espaço ou Enter para soltá-lo e Esc para cancelar.'
+      instructions: 'Arraste com o mouse para reordenar ou pressione Espaço ou Enter para abrir o menu.'
     },
     consent: {
       title: 'Cláusula de consentimento',

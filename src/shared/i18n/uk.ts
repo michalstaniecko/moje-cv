@@ -211,7 +211,6 @@ export const uk: Dictionary = {
     currentlyWorkHere: 'Досі тут працюю',
     bullets: 'Пункти',
     bullet: (number) => `Пункт ${number}`,
-    removeBullet: (number) => `Видалити пункт ${number}`,
     addBullet: 'Додати пункт',
     newEducation: 'Нова освіта',
     addEducation: 'Додати освіту',
@@ -226,12 +225,18 @@ export const uk: Dictionary = {
     graduation: 'Дата закінчення',
     endBeforeStart: 'Дата закінчення раніша за дату початку.',
     listItem: (number) => `Елемент ${number}`,
-    removeListItem: (number) => `Видалити елемент ${number}`,
     addListItem: 'Додати елемент',
     order: {
-      moveUp: (item) => `Перемістити ${item} вгору`,
-      moveDown: (item) => `Перемістити ${item} вниз`,
-      drag: (item) => `Перетягніть ${item}, щоб змінити порядок`,
+      handle: {
+        section: (name) => `Дії: розділ «${name}»`,
+        position: (name) => `Дії: посада «${name}»`,
+        education: (name) => `Дії: запис «${name}»`,
+        bullet: (number) => `Дії: пункт ${number}`,
+        listItem: (number) => `Дії: елемент ${number}`
+      },
+      moveUp: 'Перемістити вгору',
+      moveDown: 'Перемістити вниз',
+      remove: 'Видалити',
       section: (name) => `розділ «${name}»`,
       position: (name) => `посаду «${name}»`,
       education: (name) => `запис «${name}»`,
@@ -240,8 +245,9 @@ export const uk: Dictionary = {
       pickedUp: (item) => `Ви взяли ${item}.`,
       movedOver: (item, position, total) => `Ви переміщуєте ${item}: позиція ${position} з ${total}.`,
       dropped: (item, position, total) => `Ви поставили ${item} на позицію ${position} з ${total}.`,
+      moved: (item, position, total) => `Ви перемістили ${item} на позицію ${position} з ${total}.`,
       cancelled: (item) => `Ви повернули ${item} на попереднє місце.`,
-      instructions: 'Щоб взяти елемент, натисніть Пробіл або Enter. Переміщуйте його клавішами зі стрілками, поставте Пробілом або Enter, Escape скасовує.'
+      instructions: 'Перетягніть мишею, щоб змінити порядок, або натисніть Пробіл чи Enter, щоб відкрити меню.'
     },
     consent: {
       title: 'Згода на обробку даних',

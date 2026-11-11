@@ -218,7 +218,6 @@ export const nl: Dictionary = {
     currentlyWorkHere: 'Ik werk hier nog',
     bullets: 'Opsommingspunten',
     bullet: (number) => `Punt ${number}`,
-    removeBullet: (number) => `Verwijder punt ${number}`,
     addBullet: 'Voeg punt toe',
     newEducation: 'Nieuwe opleiding',
     addEducation: 'Voeg opleiding toe',
@@ -233,12 +232,18 @@ export const nl: Dictionary = {
     graduation: 'Afstudeerdatum',
     endBeforeStart: 'De einddatum ligt vóór de begindatum.',
     listItem: (number) => `Item ${number}`,
-    removeListItem: (number) => `Verwijder item ${number}`,
     addListItem: 'Voeg item toe',
     order: {
-      moveUp: (item) => `Verplaats ${item} omhoog`,
-      moveDown: (item) => `Verplaats ${item} omlaag`,
-      drag: (item) => `Sleep ${item} om de volgorde te wijzigen`,
+      handle: {
+        section: (name) => `Acties voor sectie “${name}”`,
+        position: (name) => `Acties voor functie “${name}”`,
+        education: (name) => `Acties voor item “${name}”`,
+        bullet: (number) => `Acties voor punt ${number}`,
+        listItem: (number) => `Acties voor item ${number}`
+      },
+      moveUp: 'Omhoog verplaatsen',
+      moveDown: 'Omlaag verplaatsen',
+      remove: 'Verwijderen',
       section: (name) => `sectie “${name}”`,
       position: (name) => `functie “${name}”`,
       education: (name) => `item “${name}”`,
@@ -247,8 +252,9 @@ export const nl: Dictionary = {
       pickedUp: (item) => `Je hebt ${item} opgepakt.`,
       movedOver: (item, position, total) => `Je verplaatst ${item}: positie ${position} van ${total}.`,
       dropped: (item, position, total) => `Je hebt ${item} neergezet op positie ${position} van ${total}.`,
+      moved: (item, position, total) => `Je hebt ${item} verplaatst naar positie ${position} van ${total}.`,
       cancelled: (item) => `Je hebt ${item} teruggezet op de oude plek.`,
-      instructions: 'Druk op Spatie of Enter om een item op te pakken. Verplaats het met de pijltjestoetsen, zet het neer met Spatie of Enter en annuleer met Escape.'
+      instructions: 'Sleep met de muis om de volgorde te wijzigen, of druk op Spatie of Enter om het menu te openen.'
     },
     consent: {
       title: 'Toestemmingsverklaring',

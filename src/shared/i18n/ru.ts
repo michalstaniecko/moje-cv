@@ -211,7 +211,6 @@ export const ru: Dictionary = {
     currentlyWorkHere: 'Работаю здесь сейчас',
     bullets: 'Пункты',
     bullet: (number) => `Пункт ${number}`,
-    removeBullet: (number) => `Удалить пункт ${number}`,
     addBullet: 'Добавить пункт',
     newEducation: 'Новое образование',
     addEducation: 'Добавить образование',
@@ -226,12 +225,18 @@ export const ru: Dictionary = {
     graduation: 'Дата окончания',
     endBeforeStart: 'Дата окончания раньше даты начала.',
     listItem: (number) => `Элемент ${number}`,
-    removeListItem: (number) => `Удалить элемент ${number}`,
     addListItem: 'Добавить элемент',
     order: {
-      moveUp: (item) => `Переместить ${item} вверх`,
-      moveDown: (item) => `Переместить ${item} вниз`,
-      drag: (item) => `Перетащите ${item}, чтобы изменить порядок`,
+      handle: {
+        section: (name) => `Действия: раздел «${name}»`,
+        position: (name) => `Действия: должность «${name}»`,
+        education: (name) => `Действия: запись «${name}»`,
+        bullet: (number) => `Действия: пункт ${number}`,
+        listItem: (number) => `Действия: элемент ${number}`
+      },
+      moveUp: 'Переместить вверх',
+      moveDown: 'Переместить вниз',
+      remove: 'Удалить',
       section: (name) => `раздел «${name}»`,
       position: (name) => `должность «${name}»`,
       education: (name) => `запись «${name}»`,
@@ -240,8 +245,9 @@ export const ru: Dictionary = {
       pickedUp: (item) => `Вы взяли ${item}.`,
       movedOver: (item, position, total) => `Вы перемещаете ${item}: позиция ${position} из ${total}.`,
       dropped: (item, position, total) => `Вы поставили ${item} на позицию ${position} из ${total}.`,
+      moved: (item, position, total) => `Вы переместили ${item} на позицию ${position} из ${total}.`,
       cancelled: (item) => `Вы вернули ${item} на прежнее место.`,
-      instructions: 'Чтобы взять элемент, нажмите Пробел или Enter. Перемещайте его клавишами со стрелками, поставьте Пробелом или Enter, Escape отменяет.'
+      instructions: 'Перетащите мышью, чтобы изменить порядок, или нажмите Пробел или Enter, чтобы открыть меню.'
     },
     consent: {
       title: 'Согласие на обработку данных',

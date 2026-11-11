@@ -218,7 +218,6 @@ export const de: Dictionary = {
     currentlyWorkHere: 'Ich arbeite noch hier',
     bullets: 'Aufzählungspunkte',
     bullet: (number) => `Punkt ${number}`,
-    removeBullet: (number) => `Punkt ${number} entfernen`,
     addBullet: 'Punkt hinzufügen',
     newEducation: 'Neue Ausbildung',
     addEducation: 'Ausbildung hinzufügen',
@@ -233,12 +232,18 @@ export const de: Dictionary = {
     graduation: 'Abschlussdatum',
     endBeforeStart: 'Das Enddatum liegt vor dem Startdatum.',
     listItem: (number) => `Eintrag ${number}`,
-    removeListItem: (number) => `Eintrag ${number} entfernen`,
     addListItem: 'Eintrag hinzufügen',
     order: {
-      moveUp: (item) => `${item} nach oben verschieben`,
-      moveDown: (item) => `${item} nach unten verschieben`,
-      drag: (item) => `${item} ziehen, um die Reihenfolge zu ändern`,
+      handle: {
+        section: (name) => `Aktionen für Abschnitt „${name}“`,
+        position: (name) => `Aktionen für Position „${name}“`,
+        education: (name) => `Aktionen für Eintrag „${name}“`,
+        bullet: (number) => `Aktionen für Punkt ${number}`,
+        listItem: (number) => `Aktionen für Eintrag ${number}`
+      },
+      moveUp: 'Nach oben verschieben',
+      moveDown: 'Nach unten verschieben',
+      remove: 'Entfernen',
       section: (name) => `Abschnitt „${name}“`,
       position: (name) => `Position „${name}“`,
       education: (name) => `Eintrag „${name}“`,
@@ -247,8 +252,9 @@ export const de: Dictionary = {
       pickedUp: (item) => `${item} aufgenommen.`,
       movedOver: (item, position, total) => `${item} wird verschoben: Position ${position} von ${total}.`,
       dropped: (item, position, total) => `${item} an Position ${position} von ${total} abgelegt.`,
+      moved: (item, position, total) => `${item} an Position ${position} von ${total} verschoben.`,
       cancelled: (item) => `${item} an den ursprünglichen Platz zurückgelegt.`,
-      instructions: 'Zum Aufnehmen eines Eintrags die Leertaste oder die Eingabetaste drücken. Mit den Pfeiltasten verschieben, mit der Leertaste oder der Eingabetaste ablegen, mit Escape abbrechen.'
+      instructions: 'Zum Ändern der Reihenfolge mit der Maus ziehen oder mit der Leertaste oder der Eingabetaste das Menü öffnen.'
     },
     consent: {
       title: 'Einwilligungserklärung',

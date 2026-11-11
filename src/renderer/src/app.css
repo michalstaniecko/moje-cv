@@ -63,6 +63,7 @@ body {
 .export-dialog,
 .library,
 .editor-form,
+.row-menu,
 .preview-bar,
 .photo-cropper,
 .sponsor-bar,
@@ -365,16 +366,23 @@ textarea:focus-visible {
   right: 0;
   z-index: 2;
   min-width: 100%;
+}
+
+/* Panel menu (`role="menu"`) i jego pozycje: menu przy „Nowe CV” i menu wiersza listy w formularzu. Położenie
+   ustawia każde menu osobno. */
+.split-button-menu,
+.row-menu {
   margin: 0;
   padding: 4px;
   list-style: none;
   background: var(--ui-panel-bg);
   border: 1px solid var(--ui-border);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+  box-shadow: 0 4px 12px var(--ui-shadow);
 }
 
-.split-button-menu [role='menuitem'] {
+.split-button-menu [role='menuitem'],
+.row-menu [role='menuitem'] {
   display: block;
   width: 100%;
   text-align: left;
@@ -674,10 +682,16 @@ textarea:focus-visible {
 
 .form-group legend {
   display: flex;
-  align-items: center;
   gap: 6px;
   padding: 0 4px;
   font-weight: 600;
+}
+
+/* Nagłówek wpisu z uchwytem wiersza: uchwyt przy pierwszej linii nazwy. Linia ma wysokość uchwytu (24 px), więc
+   jednoliniowa nazwa stoi na środku uchwytu, a dłuższa, zawinięta, nie ściąga go w dół. */
+.form-group legend:has(.row-handle) {
+  align-items: flex-start;
+  line-height: 24px;
 }
 
 .form-row {
@@ -802,25 +816,67 @@ textarea:focus-visible {
   padding-top: 0;
 }
 
-/* Kompaktowe sterowanie kolejnością: wąska kolumna z uchwytem, a pod nim strzałkami ↑ i ↓, żeby pole obok
-   zajmowało resztę szerokości wiersza. */
-.order-controls {
+/* Uchwyt wiersza listy z ręczną kolejnością: przeciąganie myszą i przycisk menu wiersza. Sama ikona (sześć kropek)
+   bez ramki, w kolorze wyciszonego tekstu, podświetlona po najechaniu i przy fokusie; cel kliknięcia co najmniej
+   24×24 px (WCAG 2.2, 2.5.8). */
+.row-handle {
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  gap: 1px;
-}
-
-.order-controls button {
-  width: 20px;
-  min-width: 0;
+  min-width: 24px;
+  min-height: 24px;
   padding: 0;
-  font-size: 11px;
-  line-height: 14px;
+  color: var(--ui-text-muted);
+  background: transparent;
+  border-color: transparent;
+  border-radius: 4px;
+  cursor: grab;
+  touch-action: none;
 }
 
-/* Usunięcie elementu w wierszu listy: sama ikona ✕ (etykieta w podpowiedzi i dla czytnika ekranu). */
+.row-handle:hover:not(:disabled),
+.row-handle:focus-visible,
+.row-handle[aria-expanded='true'] {
+  color: var(--ui-text);
+  background: var(--ui-accent-glow);
+  border-color: transparent;
+}
+
+.row-handle:active {
+  cursor: grabbing;
+}
+
+/* W punktach i elementach list uchwyt ma wysokość jednowierszowego pola obok, więc stoi przy jego pierwszej linii. */
+.form-bullets .row-handle {
+  height: calc(1lh + 2 * var(--ui-field-padding-y) + 2 * var(--ui-field-border-width));
+}
+
+/* Menu wiersza (wygląd wspólny z menu przy „Nowe CV”, wyżej). Leży w warstwie górnej (popover), a pozycję od uchwytu
+   ustawia RowMenu. */
+.row-menu {
+  position: fixed;
+  inset: auto;
+  min-width: 160px;
+}
+
+/* Pozycja z fokusem jest podświetlona także po otwarciu menu myszą (fokus ustawiany skryptem). */
+.row-menu [role='menuitem']:focus:not(:disabled) {
+  background: var(--ui-accent-glow);
+}
+
+/* Tekst tylko dla czytnika ekranu (np. komunikaty aria-live). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Usunięcie kontaktu: sama ikona ✕ (etykieta w podpowiedzi i dla czytnika ekranu). */
 .row-remove {
   width: 24px;
   padding: 3px 0;
@@ -830,11 +886,6 @@ textarea:focus-visible {
 .row-remove:hover:not(:disabled) {
   color: var(--ui-error);
   border-color: var(--ui-error);
-}
-
-.drag-handle {
-  cursor: grab;
-  touch-action: none;
 }
 
 /* ---------- Biblioteka klauzul ---------- */
