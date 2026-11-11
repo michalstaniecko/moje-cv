@@ -179,7 +179,6 @@ export const id: Dictionary = {
     renameCv: (name) => `Ganti nama CV: ${name}`,
     removed: 'Dihapus.',
     undoRemoval: 'Urungkan',
-    remove: 'Hapus',
     cvDesign: 'Desain CV',
     accentColor: 'Warna aksen',
     font: 'Font',

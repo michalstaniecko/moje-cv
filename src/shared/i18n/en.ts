@@ -199,7 +199,6 @@ export const en = {
     renameCv: (name: string) => `Rename CV: ${name}`,
     removed: 'Removed.',
     undoRemoval: 'Undo',
-    remove: 'Remove',
     cvDesign: 'CV design',
     accentColor: 'Accent color',
     font: 'Font',

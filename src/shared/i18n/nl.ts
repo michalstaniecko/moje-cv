@@ -186,7 +186,6 @@ export const nl: Dictionary = {
     renameCv: (name) => `Naam van cv wijzigen: ${name}`,
     removed: 'Verwijderd.',
     undoRemoval: 'Herstel',
-    remove: 'Verwijder',
     cvDesign: 'Cv-ontwerp',
     accentColor: 'Accentkleur',
     font: 'Lettertype',

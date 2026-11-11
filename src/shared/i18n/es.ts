@@ -179,7 +179,6 @@ export const es: Dictionary = {
     renameCv: (name) => `Renombrar el CV: ${name}`,
     removed: 'Eliminado.',
     undoRemoval: 'Deshacer',
-    remove: 'Quitar',
     cvDesign: 'Diseño del CV',
     accentColor: 'Color de acento',
     font: 'Fuente',

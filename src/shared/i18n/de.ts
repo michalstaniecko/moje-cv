@@ -186,7 +186,6 @@ export const de: Dictionary = {
     renameCv: (name) => `Lebenslauf umbenennen: ${name}`,
     removed: 'Entfernt.',
     undoRemoval: 'Widerrufen',
-    remove: 'Entfernen',
     cvDesign: 'Lebenslauf-Design',
     accentColor: 'Akzentfarbe',
     font: 'Schrift',

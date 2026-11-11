@@ -551,7 +551,7 @@ test('the CV editor is in English, including the save status, photo cropping and
   const consent = window.getByRole('region', { name: 'Consent clause' })
   await consent.getByLabel('Show the clause at the bottom of the last page').check()
   await expect(consent.getByLabel('Clause from the library')).toContainText('The library is empty')
-  await expect(consent.getByLabel('Text in this CV')).toBeVisible()
+  await expect(consent.getByRole('textbox', { name: 'Text in this CV' })).toBeVisible()
   await consent.getByLabel('Text in this CV').fill('I agree.')
   await consent.getByRole('button', { name: 'Save as new clause' }).click()
   await expect(consent.getByLabel('New clause name')).toHaveAttribute('placeholder', 'Name, e.g. Talent Partners')
@@ -2030,6 +2030,117 @@ test('an end date before the start date shows a warning under the dates, without
   await expect(graduation).toHaveAccessibleDescription(warning)
   await entry.getByLabel('From (optional)').fill('2007-10')
   await expect(entry.getByText(warning)).toHaveCount(0)
+})
+
+// Wysokość pola tekstowego: obecna, wysokość treści i wysokość pustego pola wyliczona przez przeglądarkę z `rows`
+// (kopia pola o stałym rozmiarze, bez wysokości minimalnej) – czyli dotychczasowa wysokość pola.
+async function textareaHeights(field: Locator) {
+  return field.evaluate((element) => {
+    // Kopia pola z tym samym `rows`, klasami i stylami, ale bez treści (klon przejmuje wpisaną wartość).
+    const reference = element.cloneNode() as typeof element & { value: string }
+    reference.value = ''
+    reference.style.setProperty('field-sizing', 'fixed')
+    reference.style.minHeight = '0'
+    element.after(reference)
+    const rowsHeight = reference.offsetHeight
+    reference.remove()
+    return {
+      height: element.offsetHeight,
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+      rowsHeight,
+      resize: element.ownerDocument.defaultView!.getComputedStyle(element).resize
+    }
+  })
+}
+
+// Pole tekstowe rośnie razem z treścią (bez przewijania w środku), a puste ma dotychczasową wysokość z `rows`.
+async function expectGrowsWithContent(field: Locator) {
+  await field.fill('')
+  const empty = await textareaHeights(field)
+  expect(empty.resize).toBe('none')
+  expect(Math.abs(empty.height - empty.rowsHeight)).toBeLessThanOrEqual(1)
+
+  await field.fill(Array.from({ length: 24 }, (_, line) => `Line ${line + 1} of a long text that also wraps inside the field`).join('\n'))
+  const full = await textareaHeights(field)
+  expect(full.height).toBeGreaterThan(empty.height * 2)
+  expect(full.scrollHeight).toBeLessThanOrEqual(full.clientHeight)
+}
+
+test('summary, bullet, consent and clause text fields grow with their content instead of scrolling inside', async () => {
+  await openFirstCv()
+  await expectGrowsWithContent(window.getByRole('textbox', { name: 'Summary', exact: true }))
+  await expectGrowsWithContent(window.getByRole('textbox', { name: 'Bullet 1', exact: true }).first())
+  const consent = window.getByRole('region', { name: 'Consent clause' })
+  await consent.getByLabel('Show the clause at the bottom of the last page').check()
+  await expectGrowsWithContent(consent.getByLabel('Text in this CV'))
+
+  await window.getByRole('button', { name: '← CV library' }).click()
+  await window.getByRole('button', { name: 'Consent clauses' }).click()
+  await window.getByRole('button', { name: 'Add clause' }).click()
+  await expectGrowsWithContent(window.getByRole('form', { name: 'Clause' }).getByRole('textbox', { name: 'Text' }))
+})
+
+// Sterowanie kolejnością w wąskiej kolumnie: uchwyt, pod nim ↑, pod nią ↓, wyśrodkowane jedno pod drugim.
+async function expectOrderColumn(drag: Locator, up: Locator, down: Locator) {
+  const [handle, upBox, downBox] = await Promise.all([drag.boundingBox(), up.boundingBox(), down.boundingBox()])
+  const centre = (box: { x: number; width: number }) => box.x + box.width / 2
+  expect(upBox!.y).toBeGreaterThanOrEqual(handle!.y + handle!.height - 1)
+  expect(downBox!.y).toBeGreaterThanOrEqual(upBox!.y + upBox!.height - 1)
+  expect(Math.abs(centre(upBox!) - centre(handle!))).toBeLessThanOrEqual(1)
+  expect(Math.abs(centre(downBox!) - centre(handle!))).toBeLessThanOrEqual(1)
+}
+
+test('list rows keep their order controls in a narrow column and remove with ✕, so a bullet gets most of the row', async () => {
+  await openFirstCv()
+  const position = window.locator('.form fieldset').filter({ has: window.getByLabel('Job title') }).first()
+
+  // Punkt stanowiska: pole zajmuje większość wiersza, a „Usuń” to ✕ z podpowiedzią i dotychczasową etykietą.
+  const bullet = position.getByRole('textbox', { name: 'Bullet 2', exact: true })
+  const row = bullet.locator('xpath=ancestor::div[contains(@class, "form-row")][1]')
+  const [bulletBox, rowBox] = await Promise.all([bullet.boundingBox(), row.boundingBox()])
+  expect(bulletBox!.width / rowBox!.width).toBeGreaterThan(0.75)
+  const removeBullet = position.getByRole('button', { name: 'Remove bullet 2', exact: true })
+  await expect(removeBullet).toHaveText('✕')
+  await expect(removeBullet).toHaveAttribute('title', 'Remove bullet 2')
+  await expectOrderColumn(
+    position.getByRole('button', { name: 'Drag bullet 2 to reorder' }),
+    position.getByRole('button', { name: 'Move bullet 2 up' }),
+    position.getByRole('button', { name: 'Move bullet 2 down' })
+  )
+
+  // Pozostałe listy: sekcje, stanowiska, wykształcenie, pozycje listy i kontakty.
+  await expectOrderColumn(
+    window.getByRole('button', { name: /^Drag section “.+” to reorder$/ }).nth(1),
+    window.getByRole('button', { name: /^Move section “.+” up$/ }).nth(1),
+    window.getByRole('button', { name: /^Move section “.+” down$/ }).nth(1)
+  )
+  await expectOrderColumn(
+    window.getByRole('button', { name: /^Drag position “.+” to reorder$/ }).first(),
+    window.getByRole('button', { name: /^Move position “.+” up$/ }).first(),
+    window.getByRole('button', { name: /^Move position “.+” down$/ }).first()
+  )
+  await expectOrderColumn(
+    window.getByRole('button', { name: /^Drag entry “.+” to reorder$/ }).first(),
+    window.getByRole('button', { name: /^Move entry “.+” up$/ }).first(),
+    window.getByRole('button', { name: /^Move entry “.+” down$/ }).first()
+  )
+  const languages = window.getByRole('region', { name: 'Languages', exact: true })
+  await expectOrderColumn(
+    languages.getByRole('button', { name: 'Drag item 2 to reorder' }),
+    languages.getByRole('button', { name: 'Move item 2 up' }),
+    languages.getByRole('button', { name: 'Move item 2 down' })
+  )
+  for (const remove of [
+    languages.getByRole('button', { name: 'Remove item 2', exact: true }),
+    window.getByRole('button', { name: 'Remove contact 1', exact: true })
+  ]) {
+    await expect(remove).toHaveText('✕')
+    await expect(remove).toHaveAttribute('title', (await remove.getAttribute('aria-label'))!)
+  }
+
+  // Usuwanie całych wpisów zostaje tekstowe.
+  await expect(position.getByRole('button', { name: 'Remove position' })).toHaveText('Remove position')
 })
 
 test('removing a position says “Removed.” with Undo, which brings it back with its bullets; any later change hides the message', async () => {

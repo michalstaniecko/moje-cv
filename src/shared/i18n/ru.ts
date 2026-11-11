@@ -179,7 +179,6 @@ export const ru: Dictionary = {
     renameCv: (name) => `Переименовать резюме: ${name}`,
     removed: 'Удалено.',
     undoRemoval: 'Отменить',
-    remove: 'Удалить',
     cvDesign: 'Дизайн резюме',
     accentColor: 'Цвет акцента',
     font: 'Шрифт',

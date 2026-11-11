@@ -179,7 +179,6 @@ export const pt: Dictionary = {
     renameCv: (name) => `Renomear o currículo: ${name}`,
     removed: 'Removido.',
     undoRemoval: 'Desfazer',
-    remove: 'Remover',
     cvDesign: 'Design do currículo',
     accentColor: 'Cor de destaque',
     font: 'Fonte',
