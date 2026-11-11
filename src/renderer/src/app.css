@@ -675,10 +675,16 @@ textarea:focus-visible {
 
 .form-group legend {
   display: flex;
-  align-items: center;
   gap: 6px;
   padding: 0 4px;
   font-weight: 600;
+}
+
+/* Nagłówek wpisu z uchwytem wiersza: uchwyt przy pierwszej linii nazwy. Linia ma wysokość uchwytu (24 px), więc
+   jednoliniowa nazwa stoi na środku uchwytu, a dłuższa, zawinięta, nie ściąga go w dół. */
+.form-group legend:has(.row-handle) {
+  align-items: flex-start;
+  line-height: 24px;
 }
 
 .form-row {
