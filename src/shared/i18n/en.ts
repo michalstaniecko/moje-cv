@@ -233,7 +233,6 @@ export const en = {
     currentlyWorkHere: 'I currently work here',
     bullets: 'Bullet points',
     bullet: (number: number) => `Bullet ${number}`,
-    removeBullet: (number: number) => `Remove bullet ${number}`,
     addBullet: 'Add bullet',
     newEducation: 'New education',
     addEducation: 'Add education',
@@ -248,7 +247,6 @@ export const en = {
     graduation: 'Graduation date',
     endBeforeStart: 'The end date is earlier than the start date.',
     listItem: (number: number) => `Item ${number}`,
-    removeListItem: (number: number) => `Remove item ${number}`,
     addListItem: 'Add item',
     // Elementy list z ręczną kolejnością w etykiecie uchwytu i komunikatach (np. „Actions for section “Languages””).
     order: {
@@ -256,6 +254,7 @@ export const en = {
       actions: (item: string) => `Actions for ${item}`,
       moveUp: 'Move up',
       moveDown: 'Move down',
+      remove: 'Remove',
       section: (name: string) => `section “${name}”`,
       position: (name: string) => `position “${name}”`,
       education: (name: string) => `entry “${name}”`,

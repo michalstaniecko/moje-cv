@@ -530,7 +530,7 @@ test('the CV editor is in English, including the save status, photo cropping and
   for (const label of ['Job title', 'Company', 'City', 'From', 'To', 'I currently work here', 'Bullet 1', 'New page before this entry']) {
     await expect(position.getByLabel(label, { exact: true })).toBeVisible()
   }
-  for (const name of ['Remove bullet 1', 'Actions for bullet 2', 'Add bullet', 'Remove position']) {
+  for (const name of ['Actions for bullet 2', 'Add bullet', 'Remove position']) {
     await expect(position.getByRole('button', { name, exact: true })).toBeVisible()
   }
   await window.getByRole('button', { name: 'Add education' }).click()
@@ -907,6 +907,11 @@ const announcement = (text: string | RegExp) => window.locator('[aria-live]').fi
 // Uchwyt wiersza listy z ręczną kolejnością („Actions for …”) i jego menu.
 const rowHandle = (scope: Page | Locator, item: string) => scope.getByRole('button', { name: `Actions for ${item}`, exact: true })
 const rowMenu = () => window.getByRole('menu')
+// Usuwa punkt albo element listy z menu jego wiersza.
+const removeFromRowMenu = async (scope: Page | Locator, item: string) => {
+  await rowHandle(scope, item).click()
+  await rowMenu().getByRole('menuitem', { name: 'Remove' }).click()
+}
 
 // `word/document.xml` z zapisanego pliku DOCX (ZIP).
 async function docxDocumentXml(filePath: string): Promise<string> {
@@ -1263,6 +1268,7 @@ test('the row menu and its announcement are translated, and the menu is not cut 
   expect(menuBox.y + menuBox.height).toBeLessThanOrEqual(Math.min(viewportHeight, formBox.y + formBox.height))
   await expect(rowMenu().getByRole('menuitem', { name: 'Przenieś wyżej' })).toBeFocused()
   await expect(rowMenu().getByRole('menuitem', { name: 'Przenieś niżej' })).toBeDisabled()
+  await expect(rowMenu().getByRole('menuitem')).toHaveText(['Przenieś wyżej', 'Przenieś niżej', 'Usuń'])
 })
 
 test('edits education and lists, reorders and hides sections, and forces page breaks in the preview and PDF', async () => {
@@ -1287,7 +1293,7 @@ test('edits education and lists, reorders and hides sections, and forces page br
   await languages.getByRole('button', { name: 'Add item' }).click()
   await languages.getByRole('textbox', { name: 'Item 3', exact: true }).fill('Spanish – B1')
   await expect(preview).toContainText('Spanish – B1')
-  await languages.getByRole('button', { name: 'Remove item 2' }).click()
+  await removeFromRowMenu(languages, 'item 2')
   await expect(preview).not.toContainText('German – B2')
 
   // Kolejność sekcji, wpisów i punktów z menu wiersza.
@@ -2286,20 +2292,18 @@ async function expectRowHandle(handle: Locator) {
   await expect(handle).toHaveAttribute('title', (await handle.getAttribute('aria-label'))!)
 }
 
-test('list rows have one handle instead of arrows and remove with ✕, so a bullet gets most of the row', async () => {
+test('list rows have one handle and no ✕, so a bullet or a list item takes almost the whole row', async () => {
   await openFirstCv()
   const position = window.locator('.form fieldset').filter({ has: window.getByLabel('Job title') }).first()
 
-  // Punkt stanowiska: pole zajmuje większość wiersza, a „Usuń” to ✕ z podpowiedzią i dotychczasową etykietą.
+  // Punkt stanowiska: w wierszu tylko uchwyt i pole, które zajmuje prawie całą szerokość.
   const bullet = position.getByRole('textbox', { name: 'Bullet 2', exact: true })
   const row = bullet.locator('xpath=ancestor::div[contains(@class, "form-row")][1]')
   const [bulletBox, rowBox] = await Promise.all([bullet.boundingBox(), row.boundingBox()])
-  expect(bulletBox!.width / rowBox!.width).toBeGreaterThan(0.75)
-  const removeBullet = position.getByRole('button', { name: 'Remove bullet 2', exact: true })
-  await expect(removeBullet).toHaveText('✕')
-  await expect(removeBullet).toHaveAttribute('title', 'Remove bullet 2')
-  // W wierszu: uchwyt, pole i ✕ – bez strzałek.
-  await expect(row.getByRole('button')).toHaveCount(2)
+  expect(bulletBox!.width / rowBox!.width).toBeGreaterThan(0.85)
+  expect(Math.abs(bulletBox!.x + bulletBox!.width - (rowBox!.x + rowBox!.width))).toBeLessThanOrEqual(1)
+  await expect(row.getByRole('button')).toHaveCount(1)
+  await expect(position.getByRole('button', { name: /^Remove bullet \d+$/ })).toHaveCount(0)
   const handle = rowHandle(position, 'bullet 2')
   await expectRowHandle(handle)
   // Uchwyt ma wysokość jednowierszowego pola i stoi przy jego pierwszej linii.
@@ -2313,18 +2317,79 @@ test('list rows have one handle instead of arrows and remove with ✕, so a bull
   await expectRowHandle(window.getByRole('button', { name: /^Actions for position “.+”$/ }).first())
   await expectRowHandle(window.getByRole('button', { name: /^Actions for entry “.+”$/ }).first())
   const languages = window.getByRole('region', { name: 'Languages', exact: true })
+  const item = languages.getByRole('textbox', { name: 'Item 2', exact: true })
+  const itemRow = item.locator('xpath=ancestor::div[contains(@class, "form-row")][1]')
+  const [itemBox, itemRowBox] = await Promise.all([item.boundingBox(), itemRow.boundingBox()])
+  // Pole kończy się przy prawej krawędzi wiersza – za nim nic nie ma.
+  expect(Math.abs(itemBox!.x + itemBox!.width - (itemRowBox!.x + itemRowBox!.width))).toBeLessThanOrEqual(1)
+  await expect(itemRow.getByRole('button')).toHaveCount(1)
+  await expect(languages.getByRole('button', { name: /^Remove item \d+$/ })).toHaveCount(0)
   await expectRowHandle(rowHandle(languages, 'item 2'))
   await expect(window.getByRole('button', { name: /^(Move .+ (up|down)|Drag .+ to reorder)$/ })).toHaveCount(0)
-  for (const remove of [
-    languages.getByRole('button', { name: 'Remove item 2', exact: true }),
-    window.getByRole('button', { name: 'Remove contact 1', exact: true })
-  ]) {
-    await expect(remove).toHaveText('✕')
-    await expect(remove).toHaveAttribute('title', (await remove.getAttribute('aria-label'))!)
-  }
+
+  // Kontakty (bez ręcznej kolejności) zostają z ✕.
+  const removeContact = window.getByRole('button', { name: 'Remove contact 1', exact: true })
+  await expect(removeContact).toHaveText('✕')
+  await expect(removeContact).toHaveAttribute('title', 'Remove contact 1')
 
   // Usuwanie całych wpisów zostaje tekstowe.
   await expect(position.getByRole('button', { name: 'Remove position' })).toHaveText('Remove position')
+})
+
+test('the row menu of a bullet or a list item has Remove, which says “Removed.” with Undo; sections, positions and education have no Remove', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+  const menuItems = async (handle: Locator) => {
+    await handle.click()
+    const labels = await rowMenu().getByRole('menuitem').allTextContents()
+    await window.keyboard.press('Escape')
+    return labels
+  }
+
+  // Menu sekcji, stanowiska i wykształcenia: tylko przenoszenie.
+  for (const handle of [
+    window.getByRole('button', { name: /^Actions for section “.+”$/ }).nth(1),
+    window.getByRole('button', { name: /^Actions for position “.+”$/ }).first(),
+    window.getByRole('button', { name: /^Actions for entry “.+”$/ }).first()
+  ]) {
+    expect(await menuItems(handle)).toEqual(['Move up', 'Move down'])
+  }
+
+  // Punkt stanowiska: „Remove” na końcu menu usuwa go, z „Removed.” i „Undo”.
+  const position = window.locator('.form fieldset', { hasText: 'Senior Procurement Specialist' })
+  const bullets = position.getByLabel(/^Bullet \d+$/)
+  const bulletCount = await bullets.count()
+  const secondBullet = 'Managing a portfolio of more than 60 suppliers of components and auxiliary materials.'
+  expect(await menuItems(rowHandle(position, 'bullet 2'))).toEqual(['Move up', 'Move down', 'Remove'])
+  await rowHandle(position, 'bullet 2').click()
+  await rowMenu().getByRole('menuitem', { name: 'Remove' }).click()
+  await expect(bullets).toHaveCount(bulletCount - 1)
+  await expect(preview).not.toContainText(secondBullet)
+  await expect(rowMenu()).toHaveCount(0)
+  await expect(removed).toBeVisible()
+  await expect(removed.getByRole('button', { name: 'Undo' })).not.toBeFocused()
+  // „Undo” przywraca punkt na jego miejscu i wraca fokusem do jego pola.
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect(bullets).toHaveCount(bulletCount)
+  await expect(position.getByLabel('Bullet 2', { exact: true })).toHaveValue(secondBullet)
+  await expect(position.getByLabel('Bullet 2', { exact: true })).toBeFocused()
+  await expect(removed).toHaveCount(0)
+
+  // Element sekcji-listy – z klawiatury: Enter otwiera menu, End wybiera „Remove”.
+  const languages = window.getByRole('region', { name: 'Languages', exact: true })
+  expect(await menuItems(rowHandle(languages, 'item 2'))).toEqual(['Move up', 'Move down', 'Remove'])
+  await rowHandle(languages, 'item 2').focus()
+  await window.keyboard.press('Enter')
+  await window.keyboard.press('End')
+  await expect(rowMenu().getByRole('menuitem', { name: 'Remove' })).toBeFocused()
+  await window.keyboard.press('Enter')
+  await expect(languages.getByLabel(/^Item \d+$/)).toHaveCount(1)
+  await expect(preview).not.toContainText('German – B2')
+  await expect(removed).toBeVisible()
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect(languages.getByRole('textbox', { name: 'Item 2', exact: true })).toHaveValue('German – B2')
+  await expect(languages.getByRole('textbox', { name: 'Item 2', exact: true })).toBeFocused()
 })
 
 test('removing a position says “Removed.” with Undo, which brings it back with its bullets; any later change hides the message', async () => {
@@ -2349,12 +2414,12 @@ test('removing a position says “Removed.” with Undo, which brings it back wi
   await expect(positions.nth(1).getByLabel('Job title')).toBeFocused()
 
   // Każda kolejna zmiana chowa komunikat, więc „Undo” nigdy nie cofa czegoś innego niż usunięcie.
-  await positions.first().getByRole('button', { name: 'Remove bullet 1' }).click()
+  await removeFromRowMenu(positions.first(), 'bullet 1')
   await expect(removed).toBeVisible()
   await window.getByLabel('Full name').fill('Ewa Nowak')
   await expect(removed).toHaveCount(0)
   // Cmd+Z po usunięciu też je chowa.
-  await window.getByRole('region', { name: 'Languages', exact: true }).getByRole('button', { name: 'Remove item 2' }).click()
+  await removeFromRowMenu(window.getByRole('region', { name: 'Languages', exact: true }), 'item 2')
   await expect(removed).toBeVisible()
   await window.keyboard.press('Meta+z')
   await expect(removed).toHaveCount(0)
@@ -2563,7 +2628,7 @@ test('a second removal replaces the “Removed.” message and its Undo brings b
   const preview = window.locator('.preview')
   const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
 
-  await window.getByRole('region', { name: 'Languages', exact: true }).getByRole('button', { name: 'Remove item 2' }).click()
+  await removeFromRowMenu(window.getByRole('region', { name: 'Languages', exact: true }), 'item 2')
   await expect(preview).not.toContainText('German – B2')
   const education = window.getByRole('region', { name: 'Education', exact: true })
   await education.getByRole('button', { name: 'Remove education' }).last().click()

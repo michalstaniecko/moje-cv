@@ -17,7 +17,8 @@ import { RowMenu, type RowMenuAction } from './RowMenu'
 
 // Sterowanie kolejnością jednego wiersza, przekazywane do `children`:
 // - `handle` – uchwyt do umieszczenia w wierszu: przeciągnięcie myszą zmienia kolejność, kliknięcie (albo Enter/spacja)
-//   otwiera menu wiersza („Przenieś wyżej/niżej”), a ⌥⇧↑/↓ na nim przenosi wiersz od razu (fokus zostaje na uchwycie),
+//   otwiera menu wiersza („Przenieś wyżej/niżej”, a w listach z `onRemove` także „Usuń”), a ⌥⇧↑/↓ na nim przenosi
+//   wiersz od razu (fokus zostaje na uchwycie),
 // - `moveBy(offset)` – przenosi wiersz o `offset` pozycji (−1 w górę, 1 w dół) jako osobny krok cofania i ogłasza nową
 //   pozycję czytnikowi ekranu; na krańcu listy nic nie robi i zwraca `false`. Fokusu nie zmienia – o nim decyduje
 //   wywołujący (menu wraca na uchwyt, pole tekstowe może zostać w sobie).
@@ -28,16 +29,20 @@ export type SortableRow = {
 
 // Lista z ręczną kolejnością: przeciąganie za uchwyt myszą i menu wiersza pod uchwytem (także z klawiatury).
 // `onMove(id, toIndex)` – element ma trafić na pozycję `toIndex`; `children` dostaje sterowanie wiersza (`SortableRow`).
+// `onRemove` dodaje do menu wiersza „Usuń” (punkty i elementy list; całe wpisy usuwa się przyciskiem w ich polu) –
+// wywołujący usuwa element z „Usunięto. Cofnij” i decyduje o fokusie.
 export function SortableList<T extends { id: string }>({
   items,
   label,
   onMove,
+  onRemove,
   children
 }: {
   items: T[]
   // Nazwa elementu w etykiecie uchwytu i komunikatach, np. „section “Languages”” → „Actions for section “Languages””.
   label: (item: T, index: number) => string
   onMove: (id: string, toIndex: number) => void
+  onRemove?: (item: T) => void
   children: (item: T, row: SortableRow, index: number) => ReactNode
 }) {
   const { order } = useDictionary().editor
@@ -123,7 +128,8 @@ export function SortableList<T extends { id: string }>({
           }
           const actions: RowMenuAction[] = [
             { label: order.moveUp, disabled: index === 0, run: () => moveAndRefocus(-1) },
-            { label: order.moveDown, disabled: index === items.length - 1, run: () => moveAndRefocus(1) }
+            { label: order.moveDown, disabled: index === items.length - 1, run: () => moveAndRefocus(1) },
+            ...(onRemove ? [{ label: order.remove, run: () => onRemove(item) }] : [])
           ]
           return (
             <SortableItem key={item.id} id={item.id}>
