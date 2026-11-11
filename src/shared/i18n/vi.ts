@@ -175,6 +175,7 @@ export const vi: Dictionary = {
     leaveUnsaved: 'Các thay đổi chưa được lưu. Vẫn rời đi?',
     leaveAnyway: 'Vẫn rời đi',
     stayInEditor: 'Ở lại trình chỉnh sửa',
+    resizePanes: 'Thay đổi độ rộng biểu mẫu và bản xem trước',
     renameCv: (name) => `Đổi tên CV: ${name}`,
     removed: 'Đã xóa.',
     undoRemoval: 'Hoàn tác',

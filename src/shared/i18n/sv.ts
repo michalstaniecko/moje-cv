@@ -180,6 +180,7 @@ export const sv: Dictionary = {
     leaveUnsaved: 'Dina ändringar har inte sparats. Lämna ändå?',
     leaveAnyway: 'Lämna ändå',
     stayInEditor: 'Stanna i redigeraren',
+    resizePanes: 'Ändra bredd på formuläret och förhandsvisningen',
     renameCv: (name) => `Byt namn på cv: ${name}`,
     removed: 'Borttaget.',
     undoRemoval: 'Ångra',

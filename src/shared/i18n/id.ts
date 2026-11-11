@@ -175,6 +175,7 @@ export const id: Dictionary = {
     leaveUnsaved: 'Perubahan Anda belum disimpan. Tetap keluar?',
     leaveAnyway: 'Tetap keluar',
     stayInEditor: 'Tetap di editor',
+    resizePanes: 'Ubah lebar formulir dan pratinjau',
     renameCv: (name) => `Ganti nama CV: ${name}`,
     removed: 'Dihapus.',
     undoRemoval: 'Urungkan',

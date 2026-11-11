@@ -80,13 +80,15 @@ export type Api = {
     exportFile: (id: string) => Promise<ExportCvFileResult>
     importFile: () => Promise<ImportCvFileResult>
   }
-  // Ustawienia globalne: biblioteka klauzul zgody.
+  // Ustawienia globalne: biblioteka klauzul zgody i szerokość formularza w edytorze.
   settings: {
     get: () => Promise<AppSettings>
     addClause: (content: ClauseContent) => Promise<Clause>
     updateClause: (id: string, content: ClauseContent) => Promise<AppSettings>
     deleteClause: (id: string) => Promise<AppSettings>
     setDefaultClause: (id: string | null) => Promise<AppSettings>
+    // Szerokość formularza w edytorze CV (px) – jedna preferencja dla całej aplikacji.
+    setFormWidth: (width: number) => Promise<AppSettings>
   }
   photo: {
     pick: () => Promise<PickPhotoResult>

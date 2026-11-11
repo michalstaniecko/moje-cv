@@ -4,6 +4,7 @@
 
 ### Added
 - Export to DOCX: an "Export to DOCX" button next to "Export to PDF" in the CV editor and File → Export to DOCX… save an editable copy of the CV for Word, Pages, LibreOffice or Google Docs. The file uses one simplified layout for every Template (heading styles, real bulleted lists, dates on a right tab stop) with the CV's accent colour, font and CV language; the PDF stays the exact image of the preview. The photo (JPEG or PNG) sits next to the name, and with Lato the characters it lacks (Cyrillic, some Vietnamese letters) are written in Source Sans 3, as in the preview. The CV's font is embedded in the file, so Word on Windows shows it without installing anything; the fonts ship with the app as unmodified files from their authors, with their SIL Open Font License (`Contents/Resources/fonts`).
+- The separator between the form and the preview in the CV editor can be dragged to make the form wider or narrower (at least 360 px each for the form and the preview). It also works from the keyboard (←/→, with Shift in bigger steps, Home/End), and a double click restores the default width. The width is one setting for the whole app and is kept after a restart.
 
 ### Changed
 - First release in the Mac App Store, alongside the `.dmg` on GitHub Releases. Both versions are free and share the same CV library on your Mac.

@@ -175,6 +175,7 @@ export const ro: Dictionary = {
     leaveUnsaved: 'Modificările nu au fost salvate. Ieși oricum?',
     leaveAnyway: 'Ieși oricum',
     stayInEditor: 'Rămâi în editor',
+    resizePanes: 'Redimensionează formularul și previzualizarea',
     renameCv: (name) => `Redenumește CV-ul: ${name}`,
     removed: 'Eliminat.',
     undoRemoval: 'Anulează',
