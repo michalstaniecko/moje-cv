@@ -14,6 +14,9 @@
 - CV Drawer runs in the macOS App Sandbox. CVs and settings are stored in the app's container (`~/Library/Containers/com.michalstaniecko.cvdrawer`), which the Mac App Store and `.dmg` versions share.
 - Template thumbnails in the CV editor always show the Sample CV in the CV language, in the CV's accent colour and font, so they show how the Templates differ even for a new, empty CV.
 
+### Fixed
+- The CV editor screen no longer scrolls as a whole: only the form and the preview scroll, and the toolbar stays in place above them.
+
 ## [0.6.0] – 2026-11-08
 
 ### Changed

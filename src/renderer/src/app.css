@@ -545,9 +545,16 @@ textarea:focus-visible {
   grid-template-columns: var(--form-width, 440px) minmax(0, 1fr);
   flex: 1;
   min-height: 0;
+  /* Zabezpieczenie: nic z paneli nie rozszerza ekranu (.app-screen), więc ekran edytora nigdy się nie przewija.
+     `clip`, nie `hidden`: tego obszaru nie da się przewinąć nawet skryptem ani przez scrollIntoView. */
+  overflow: clip;
 }
 
+/* `position: relative` jest konieczne: bez niego blokiem zawierającym elementów `position: absolute` w panelu
+   (.visually-hidden, .cv-measure, kropki szablonu) jest .editor-panes, a wtedy panel ich nie przycina i wystają
+   poza niego, dając ekranowi własny pasek przewijania (panele odjeżdżały spod paska narzędzi). */
 .editor-panes > :not(.pane-separator) {
+  position: relative;
   overflow: auto;
 }
 

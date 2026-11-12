@@ -171,3 +171,16 @@ test('a long bullet field fits its text again after the separator moves: shorter
   await expect.poll(height).toBeLessThan(narrow)
   expect(await fits()).toBe(true)
 })
+
+test('the editor screen itself never scrolls: only the form and the preview do, with their hidden helpers kept inside', async () => {
+  await setWindowWidth(1280)
+  await openFirstCv()
+  await expect(window.locator('.preview .cv-page').first()).toBeVisible()
+  // Ukryte elementy pozycjonowane absolutnie (komunikaty dla czytnika ekranu, kontener pomiaru stron) nie mogą
+  // wystawać poza panele: inaczej ekran dostaje własny pasek przewijania i panele odjeżdżają spod paska narzędzi.
+  await window.locator('.editor-form').evaluate((form) => (form.scrollTop = form.scrollHeight))
+  const screen = window.locator('.app-screen')
+  await screen.evaluate((element) => (element.scrollTop = 10_000))
+  expect(await screen.evaluate((element) => element.scrollTop)).toBe(0)
+  expect(await screen.evaluate((element) => element.scrollHeight - element.clientHeight)).toBe(0)
+})
