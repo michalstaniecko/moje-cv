@@ -1923,7 +1923,7 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   // Eksport najpierw pyta, czy uciąć treść: „Cancel” wraca do edycji bez okna zapisu.
   await window.getByRole('button', { name: 'Export to PDF' }).click()
   const confirm = window.getByRole('dialog', { name: 'Some content doesn’t fit on a page and will be cut off. Export anyway?' })
-  await expect(confirm).toContainText('The fragments that are too long are highlighted in the preview.')
+  await expect(confirm).toContainText('The fragments that are too long are highlighted in edit mode.')
   await expect(confirm.getByRole('button', { name: 'Cancel' })).toBeFocused()
   await confirm.getByRole('button', { name: 'Cancel' }).click()
   await expect(confirm).toBeHidden()

@@ -30,6 +30,7 @@ export const en = {
     selectAll: 'Select All',
     view: 'View',
     toggleFullScreen: 'Toggle Full Screen',
+    previewMode: 'Preview',
     window: 'Window',
     minimize: 'Minimize',
     zoom: 'Zoom',
@@ -185,7 +186,9 @@ export const en = {
     // DOCX export ma uproszczony układ (ADR-0008) – mówi o tym powiadomienie po zapisie.
     docxNote: 'Simplified layout for editing in Word, Pages, LibreOffice or Google Docs. The PDF matches the preview.',
     exportCutOff: 'Some content doesn’t fit on a page and will be cut off. Export anyway?',
-    exportCutOffHint: 'The fragments that are too long are highlighted in the preview.',
+    exportCutOffHint: 'The fragments that are too long are highlighted in edit mode.',
+    // Przełącznik Edit mode / Preview mode w pasku narzędzi edytora.
+    mode: { label: 'Mode', edit: 'Edit', preview: 'Preview' },
     exportAnyway: 'Export anyway',
     preparingPdf: 'Preparing the PDF…',
     exportTimedOut: 'Preparing the PDF took too long and was stopped. Try again.',
@@ -315,6 +318,9 @@ export const en = {
     lengthNotice: (pages: string) => `The CV is longer than ${pages} – consider shortening it.`,
     // Tylko w podglądzie – nigdy nie trafia do PDF.
     oversized: 'This fragment is too long to fit on a page – shorten it',
+    // W Preview mode bloki za długie nie są wyróżnione na kartkach – zamiast tego ostrzeżenie w pasku podglądu.
+    oversizedInPreview: 'Some content doesn’t fit on a page',
+    showInEditMode: 'Show',
     zoomOut: 'Zoom out',
     zoomIn: 'Zoom in',
     fit: 'Fit'
