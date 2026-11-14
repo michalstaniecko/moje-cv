@@ -755,6 +755,17 @@ textarea:focus-visible {
   content: '✓';
 }
 
+/* Kreska przed pozycją destrukcyjną (np. „Usuń stanowisko” w menu fragmentu na stronie). */
+.row-menu [role='separator'] {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--ui-border);
+}
+
+.row-menu button.danger:hover:not(:disabled) {
+  border-color: transparent;
+}
+
 /* ---------- Biblioteka CV ---------- */
 .library {
   max-width: 820px;

@@ -5,8 +5,9 @@ import { moveShortcutOffset, type MoveOffset } from './moveShortcut'
 
 // Pozycja menu wiersza. `run` wykonuje się po zamknięciu menu i sam decyduje o fokusie (np. przeniesienie wraca na
 // uchwyt przeniesionego wiersza); wyłączona pozycja jest widoczna, ale pomijana przez strzałki. `checked` robi z pozycji
-// przełącznik (`menuitemcheckbox` z zaznaczeniem, np. „Nowa strona przed”).
-export type RowMenuAction = { label: string; disabled?: boolean; checked?: boolean; run: () => void }
+// przełącznik (`menuitemcheckbox` z zaznaczeniem, np. „Nowa strona przed”); `danger` – pozycja destrukcyjna (np. „Usuń
+// stanowisko”), oddzielona od pozostałych kreską i w kolorze błędu.
+export type RowMenuAction = { label: string; disabled?: boolean; checked?: boolean; danger?: boolean; run: () => void }
 
 const ITEMS = '[role="menuitem"]:not(:disabled), [role="menuitemcheckbox"]:not(:disabled)'
 
@@ -142,10 +143,12 @@ export function RowMenu({
             if (!menu.current?.contains(next) && next !== handle.current) close(false)
           }}
         >
-          {actions.map((action) => (
+          {actions.map((action) => [
+            action.danger && <li key={`${action.label}:separator`} role="separator" />,
             <li key={action.label} role="none">
               <button
                 type="button"
+                className={action.danger ? 'danger' : undefined}
                 role={action.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
                 aria-checked={action.checked}
                 // Pozycje menu nie są w kolejności Tab (przechodzi się po nich strzałkami), więc Tab wychodzi z menu.
@@ -159,7 +162,7 @@ export function RowMenu({
                 {action.label}
               </button>
             </li>
-          ))}
+          ])}
         </ul>
       )}
     </>
