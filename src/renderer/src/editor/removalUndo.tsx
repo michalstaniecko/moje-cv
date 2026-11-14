@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import type { CvDocument } from '../domain/schema'
 import { useDictionary } from '../i18n'
@@ -102,10 +102,23 @@ export function RemovalMessage({
   onUndo: () => void
   onExpire: () => void
 }) {
+  // Komunikat jest w warstwie górnej (`popover`), żeby otwarta Edit card (też w warstwie górnej) nie zasłoniła „Cofnij”;
+  // każde nowe usunięcie stawia go na jej wierzchu. Położenie – od kotwicy w rogu panelu stron (CSS anchor positioning).
+  const element = useRef<HTMLDivElement>(null)
+  const key = removal?.key
+  useLayoutEffect(() => {
+    const message = element.current
+    if (!message) return
+    if (message.matches(':popover-open')) message.hidePopover()
+    message.showPopover()
+  }, [key])
   return (
-    <div className="removal-message" role="status">
-      {removal && <RemovalMessageContent key={removal.key} onUndo={onUndo} onExpire={onExpire} />}
-    </div>
+    <>
+      <div className="removal-message-anchor" />
+      <div ref={element} popover="manual" className="removal-message" role="status">
+        {removal && <RemovalMessageContent key={removal.key} onUndo={onUndo} onExpire={onExpire} />}
+      </div>
+    </>
   )
 }
 

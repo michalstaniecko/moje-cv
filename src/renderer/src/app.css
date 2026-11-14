@@ -326,6 +326,15 @@ textarea:focus-visible {
   flex-wrap: wrap;
 }
 
+/* Wiersz punktu lub elementu listy (uchwyt + pole) zostaje w jednej linii i zajmuje całą szerokość karty. */
+.edit-card .form-bullets .form-row {
+  flex-wrap: nowrap;
+}
+
+.edit-card .form-bullets > div {
+  align-self: stretch;
+}
+
 .edit-card .form-row > .form-checkbox {
   flex-basis: 100%;
   padding-top: 0;
@@ -708,7 +717,7 @@ textarea:focus-visible {
 /* `position: relative` jest konieczne: bez niego blokiem zawierającym elementów `position: absolute` w panelu
    (.visually-hidden, .cv-measure, kropki szablonu) jest .editor-panes, a wtedy panel ich nie przycina i wystają
    poza niego, dając ekranowi własny pasek przewijania (panele odjeżdżały spod paska narzędzi). */
-.editor-panes > :not(.pane-separator, .removal-message) {
+.editor-panes > :not(.pane-separator, .removal-message-anchor, .removal-message) {
   position: relative;
   overflow: auto;
 }
@@ -1115,17 +1124,32 @@ textarea:focus-visible {
 }
 
 /* „Usunięto. Cofnij” pływa w lewym dolnym rogu panelu stron (obok paska bocznego, a w Preview mode przy lewej krawędzi),
-   wspólne dla Edit card i formularza. Pusty kontener `role="status"` zostaje w DOM bez wymiarów, żeby czytnik ekranu
-   ogłosił wstawioną treść. */
-.removal-message {
+   wspólne dla Edit card i formularza. Kontener `role="status"` jest w warstwie górnej (popover, nad otwartą Edit card),
+   zakotwiczony w pustym elemencie w tym rogu; bez treści nie ma wymiarów, a czytnik ekranu ogłasza wstawioną treść. */
+.removal-message-anchor {
   position: absolute;
   bottom: 16px;
   left: calc(var(--form-width, 440px) + 16px);
-  z-index: 2;
+  width: 0;
+  height: 0;
+  anchor-name: --removal-message;
 }
 
-.editor-panes--preview > .removal-message {
+.editor-panes--preview > .removal-message-anchor {
   left: 16px;
+}
+
+.removal-message {
+  position: fixed;
+  position-anchor: --removal-message;
+  inset: auto;
+  left: anchor(left);
+  bottom: anchor(bottom);
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
 }
 
 .removal-message-content {
