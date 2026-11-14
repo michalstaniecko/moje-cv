@@ -22,13 +22,16 @@ export const MIN_CONTAINED_HEIGHT = 180
 // 3. dopiero gdy i to się nie da (kotwica prawie na całą wysokość okna), staje po stronie z większą ilością miejsca,
 //    przesunięty tak, żeby był cały w oknie (zasłania wtedy część kotwicy, ale nie ucieka z ekranu).
 // Przy kotwicy przewiniętej poza okno panel stoi przy jego krawędzi.
+// `prefer: 'above'` (pasek klauzuli nad klauzulą): bez `beside` i `contain` – najpierw nad kotwicą, a gdy nad nią brakuje
+// miejsca – pod nią.
 export function anchoredPosition({
   anchor,
   panel,
   viewport,
   beside,
   gap = GAP,
-  contain = false
+  contain = false,
+  prefer = 'below'
 }: {
   anchor: Box
   panel: Size
@@ -36,6 +39,7 @@ export function anchoredPosition({
   beside?: { edge: number; limit: number }
   gap?: number
   contain?: boolean
+  prefer?: 'below' | 'above'
 }): { top: number; left: number; placement: 'beside' | 'side' | 'below' | 'above'; maxHeight?: number } {
   const left = (preferred: number) => Math.max(EDGE, Math.min(preferred, viewport.width - panel.width - EDGE))
   if (beside && beside.edge + gap + panel.width <= beside.limit) {
@@ -65,6 +69,7 @@ export function anchoredPosition({
   }
   // `contain`: kotwica przewinięta poza okno nie wyprowadza panelu z ekranu – panel zostaje przy krawędzi okna.
   const inWindow = (top: number) => (contain ? Math.max(EDGE, Math.min(top, viewport.height - panel.height - EDGE)) : top)
+  if (prefer === 'above' && above >= 0) return { top: inWindow(above), left: left(anchor.left), placement: 'above' }
   if (below + panel.height <= viewport.height || above < 0) return { top: inWindow(below), left: left(anchor.left), placement: 'below' }
   return { top: inWindow(above), left: left(anchor.left), placement: 'above' }
 }

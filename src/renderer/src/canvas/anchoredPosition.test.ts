@@ -103,4 +103,9 @@ describe('anchoredPosition', () => {
     expect(anchoredPosition({ anchor: { ...anchor, left: 1000 }, panel, viewport }).left).toBe(876)
     expect(anchoredPosition({ anchor: { ...anchor, left: -20 }, panel, viewport }).left).toBe(4)
   })
+  it('with `prefer: above`, puts the panel above its anchor, and below it when there is no room above', () => {
+    expect(anchoredPosition({ anchor, panel, viewport, prefer: 'above' })).toEqual({ top: anchor.top - 4 - panel.height, left: anchor.left, placement: 'above' })
+    const nearTop = { ...anchor, top: 20, bottom: 40 }
+    expect(anchoredPosition({ anchor: nearTop, panel, viewport, prefer: 'above' })).toEqual({ top: 44, left: anchor.left, placement: 'below' })
+  })
 })

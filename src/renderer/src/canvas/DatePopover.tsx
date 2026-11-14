@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { isEndBeforeStart } from '../domain/dates'
 import type { CvDocument, YearMonth } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
@@ -7,7 +7,7 @@ import { DateOrderWarning } from '../editor/fields/DateOrderWarning'
 import { MonthField } from '../editor/MonthField'
 import { useDictionary } from '../i18n'
 import type { JoinedFieldsProps, PageFieldProps } from '../template/editable'
-import { anchoredPosition } from './anchoredPosition'
+import { FieldPopover } from './FieldPopover'
 import { activateJoined, focusSibling, fragmentHandle, joinedTarget, usePageFieldsContext } from './PageField'
 import { dateChange, dateName, entryDates, isPositionEnd, moveField, pageFieldByKey } from './pageFields'
 import { offsetOf, pageFieldElement, type ActiveFieldStore } from './useActiveField'
@@ -245,8 +245,6 @@ export function DatePopover({
 
 type EntryDates = { start: YearMonth | null; end: YearMonth | 'present' | null }
 
-const CONTROLS = 'input:not(:disabled), button:not(:disabled)'
-
 function DatePanel({
   fieldKey,
   values,
@@ -294,113 +292,53 @@ function DatePanel({
     const activeField = field && { key: field.key, fragment: field.fragment }
     if (activeField) setTimeout(() => active.blurred(activeField))
   }
-  const closeRef = useRef(close)
-  useLayoutEffect(() => {
-    closeRef.current = close
-  })
 
-  // Położenie przy żetonie (pod nim, a bez miejsca – nad nim) po każdym renderze, przewinięciu i zmianie rozmiaru okna:
-  // żeton bywa przemontowany na innej stronie albo przesunięty przez nowy podział stron.
-  const place = () => {
-    const element = panel.current
-    const anchor = token()
-    if (!element || !anchor) return
-    const { top, left } = anchoredPosition({
-      anchor: anchor.getBoundingClientRect(),
-      panel: { width: element.offsetWidth, height: element.offsetHeight },
-      viewport: { width: window.innerWidth, height: window.innerHeight },
-      gap: 6
-    })
-    element.style.top = `${top}px`
-    element.style.left = `${left}px`
-  }
-  const placeRef = useRef(place)
-  useLayoutEffect(() => {
-    placeRef.current = place
-  })
-  // Pokazanie dopiero przy żetonie na stronie (popover otwarty z napisu dat czeka na rozwinięty wpis); fokus na
-  // pierwszej kontrolce raz, przy pokazaniu.
-  const shown = useRef(false)
-  useLayoutEffect(() => {
-    const element = panel.current
-    if (!element || shown.current || !token()) return
-    shown.current = true
-    element.showPopover()
-    placeRef.current()
-    element.querySelector<HTMLElement>(CONTROLS)?.focus({ preventScroll: true })
-  }, [anchored])
-  useLayoutEffect(() => {
-    const element = panel.current
-    if (!element) return
-    const onMove = () => placeRef.current()
-    // Klik poza popoverem i żetonem zamyka popover (klik w żeton – sam żeton go zamyka).
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node
-      if (element.contains(target) || token()?.contains(target)) return
-      closeRef.current(false)
-    }
-    window.addEventListener('scroll', onMove, true)
-    window.addEventListener('resize', onMove)
-    window.document.addEventListener('pointerdown', onPointerDown)
-    return () => {
-      window.removeEventListener('scroll', onMove, true)
-      window.removeEventListener('resize', onMove)
-      window.document.removeEventListener('pointerdown', onPointerDown)
-    }
-  }, [])
-  useLayoutEffect(() => {
-    if (shown.current) placeRef.current()
-  })
-
-  const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape' || (event.key === 'Enter' && (event.target as HTMLElement).matches('input[type="month"]'))) {
-      event.preventDefault()
-      event.stopPropagation()
-      close(true)
-      return
-    }
-    if (event.key !== 'Tab' || !panel.current) return
-    // Popover stoi „za” żetonem: Shift+Tab z pierwszej kontrolki wraca na żeton, Tab z ostatniej – do pola za żetonem.
-    const controls = [...panel.current.querySelectorAll<HTMLElement>(CONTROLS)]
-    const edge = event.shiftKey ? controls[0] : controls.at(-1)
-    if (event.target !== edge) return
-    event.preventDefault()
+  // Popover stoi „za” żetonem: Shift+Tab z pierwszej kontrolki wraca na żeton, Tab z ostatniej – do pola za żetonem.
+  const tabOut = (backward: boolean) => {
     close(true)
     const element = token()
-    if (!event.shiftKey && element) focusSibling(element, 1, false, active)
+    if (!backward && element) focusSibling(element, 1, false, active)
   }
 
   return (
-    <div
-      ref={panel}
-      popover="manual"
-      className="field-popover"
-      role="dialog"
-      aria-label={field?.label}
-      data-field-popover
-      onKeyDown={onKeyDown}
+    <FieldPopover
+      anchor={token}
+      anchored={anchored}
+      label={field?.label}
+      onClose={close}
+      onTabOut={tabOut}
+      onKeyDown={(event) => {
+        // Enter w polu miesiąca zatwierdza datę i wraca na żeton.
+        if (event.key === 'Enter' && (event.target as HTMLElement).matches('input[type="month"]')) {
+          event.preventDefault()
+          event.stopPropagation()
+          close(true)
+        }
+      }}
     >
-      <MonthField
-        label={dateName(fieldKey, t) ?? ''}
-        value={value === 'present' ? null : value}
-        disabled={value === 'present'}
-        describedBy={reversed ? warningId : undefined}
-        onChange={(next) => change(next, true)}
-      />
-      {isPositionEnd(fieldKey) && <Checkbox label={t.currentlyWorkHere} checked={value === 'present'} onChange={togglePresent} />}
-      {reversed && <DateOrderWarning id={warningId} />}
-      <div className="field-popover-actions">
-        <button
-          type="button"
-          disabled={value === null}
-          onClick={() => {
-            change(null, false)
-            panel.current?.querySelector<HTMLInputElement>('input[type="month"]')?.focus()
-          }}
-        >
-          {t.clearDate}
-        </button>
+      <div ref={panel}>
+        <MonthField
+          label={dateName(fieldKey, t) ?? ''}
+          value={value === 'present' ? null : value}
+          disabled={value === 'present'}
+          describedBy={reversed ? warningId : undefined}
+          onChange={(next) => change(next, true)}
+        />
+        {isPositionEnd(fieldKey) && <Checkbox label={t.currentlyWorkHere} checked={value === 'present'} onChange={togglePresent} />}
+        {reversed && <DateOrderWarning id={warningId} />}
+        <div className="field-popover-actions">
+          <button
+            type="button"
+            disabled={value === null}
+            onClick={() => {
+              change(null, false)
+              panel.current?.querySelector<HTMLInputElement>('input[type="month"]')?.focus()
+            }}
+          >
+            {t.clearDate}
+          </button>
+        </div>
       </div>
-    </div>
+    </FieldPopover>
   )
 }
