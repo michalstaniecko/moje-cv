@@ -165,4 +165,50 @@ describe('generateBlocks', () => {
       expect.objectContaining({ id: 'ed2', level: '', details: 'Logistics, Fictional Academy' })
     ])
   })
+
+  describe('the parts of a CV revealed in Edit mode (`reveal`)', () => {
+    const emptyHeader = { fullName: '', photo: null, contacts: [{ id: 'c1', label: 'Phone', value: '' }], summary: '' }
+    const withEmptyTitle = (section: Section): Section => ({ ...section, title: '' })
+    const experience = sampleCvs.en.sections[0]!
+    const twoColumns = geometry({ title: 'above', columns: 2 })
+
+    it('changes nothing without revealed parts, for every Sample CV and both list layouts', () => {
+      for (const document of Object.values(sampleCvs)) {
+        for (const layout of [geometry(), twoColumns]) {
+          expect(generateBlocks(document, layout, { reveal: new Set() })).toEqual(generateBlocks(document, layout))
+        }
+      }
+    })
+
+    it('gives an empty header a block when its full name or summary is revealed', () => {
+      const document = { ...withSections(listSection()), header: emptyHeader }
+
+      expect(generateBlocks(document, geometry()).map((block) => block.id)).not.toContain('header')
+      for (const part of ['fullName', 'summary']) {
+        expect(generateBlocks(document, geometry(), { reveal: new Set([part]) })[0]).toEqual(
+          expect.objectContaining({ kind: 'header', id: 'header', fullName: '', summary: '', contacts: [] })
+        )
+      }
+    })
+
+    it('gives a section with entries a title block for its empty title when the title is revealed', () => {
+      const document = withSections(withEmptyTitle(experience), withEmptyTitle(listSection()))
+      const reveal = new Set(['sectionTitle:experience', 'sectionTitle:skills'])
+
+      expect(generateBlocks(document, twoColumns).map((block) => block.id)).not.toContain('experience:title')
+      const blocks = generateBlocks(document, twoColumns, { reveal })
+      expect(blocks[0]).toEqual(expect.objectContaining({ kind: 'sectionTitle', id: 'experience:title', title: '', keepWithNext: true }))
+      expect(blocks.map((block) => block.id)).toContain('skills:title')
+      // Odstęp przed odsłoniętym tytułem jak przed każdym innym tytułem sekcji.
+      expect(spaceAfter(blocks, 'e4:e4-b4')).toBe(12)
+    })
+
+    it('reveals no title of a section without entries on the pages, nor beside a list (the title is in its first row)', () => {
+      const emptySection = { ...withEmptyTitle(experience), items: [] }
+      const document = withSections(emptySection, withEmptyTitle(listSection()))
+      const reveal = new Set(['sectionTitle:experience', 'sectionTitle:skills'])
+
+      expect(generateBlocks(document, geometry(), { reveal })).toEqual(generateBlocks(document, geometry()))
+    })
+  })
 })

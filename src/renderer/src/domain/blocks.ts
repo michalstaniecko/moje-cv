@@ -54,13 +54,25 @@ type DraftBlock = BlockContent & {
 // Pozycja w sekcji jest ustalana dopiero dla gotowej listy bloków wpisów (markSectionPositions).
 const unplaced: SectionPosition = 'middle'
 
+const noReveal: Reveal = new Set()
+
 const isFilled = (text: string): boolean => text.trim() !== ''
 const joinFilled = (parts: string[], separator: string): string => parts.filter(isFilled).join(separator)
 
-function headerBlocks(header: CvDocument['header'], spacing: BlockSpacingMm): DraftBlock[] {
+// Części CV odsłonięte w Edit mode (docs/specs/wysiwyg-editing.md, W4, W10): mają blok mimo pustych pól, żeby było
+// gdzie postawić kursor. Klucze to klucze fragmentów strony warstwy edycji (`fragmentKey` w canvas/editTargets.ts):
+// `fullName` i `summary` (części nagłówka), `sectionTitle:<id sekcji>`. PDF, DOCX i Preview mode nigdy ich nie podają.
+export type Reveal = ReadonlySet<string>
+
+export type GenerateBlocksOptions = { reveal?: Reveal }
+
+const headerParts = ['fullName', 'summary']
+
+function headerBlocks(header: CvDocument['header'], spacing: BlockSpacingMm, reveal: Reveal): DraftBlock[] {
   const contacts = header.contacts.filter((contact) => isFilled(contact.value))
   const photoUrl = header.photo?.dataUrl ?? null
-  if (!isFilled(header.fullName) && contacts.length === 0 && !isFilled(header.summary) && !photoUrl) return []
+  const revealed = headerParts.some((part) => reveal.has(part))
+  if (!isFilled(header.fullName) && contacts.length === 0 && !isFilled(header.summary) && !photoUrl && !revealed) return []
   return [
     {
       kind: 'header',
@@ -74,8 +86,8 @@ function headerBlocks(header: CvDocument['header'], spacing: BlockSpacingMm): Dr
   ]
 }
 
-function titleBlocks(section: Section, spacing: BlockSpacingMm): DraftBlock[] {
-  if (!isFilled(section.title)) return []
+function titleBlocks(section: Section, spacing: BlockSpacingMm, reveal: Reveal): DraftBlock[] {
+  if (!isFilled(section.title) && !reveal.has(`sectionTitle:${section.id}`)) return []
   return [
     {
       kind: 'sectionTitle',
@@ -164,7 +176,7 @@ function markSectionPositions(entries: DraftBlock[]): DraftBlock[] {
 // Geometria szablonu potrzebna do generowania bloków.
 export type BlockGeometry = Pick<TemplateGeometry, 'blockSpacingMm' | 'listSectionLayout'>
 
-function listSectionBlocks(section: Extract<Section, { type: 'list' }>, geometry: BlockGeometry): DraftBlock[] {
+function listSectionBlocks(section: Extract<Section, { type: 'list' }>, geometry: BlockGeometry, reveal: Reveal): DraftBlock[] {
   const { blockSpacingMm: spacing, listSectionLayout: layout } = geometry
   const items = section.items.filter((item) => isFilled(item.text)).map(({ id, text }) => ({ id, text }))
   if (items.length === 0) return []
@@ -181,10 +193,10 @@ function listSectionBlocks(section: Extract<Section, { type: 'list' }>, geometry
     })
   }
   rows[rows.length - 1]!.marginBottomMm! += spacing.afterListSection
-  return layout.title === 'above' ? [...titleBlocks(section, spacing), ...rows] : rows
+  return layout.title === 'above' ? [...titleBlocks(section, spacing, reveal), ...rows] : rows
 }
 
-function sectionBlocks(section: Section, geometry: BlockGeometry, language: CvLanguage): DraftBlock[] {
+function sectionBlocks(section: Section, geometry: BlockGeometry, language: CvLanguage, reveal: Reveal): DraftBlock[] {
   const spacing = geometry.blockSpacingMm
   const entry: EntryContext = { spacing, language }
   if (section.hidden) return []
@@ -193,17 +205,17 @@ function sectionBlocks(section: Section, geometry: BlockGeometry, language: CvLa
   switch (section.type) {
     case 'experience': {
       const items = markSectionPositions(section.items.flatMap((item) => experienceItemBlocks(item, entry)))
-      blocks = items.length > 0 ? [...titleBlocks(section, spacing), ...items] : []
+      blocks = items.length > 0 ? [...titleBlocks(section, spacing, reveal), ...items] : []
       break
     }
     case 'education': {
       const items = markSectionPositions(section.items.flatMap((item) => educationItemBlocks(item, entry)))
       if (items.length > 0) items[items.length - 1]!.marginBottomMm = spacing.afterEducationSection
-      blocks = items.length > 0 ? [...titleBlocks(section, spacing), ...items] : []
+      blocks = items.length > 0 ? [...titleBlocks(section, spacing, reveal), ...items] : []
       break
     }
     case 'list':
-      blocks = listSectionBlocks(section, geometry)
+      blocks = listSectionBlocks(section, geometry, reveal)
       break
   }
 
@@ -212,11 +224,13 @@ function sectionBlocks(section: Section, geometry: BlockGeometry, language: CvLa
 }
 
 // Zamienia dokument na płaską listę bloków do podziału na strony. Puste pola, puste sekcje
-// i sekcje ukryte są pomijane. Stały tekst (np. „present” w datach) jest w CV language dokumentu. Odstępy między blokami i układ sekcji listowych pochodzą z geometrii szablonu.
-export function generateBlocks(document: CvDocument, geometry: BlockGeometry): CvBlock[] {
+// i sekcje ukryte są pomijane – poza częściami odsłoniętymi w Edit mode (`reveal`), które mają blok mimo pustych pól.
+// Stały tekst (np. „present” w datach) jest w CV language dokumentu. Odstępy między blokami i układ sekcji listowych
+// pochodzą z geometrii szablonu.
+export function generateBlocks(document: CvDocument, geometry: BlockGeometry, { reveal = noReveal }: GenerateBlocksOptions = {}): CvBlock[] {
   const drafts = [
-    ...headerBlocks(document.header, geometry.blockSpacingMm),
-    ...document.sections.flatMap((section) => sectionBlocks(section, geometry, document.settings.language))
+    ...headerBlocks(document.header, geometry.blockSpacingMm, reveal),
+    ...document.sections.flatMap((section) => sectionBlocks(section, geometry, document.settings.language, reveal))
   ]
   return drafts.map(({ marginTopMm: _top, marginBottomMm, ...block }, index) => {
     const next = drafts[index + 1]
