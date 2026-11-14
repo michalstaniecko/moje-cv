@@ -32,7 +32,9 @@ export const PAGE_FIELD_SELECTOR = '.cv-pages [data-field-key]'
 export const pageFieldElement = (root: ParentNode, key: string) =>
   root.querySelector<HTMLElement>(`.cv-pages [data-field-key="${CSS.escape(key)}"]`)
 
-export function createActiveFieldStore() {
+// `onLost` – aktywne pole zniknęło ze stron bez pola przed nim we fragmencie, a fokus nigdzie nie trafił (np. cofnięte
+// dodanie wpisu z kursorem w nim): edytor przenosi fokus w bezpieczne miejsce.
+export function createActiveFieldStore({ onLost }: { onLost?: () => void } = {}) {
   let active: ActiveField | null = null
   let selection: TextSelection | null = null
   let pending: Pending | null = null
@@ -80,12 +82,14 @@ export function createActiveFieldStore() {
         // Pole zniknęło ze stron (cofnięty podział, usunięty punkt), a fokus nigdzie nie trafił: kursor na koniec pola
         // przed nim w tym samym fragmencie (W19).
         const fallback = previous === null ? null : pageFieldElement(window.document, previous)
-        if (fallback && !pageFieldElement(window.document, field.key) && (!element || element === window.document.body)) {
+        const gone = !pageFieldElement(window.document, field.key) && (!element || element === window.document.body)
+        if (fallback && gone) {
           focusField(fallback, 'end', { scroll: 'nearest' })
           return
         }
         selection = null
         setActive(null)
+        if (gone) onLost?.()
       })
     },
     // Czy pole czeka na fokus z zaznaczeniem po zmianie struktury (jego tekst zmienia się, ale kursor ustawi `restore`).

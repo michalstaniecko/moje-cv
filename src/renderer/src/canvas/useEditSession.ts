@@ -20,29 +20,29 @@ export type EditSession = ReturnType<typeof useEditSession>
 // Q17, Q21). Tryb jest zgłaszany procesowi głównemu dla zaznaczenia Widok → Podgląd.
 // - Jedna karta naraz: otwarcie innej zastępuje bieżącą; przejście do Preview mode zamyka kartę (powrót jej nie otwiera).
 // - Po każdej zmianie dokumentu (także cofnij/ponów) sesja sprawdza, czy część CV z karty nadal istnieje; jeśli nie,
-//   zamyka kartę i woła `onCardGone` (edytor przenosi fokus w bezpieczne miejsce).
+//   zamyka kartę i woła `onFocusLost` (edytor przenosi fokus w bezpieczne miejsce) – tak samo, gdy z dokumentu zniknie
+//   aktywne pole, a fokus nie ma dokąd wrócić (np. cofnięte dodanie wpisu z kursorem w nim).
 // - Aktywne pole (`activeField`, useActiveField.ts): Page field z fokusem na stronach (docs/specs/wysiwyg-editing.md);
 //   otwarty Field popover daty (`datePopover`, DatePopover.tsx) – zamykany przy przejściu do Preview mode.
 //   Części CV edytowane już na stronie (imię i nazwisko, kontakty, podsumowanie, tytuł sekcji, pole tekstowe wpisu,
 //   element listy, klauzula zgody) nie mają karty: „otwarcie” ich z Outline, „Add to CV” czy menu stawia kursor w ich polu na stronie (pusta
-//   część jest odsłaniana). Karta tytułu i listy zostaje tylko dla sekcji, której nie ma na stronach (ukrytej albo
-//   pustej) – do czasu odsłaniania sekcji (S5); karta wpisu – tylko dla nowego wpisu (do S5; daty zmienia żeton daty);
-//   karta zdjęcia – tylko z „Add to CV”, gdy zdjęcia nie ma (do S5; zdjęcie na stronie ma Field popover).
+//   część – także nowy wpis – jest odsłaniana). Karta zostaje (do S6) tylko dla tego, czego nie ma na stronach: tytułu
+//   ukrytej albo pustej sekcji i zdjęcia – Outline i „Add to CV” już ich nie otwierają.
 // `current` – bieżący dokument edytora: część CV dodana tuż przed „otwarciem” (nowy kontakt, włączona klauzula) jest już
 // w nim, choć `document` z ostatniego renderu jeszcze jej nie ma.
 export function useEditSession(
   document: CvDocument,
-  { onCardGone, current }: { onCardGone?: () => void; current?: () => CvDocument } = {}
+  { onFocusLost, current }: { onFocusLost?: () => void; current?: () => CvDocument } = {}
 ) {
   const [mode, setModeState] = useState<EditorMode>('edit')
   const [card, setCard] = useState<OpenCard | null>(null)
-  const [activeField] = useState(createActiveFieldStore)
+  const cardGone = useRef(onFocusLost)
+  const [activeField] = useState(() => createActiveFieldStore({ onLost: () => cardGone.current?.() }))
   const [datePopover] = useState(createDatePopoverStore)
-  const cardGone = useRef(onCardGone)
   const latestDocument = useRef(document)
   const currentDocument = useRef(current)
   useEffect(() => {
-    cardGone.current = onCardGone
+    cardGone.current = onFocusLost
     latestDocument.current = document
     currentDocument.current = current
   })

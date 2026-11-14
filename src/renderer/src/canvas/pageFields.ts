@@ -227,7 +227,8 @@ function refOf(key: string, document: CvDocument): FieldRef | null {
 }
 
 // Klucz Page field (albo żetonu daty) części CV edytowanej na stronie (fokus z Outline, „Add to CV”, menu) albo null –
-// część bez pola albo z kartą (wpis bez wskazanego pola: nowy wpis ma kartę do S5). Sekcja listowa bez wskazanego
+// część bez pola (zdjęcie). Wpis bez wskazanego pola (np. nowy wpis) – jego pierwsze pole tekstu: stanowisko albo poziom
+// wykształcenia (pusty wpis jest odsłaniany z placeholderami). Sekcja listowa bez wskazanego
 // elementu – jej pierwszy element; kontakt – jego pierwsze puste pole, a wypełniony – wartość; bez wskazanego kontaktu –
 // pierwszy (gdy podano dokument).
 export function pageFieldKey(target: EditTarget, document?: CvDocument): string | null {
@@ -249,10 +250,10 @@ export function pageFieldKey(target: EditTarget, document?: CvDocument): string 
     case 'experienceItem':
       if (target.bulletId) return bulletKey(target.itemId, target.bulletId)
       if (target.field === 'start' || target.field === 'end') return dateKey('experience', target.itemId, target.field)
-      return target.field ? experienceKey(target.itemId, target.field) : null
+      return experienceKey(target.itemId, target.field ?? 'role')
     case 'educationItem':
       if (target.field === 'start' || target.field === 'end') return dateKey('education', target.itemId, target.field)
-      return target.field ? educationKey(target.itemId, target.field) : null
+      return educationKey(target.itemId, target.field ?? 'level')
     case 'listSection': {
       if (target.itemId) return listItemKey(target.itemId)
       const section = document?.sections.find((candidate) => candidate.id === target.sectionId)

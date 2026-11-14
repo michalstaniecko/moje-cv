@@ -1263,28 +1263,27 @@ test('the dates of entries change in a date popover at the date on the page, wit
   await expect(graduation).toHaveCount(0)
 })
 
-test('Cmd+Z with the card of a newly added position open undoes the adding, closes the card and keeps the focus', async () => {
+test('Cmd+Z after adding a position undoes the typing and then the adding; the focus then goes to a safe place', async () => {
   await openFirstCv()
   const form = window.locator('.editor-form')
   await handle('section “Work experience”').click()
   await blockMenu('section “Work experience”').getByRole('menuitem', { name: 'Add position' }).click()
-  const added = card('Position “New position”')
-  await expect(added.getByLabel('Job title')).toBeFocused()
+  await expect(roleField('New position')).toBeFocused()
   await window.keyboard.type('Buyer')
   const role = window.locator('.preview .cv-page .cv-role', { hasText: /^Buyer$/ })
   await expect(role).toHaveCount(1)
-  await expect(card('Position “Buyer”').getByLabel('Job title')).toBeFocused()
-  // Cofnięcie wpisanej nazwy: wpis bez treści znika ze strony, ale karta zostaje (wpis istnieje).
+  await expect(roleField('Buyer')).toBeFocused()
+  // Cofnięcie wpisanej nazwy: pusty wpis z kursorem zostaje odsłonięty (z placeholderem), kursor w nim.
   await window.keyboard.press('Meta+z')
   await expect(role).toHaveCount(0)
-  await expect(added).toBeVisible()
-  await expect(added.getByLabel('Job title')).toBeFocused()
-  // Cofnięcie dodania: wpisu nie ma, karta się zamyka, fokus przechodzi w bezpieczne miejsce – na pasek boczny (przy
-  // CV form – jego przycisk w przełączniku Outline / Form).
+  await expect(roleField('New position')).toBeFocused()
+  // Cofnięcie dodania: wpisu nie ma, fokus przechodzi w bezpieczne miejsce – na pasek boczny (przy CV form – jego
+  // przycisk w przełączniku Outline / Form).
   await window.keyboard.press('Meta+z')
-  await expect(window.getByRole('dialog')).toHaveCount(0)
+  await expect(roleField('New position')).toHaveCount(0)
   await expect(form.getByLabel('Job title')).toHaveCount(4)
   await expect(form.getByRole('button', { name: 'Form', exact: true })).toBeFocused()
+  await expect(window.getByRole('dialog')).toHaveCount(0)
 })
 
 // ---------- Karta zdjęcia i kontakty na stronie ----------
@@ -1901,23 +1900,25 @@ test('“New page before” and “Hide section” in the menu on the page work 
   await expect(skillsTitle).toHaveCount(1)
 })
 
-test('“Add …” in the menu of a section title adds an element: a position opens its card with the focus on the first field, a list item gets the caret on the page', async () => {
+test('“Add …” in the menu of a section title adds an element with the caret in it on the page: a position in its job title, a list item in its text', async () => {
   await openFirstCv()
   await window.setViewportSize({ width: 1600, height: 1000 })
   const form = window.locator('.editor-form')
   await handle('section “Work experience”').click()
   await blockMenu('section “Work experience”').getByRole('menuitem', { name: 'Add position' }).click()
-  // Nowy wpis jest pusty (nie ma go na stronie) – karta stoi przy uchwycie, z którego go dodano.
-  const added = card('Position “New position”')
-  await expect(added.getByLabel('Job title')).toBeFocused()
+  // Nowy, pusty wpis jest odsłonięty na stronie: kursor w stanowisku, placeholdery pól i żetony dat – bez karty.
+  const newRole = roleField('New position')
+  await expect(newRole).toBeFocused()
+  await expect(newRole).toHaveText('')
+  expect(await placeholderOf(newRole)).toBe('"Job title"')
+  expect(await placeholderOf(pageField('Company – Position “New position”'))).toBe('"Company"')
+  await expect(dateToken('From – Position “New position”')).toHaveCount(1)
+  await expect(window.getByRole('dialog')).toHaveCount(0)
   await expect(form.getByLabel('Job title')).toHaveCount(5)
-  await expectCardNextTo(added, handle('section “Work experience”'))
   await window.keyboard.type('Buyer')
   await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^Buyer$/ })).toHaveCount(1)
-  await expect(card('Position “Buyer”')).toBeVisible()
-  await expectCardNextTo(card('Position “Buyer”'), roleField('Buyer'))
-  await window.keyboard.press('Escape')
   await expect(roleField('Buyer')).toBeFocused()
+  await expect(form.getByLabel('Job title').nth(4)).toHaveValue('Buyer')
 
   // Lista: nowy, pusty element na stronie (z placeholderem), z kursorem w nim – bez karty.
   await handle('section “Skills”').click()
@@ -1951,7 +1952,7 @@ test('the menu works from the keyboard alone, and there are no handles below 50%
   await window.keyboard.press('Enter')
   await window.keyboard.press('ArrowUp')
   await window.keyboard.press('Enter')
-  await expect(card('Education “New education”').getByLabel('Level')).toBeFocused()
+  await expect(pageField('Level – Education “New education”')).toBeFocused()
 
   const preview = window.locator('.preview')
   await preview.getByRole('button', { name: '100%' }).click()
@@ -2057,7 +2058,7 @@ test('a new CV shows the start hint on its empty first page and an “Add to CV�
   await expect(window.locator('.add-to-cv, .edit-pill, .edit-start-hint')).toHaveCount(0)
 })
 
-test('the “+” pill under a section adds an entry: its card opens at the pill with the focus on the first field, and moves to the new block after the first character; a list item gets the caret on the page', async () => {
+test('the “+” pill under a section adds an entry with the caret in its job title on the page; a list item gets the caret in its text', async () => {
   await openFirstCv()
   await window.setViewportSize({ width: 1600, height: 1000 })
   const form = window.locator('.editor-form')
@@ -2079,20 +2080,15 @@ test('the “+” pill under a section adds an entry: its card opens at the pill
   expect(pillBox.y).toBeLessThan(last.y + last.height + 8)
   await position.click()
 
-  const added = card('Position “New position”')
-  await expect(added.getByLabel('Job title')).toBeFocused()
+  // Nowy, pusty wpis odsłonięty pod ostatnim wpisem sekcji, z kursorem w stanowisku – bez karty.
+  await expect(roleField('New position')).toBeFocused()
+  await expect(window.getByRole('dialog')).toHaveCount(0)
   await expect(form.getByLabel('Job title')).toHaveCount(5)
-  await expectCardNextTo(added, position)
-  await window.keyboard.type('B')
-  const buyer = card('Position “B”')
-  await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^B$/ })).toHaveCount(1)
-  await expectCardNextTo(buyer, roleField('B'))
-  await window.keyboard.type('uyer')
-  await expect(card('Position “Buyer”')).toBeVisible()
+  await window.keyboard.type('Buyer')
+  await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^Buyer$/ })).toHaveCount(1)
+  await expect(roleField('Buyer')).toBeFocused()
 
   // Pigułki listy i wykształcenia; z klawiatury – pigułka jest w kolejności Tab za ostatnim fragmentem sekcji.
-  await window.keyboard.press('Escape')
-  await expect(roleField('Buyer')).toBeFocused()
   await handle('section “Skills”').focus()
   await window.keyboard.press('Tab')
   const item = pill('Item').first()
@@ -2112,12 +2108,21 @@ test('the “+” pill under a section adds an entry: its card opens at the pill
   await expect(window.locator('.edit-layer .edit-pill')).toHaveCount(0)
 })
 
-test('a full CV can be built from a new CV with the editing layer and cards alone, and Edit mode splits the pages like Preview mode', async () => {
+test('a full CV is built from a new CV in the Outline without any card and without the CV form: every field of the Sample CV is on the page or in a Field popover, and Edit mode then splits the pages like Preview mode', async () => {
   const photoPath = await writeRedBluePhoto()
   await openNewCv()
+  await expect(outline()).toBeVisible()
   const bar = (name: string) => addBar().getByRole('button', { name, exact: true })
+  const outlineSection = (name: string) => outlineRow(name).locator('.outline-row-button')
+  // Ani Edit card, ani CV form – przez cały czas.
+  const expectNoForms = async () => {
+    await expect(window.locator('.edit-card')).toHaveCount(0)
+    await expect(window.locator('.editor-form')).toHaveCount(0)
+  }
 
-  await bar('Full name').click()
+  // Imię i nazwisko z podpowiedzi w pustym CV.
+  await startHint().click()
+  await expect(pageField('Full name')).toBeFocused()
   await window.keyboard.type('Jane Doe')
   await expect(pageName()).toHaveText('Jane Doe')
 
@@ -2128,52 +2133,93 @@ test('a full CV can be built from a new CV with the editing layer and cards alon
   await window.getByRole('dialog', { name: 'Crop photo' }).getByRole('button', { name: 'Apply' }).click()
   await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(1)
   await expect(bar('Photo')).toHaveCount(0)
+  await window.keyboard.press('Escape')
 
-  // Kontakt: kursor na stronie w wartości pierwszego pustego kontaktu (etykiety nowego CV), z placeholderem.
+  // Kontakty: kursor w wartości pierwszego pustego kontaktu (etykiety nowego CV), z placeholderem; Enter w wartości
+  // dodaje kontakt z kursorem w jego etykiecie.
   await bar('Contact').click()
   await expect(pageField('Contact value 1')).toBeFocused()
   expect(await placeholderOf(pageField('Contact value 1'))).toBe('"Value"')
   await window.keyboard.type('+48 600 000 000')
-  await expect(window.locator('.preview .cv-page .cv-contact')).toContainText('+48 600 000 000')
+  await pageField('Contact value 2').click()
+  await window.keyboard.type('jane@example.com')
+  await window.keyboard.press('Enter')
+  await expect(labelField(3)).toBeFocused()
+  await window.keyboard.type('Website')
+  await window.keyboard.press('Enter')
+  await expect(pageField('Contact value 3')).toBeFocused()
+  await window.keyboard.type('jane.example')
+  await expectNoForms()
 
   await bar('Summary').click()
   await expect(pageField('Summary')).toBeFocused()
   await window.keyboard.type('Buyer with ten years in procurement.')
 
-  // Stanowisko z punktami.
-  await bar('Work experience').click()
-  const position = card('Position “New position”')
-  await expect(position.getByLabel('Job title')).toBeFocused()
+  // Pusta sekcja w Outline: jej pierwszy wpis odsłonięty na stronie z kursorem w stanowisku; Enter – kolejne pola.
+  await outlineSection('Work experience').click()
+  await expect(roleField('New position')).toBeFocused()
+  expect(await placeholderOf(roleField('New position'))).toBe('"Job title"')
   await window.keyboard.type('Senior Buyer')
-  await card('Position “Senior Buyer”').getByLabel('Company').fill('Acme')
-  const seniorBuyer = card('Position “Senior Buyer”')
-  await seniorBuyer.getByRole('button', { name: 'Add bullet' }).click()
-  await seniorBuyer.getByRole('textbox', { name: 'Bullet 1' }).fill('Negotiated annual contracts.')
-  // Enter dzieli punkt jak w formularzu.
   await window.keyboard.press('Enter')
-  await expect(seniorBuyer.getByRole('textbox', { name: 'Bullet 2' })).toBeFocused()
+  await expect(pageField('Company – Position “Senior Buyer”')).toBeFocused()
+  await window.keyboard.type('Acme')
+  await window.keyboard.press('Enter')
+  await expect(pageField('City – Position “Senior Buyer”')).toBeFocused()
+  await window.keyboard.type('Warsaw')
+  // Daty – żetony z placeholderami i popover daty.
+  const seniorBuyer = 'Position “Senior Buyer”'
+  await dateToken(`From – ${seniorBuyer}`).click()
+  const from = datePopover(`From – ${seniorBuyer}`).getByLabel('From', { exact: true })
+  await expect(from).toBeFocused()
+  await from.fill('2020-03')
+  await from.press('Enter')
+  await dateToken(`To – ${seniorBuyer}`).click()
+  await datePopover(`To – ${seniorBuyer}`).getByLabel('I currently work here').check()
+  await window.keyboard.press('Escape')
+  await expect(dateToken(`To – ${seniorBuyer}`)).toBeFocused()
+  // Punkty: pusty pierwszy punkt nowego wpisu, Enter dzieli.
+  await bulletField(1, 'Senior Buyer').click()
+  await window.keyboard.type('Negotiated annual contracts.')
+  await window.keyboard.press('Enter')
+  await expect(bulletField(2, 'Senior Buyer')).toBeFocused()
   await window.keyboard.type('Cut costs by 12%.')
   await expect(pageItem('Cut costs by 12%.')).toHaveCount(1)
+  // Tytuł sekcji – na stronie.
+  await clickAtCharacter(titleField('Work experience'), 4)
+  await window.keyboard.press('Meta+a')
+  await window.keyboard.type('Experience')
+  await expect(outlineRow('Experience')).toHaveText(/^Experience1$/)
   // Drugie stanowisko pigułką.
-  await window.keyboard.press('Escape')
   await pageRole('Senior Buyer').hover()
   await pill('Position').click()
+  await expect(roleField('New position')).toBeFocused()
   await window.keyboard.type('Buyer')
+  await expectNoForms()
 
-  await bar('Education').click()
-  await expect(card('Education “New education”').getByLabel('Level')).toBeFocused()
+  await outlineSection('Education').click()
+  await expect(pageField('Level – Education “New education”')).toBeFocused()
   await window.keyboard.type('Master’s degree')
+  await window.keyboard.press('Enter')
+  await window.keyboard.type('Logistics')
+  await window.keyboard.press('Enter')
+  await window.keyboard.type('Fictional Academy')
+  const master = 'Education “Master’s degree, Logistics”'
+  await dateToken(`Graduation date – ${master}`).click()
+  const graduation = datePopover(`Graduation date – ${master}`).getByLabel('Graduation date')
+  await graduation.fill('2015-06')
+  await graduation.press('Enter')
 
-  for (const [section, text] of [
-    ['Skills', 'Negotiation'],
-    ['Languages', 'English – native']
-  ] as const) {
-    await bar(section).click()
-    await expect(itemField(1, section)).toBeFocused()
-    await window.keyboard.type(text)
-    await window.keyboard.press('Enter')
-    await window.keyboard.type(`${text} 2`)
-  }
+  // Sekcje listowe: z Outline i z paska.
+  await outlineSection('Skills').click()
+  await expect(itemField(1, 'Skills')).toBeFocused()
+  await window.keyboard.type('Negotiation')
+  await window.keyboard.press('Enter')
+  await window.keyboard.type('Negotiation 2')
+  await bar('Languages').click()
+  await expect(itemField(1, 'Languages')).toBeFocused()
+  await window.keyboard.type('English – native')
+  await window.keyboard.press('Enter')
+  await window.keyboard.type('English – native 2')
 
   // Klauzula zgody: włączona przyciskiem paska, kursor w jej pustym tekście na stronie (z placeholderem).
   await bar('Consent clause').click()
@@ -2184,30 +2230,30 @@ test('a full CV can be built from a new CV with the editing layer and cards alon
 
   // Wszystko jest na stronach – pasek znika.
   await expect(addBar()).toHaveCount(0)
+  await expectNoForms()
 
   // Podział stron w Edit mode jak w Preview mode: te same strony i te same bloki na nich – także po kilku stronach.
   for (let copy = 0; copy < 3; copy++) {
     await pageRole('Senior Buyer').hover()
     await pill('Position').click()
+    await expect(roleField('New position')).toBeFocused()
     await window.keyboard.type(`Buyer ${copy}`)
-    const bullets = card(`Position “Buyer ${copy}”`)
-    await bullets.getByRole('button', { name: 'Add bullet' }).click()
-    await bullets.getByRole('textbox', { name: 'Bullet 1' }).focus()
+    await bulletField(1, `Buyer ${copy}`).click()
     for (let line = 0; line < 8; line++) {
       await window.keyboard.type(`Achievement ${copy}.${line} with a sentence long enough to wrap onto a second line of the page.`)
       await window.keyboard.press('Enter')
     }
-    await window.keyboard.press('Escape')
   }
-  // Escape z karty wraca na stanowisko na stronie (wpis z pustymi polami jest wtedy odsłonięty); klik w margines kartki
-  // zabiera fokus z pól – strony w spoczynku.
+  // Klik w margines kartki zabiera fokus z pól – strony w spoczynku (pusty ostatni punkt znika).
+  await window.locator('.preview').evaluate((element) => element.scrollTo({ top: 0 }))
   const firstPage = (await window.locator('.preview .cv-page').first().boundingBox())!
   await window.mouse.click(firstPage.x + 4, firstPage.y + 4)
-  await expect.poll(() => window.evaluate('document.activeElement?.dataset.fieldKey ?? null')).toBeNull()
+  await expect.poll(focusedKey).toBeNull()
   const edit = await pageSplit()
   expect(edit.length).toBeGreaterThan(1)
+  await expectNoForms()
   await window.keyboard.press('Meta+Shift+P')
-  await expectPreviewMode()
+  await expect(previewButton()).toHaveAttribute('aria-pressed', 'true')
   await expect.poll(pageSplit).toEqual(edit)
 
   const pdfPath = join(outputDir, 'cv.pdf')
@@ -2218,11 +2264,21 @@ test('a full CV can be built from a new CV with the editing layer and cards alon
   for (const expected of [
     'Jane Doe',
     '+48 600 000 000',
+    'jane@example.com',
+    'Website',
+    'jane.example',
     'Buyer with ten years in procurement.',
+    'Experience',
     'Senior Buyer',
     'Acme',
+    'Warsaw',
+    '03.2020',
+    'present',
     'Cut costs by 12%.',
     'Master’s degree',
+    'Logistics',
+    'Fictional Academy',
+    '06.2015',
     'Negotiation 2',
     'English – native 2',
     'I agree to the processing of my personal data.'
@@ -2256,12 +2312,12 @@ test('by default the sidebar is the Outline, about 240 px wide: the header, ever
     /^Education2$/,
     /^Skills5$/,
     /^Languages2$/,
-    /^Interestshidden1$/
+    /^Interestshidden1Show on CV$/
   ])
   // Liczba wpisów dla czytnika ekranu: opis wiersza, nie część nazwy.
   await expect(outlineRow('Work experience').locator('.outline-row-button')).toHaveAccessibleName('Work experience')
   await expect(outlineRow('Work experience').locator('.outline-row-button')).toHaveAccessibleDescription('4 items')
-  await expect(outlineRow('Interests').locator('.outline-row-button')).toHaveAccessibleDescription('1 item')
+  await expect(outlineRow('Interests').locator('.outline-row-button')).toHaveAccessibleDescription('1 item Show the section on the CV to edit it')
   await expect(nav.getByRole('button', { name: 'Consent clause' })).toBeVisible()
   await expect(nav.getByRole('switch', { name: 'Show on CV' })).not.toBeChecked()
 
@@ -2287,44 +2343,51 @@ test('by default the sidebar is the Outline, about 240 px wide: the header, ever
   await expect(window.getByRole('dialog')).toHaveCount(0)
 })
 
-test('a section hidden from the Outline leaves the pages but stays in the Outline: its card opens at its Outline row, “Hide section” again shows it, and each change is one undo step', async () => {
+test('a section hidden from the Outline leaves the pages but stays in the Outline: a click on it goes to its “Show on CV” switch, which shows it with the caret in its title on the page; each change is one undo step', async () => {
   await window.setViewportSize({ width: 1600, height: 1000 })
   await openFirstCvWithOutline()
-  const skillsOnPage = () => window.locator('.preview .cv-page .cv-section-title', { hasText: /^(Skills|Abilities)$/ })
+  const skillsOnPage = () => window.locator('.preview .cv-page .cv-section-title', { hasText: /^Skills/ })
   const hide = window.getByRole('menuitemcheckbox', { name: 'Hide section' })
   await outlineHandle('Skills').click()
   await expect(hide).toHaveAttribute('aria-checked', 'false')
   await hide.click()
   await expect(outlineHandle('Skills')).toBeFocused()
   await expect(skillsOnPage()).toHaveCount(0)
-  await expect(outlineRow('Skills')).toHaveText(/^Skillshidden5$/)
+  await expect(outlineRow('Skills')).toHaveText(/^Skillshidden5Show on CV$/)
 
-  // Karta ukrytej sekcji stoi przy jej wierszu Outline; Escape wraca na wiersz.
+  // Ukrytej sekcji nie ma na stronach: klik w jej wiersz przenosi fokus na jej przełącznik „Show on CV” (bez karty), a
+  // wiersz mówi czytnikowi ekranu, że trzeba ją pokazać.
   const row = outlineRow('Skills').locator('.outline-row-button')
+  await expect(row).toHaveAccessibleDescription('5 items Show the section on the CV to edit it')
   await row.click()
-  const titleCard = card('Section title “Skills”')
-  await expect(titleCard.getByLabel('Section title')).toBeFocused()
-  await expectCardNextTo(titleCard, row)
-  await titleCard.getByLabel('Section title').fill('Abilities')
-  await expect(outlineRow('Abilities')).toHaveText(/^Abilitieshidden5$/)
-  await window.keyboard.press('Escape')
+  const showSkills = outline().getByRole('switch', { name: 'Show “Skills” on CV', exact: true })
+  await expect(showSkills).toBeFocused()
+  await expect(showSkills).not.toBeChecked()
   await expect(window.getByRole('dialog')).toHaveCount(0)
-  await expect(outlineRow('Abilities').locator('.outline-row-button')).toBeFocused()
 
-  // Pokazanie – ta sama pozycja menu, zaznaczona.
-  await outlineHandle('Abilities').click()
+  // Pokazanie – sekcja wraca na strony z kursorem na końcu jej tytułu; przełącznik znika.
+  await showSkills.click()
+  await expect(skillsOnPage()).toHaveText(['Skills'])
+  await expect(titleField('Skills')).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'section:skills:title', offset: 6, collapsed: true })
+  await expect(outlineRow('Skills')).toHaveText(/^Skills5$/)
+  await window.keyboard.type(' & tools')
+  await expect(skillsOnPage()).toHaveText(['Skills & tools'])
+
+  // „Hide section” w menu – zaznaczone przy ukrytej sekcji, kolejny wybór ją pokazuje.
+  await outlineHandle('Skills & tools').click()
+  await hide.click()
+  await expect(skillsOnPage()).toHaveCount(0)
+  await outlineHandle('Skills & tools').click()
   await expect(hide).toHaveAttribute('aria-checked', 'true')
   await hide.click()
-  await expect(skillsOnPage()).toHaveText(['Abilities'])
-  await expect(outlineRow('Abilities')).toHaveText(/^Abilities5$/)
+  await expect(skillsOnPage()).toHaveText(['Skills & tools'])
 
-  // Cofanie: pokazanie, zmiana tytułu, ukrycie – po jednym kroku.
-  await window.keyboard.press('Meta+z')
-  await expect(outlineRow('Abilities')).toHaveText(/^Abilitieshidden5$/)
-  await window.keyboard.press('Meta+z')
-  await expect(outlineRow('Skills')).toHaveText(/^Skillshidden5$/)
-  await window.keyboard.press('Meta+z')
-  await expect(outlineRow('Skills')).toHaveText(/^Skills5$/)
+  // Cofanie: pokazanie, ukrycie, pisanie, pokazanie, ukrycie – po jednym kroku.
+  for (const expected of [/^Skills & toolshidden5Show on CV$/, /^Skills & tools5$/, /^Skills5$/, /^Skillshidden5Show on CV$/, /^Skills5$/]) {
+    await window.keyboard.press('Meta+z')
+    await expect(outlineRow(expected.source.startsWith('^Skills & tools') ? 'Skills & tools' : 'Skills')).toHaveText(expected)
+  }
   await expect(skillsOnPage()).toHaveText(['Skills'])
 })
 
@@ -2354,22 +2417,20 @@ test('sections are reordered in the Outline by dragging and from the row menu, a
   await expect.poll(pageSectionTitles).toEqual(['Work experience', 'Education', 'Skills', 'Languages'])
 })
 
-test('in a new CV the Outline marks the empty sections; “Add …” in a row menu opens the new entry’s card at the row, and the consent clause is switched on from the Outline and edited on the page', async () => {
+test('in a new CV the Outline marks the empty sections; “Add …” in a row menu puts the caret in the new entry on the page, and the consent clause is switched on from the Outline and edited on the page', async () => {
   await openNewCv()
   const nav = outline()
   await expect(nav.locator('.outline-section')).toHaveText([/^Work experienceempty$/, /^Educationempty$/, /^Skillsempty$/, /^Languagesempty$/])
 
   await outlineHandle('Work experience').click()
   await window.getByRole('menuitem', { name: 'Add position' }).click()
-  const newPosition = card('Position “New position”')
-  await expect(newPosition.getByLabel('Job title')).toBeFocused()
-  await expectCardNextTo(newPosition, outlineHandle('Work experience'))
+  // Nowy wpis odsłonięty na stronie razem z tytułem sekcji, kursor w stanowisku – bez karty.
+  await expect(roleField('New position')).toBeFocused()
+  await expect(window.locator('.preview .cv-page .cv-section-title')).toHaveText(['Work experience'])
+  await expect(window.getByRole('dialog')).toHaveCount(0)
   await window.keyboard.type('Buyer')
   await expect(window.locator('.preview .cv-page .cv-role')).toHaveText(['Buyer'])
   await expect(outlineRow('Work experience')).toHaveText(/^Work experience1$/)
-  // Po pierwszym znaku karta przeskakuje do bloku na stronie.
-  await expectCardNextTo(card('Position “Buyer”'), roleField('Buyer'))
-  await window.keyboard.press('Escape')
 
   // Wyłączona klauzula: klik w jej wiersz przenosi fokus na przełącznik; włączona – kursor w jej tekście na stronie.
   const consentSwitch = nav.getByRole('switch', { name: 'Show on CV' })

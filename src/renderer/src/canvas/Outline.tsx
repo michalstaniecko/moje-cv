@@ -19,12 +19,14 @@ import type { EditSession } from './useEditSession'
 // - Sekcje w kolejności CV (także ukryte i puste) z liczbą wpisów (czytnik ekranu słyszy ją jako opis „3 elementy”)
 //   i oznaczeniem „ukryta” / „pusta”. Uchwyt: przeciąganie
 //   myszą i menu („Przenieś wyżej/niżej”, „Nowa strona przed”, „Ukryj sekcję” z zaznaczeniem, „Dodaj …”) – każda zmiana
-//   to jeden krok cofania. Klik w sekcję przewija strony do jej tytułu i stawia kursor na jego końcu (Page field); sekcja
-//   ukryta albo pusta (bez tytułu na stronie) dostaje kartę tytułu przy swoim wierszu Outline (useEditSession.ts).
+//   to jeden krok cofania. Klik w sekcję przewija strony do jej tytułu i stawia kursor na jego końcu (Page field);
+//   w pustą sekcję (bez treści na stronach) – odsłania jej pierwszy element (a bez elementów dodaje go) z kursorem w nim
+//   (docs/specs/wysiwyg-editing.md, W21). Ukrytej sekcji nie ma na stronach, więc nie ma czego edytować: jej wiersz ma
+//   przełącznik „Pokaż na CV” (klik w wiersz przenosi na niego fokus, opis wiersza mówi, że trzeba ją pokazać), a
+//   pokazanie od razu stawia kursor w niej na stronie.
 // - „Klauzula zgody” stawia kursor w jej tekście na stronie (pusty jest odsłaniany), a wyłączona – przenosi fokus na
 //   przełącznik „Pokaż na CV”, który ją włącza i wyłącza.
-// Karty otwierane stąd mają kotwicę w wierszu Outline (`added`); gdy część CV jest na stronie, karta stoi przy jej
-// fragmencie (warstwa edycji szuka najpierw fragmentu). Nie pokazuje treści CV poza nazwami.
+// Nie pokazuje treści CV poza nazwami.
 export function Outline({
   editor,
   document,
@@ -57,7 +59,30 @@ export function Outline({
   }
   const openRow = (target: EditTarget) => openCard(target, find(rowSelector(fragmentKey(target))))
 
-  const isEmpty = (section: Section) => !sectionShown({ ...section, hidden: false }, document)
+  const isEmpty = (section: Section, current = document) => !sectionShown({ ...section, hidden: false }, current)
+
+  // Klik w sekcję: kursor na końcu jej tytułu na stronie, a w pustej – w jej pierwszym elemencie (odsłoniętym, a bez
+  // elementów – nowym). Ukryta – fokus na jej przełączniku „Pokaż na CV”.
+  const switches = useRef(new Map<string, HTMLInputElement>())
+  const openSection = (section: Section, current = document) => {
+    if (section.hidden) {
+      switches.current.get(section.id)?.focus()
+      return
+    }
+    const row = find(rowSelector(fragmentKey({ kind: 'sectionTitle', sectionId: section.id })))
+    if (!isEmpty(section, current)) {
+      openCard({ kind: 'sectionTitle', sectionId: section.id }, row)
+      return
+    }
+    const target = addSectionElement(editor, section, { reuseEmpty: true })
+    if (target) openCard(target, row)
+  }
+  const show = (section: Section) => {
+    editor.edit(updateSection(section.id, { hidden: false }))
+    const current = editor.store.getState().document
+    const shown = current.sections.find((candidate) => candidate.id === section.id)
+    if (shown) openSection(shown, current)
+  }
 
   const sectionActions = (section: Section, focusHandle: () => void): RowMenuAction[] => {
     const handle = find(`[data-outline-section="${CSS.escape(section.id)}"] .row-handle`)
@@ -114,6 +139,10 @@ export function Outline({
           {(section, row) => {
             const empty = isEmpty(section)
             const target: EditTarget = { kind: 'sectionTitle', sectionId: section.id }
+            const described = [
+              section.items.length > 0 ? `${countId}-${section.id}` : '',
+              section.hidden ? `${countId}-show-to-edit` : ''
+            ].join(' ').trim()
             return (
               <div
                 className="outline-section"
@@ -126,9 +155,8 @@ export function Outline({
                   type="button"
                   className="outline-row-button"
                   data-outline-row={fragmentKey(target)}
-                  aria-haspopup={section.hidden || empty ? 'dialog' : undefined}
-                  aria-describedby={section.items.length > 0 ? `${countId}-${section.id}` : undefined}
-                  onClick={() => openRow(target)}
+                  aria-describedby={described || undefined}
+                  onClick={() => openSection(section)}
                 >
                   <span className="outline-row-name">{sectionName(section, t)}</span>
                   {section.hidden ? (
@@ -142,6 +170,22 @@ export function Outline({
                     </span>
                   )}
                 </button>
+                {section.hidden && (
+                  <label className="outline-switch outline-section-switch">
+                    <input
+                      ref={(element) => {
+                        if (element) switches.current.set(section.id, element)
+                        else switches.current.delete(section.id)
+                      }}
+                      type="checkbox"
+                      role="switch"
+                      checked={false}
+                      aria-label={t.outline.showSection(sectionName(section, t))}
+                      onChange={() => show(section)}
+                    />
+                    <span aria-hidden="true">{t.outline.showOnCv}</span>
+                  </label>
+                )}
               </div>
             )
           }}
@@ -178,6 +222,7 @@ export function Outline({
               </span>
             )
         )}
+        <span id={`${countId}-show-to-edit`}>{t.outline.showToEdit}</span>
       </div>
       {footer}
     </nav>

@@ -203,7 +203,7 @@ describe('field keys', () => {
     expect(pageFieldKey({ kind: 'contacts' }, sample)).toBe('contact:c1:value')
     expect(pageFieldKey({ kind: 'contacts' }, { ...sample, header: { ...sample.header, contacts: [] } })).toBeNull()
     expect(pageFieldTarget('contact:gone:label', sample)).toBeNull()
-    // Daty wpisu – żetony dat; wpis bez wskazanego pola (nowy wpis) – jeszcze karta (do S5).
+    // Daty wpisu – żetony dat; wpis bez wskazanego pola (np. nowy wpis) – jego pierwsze pole tekstu.
     for (const target of [
       { kind: 'experienceItem', sectionId: 'experience', itemId: 'e1', field: 'start' },
       { kind: 'experienceItem', sectionId: 'experience', itemId: 'e1', field: 'end' },
@@ -212,7 +212,8 @@ describe('field keys', () => {
       expect(pageFieldTarget(pageFieldKey(target)!, sample)).toEqual(target)
     }
     expect(pageFieldKey({ kind: 'experienceItem', sectionId: 'experience', itemId: 'e1', field: 'end' })).toBe('experience:e1:end')
-    expect(pageFieldKey({ kind: 'experienceItem', sectionId: 'experience', itemId: 'e1' })).toBeNull()
+    expect(pageFieldKey({ kind: 'experienceItem', sectionId: 'experience', itemId: 'e1' })).toBe('experience:e1:role')
+    expect(pageFieldKey({ kind: 'educationItem', sectionId: 'education', itemId: 'ed2' })).toBe('education:ed2:level')
     expect(pageFieldTarget('education:e1:start', sample)).toBeNull()
     expect(pageFieldKey({ kind: 'listSection', sectionId: 'languages' }, sample)).toBe('list:l1:text')
     expect(pageFieldTarget('experience:gone:role', sample)).toBeNull()

@@ -1168,6 +1168,16 @@ textarea:focus-visible {
   accent-color: var(--ui-accent);
 }
 
+/* Przełącznik „Pokaż na CV” ukrytej sekcji – w osobnej linii pod jej nazwą, na wysokości nazwy. */
+.outline-section[data-hidden] {
+  flex-wrap: wrap;
+}
+
+.outline-section-switch {
+  flex-basis: 100%;
+  padding-top: 0;
+}
+
 /* Dół Outline i CV form: „Outline | Formularz” (jak przełącznik trybu) i „Zwiń”. W CV form przyklejony do dołu
    przewijanej kolumny. */
 .sidebar-footer {

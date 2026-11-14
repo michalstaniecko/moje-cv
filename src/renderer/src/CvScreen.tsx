@@ -85,7 +85,7 @@ export function CvScreen({
       else modeToggle.current?.focus('edit')
     })
   }, [])
-  const session = useEditSession(document, { onCardGone: focusSafePlace, current: () => editor.store.getState().document })
+  const session = useEditSession(document, { onFocusLost: focusSafePlace, current: () => editor.store.getState().document })
   // Przejście do Preview mode przenosi fokus na przełącznik (pole formularza z fokusem znika); przewinięcie i skala
   // stron zostają, bo panel stron jest ten sam w obu trybach.
   const previousMode = useRef(session.mode)
