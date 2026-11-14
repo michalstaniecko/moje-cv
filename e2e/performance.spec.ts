@@ -6,7 +6,7 @@ import type { CvDocument, ExperienceItem } from '../src/renderer/src/domain/sche
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
 
 // Pomiar wydajności dużego CV (ticket #72, próg 100 ms – zob. .docs/spec.md, sekcja „Pomiar”): pisanie w CV form i na
-// stronach w Page fields (docs/specs/wysiwyg-editing.md, W23, AC 10).
+// stronach w Page fields oraz wejście we wpis z pustym polem (docs/specs/wysiwyg-editing.md, W23, AC 10).
 // Opcjonalny: pomijany bez `MOJE_CV_PERF=1`, bo czasy zależą od sprzętu i w CI byłyby niestabilne. Asercje sprawdzają
 // tylko poprawność fixture'a; progi ocenia człowiek na M1. Uruchamiać na zbudowanej aplikacji, nigdy na serwerze
 // deweloperskim:
@@ -53,7 +53,8 @@ const LAST_ROLE = 'Last position (performance)'
 const POSITIONS = 18
 
 // Duży CV z Sample CV (en): 18 stanowisk po 5 punktów, pięć razy dłuższe podsumowanie i zdjęcie w zapisywanym
-// rozmiarze (JPEG 496 × 661, jak po kadrowaniu).
+// rozmiarze (JPEG 496 × 661, jak po kadrowaniu). Co drugie stanowisko (nieparzyste numery, bez ostatniego) nie ma
+// miejscowości – wejście w nie odsłania puste pole z placeholderem (W10, W23).
 function longCv(photoDataUrl: string): CvDocument {
   const sample = sampleCvs.en
   const sections = sample.sections.map((section) => {
@@ -65,7 +66,8 @@ function longCv(photoDataUrl: string): CvDocument {
         id: `${id}-b${bullet + 1}`,
         text: source.bullets[bullet % source.bullets.length]!.text
       }))
-      return { ...source, id, bullets, role: index === POSITIONS - 1 ? LAST_ROLE : source.role }
+      const last = index === POSITIONS - 1
+      return { ...source, id, bullets, role: last ? LAST_ROLE : source.role, location: index % 2 === 0 && !last ? '' : source.location }
     })
     return { ...section, items }
   })
@@ -236,3 +238,72 @@ for (const path of [typingInForm, typingOnPage]) {
     expect(byName('cv:update').length).toBeGreaterThanOrEqual(10)
   })
 }
+
+// Wejście we wpis (docs/specs/wysiwyg-editing.md, W23): klik w stanowisko na stronie → namalowana klatka, w której wpis
+// jest rozwinięty w osobne pola. Wpis z pustym polem (bez miejscowości) jest przy tym odsłaniany z placeholderem – to
+// kosztuje ponowny podział stron; wypełniony tylko się rozwija (bez nowego podziału). Czas od `mousedown` (czas
+// zdarzenia) do pierwszej namalowanej klatki z polem miejscowości wpisu na stronie.
+test('a 4+ page CV with a photo, entering an entry on the page: click-to-painted time with and without an empty field', async () => {
+  test.setTimeout(180_000)
+  await importCv(longCv(await photoDataUrl()))
+  await window.getByRole('list', { name: 'CV list' }).getByRole('listitem').filter({ hasText: LONG_CV_NAME }).getByRole('button', { name: 'Open' }).click()
+  const preview = window.locator('.preview')
+  await expect.poll(() => preview.locator('.cv-page').count()).toBeGreaterThanOrEqual(4)
+  const pageCount = await preview.locator('.cv-page').count()
+  const firstPage = (await preview.locator('.cv-page').first().boundingBox())!
+
+  const enter = async (itemId: string) => {
+    const location = `.cv-pages [data-field-key="experience:${itemId}:location"]`
+    // Wyjście z pól (klik w margines pierwszej strony) i czekanie, aż wpis jest znowu zwinięty.
+    await preview.evaluate((element) => element.scrollTo({ top: 0 }))
+    await window.mouse.click(firstPage.x + 4, firstPage.y + 4)
+    await expect(window.locator(location)).toHaveCount(0)
+    const role = window.locator(`.cv-pages [data-field-key="experience:${itemId}:role"]`)
+    await role.scrollIntoViewIfNeeded()
+    // Typy `e2e` są bez biblioteki DOM – skrypt strony jako tekst.
+    await window.evaluate(`
+      window.enterTiming = new Promise((resolve) => {
+        document.addEventListener('mousedown', (event) => {
+          const start = event.timeStamp
+          const frame = () => {
+            if (!document.querySelector(${JSON.stringify(location)})) return requestAnimationFrame(frame)
+            // Klatka z polem jest malowana po tym requestAnimationFrame; kolejny task – już po malowaniu.
+            requestAnimationFrame(() => setTimeout(() => resolve(performance.now() - start), 0))
+          }
+          requestAnimationFrame(frame)
+        }, { once: true, capture: true })
+      })
+      // Bez czekania na obietnicę – evaluate czekałby na nią przed kliknięciem.
+      undefined
+    `)
+    await role.click()
+    const duration = await window.evaluate<number>('window.enterTiming')
+    await expect(role).toBeFocused()
+    return duration
+  }
+
+  const empty: number[] = []
+  const filled: number[] = []
+  for (let round = 0; round < 3; round++) {
+    for (let index = 0; index < POSITIONS - 1; index++) {
+      const duration = await enter(`perf-e${index + 1}`)
+      ;(index % 2 === 0 ? empty : filled).push(duration)
+    }
+  }
+  // Odsłonięte puste pole ostatniego wpisu, w który weszliśmy, ma placeholder.
+  expect(
+    await window
+      .locator('.cv-pages [data-field-key="experience:perf-e17:location"]')
+      .evaluate((element) => (globalThis as unknown as { getComputedStyle: (element: unknown, pseudo: string) => { content: string } }).getComputedStyle(element, '::before').content)
+  ).toBe('"City"')
+
+  console.log(
+    `Performance, entering an entry on the page (${pageCount} pages, ${packagedExecutable ? 'packaged app' : 'out/ build'}, ` +
+      `renderer CPU slowdown ×${process.env['MOJE_CV_PERF_CPU_SLOWDOWN'] ?? 1}), ms:`
+  )
+  console.table({
+    'click → entry with an empty field revealed and painted': stats(empty),
+    'click → filled entry expanded and painted': stats(filled)
+  })
+  expect(empty.length).toBe(27)
+})
