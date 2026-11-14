@@ -82,9 +82,10 @@ export function useBlockMenu({
     // Tylko po nowym pomiarze fragmentów; `layout` porównany z tym sprzed zmiany odróżnia nowy podział stron.
   }, [fragments])
 
-  // Nowy, jeszcze pusty element: klucz jego fragmentu i uchwyt, z którego go dodano.
-  const added = useRef<{ key: string; element: HTMLElement } | null>(null)
-  const addedAnchor = (key: string) => (added.current?.key === key && added.current.element.isConnected ? added.current.element : null)
+  // Nowy, jeszcze pusty element: klucz jego fragmentu i klucz fragmentu z uchwytem, z którego go dodano (uchwyt
+  // szukany po kluczu – po nowym podziale stron to może być inny element).
+  const added = useRef<{ key: string; from: string } | null>(null)
+  const addedAnchor = (key: string) => (added.current?.key === key ? handleButton(added.current.from) : null)
 
   const shownSections = new Set<string>()
   const shownItems = new Set<string>()
@@ -119,7 +120,6 @@ export function useBlockMenu({
       else onFocusLost()
     }
     const add = () => {
-      const anchor = handleButton(fragment.key)
       editor.edit(
         section.type === 'experience'
           ? addExperienceItem(section.id)
@@ -134,7 +134,7 @@ export function useBlockMenu({
           ? { kind: 'listSection', sectionId: section.id, itemId: item.id }
           : { kind: section.type === 'experience' ? 'experienceItem' : 'educationItem', sectionId: section.id, itemId: item.id }
       const key = fragmentKey(target)
-      added.current = anchor ? { key, element: anchor } : null
+      added.current = { key, from: fragment.key }
       session.openCard(target, key)
     }
     const addLabel = { experience: t.addPosition, education: t.addEducation, list: t.addListItem }[section.type]
