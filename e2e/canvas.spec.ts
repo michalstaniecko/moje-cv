@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
@@ -349,7 +349,9 @@ test('the editing layer works from the keyboard alone: Tab goes through the frag
   // Classic: tytuł listy obok niej, więc przed jej elementami. Wpis rozdzielony podziałem stron ma fragment na każdej
   // stronie (ta sama nazwa dwa razy z rzędu).
   const names = [
+    'Photo',
     'Full name',
+    'Contact',
     'Summary',
     'Section title “Work experience”',
     ...positions.map((role) => `Position “${role}”`),
@@ -471,8 +473,12 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     const page = (selector: string, text?: string) =>
       preview.locator(`.cv-page ${selector}`, text ? { hasText: new RegExp(`^${text.replace(/[()]/g, '\\$&')}$`) } : {})
     const titles = ['Work experience', 'Education', 'Skills', 'Languages']
+    const contacts = preview.locator('.cv-page .cv-contact > *')
+    await expect(contacts).toHaveCount(4)
     const expected: [string, Locator][] = [
+      ['Photo', page('.cv-photo')],
       ['Full name', page('.cv-name')],
+      ...[0, 1, 2, 3].map((index): [string, Locator] => ['Contact', contacts.nth(index)]),
       ['Summary', page('.cv-summary')],
       ...titles.map((title): [string, Locator] => [`Section title “${title}”`, page('.cv-section-title', title)]),
       ...positions.map((role): [string, Locator] => [`Position “${role}”`, page('.cv-role', role)]),
@@ -510,6 +516,19 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
       await window.keyboard.press('Escape')
       await expect(window.getByRole('dialog')).toHaveCount(0)
     }
+
+    // N-te dziecko `.cv-contact` to n-ty kontakt: fokus na jego wartości w karcie kontaktów.
+    for (const index of [1, 3]) {
+      await clickOnPage(contacts.nth(index))
+      await expect(card('Contact').getByRole('textbox', { name: `Contact value ${index + 1}` })).toBeFocused()
+      await window.keyboard.press('Escape')
+      await expect(window.getByRole('dialog')).toHaveCount(0)
+    }
+    // Zdjęcie: karta zdjęcia z fokusem na „Change photo” (karta nie ma pól tekstowych).
+    await clickOnPage(page('.cv-photo'))
+    await expect(card('Photo').getByRole('button', { name: 'Change photo' })).toBeFocused()
+    await window.keyboard.press('Escape')
+    await expect(fragment('Photo')).toBeFocused()
   })
 }
 
@@ -691,4 +710,166 @@ test('Cmd+Z with the card of a newly added position open undoes the adding, clos
   await expect(window.getByRole('dialog')).toHaveCount(0)
   await expect(form.getByLabel('Job title')).toHaveCount(4)
   await expect(editButton()).toBeFocused()
+})
+
+// ---------- Karty zdjęcia i kontaktów ----------
+
+// Systemowe okno wyboru pliku podmienione w procesie głównym, jak w export.spec.ts.
+async function stubOpenDialog(filePath: string | null) {
+  await app.evaluate(({ dialog }, filePath) => {
+    dialog.showOpenDialog = (async () =>
+      filePath ? { canceled: false, filePaths: [filePath] } : { canceled: true, filePaths: [] }) as typeof dialog.showOpenDialog
+  }, filePath)
+}
+
+// Zdjęcie 1200×800: lewa połowa czerwona, prawa niebieska (jak w export.spec.ts).
+async function writeRedBluePhoto() {
+  const photoPath = join(outputDir, 'photo.png')
+  const png = await app.evaluate(({ nativeImage }) => {
+    const [width, height] = [1200, 800]
+    const bitmap = Buffer.alloc(width * height * 4)
+    // Piksele w kolejności BGRA.
+    for (let y = 0; y < height; y++)
+      for (let x = 0; x < width; x++) bitmap.set(x < width / 2 ? [0, 0, 255, 255] : [255, 0, 0, 255], (y * width + x) * 4)
+    return nativeImage.createFromBitmap(bitmap, { width, height }).toPNG().toString('base64')
+  })
+  await writeFile(photoPath, Buffer.from(png, 'base64'))
+  return photoPath
+}
+
+// Kolory dwóch przeciwległych rogów zdjęcia na stronie (RGB), jak `storedPhoto` w export.spec.ts.
+function photoCorners(photo: Locator) {
+  return photo.evaluate(async (element) => {
+    const image = element as typeof element & { naturalWidth: number; naturalHeight: number; decode: () => Promise<void> }
+    await image.decode()
+    const canvas = element.ownerDocument.createElement('canvas') as unknown as {
+      width: number
+      height: number
+      getContext: (type: '2d') => {
+        drawImage: (image: unknown, x: number, y: number) => void
+        getImageData: (x: number, y: number, width: number, height: number) => { data: Uint8ClampedArray }
+      }
+    }
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    const context = canvas.getContext('2d')
+    context.drawImage(image, 0, 0)
+    const pixel = (x: number, y: number) => [...context.getImageData(x, y, 1, 1).data.slice(0, 3)]
+    return [pixel(2, 2), pixel(canvas.width - 3, canvas.height - 3)]
+  })
+}
+
+async function pdfImagesPerPage(path: string): Promise<number[]> {
+  const { getDocument, OPS } = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  const document = await getDocument({ data: new Uint8Array(await readFile(path)) }).promise
+  const counts: number[] = []
+  for (let number = 1; number <= document.numPages; number++) {
+    const operators = await (await document.getPage(number)).getOperatorList()
+    counts.push(operators.fnArray.filter((fn) => fn === OPS.paintImageXObject || fn === OPS.paintInlineImageXObject).length)
+  }
+  return counts
+}
+
+test('clicking the photo opens its card: changing and cropping the photo there changes the page and the PDF; removing it says “Removed.” and Undo brings it back', async () => {
+  const photoPath = await writeRedBluePhoto()
+  await openFirstCv()
+  const photo = window.locator('.preview .cv-page .cv-photo')
+  const before = await photo.getAttribute('src')
+  await clickOnPage(photo)
+  const photoCard = card('Photo')
+  await expect(photoCard.getByRole('img', { name: 'Photo in the CV' })).toBeVisible()
+  await expect(photoCard.getByRole('button', { name: 'Change photo' })).toBeFocused()
+
+  // Escape w oknie kadrowania zamyka tylko to okno – karta zostaje, zdjęcie bez zmian.
+  await stubOpenDialog(photoPath)
+  await photoCard.getByRole('button', { name: 'Change photo' }).click()
+  const cropper = window.getByRole('dialog', { name: 'Crop photo' })
+  await expect(cropper).toBeVisible()
+  await window.keyboard.press('Escape')
+  await expect(cropper).toHaveCount(0)
+  await expect(photoCard).toBeVisible()
+  await expect(photo).toHaveAttribute('src', before!)
+
+  // Kadr przesunięty maksymalnie w prawo – na zdjęciu zostaje sam niebieski.
+  await photoCard.getByRole('button', { name: 'Change photo' }).click()
+  const frame = cropper.getByRole('img', { name: 'Frame preview' })
+  const box = (await frame.boundingBox())!
+  await window.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await window.mouse.down()
+  await window.mouse.move(box.x - box.width * 3, box.y + box.height / 2, { steps: 10 })
+  await window.mouse.up()
+  await cropper.getByRole('button', { name: 'Apply' }).click()
+  await expect(cropper).toHaveCount(0)
+  await expect(photoCard).toBeVisible()
+  await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+  for (const [r = 0, , b = 0] of await photoCorners(photo)) {
+    expect(b).toBeGreaterThan(200)
+    expect(r).toBeLessThan(40)
+  }
+  await expect(photoCard.getByRole('img', { name: 'Photo in the CV' })).toHaveAttribute('src', (await photo.getAttribute('src'))!)
+
+  const pdfPath = join(outputDir, 'with-photo.pdf')
+  await stubSaveDialog(pdfPath)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: with-photo.pdf')).toBeVisible()
+  expect((await pdfImagesPerPage(pdfPath))[0]).toBe(1)
+
+  // Usunięcie z karty (klik w pasek narzędzi zamknął kartę – otwieramy ją znowu): zdjęcia nie ma na stronie ani
+  // w PDF, karta zostaje z „Choose photo”.
+  await clickOnPage(photo)
+  await expect(photoCard.getByRole('button', { name: 'Change photo' })).toBeFocused()
+  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+  await photoCard.getByRole('button', { name: 'Remove photo' }).click()
+  await expect(photo).toHaveCount(0)
+  await expect(removed).toBeVisible()
+  await expect(photoCard.getByRole('button', { name: 'Choose photo' })).toBeVisible()
+
+  // „Undo” przywraca wykadrowane zdjęcie, a fokus wraca do karty.
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+  await expect(photoCard.getByRole('button', { name: 'Change photo' })).toBeFocused()
+
+  await photoCard.getByRole('button', { name: 'Remove photo' }).click()
+  await expect(photo).toHaveCount(0)
+  const withoutPhoto = join(outputDir, 'without-photo.pdf')
+  await stubSaveDialog(withoutPhoto)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: without-photo.pdf')).toBeVisible()
+  expect((await pdfImagesPerPage(withoutPhoto)).every((count) => count === 0)).toBe(true)
+})
+
+test('the contacts card edits, adds and removes contacts like the form; removing says “Removed.” and Undo brings the contact back', async () => {
+  await openFirstCv()
+  const contacts = window.locator('.preview .cv-page .cv-contact > *')
+  await clickOnPage(contacts.nth(1))
+  const contactsCard = card('Contact')
+  const value2 = contactsCard.getByRole('textbox', { name: 'Contact value 2' })
+  await expect(value2).toBeFocused()
+  await expect(value2).toHaveValue('jane.example@example.com')
+
+  // Pisanie w karcie zmienia stronę i formularz (te same pola).
+  await window.keyboard.type('.uk')
+  await expect(contacts.nth(1)).toContainText('jane.example@example.com.uk')
+  await expect(window.locator('.editor-form').getByLabel('Contact value 2')).toHaveValue('jane.example@example.com.uk')
+
+  // Dodanie: nowy wiersz w karcie (etykieta z podpowiedziami), kontakt na stronie po wpisaniu wartości.
+  await contactsCard.getByRole('button', { name: 'Add contact' }).click()
+  const label5 = contactsCard.getByRole('combobox', { name: 'Contact label 5' })
+  await expect(label5).toBeVisible()
+  await label5.fill('GitHub')
+  await contactsCard.getByRole('textbox', { name: 'Contact value 5' }).fill('github.com/jane-example')
+  await expect(contacts).toHaveCount(5)
+  await expect(contacts.nth(4)).toContainText('github.com/jane-example')
+
+  // Usunięcie drugiego kontaktu: „Removed.”, a „Undo” przywraca go z fokusem na jego pierwszym polu w karcie.
+  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+  await contactsCard.getByRole('button', { name: 'Remove contact 2' }).click()
+  await expect(contacts).toHaveCount(4)
+  await expect(window.locator('.preview .cv-page .cv-contact')).not.toContainText('jane.example@example.com.uk')
+  await expect(removed).toBeVisible()
+  await expect(contactsCard).toBeVisible()
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect(contacts).toHaveCount(5)
+  await expect(contactsCard.getByRole('combobox', { name: 'Contact label 2' })).toBeFocused()
+  await expect(contactsCard.getByRole('textbox', { name: 'Contact value 2' })).toHaveValue('jane.example@example.com.uk')
 })

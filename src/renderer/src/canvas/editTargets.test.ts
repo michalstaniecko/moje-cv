@@ -74,6 +74,9 @@ describe('hitTarget', () => {
       header: { ...sample.header, contacts: [{ id: 'empty', label: 'Fax', value: ' ' }, ...sample.header.contacts] }
     }
     expect(hitTarget('header', { part: 'contact', index: 1 }, withEmptyContact)).toEqual({ kind: 'contacts', contactId: 'c2' })
+    expect(hitTarget('header', { part: 'contact', index: 0 }, sample)).toEqual({ kind: 'contacts', contactId: 'c1' })
+    // Dziecko spoza listy (np. układ sprzed ponownego podziału stron) – karta kontaktów bez fokusu na kontakcie.
+    expect(hitTarget('header', { part: 'contact', index: 99 }, sample)).toEqual({ kind: 'contacts' })
     expect(hitTarget('header', none, sample)).toEqual({ kind: 'fullName' })
   })
 
