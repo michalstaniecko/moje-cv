@@ -1,9 +1,10 @@
-import { memo, useCallback, useEffect, useRef, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
+import { Fragment as Group, memo, useCallback, useEffect, useRef, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
 import type { RemoveWithUndo } from '../editor/removalUndo'
 import { useDictionary } from '../i18n'
+import { BlockHandle, useBlockMenu } from './BlockMenu'
 import { cardLabel, EditCard, hasCard, type CardAnchor, type ClauseLibrary } from './EditCard'
 import {
   editMarkupContract,
@@ -26,6 +27,8 @@ export const CONTROLS_MIN_SCALE = 0.5
 // zmienia ani piksela stron. Każdy fragment strony z Edit card to przezroczysty przycisk „Edit: <co>” nad nim
 // (kolejność dokumentu, obrys przy najechaniu i fokusie), który otwiera kartę: klik – z fokusem na klikniętym polu
 // (kontrakt znaczników), Enter/spacja – na pierwszym polu. Istnieje tylko w Edit mode.
+// Tytuły sekcji i wpisy mają przed przyciskiem fragmentu uchwyt menu w marginesie kartki (BlockMenu.tsx); przy skali
+// poniżej CONTROLS_MIN_SCALE uchwytów nie ma.
 // Kartę zamyka Escape (fokus wraca na fragment), klik w tło strony lub poza stronę (poza kartą, fragmentami i paskiem
 // podglądu), przejście do Preview mode i wyjście z edytora. `onFocusLost` – fokus nie ma dokąd wrócić (fragment zniknął).
 export function EditLayer({
@@ -57,12 +60,18 @@ export function EditLayer({
       ),
     []
   )
+  const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, onFocusLost })
+  const compact = scale < CONTROLS_MIN_SCALE
+  // Element, przy którym stoi karta: przycisk fragmentu, a dla nowego, jeszcze pustego elementu – uchwyt, z którego go
+  // dodano.
+  const anchorElement = (key: string | undefined): HTMLElement | undefined =>
+    key === undefined ? undefined : (fragmentButtons(key)[0] ?? blockMenu.addedAnchor(key) ?? undefined)
   const anchorKey = open?.anchor
-  const focusAnchor = useCallback(() => {
-    const button = anchorKey === undefined ? undefined : fragmentButtons(anchorKey)[0]
-    if (button) button.focus()
+  const focusAnchor = () => {
+    const element = anchorElement(anchorKey)
+    if (element) element.focus()
     else onFocusLost()
-  }, [anchorKey, fragmentButtons, onFocusLost])
+  }
 
   // Bieżący dokument dla obsługi kliknięcia – bez niego w zależnościach przyciski nie przerysowują się przy każdym klawiszu.
   const latestDocument = useRef(document)
@@ -94,7 +103,8 @@ export function EditLayer({
 
   const onTabOut = (direction: 'forward' | 'backward') => {
     if (anchorKey === undefined) return false
-    const all = fragmentButtons()
+    // Przyciski fragmentów i uchwyty – kolejne miejsce w kolejności Tab warstwy.
+    const all = [...(layer.current?.querySelectorAll<HTMLButtonElement>('.edit-fragment, .edit-handle .row-handle') ?? [])]
     const own = fragmentButtons(anchorKey)
     const next = direction === 'backward' ? own[0] : all[all.indexOf(own.at(-1)!) + 1]
     if (!next || (direction === 'forward' && own.length === 0)) return false
@@ -117,10 +127,11 @@ export function EditLayer({
   }
 
   const locate = (): CardAnchor => {
-    const button = anchorKey === undefined ? undefined : fragmentButtons(anchorKey)[0]
-    if (!button || !panel.current) return null
-    const anchor = button.getBoundingClientRect()
-    const page = panel.current.querySelectorAll('.cv-pages > .cv-page')[Number(button.dataset['page'])]
+    const element = anchorElement(anchorKey)
+    if (!element || !panel.current) return null
+    const anchor = element.getBoundingClientRect()
+    const pageNumber = element.closest<HTMLElement>('[data-page]')?.dataset['page']
+    const page = panel.current.querySelectorAll('.cv-pages > .cv-page')[Number(pageNumber)]
     const panelBox = panel.current.getBoundingClientRect()
     return {
       anchor,
@@ -129,13 +140,14 @@ export function EditLayer({
   }
 
   // Klik w tło strony albo poza stronę zamyka kartę. Gdy fokus nie trafił w nic (tło nie przyjmuje fokusu), wraca na
-  // fragment karty, żeby nie zginął. „Usunięto. Cofnij” nie zamyka karty – „Cofnij” wraca do pola w karcie.
+  // fragment karty, żeby nie zginął. „Usunięto. Cofnij” nie zamyka karty – „Cofnij” wraca do pola w karcie. Uchwyt
+  // i jego menu też nie: przeniesienie fragmentu z otwartą kartą zostawia kartę przy nim, a „Dodaj …” ją zastępuje.
   useEffect(() => {
     if (!open) return
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Element | null
-      if (target?.closest('.edit-card, .edit-fragment, .preview-bar, .removal-message')) return
-      const anchor = fragmentButtons(open.anchor)[0]
+      if (target?.closest('.edit-card, .edit-fragment, .edit-handle, .preview-bar, .removal-message')) return
+      const anchor = anchorElement(open.anchor)
       closeCard()
       requestAnimationFrame(() => {
         if (window.document.activeElement === window.document.body) anchor?.focus({ preventScroll: true })
@@ -146,19 +158,25 @@ export function EditLayer({
   }, [open, closeCard, fragmentButtons])
 
   return (
-    <div ref={layer} className="edit-layer" data-compact={scale < CONTROLS_MIN_SCALE || undefined}>
+    <div ref={layer} className="edit-layer" data-compact={compact || undefined}>
       {fragments
         .filter((fragment) => hasCard(fragment.target))
-        .map((fragment) => (
-          <FragmentButton
-            key={`${fragment.key}@${fragment.page}`}
-            fragment={fragment}
-            label={t.canvas.edit(cardLabel(fragment.target, document, t))}
-            expanded={anchorKey === fragment.key}
-            onOpen={onOpen}
-            onKeyDown={onFragmentKeyDown}
-          />
-        ))}
+        .map((fragment) => {
+          const handle = compact ? undefined : blockMenu.handles.find((candidate) => candidate.fragment === fragment)
+          return (
+            <Group key={`${fragment.key}@${fragment.page}`}>
+              {handle && <BlockHandle fragment={fragment} menu={handle.menu} />}
+              <FragmentButton
+                fragment={fragment}
+                label={t.canvas.edit(cardLabel(fragment.target, document, t))}
+                expanded={anchorKey === fragment.key}
+                onOpen={onOpen}
+                onKeyDown={onFragmentKeyDown}
+              />
+            </Group>
+          )
+        })}
+      {blockMenu.liveRegion}
       {open && (
         <EditCard
           // Inny fragment = nowa karta (nowe pola, fokus); inne pole tego samego fragmentu – ta sama karta.

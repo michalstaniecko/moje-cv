@@ -1,0 +1,264 @@
+import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import type { PaginateResult } from '../domain/paginate'
+import type { CvDocument, Section } from '../domain/schema'
+import type { CvEditor } from '../editor/cvEditor'
+import {
+  addEducationItem,
+  addExperienceItem,
+  addListItem,
+  moveItem,
+  moveSection,
+  updateEducationItem,
+  updateExperienceItem,
+  updateSection
+} from '../editor/documentEdits'
+import { educationName, entryName } from '../editor/fields/entryNames'
+import { sectionName } from '../editor/fields/SectionTitleField'
+import type { MoveOffset } from '../editor/moveShortcut'
+import { RowMenu, type RowMenuAction } from '../editor/RowMenu'
+import { useDictionary } from '../i18n'
+import { handleFragments, moveAmongShown, neighbourAfterHiding, sectionFragmentKeys } from './blockMoves'
+import { fragmentKey, type EditTarget } from './editTargets'
+import type { Fragment } from './fragmentRects'
+import type { EditSession } from './useEditSession'
+
+// Uchwyt 24×24 px stoi w marginesie kartki przed lewą krawędzią fragmentu, środkiem mniej więcej na wysokości
+// pierwszej linii.
+const HANDLE_SIZE = 24
+const HANDLE_GAP = 4
+const FIRST_LINE_OFFSET = 4
+
+// Menu fragmentu strony (docs/specs/inline-editing-redesign.md, Q11, Q25): uchwyt `RowMenu` (bez przeciągania) przy
+// tytułach sekcji i wpisach w Edit mode – „Przenieś wyżej/niżej” (także ⌥⇧↑/↓ na uchwycie), „Nowa strona przed”, a przy
+// tytule sekcji też „Ukryj sekcję” i „Dodaj …”. Każda zmiana to jeden krok cofania.
+// - Przeniesienie przeskakuje to, czego na stronach nie ma (ukryte i puste sekcje, puste wpisy), ogłasza nową pozycję
+//   czytnikowi ekranu (jak `SortableList`) i zostawia fokus na uchwycie fragmentu w nowym miejscu – także na innej
+//   stronie (uchwyt szukany po kluczu fragmentu po nowym pomiarze stron).
+// - „Ukryj sekcję” przenosi fokus na fragment za sekcją (albo przed nią); karta otwarta w tej sekcji się zamyka.
+// - „Dodaj …” dodaje element na końcu sekcji i otwiera jego kartę z fokusem na pierwszym polu; dopóki nowy wpis nie ma
+//   treści (nie ma go na stronie), karta stoi przy uchwycie, z którego go dodano (`addedAnchor`).
+// Usuwania tu nie ma: wpisy usuwa się przyciskiem tekstowym w karcie (Q11).
+export function useBlockMenu({
+  editor,
+  document,
+  fragments,
+  layout,
+  layer,
+  session,
+  onFocusLost
+}: {
+  editor: CvEditor
+  document: CvDocument
+  fragments: Fragment[]
+  layout: PaginateResult | null
+  layer: RefObject<HTMLElement | null>
+  session: EditSession
+  onFocusLost: () => void
+}) {
+  const t = useDictionary().editor
+  const [announcement, setAnnouncement] = useState<{ text: string; key: number } | null>(null)
+  const announce = (text: string) => setAnnouncement((previous) => ({ text, key: (previous?.key ?? 0) + 1 }))
+
+  const handleButton = (key: string) =>
+    layer.current?.querySelector<HTMLButtonElement>(`.edit-handle[data-fragment="${CSS.escape(key)}"] .row-handle`) ?? null
+  const fragmentButton = (key: string) =>
+    layer.current?.querySelector<HTMLButtonElement>(`.edit-fragment[data-fragment="${CSS.escape(key)}"]`) ?? null
+
+  // Fokus po zmianie: od razu na obecny element (pozycja menu zaraz zniknie), a po nowym pomiarze stron – na element
+  // fragmentu w nowym miejscu (przestawienie przycisków w DOM albo przejście na inną stronę gubi fokus).
+  const pendingFocus = useRef<{ key: string; on: 'handle' | 'fragment'; layout: PaginateResult | null } | null>(null)
+  const focusAfterChange = (key: string, on: 'handle' | 'fragment') => {
+    ;(on === 'handle' ? handleButton(key) : fragmentButton(key))?.focus()
+    pendingFocus.current = { key, on, layout }
+  }
+  useLayoutEffect(() => {
+    const pending = pendingFocus.current
+    if (!pending || pending.layout === layout) return
+    pendingFocus.current = null
+    const element = pending.on === 'handle' ? handleButton(pending.key) : fragmentButton(pending.key)
+    if (element) {
+      if (window.document.activeElement !== element) element.focus()
+    } else onFocusLost()
+    // Tylko po nowym pomiarze fragmentów; `layout` porównany z tym sprzed zmiany odróżnia nowy podział stron.
+  }, [fragments])
+
+  // Nowy, jeszcze pusty element: klucz jego fragmentu i uchwyt, z którego go dodano.
+  const added = useRef<{ key: string; element: HTMLElement } | null>(null)
+  const addedAnchor = (key: string) => (added.current?.key === key && added.current.element.isConnected ? added.current.element : null)
+
+  const shownSections = new Set<string>()
+  const shownItems = new Set<string>()
+  for (const fragment of fragments) {
+    if (fragment.target.kind === 'sectionTitle') shownSections.add(fragment.target.sectionId)
+    if (fragment.target.kind === 'experienceItem' || fragment.target.kind === 'educationItem') shownItems.add(fragment.target.itemId)
+  }
+  const current = () => editor.store.getState().document
+
+  const moveActions = (plan: (offset: MoveOffset) => unknown, moveBy: (offset: MoveOffset) => void): RowMenuAction[] => [
+    { label: t.order.moveUp, disabled: !plan(-1), run: () => moveBy(-1) },
+    { label: t.order.moveDown, disabled: !plan(1), run: () => moveBy(1) }
+  ]
+
+  const sectionMenu = (fragment: Fragment, section: Section): BlockMenu => {
+    const name = sectionName(section, t)
+    const plan = (offset: MoveOffset) =>
+      moveAmongShown(current().sections.map((candidate) => candidate.id), shownSections, section.id, offset)
+    const moveBy = (offset: MoveOffset) => {
+      const move = plan(offset)
+      if (!move) return
+      editor.edit(moveSection(section.id, move.toIndex))
+      announce(t.order.moved(t.order.section(name), move.position, move.total))
+      focusAfterChange(fragment.key, 'handle')
+    }
+    const hide = () => {
+      const keys = sectionFragmentKeys(section)
+      const next = neighbourAfterHiding(fragments, keys)
+      if (session.card && keys.has(session.card.anchor)) session.closeCard()
+      editor.edit(updateSection(section.id, { hidden: true }))
+      if (next) focusAfterChange(next, 'fragment')
+      else onFocusLost()
+    }
+    const add = () => {
+      const anchor = handleButton(fragment.key)
+      editor.edit(
+        section.type === 'experience'
+          ? addExperienceItem(section.id)
+          : section.type === 'education'
+            ? addEducationItem(section.id)
+            : addListItem(section.id)
+      )
+      const item = current().sections.find((candidate) => candidate.id === section.id)?.items.at(-1)
+      if (!item) return
+      const target: EditTarget =
+        section.type === 'list'
+          ? { kind: 'listSection', sectionId: section.id, itemId: item.id }
+          : { kind: section.type === 'experience' ? 'experienceItem' : 'educationItem', sectionId: section.id, itemId: item.id }
+      const key = fragmentKey(target)
+      added.current = anchor ? { key, element: anchor } : null
+      session.openCard(target, key)
+    }
+    const addLabel = { experience: t.addPosition, education: t.addEducation, list: t.addListItem }[section.type]
+    return {
+      label: t.order.handle.section(name),
+      onMoveShortcut: moveBy,
+      actions: [
+        ...moveActions(plan, moveBy),
+        {
+          label: t.pageBreakBeforeSection,
+          checked: section.pageBreakBefore,
+          run: () => {
+            editor.edit(updateSection(section.id, { pageBreakBefore: !section.pageBreakBefore }))
+            focusAfterChange(fragment.key, 'handle')
+          }
+        },
+        { label: t.hideSection, run: hide },
+        { label: addLabel, run: add }
+      ]
+    }
+  }
+
+  const entryMenu = (fragment: Fragment, section: Section, itemId: string): BlockMenu | null => {
+    if (section.type === 'experience') {
+      const item = section.items.find((candidate) => candidate.id === itemId)
+      if (!item) return null
+      const name = entryName(item.role, t.newPosition)
+      return entryActions(fragment, section.id, itemId, {
+        handleName: t.order.handle.position(name),
+        movedName: t.order.position(name),
+        pageBreakBefore: item.pageBreakBefore,
+        setPageBreakBefore: (pageBreakBefore) => updateExperienceItem(section.id, itemId, (entry) => ({ ...entry, pageBreakBefore }))
+      })
+    }
+    if (section.type === 'education') {
+      const item = section.items.find((candidate) => candidate.id === itemId)
+      if (!item) return null
+      const name = educationName(item, t)
+      return entryActions(fragment, section.id, itemId, {
+        handleName: t.order.handle.education(name),
+        movedName: t.order.education(name),
+        pageBreakBefore: item.pageBreakBefore,
+        setPageBreakBefore: (pageBreakBefore) => updateEducationItem(section.id, itemId, { pageBreakBefore })
+      })
+    }
+    return null
+  }
+
+  const entryActions = (
+    fragment: Fragment,
+    sectionId: string,
+    itemId: string,
+    entry: {
+      handleName: string
+      movedName: string
+      pageBreakBefore: boolean
+      setPageBreakBefore: (pageBreakBefore: boolean) => (document: CvDocument) => CvDocument
+    }
+  ): BlockMenu => {
+    const plan = (offset: MoveOffset) => {
+      const latest = current().sections.find((candidate) => candidate.id === sectionId)
+      return latest ? moveAmongShown(latest.items.map((candidate) => candidate.id), shownItems, itemId, offset) : null
+    }
+    const moveBy = (offset: MoveOffset) => {
+      const move = plan(offset)
+      if (!move) return
+      editor.edit(moveItem(sectionId, itemId, move.toIndex))
+      announce(t.order.moved(entry.movedName, move.position, move.total))
+      focusAfterChange(fragment.key, 'handle')
+    }
+    return {
+      label: entry.handleName,
+      onMoveShortcut: moveBy,
+      actions: [
+        ...moveActions(plan, moveBy),
+        {
+          label: t.pageBreakBeforeEntry,
+          checked: entry.pageBreakBefore,
+          run: () => {
+            editor.edit(entry.setPageBreakBefore(!entry.pageBreakBefore))
+            focusAfterChange(fragment.key, 'handle')
+          }
+        }
+      ]
+    }
+  }
+
+  const menuFor = (fragment: Fragment): BlockMenu | null => {
+    const { target } = fragment
+    if (target.kind !== 'sectionTitle' && target.kind !== 'experienceItem' && target.kind !== 'educationItem') return null
+    const section = document.sections.find((candidate) => candidate.id === target.sectionId)
+    if (!section) return null
+    return target.kind === 'sectionTitle' ? sectionMenu(fragment, section) : entryMenu(fragment, section, target.itemId)
+  }
+
+  const handles = [...handleFragments(fragments)].flatMap((fragment) => {
+    const menu = menuFor(fragment)
+    return menu ? [{ fragment, menu }] : []
+  })
+
+  const liveRegion: ReactNode = (
+    <div className="visually-hidden" aria-live="polite" aria-atomic="true">
+      {announcement && <span key={announcement.key}>{announcement.text}</span>}
+    </div>
+  )
+
+  return { handles, liveRegion, addedAnchor }
+}
+
+type BlockMenu = { label: string; actions: RowMenuAction[]; onMoveShortcut: (offset: MoveOffset) => void }
+
+// Uchwyt menu fragmentu w marginesie kartki. Widać go przy najechaniu na fragment albo na uchwyt, przy fokusie i przy
+// otwartym menu (app.css). Stoi w DOM tuż przed przyciskiem swojego fragmentu: w kolejności Tab jest przed nim, jak
+// uchwyt przed polami wiersza w CV form.
+export function BlockHandle({ fragment, menu }: { fragment: Fragment; menu: BlockMenu }) {
+  const { rect } = fragment
+  return (
+    <div
+      className="edit-handle"
+      data-fragment={fragment.key}
+      data-page={fragment.page}
+      style={{ top: rect.top - FIRST_LINE_OFFSET, left: rect.left - HANDLE_SIZE - HANDLE_GAP }}
+    >
+      <RowMenu label={menu.label} actions={menu.actions} onMoveShortcut={menu.onMoveShortcut} />
+    </div>
+  )
+}

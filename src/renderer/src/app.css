@@ -255,9 +255,11 @@ textarea:focus-visible {
 /* ---------- Warstwa edycji na stronach (Edit mode) ----------
    Warstwa leży w przewijanym panelu stron obok .preview-pages, poza .cv (ADR-0009), i przewija się razem ze stronami.
    Fragment to przezroczysty przycisk nad częścią strony: obrys tylko przy najechaniu, fokusie i otwartej karcie.
-   Pasek podglądu (z-index 1) zostaje nad fragmentami przy przewijaniu. */
+   Pasek podglądu (z-index 1) zostaje nad fragmentami przy przewijaniu. Warstwa ma własny kontekst nakładania (z-index
+   0): uchwyty menu są w niej nad fragmentami, a pasek podglądu nad całą warstwą. */
 .edit-layer {
   position: absolute;
+  z-index: 0;
   top: 0;
   left: 0;
   width: 100%;
@@ -286,6 +288,47 @@ textarea:focus-visible {
   background: var(--ui-fragment-fill);
   outline: 2px solid var(--ui-fragment-outline);
   outline-offset: 2px;
+}
+
+/* Uchwyt menu fragmentu (tytuł sekcji, wpis) w marginesie kartki, tuż przed przyciskiem fragmentu w DOM. Niewidoczny,
+   dopóki nie najedzie się na fragment albo uchwyt, uchwyt nie dostanie fokusu albo menu nie jest otwarte; fragmentu
+   z otwartą kartą – widoczny. Bez przeciągania – kursor jak przy przycisku. */
+.edit-layer .edit-handle {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.edit-layer .edit-handle:hover,
+.edit-layer .edit-handle:focus-within,
+.edit-layer .edit-handle:has(.row-handle[aria-expanded='true']),
+.edit-layer .edit-handle:has(+ .edit-fragment:hover),
+.edit-layer .edit-handle:has(+ .edit-fragment:focus-visible),
+.edit-layer .edit-handle:has(+ .edit-fragment[aria-expanded='true']) {
+  opacity: 1;
+}
+
+.edit-layer .edit-handle .row-handle {
+  cursor: pointer;
+  background: var(--ui-panel-bg);
+  box-shadow: 0 1px 3px var(--ui-shadow);
+}
+
+.edit-layer .edit-handle .row-handle:hover,
+.edit-layer .edit-handle .row-handle:focus-visible,
+.edit-layer .edit-handle .row-handle[aria-expanded='true'] {
+  color: var(--ui-text);
+  background: var(--ui-panel-bg);
+  outline: 2px solid var(--ui-fragment-outline);
+  outline-offset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edit-layer .edit-handle {
+    transition: none;
+  }
 }
 
 /* Edit card: w warstwie górnej (popover), pozycję od fragmentu ustawia EditCard; skala zawsze 1:1. Bez nagłówka –
