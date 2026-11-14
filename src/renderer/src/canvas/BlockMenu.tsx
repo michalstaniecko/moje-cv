@@ -61,11 +61,18 @@ export function useBlockMenu({
 
   const handleButton = (key: string) =>
     layer.current?.querySelector<HTMLButtonElement>(`.edit-handle[data-fragment="${CSS.escape(key)}"] .row-handle`) ?? null
-  // Przycisk fragmentu z Edit card albo – fragmentu edytowanego na stronie – jego Page field.
-  const fragmentButton = (key: string) =>
-    layer.current?.querySelector<HTMLElement>(`.edit-fragment[data-fragment="${CSS.escape(key)}"]`) ??
-    layer.current?.parentElement?.querySelector<HTMLElement>(`.cv-pages [data-fragment="${CSS.escape(key)}"]`) ??
-    null
+  // Przycisk fragmentu z Edit card albo – fragmentu edytowanego na stronie – jego pierwsze Page field z tekstem (nie
+  // żeton daty), a bez niego pierwsze pole fragmentu.
+  const fragmentButton = (key: string) => {
+    const pages = layer.current?.parentElement
+    const selector = `.cv-pages [data-fragment="${CSS.escape(key)}"]`
+    return (
+      layer.current?.querySelector<HTMLElement>(`.edit-fragment[data-fragment="${CSS.escape(key)}"]`) ??
+      pages?.querySelector<HTMLElement>(`${selector}[contenteditable]`) ??
+      pages?.querySelector<HTMLElement>(selector) ??
+      null
+    )
+  }
 
   // Fokus po zmianie: od razu na obecny element (pozycja menu zaraz zniknie), a po nowym pomiarze stron – na element
   // fragmentu w nowym miejscu (przestawienie przycisków w DOM albo przejście na inną stronę gubi fokus).

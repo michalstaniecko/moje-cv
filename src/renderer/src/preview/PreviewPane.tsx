@@ -52,7 +52,13 @@ export function PreviewPane({
   const t = useDictionary().preview
   const language = useInterfaceLanguage()
   const oversizedMessage = mode === 'edit' ? t.oversized : undefined
-  const pageEditing = usePageEditing({ document, editor: editing?.editor, active: editing?.session.activeField, panel })
+  const pageEditing = usePageEditing({
+    document,
+    editor: editing?.editor,
+    active: editing?.session.activeField,
+    dates: editing?.session.datePopover,
+    panel
+  })
   const editable = mode === 'edit' && pageEditing !== null
   // Element stron zapamiętany: przerysowanie panelu (np. nowy podział stron dla warstwy edycji, zmiana pola z fokusem
   // bez odsłaniania) nie renderuje stron ponownie, dopóki nie zmieni się dokument albo odsłonięty fragment.

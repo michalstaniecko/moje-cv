@@ -19,10 +19,10 @@ import { anchoredPosition, type Box } from './anchoredPosition'
 import type { EditTarget } from './editTargets'
 
 // Części CV, które na stronie otwierają Edit card (przycisk fragmentu warstwy edycji). Imię i nazwisko, podsumowanie,
-// tytuły sekcji, tekst wpisów i listy edytuje się już wprost na stronie (Page fields, pageFields.ts): karta tytułu
-// i listy otwiera się jeszcze tylko z Outline i dodawania dla sekcji, której nie ma na stronach (useEditSession.ts),
-// a karta wpisu – dla jego dat (klik w datę, przycisk fragmentu z klawiatury; do S3) i nowego, pustego wpisu (do S5).
-const cardKinds: ReadonlySet<EditTarget['kind']> = new Set(['photo', 'contacts', 'experienceItem', 'educationItem', 'consent'])
+// tytuły sekcji, wpisy (tekst i żetony dat) i listy edytuje się już wprost na stronie (Page fields, pageFields.ts):
+// karta tytułu i listy otwiera się jeszcze tylko z Outline i dodawania dla sekcji, której nie ma na stronach
+// (useEditSession.ts), a karta wpisu – tylko dla nowego, pustego wpisu (do S5).
+const cardKinds: ReadonlySet<EditTarget['kind']> = new Set(['photo', 'contacts', 'consent'])
 export const hasCard = (target: EditTarget) => cardKinds.has(target.kind)
 
 const findSection = (document: CvDocument, sectionId: string) =>

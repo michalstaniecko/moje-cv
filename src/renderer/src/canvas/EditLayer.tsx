@@ -1,4 +1,16 @@
-import { Fragment as Group, memo, useCallback, useEffect, useLayoutEffect, useRef, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
+import {
+  Fragment as Group,
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type RefObject
+} from 'react'
+import { isEndBeforeStart } from '../domain/dates'
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
@@ -6,6 +18,7 @@ import type { RemoveWithUndo } from '../editor/removalUndo'
 import { useDictionary } from '../i18n'
 import { useAddControls, type AddedAnchor } from './AddControls'
 import { BlockHandle, useBlockMenu } from './BlockMenu'
+import { DatePopover, openDatesAt, type DatePopoverStore } from './DatePopover'
 import { cardLabel, EditCard, hasCard, type CardAnchor, type ClauseLibrary } from './EditCard'
 import {
   blockTarget,
@@ -18,8 +31,8 @@ import {
   type ContractPart,
   type EditTarget
 } from './editTargets'
-import type { Fragment } from './fragmentRects'
-import { pageFieldKinds } from './pageFields'
+import type { Fragment, Rect } from './fragmentRects'
+import { dateWarningId } from './pageFields'
 import { activateJoined } from './PageField'
 import { offsetOf, writeSelection, type ActiveFieldStore } from './useActiveField'
 import { useFragmentRects } from './useFragmentRects'
@@ -71,10 +84,21 @@ export function EditLayer({
   const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, added, onFocusLost })
   const compact = scale < CONTROLS_MIN_SCALE
   const addOnPage = useAddControls({ editor, document, session, fragments, pages, layer, added, compact })
-  // Element, przy którym stoi karta: przycisk fragmentu, a dla nowego, jeszcze pustego elementu – przycisk, którym go
-  // dodano (uchwyt menu, pigułka „+”, pasek „Add to CV”, podpowiedź w pustym CV).
+  // Element, przy którym stoi karta: przycisk fragmentu albo – fragmentu edytowanego na stronie (nowy wpis, do S5) – jego
+  // pierwsze pole tekstu na stronie (nie żeton daty), a dla nowego, jeszcze pustego elementu – przycisk, którym go dodano (uchwyt menu, pigułka
+  // „+”, pasek „Add to CV”, podpowiedź w pustym CV).
+  // Najpierw Page field (fokus w nim nie rozwija wpisu), dopiero potem linia złączona.
+  const onPage = (key: string): HTMLElement | undefined => {
+    const selector = `.cv-pages [data-fragment="${CSS.escape(key)}"]`
+    return (
+      fragmentButtons(key)[0] ??
+      panel.current?.querySelector<HTMLElement>(`${selector}[contenteditable]`) ??
+      panel.current?.querySelector<HTMLElement>(`${selector}:not(.cv-page-date, .cv-page-dates)`) ??
+      undefined
+    )
+  }
   const anchorElement = (key: string | undefined): HTMLElement | undefined =>
-    key === undefined ? undefined : (fragmentButtons(key)[0] ?? added.anchor(key) ?? undefined)
+    key === undefined ? undefined : (onPage(key) ?? added.anchor(key) ?? undefined)
   const anchorKey = open?.anchor
   const focusAnchor = () => {
     const element = anchorElement(anchorKey)
@@ -91,7 +115,7 @@ export function EditLayer({
       lastAnchor.current = null
       return
     }
-    const fragment = fragmentButtons(open.anchor)[0]
+    const fragment = onPage(open.anchor)
     const previous = lastAnchor.current
     lastAnchor.current = { key: open.anchor, onPage: fragment !== undefined }
     if (fragment && previous?.key === open.anchor && !previous.onPage) fragment.scrollIntoView({ block: 'nearest' })
@@ -184,7 +208,7 @@ export function EditLayer({
   }, [open, closeCard, fragmentButtons])
 
   useHandlesOfPageFields(panel, layer)
-  usePointerOnPages(panel, latestDocument, openCard, session.activeField)
+  usePointerOnPages(panel, session.activeField, session.datePopover)
   useSectionHoverOnPages(panel, latestDocument, addOnPage.hoverOnPage)
 
   return (
@@ -200,7 +224,6 @@ export function EditLayer({
                 fragment={fragment}
                 label={t.canvas.edit(cardLabel(fragment.target, document, t))}
                 expanded={anchorKey === fragment.key}
-                keysOnly={pageFieldKinds.has(fragment.target.kind)}
                 onOpen={onOpen}
                 onKeyDown={onFragmentKeyDown}
               />
@@ -211,6 +234,8 @@ export function EditLayer({
       })}
       {addOnPage.bar}
       {blockMenu.liveRegion}
+      <DateWarnings document={document} panel={panel} layer={layer} fragments={fragments} hidden={compact} />
+      <DatePopover editor={editor} document={document} dates={session.datePopover} active={session.activeField} />
       {open && (
         <EditCard
           // Inny fragment = nowa karta (nowe pola, fokus); inne pole tego samego fragmentu – ta sama karta.
@@ -245,25 +270,22 @@ export type EditingContext = {
   added: AddedAnchor
 }
 
-// `keysOnly` – fragment z Page fields, który ma jeszcze kartę (wpis – jego daty, do S3): przycisk tylko dla klawiatury,
-// mysz trafia w pola pod nim.
 type FragmentButtonProps = {
   fragment: Fragment
   label: string
   expanded: boolean
-  keysOnly: boolean
   onOpen: (fragment: Fragment, event: MouseEvent<HTMLButtonElement>) => void
   onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void
 }
 
 // Przycisk fragmentu – przerysowany tylko, gdy zmienił się jego prostokąt, nazwa albo stan karty.
 const FragmentButton = memo(
-  function FragmentButton({ fragment, label, expanded, keysOnly, onOpen, onKeyDown }: FragmentButtonProps) {
+  function FragmentButton({ fragment, label, expanded, onOpen, onKeyDown }: FragmentButtonProps) {
     const { rect } = fragment
     return (
       <button
         type="button"
-        className={keysOnly ? 'edit-fragment edit-fragment--keys' : 'edit-fragment'}
+        className="edit-fragment"
         data-fragment={fragment.key}
         data-section={sectionOf(fragment.target) ?? undefined}
         data-page={fragment.page}
@@ -282,7 +304,6 @@ const FragmentButton = memo(
   (previous, next) =>
     previous.label === next.label &&
     previous.expanded === next.expanded &&
-    previous.keysOnly === next.keysOnly &&
     previous.onOpen === next.onOpen &&
     previous.onKeyDown === next.onKeyDown &&
     previous.fragment.key === next.fragment.key &&
@@ -357,15 +378,11 @@ function useSectionHoverOnPages(
   }, [panel, latestDocument])
 }
 
-// Klik myszą na stronie poza Page field (docs/specs/wysiwyg-editing.md, W9): w datę wpisu – karta wpisu z fokusem na
-// dacie początku (do S3, żetony dat); w separator, kropkę osi czasu albo puste miejsce bloku – kursor w najbliższym
-// polu tego bloku, w miejscu najbliższym kliknięciu. Tło strony poza blokami – nic (zamyka kartę, jak dotąd).
-function usePointerOnPages(
-  panel: RefObject<HTMLElement | null>,
-  latestDocument: RefObject<CvDocument>,
-  openCard: (target: EditTarget, anchor: string) => void,
-  active: ActiveFieldStore
-) {
+// Klik myszą na stronie poza Page field (docs/specs/wysiwyg-editing.md, W9, W12): w datę wpisu obok żetonu (np. kropka
+// osi czasu w Classic, tło żetonu w Bold) – Field popover najbliższej daty; w separator, kropkę osi czasu albo puste
+// miejsce bloku – kursor w najbliższym polu tego bloku, w miejscu najbliższym kliknięciu. Tło strony poza blokami – nic
+// (zamyka kartę, jak dotąd).
+function usePointerOnPages(panel: RefObject<HTMLElement | null>, active: ActiveFieldStore, dates: DatePopoverStore) {
   useEffect(() => {
     const element = panel.current
     if (!element) return
@@ -376,13 +393,18 @@ function usePointerOnPages(
       const block = target.closest<HTMLElement>('[data-block-id]')
       if (!block) return
       const date = target.closest('.cv-date')
-      const entry = date ? blockTarget(block.dataset['blockId']!, latestDocument.current) : null
-      if (entry?.kind === 'experienceItem' || entry?.kind === 'educationItem') {
+      const token = date ? nearestField(date, dateTokens, event.clientX, event.clientY) : null
+      if (token) {
         event.preventDefault()
-        openCard({ kind: entry.kind, sectionId: entry.sectionId, itemId: entry.itemId, field: 'start' }, fragmentKey(entry))
+        if (token.field.dataset['joined'] !== undefined) {
+          openDatesAt(token.field, token.caret, active, dates)
+          return
+        }
+        token.field.focus({ preventScroll: true })
+        dates.open(token.field.dataset['fieldKey']!)
         return
       }
-      const nearest = nearestField(block, event.clientX, event.clientY)
+      const nearest = nearestField(block, textFields, event.clientX, event.clientY)
       if (!nearest) return
       event.preventDefault()
       if (nearest.field.dataset['joined'] !== undefined) {
@@ -394,14 +416,18 @@ function usePointerOnPages(
     }
     element.addEventListener('mousedown', onMouseDown)
     return () => element.removeEventListener('mousedown', onMouseDown)
-  }, [panel, latestDocument, openCard, active])
+  }, [panel, active, dates])
 }
+
+// Pola tekstu (Page fields i linie złączone) i daty na stronie (żetony dat i napis dat poza rozwiniętym wpisem).
+const textFields = '[data-field-key][contenteditable], .cv-page-joined'
+const dateTokens = '.cv-page-date[data-field-key], .cv-page-dates'
 
 // Page field (albo linia złączona z kilku pól) bloku najbliższe punktowi okna i miejsce kursora w nim (znak pod punktem
 // przesuniętym na linię pola).
-function nearestField(block: HTMLElement, x: number, y: number): { field: HTMLElement; caret: number } | null {
+function nearestField(block: Element, selector: string, x: number, y: number): { field: HTMLElement; caret: number } | null {
   let best: { field: HTMLElement; rect: DOMRect; distance: number } | null = null
-  for (const field of block.querySelectorAll<HTMLElement>('[data-field-key], [data-joined]')) {
+  for (const field of block.querySelectorAll<HTMLElement>(selector)) {
     for (const rect of field.getClientRects()) {
       if (rect.height === 0) continue
       const dx = Math.max(rect.left - x, 0, x - rect.right)
@@ -446,3 +472,70 @@ function contractHit(element: Element, block: Element): ContractHit {
   }
   return { part: null, index: 0 }
 }
+
+// Ostrzeżenie o odwróconych datach wpisu (W12): znaczek ⚠ w warstwie edycji przy dacie na stronie (poza treścią kartki,
+// tylko w Edit mode) i opis dla czytnika ekranu, który żetony dat wpisu wskazują przez `aria-describedby`
+// (`dateWarningId`). Znaczek stoi po tej stronie napisu dat, po której w bloku jest wolne miejsce: po prawej, gdy daty
+// kończą blok (Modern, Bold), inaczej po lewej (Classic: kolumna dat wyrównana do prawej). Położenie liczone po każdym
+// nowym pomiarze fragmentów (podział stron, skala); poniżej CONTROLS_MIN_SCALE – bez znaczka (`hidden`), opis zostaje.
+function DateWarnings({
+  document,
+  panel,
+  layer,
+  fragments,
+  hidden
+}: {
+  document: CvDocument
+  panel: RefObject<HTMLElement | null>
+  layer: RefObject<HTMLElement | null>
+  fragments: Fragment[]
+  hidden: boolean
+}) {
+  const t = useDictionary().editor
+  const reversed = document.sections.flatMap((section) =>
+    section.type === 'list' ? [] : section.items.filter((item) => isEndBeforeStart(item.start, item.end)).map((item) => item.id)
+  )
+  const [marks, setMarks] = useState<{ id: string; top: number; left: number }[]>([])
+  const signature = reversed.join(' ')
+  useLayoutEffect(() => {
+    const origin = layer.current?.getBoundingClientRect()
+    if (!origin || !panel.current) return
+    const next = reversed.flatMap((id) =>
+      [...panel.current!.querySelectorAll<HTMLElement>(`.cv-pages [data-block-id="${CSS.escape(id)}"]`)].flatMap((block) => {
+        const date = block.querySelector('.cv-date')
+        if (!date) return []
+        const range = window.document.createRange()
+        range.selectNodeContents(date)
+        const text: Rect = range.getBoundingClientRect()
+        const box = block.getBoundingClientRect()
+        if (text.right - text.left === 0) return []
+        const middle = (text.top + text.bottom) / 2 - origin.top
+        const right = text.right >= box.right - 2
+        return [{ id, top: middle - WARNING_SIZE / 2, left: right ? text.right - origin.left + 4 : text.left - origin.left - WARNING_SIZE - 4 }]
+      })
+    )
+    setMarks((current) =>
+      current.length === next.length && current.every((mark, index) => sameMark(mark, next[index]!)) ? current : next
+    )
+  }, [fragments, signature, layer, panel])
+  return (
+    <>
+      {!hidden &&
+        marks.map((mark, index) => (
+          <span key={`${mark.id}:${index}`} className="edit-date-warning" style={{ top: mark.top, left: mark.left }} aria-hidden="true">
+            ⚠
+          </span>
+        ))}
+      {reversed.map((id) => (
+        <span key={id} id={dateWarningId(id)} className="visually-hidden">
+          {t.endBeforeStart}
+        </span>
+      ))}
+    </>
+  )
+}
+
+const WARNING_SIZE = 16
+
+const sameMark = (a: { id: string; top: number; left: number }, b: { id: string; top: number; left: number }) =>
+  a.id === b.id && a.top === b.top && a.left === b.left

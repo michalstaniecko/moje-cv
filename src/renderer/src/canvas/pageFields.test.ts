@@ -8,12 +8,17 @@ import type { CvDocument } from '../domain/schema'
 import type { SlotName } from '../template/editable'
 import { templates } from '../template/templates'
 import {
+  dateChange,
+  dateName,
+  dateWarningId,
+  entryDates,
   fieldChange,
   fragmentHasEmptyField,
   isListField,
   mergeBackward,
   mergeForward,
   moveField,
+  pageFieldByKey,
   pageFieldKey,
   pageFieldOf,
   pageFieldTarget,
@@ -138,6 +143,9 @@ describe('field keys', () => {
     expect(source('ExperienceItemFields.tsx')).toContain('`experience:${item.id}:${field}`')
     expect(source('ExperienceItemFields.tsx')).toContain('mergeKey(`bullet:${bullet.id}`)')
     expect(source('EducationItemFields.tsx')).toContain('`education:${item.id}:${field}`')
+    // Daty: `patchItem({ start }, 'start')` – ten sam klucz co żeton daty (`…:start|end`).
+    expect(source('ExperienceItemFields.tsx')).toContain("patchItem({ start }, 'start')")
+    expect(source('EducationItemFields.tsx')).toContain("patchItem({ end }, 'end')")
     expect(source('ListItemsFields.tsx')).toContain('`list:${item.id}:text`')
   })
 
@@ -154,12 +162,66 @@ describe('field keys', () => {
     ] as const
     for (const target of targets) expect(pageFieldTarget(pageFieldKey(target)!, titled)).toEqual(target)
     expect(pageFieldKey({ kind: 'photo' })).toBeNull()
-    // Wpis bez pola tekstowego (np. z kliknięcia w datę) – jeszcze karta.
-    expect(pageFieldKey({ kind: 'experienceItem', sectionId: 'experience', itemId: 'e1', field: 'start' })).toBeNull()
+    // Daty wpisu – żetony dat; wpis bez wskazanego pola (nowy wpis) – jeszcze karta (do S5).
+    for (const target of [
+      { kind: 'experienceItem', sectionId: 'experience', itemId: 'e1', field: 'start' },
+      { kind: 'experienceItem', sectionId: 'experience', itemId: 'e1', field: 'end' },
+      { kind: 'educationItem', sectionId: 'education', itemId: 'ed2', field: 'start' }
+    ] as const) {
+      expect(pageFieldTarget(pageFieldKey(target)!, sample)).toEqual(target)
+    }
+    expect(pageFieldKey({ kind: 'experienceItem', sectionId: 'experience', itemId: 'e1', field: 'end' })).toBe('experience:e1:end')
     expect(pageFieldKey({ kind: 'experienceItem', sectionId: 'experience', itemId: 'e1' })).toBeNull()
+    expect(pageFieldTarget('education:e1:start', sample)).toBeNull()
     expect(pageFieldKey({ kind: 'listSection', sectionId: 'languages' }, sample)).toBe('list:l1:text')
     expect(pageFieldTarget('experience:gone:role', sample)).toBeNull()
     expect(pageFieldTarget('list:e1:text', sample)).toBeNull()
+  })
+})
+
+describe('date tokens', () => {
+  it('give the dates of every entry as text in the CV language, named after the date and the entry', () => {
+    const fields = fieldsOf(sample, 'modern', ['start', 'end'])
+    expect(fields.filter((field) => field.block === 'e1')).toEqual([
+      { block: 'e1', slot: 'start', key: 'experience:e1:start', fragment: 'item:e1', label: 'From – Position “Senior Procurement Specialist”', placeholder: 'From', spellcheck: false, value: '03.2023' },
+      expect.objectContaining({ slot: 'end', key: 'experience:e1:end', label: 'To – Position “Senior Procurement Specialist”', placeholder: 'To', value: 'present' })
+    ])
+    expect(fields.filter((field) => field.block === 'ed1')).toEqual([
+      expect.objectContaining({ key: 'education:ed1:start', label: 'From (optional) – Education “Postgraduate diploma, Procurement Management”', value: '' }),
+      expect.objectContaining({ key: 'education:ed1:end', label: 'Graduation date – Education “Postgraduate diploma, Procurement Management”', value: '06.2024' })
+    ])
+    const polish = { ...sample, settings: { ...sample.settings, language: 'pl' as const } }
+    expect(pageFieldByKey('experience:e1:end', polish, t)!.value).toBe('obecnie')
+    expect(fieldsOf(sample, 'modern', ['start']).filter((field) => !field.block.match(/^e\d$|^ed\d$/))).toEqual([])
+  })
+
+  it('point the tokens of reversed dates at the warning, and only them', () => {
+    const reversed = dateChange('experience:e2:end', { year: 2010, month: 1 })(sample)
+    expect(pageFieldByKey('experience:e2:start', reversed, t)!.describedBy).toBe(dateWarningId('e2'))
+    expect(pageFieldByKey('experience:e2:end', reversed, t)!.describedBy).toBe(dateWarningId('e2'))
+    expect(pageFieldByKey('experience:e2:end', sample, t)!.describedBy).toBeUndefined()
+  })
+
+  it('change a date, “present” only at the end of a position, and clear it', () => {
+    const march = { year: 2020, month: 3 }
+    expect(entryDates('experience:e2:start', dateChange('experience:e2:start', march)(sample))).toEqual({ start: march, end: { year: 2023, month: 2 } })
+    expect(entryDates('experience:e2:end', dateChange('experience:e2:end', 'present')(sample))!.end).toBe('present')
+    expect(dateChange('experience:e2:start', 'present')(sample)).toBe(sample)
+    expect(dateChange('education:ed2:end', 'present')(sample)).toBe(sample)
+    expect(entryDates('education:ed2:end', dateChange('education:ed2:end', null)(sample))!.end).toBeNull()
+    expect(dateChange('experience:ed2:end', null)(sample)).toBe(sample)
+    expect(entryDates('experience:gone:start', sample)).toBeNull()
+    expect(entryDates('experience:e1:role', sample)).toBeNull()
+  })
+
+  it('have the short names of the CV form', () => {
+    expect(['experience:e1:start', 'experience:e1:end', 'education:ed1:start', 'education:ed1:end'].map((key) => dateName(key, t))).toEqual([
+      'From',
+      'To',
+      'From (optional)',
+      'Graduation date'
+    ])
+    expect(dateName('experience:e1:role', t)).toBeNull()
   })
 })
 
@@ -190,7 +252,10 @@ describe('fragmentHasEmptyField', () => {
     expect(fragmentHasEmptyField('sectionTitle:gone', empty)).toBe(false)
     expect(fragmentHasEmptyField('item:gone', empty)).toBe(false)
 
-    for (const fragment of ['item:e1', 'item:ed1', 'list:skills']) expect(fragmentHasEmptyField(fragment, sample), fragment).toBe(false)
+    for (const fragment of ['item:e1', 'item:ed2', 'list:skills']) expect(fragmentHasEmptyField(fragment, sample), fragment).toBe(false)
+    // Pusta data to puste pole (żeton z placeholderem): wykształcenie bez daty początku, stanowisko bez końca.
+    expect(fragmentHasEmptyField('item:ed1', sample)).toBe(true)
+    expect(fragmentHasEmptyField('item:e1', dateChange('experience:e1:end', null)(sample))).toBe(true)
     expect(fragmentHasEmptyField('item:e2', fieldChange('experience:e2:location', ' ')(sample))).toBe(true)
     expect(fragmentHasEmptyField('item:e2', fieldChange('experience:e2:bullet:e2-b4', '')(sample))).toBe(true)
     expect(fragmentHasEmptyField('item:ed2', fieldChange('education:ed2:level', '')(sample))).toBe(true)
@@ -272,6 +337,7 @@ describe('the structure of bullets and list items from the keyboard', () => {
     expect(sectionOf(moved, 'experience').items.map((item) => item.id)).toEqual(['e2', 'e1', 'e3', 'e4'])
     expect(moveField('experience:e1:role', sample, -1)).toBeNull()
     expect(sectionOf(moveField('education:ed1:level', sample, 1)!(sample), 'education').items.map((item) => item.id)).toEqual(['ed2', 'ed1'])
+    expect(sectionOf(moveField('experience:e3:start', sample, -1)!(sample), 'experience').items.map((item) => item.id)).toEqual(['e1', 'e3', 'e2', 'e4'])
     expect(moveField('header:fullName', sample, 1)).toBeNull()
   })
 })

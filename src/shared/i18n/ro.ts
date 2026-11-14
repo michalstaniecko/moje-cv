@@ -255,6 +255,7 @@ export const ro: Dictionary = {
     startOptional: 'De la (opțional)',
     graduation: 'Data absolvirii',
     endBeforeStart: 'Data de sfârșit este anterioară datei de început.',
+    clearDate: 'Șterge',
     listItem: (number) => `Elementul ${number}`,
     addListItem: 'Adaugă element',
     order: {

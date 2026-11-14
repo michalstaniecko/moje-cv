@@ -256,6 +256,7 @@ export const uk: Dictionary = {
     startOptional: 'З (необов’язково)',
     graduation: 'Дата закінчення',
     endBeforeStart: 'Дата закінчення раніша за дату початку.',
+    clearDate: 'Очистити',
     listItem: (number) => `Елемент ${number}`,
     addListItem: 'Додати елемент',
     order: {

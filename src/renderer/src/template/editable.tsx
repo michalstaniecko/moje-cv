@@ -11,7 +11,8 @@ import type { ListSectionLayout } from '../domain/templateGeometry'
 
 // Tekst bloku rysowany przez slot: `fullName` i `summary` nagłówka, `title` tytułu sekcji (także obok listy), pola
 // stanowiska (`role`, `company`, `location`) i jego punkt (`bullet` – pierwszy punkt w bloku wpisu albo punkt bloku
-// punktu), pola wykształcenia (`level`, `field`, `institution`) i element wiersza listy (`item`, z id elementu).
+// punktu), pola wykształcenia (`level`, `field`, `institution`), element wiersza listy (`item`, z id elementu) i daty
+// wpisu (`start`, `end` – żetony dat, `DateRange`).
 export type SlotName =
   | 'fullName'
   | 'summary'
@@ -24,12 +25,15 @@ export type SlotName =
   | 'field'
   | 'institution'
   | 'item'
+  | 'start'
+  | 'end'
 
 // Pole CV rysowane przez slot w Edit mode. `key` – klucz pola (= klucz łączenia kroków cofania i `data-field-key`),
 // `fragment` – klucz fragmentu strony, do którego pole należy (aktywny fragment pokazuje placeholdery pustych pól,
 // zob. `Reveal`), `label` – nazwa pola dla czytnika ekranu, `placeholder` – tekst pustego pola, `spellcheck` –
 // sprawdzanie pisowni (W24), `value` – wartość pola w dokumencie (sloty złożone rysują pola, które blok łączy w jeden
-// napis, np. `companyLine`).
+// napis, np. `companyLine`; data – napis daty w CV language, np. „03.2021”), `describedBy` – id opisu pola dla czytnika
+// ekranu (np. ostrzeżenia o kolejności dat).
 export type EditableField = {
   key: string
   fragment: string
@@ -37,6 +41,7 @@ export type EditableField = {
   placeholder: string
   spellcheck: boolean
   value: string
+  describedBy?: string
 }
 
 // `measuring` – kopia w kontenerze pomiarowym: ten sam tekst i placeholder (identyczna geometria), bez edycji i fokusu.
@@ -55,7 +60,9 @@ export type JoinedFieldsProps = { fields: EditableField[]; separator: string; te
 //   elementów w środku linii przesuwa dalszy tekst o ułamek piksela (pozycja każdego elementu jest zaokrąglana do 1/64
 //   px), a strony w spoczynku muszą być piksel w piksel jak w PDF.
 // - `Field` – komponent Page field (musi mieć stałą tożsamość, inaczej pole traci kursor przy każdym renderze);
-//   `Joined` – komponent linii złączonej poza rozwiniętym fragmentem (klik i fokus rozwijają fragment).
+//   `Joined` – komponent linii złączonej poza rozwiniętym fragmentem (klik i fokus rozwijają fragment); `DateToken` –
+//   żeton daty (przycisk otwierający Field popover daty; napis daty albo placeholder); `JoinedDates` – daty wpisu poza
+//   rozwiniętym fragmentem (jeden napis jak w dokumencie; klik rozwija wpis i otwiera popover klikniętej daty).
 // - `onPagesCommitted` – wołane przed malowaniem po każdym nowym podziale stron (np. przywrócenie kursora w polu
 //   przeniesionym na inną stronę).
 export type PageEditing = {
@@ -64,6 +71,8 @@ export type PageEditing = {
   expanded: ReadonlySet<string>
   Field: ComponentType<PageFieldProps>
   Joined: ComponentType<JoinedFieldsProps>
+  DateToken: ComponentType<PageFieldProps>
+  JoinedDates: ComponentType<JoinedFieldsProps>
   onPagesCommitted: () => void
 }
 
@@ -159,4 +168,31 @@ export function EducationDetails({ block }: { block: EducationEntryBlock }) {
   const institution = useField(block, 'institution')
   if (!field || !institution) return block.details
   return <Joined fields={[field, institution]} separator=", " text={block.details} />
+}
+
+// Daty wpisu („od – do”) w `.cv-date`: w dokumencie `dates`, w Edit mode w rozwiniętym fragmencie dwa żetony dat
+// z separatorem „ – ” (jak `formatDateRange`: między dwiema niepustymi datami, w odsłoniętym fragmencie – zawsze), poza
+// nim – jeden napis jak w dokumencie (`PageEditing.JoinedDates`): granica elementów w środku napisu przesuwa dalsze
+// znaki o ułamek piksela, jak w liniach złączonych. Czy szablon rysuje element dat, gdy są puste (Bold) –
+// `useShown(block, 'start', block.dates)`.
+export function DateRange({ block }: { block: ExperienceEntryBlock | EducationEntryBlock }) {
+  const start = useField(block, 'start')
+  const end = useField(block, 'end')
+  if (!start || !end) return block.dates
+  const shown = [start, end].filter(shownField)
+  const { context } = start
+  if (!context.editing.expanded.has(start.field.fragment)) {
+    if (block.dates === '') return block.dates
+    const { JoinedDates } = context.editing
+    return <JoinedDates fields={shown.map(({ field }) => field)} separator=" – " text={block.dates} measuring={context.measuring} />
+  }
+  return shown.map((editable, index) => {
+    const { DateToken } = editable.context.editing
+    return (
+      <Fragment key={editable.field.key}>
+        {index > 0 && ' – '}
+        <DateToken field={editable.field} text={editable.field.value} measuring={editable.context.measuring} />
+      </Fragment>
+    )
+  })
 }

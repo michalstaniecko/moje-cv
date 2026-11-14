@@ -256,6 +256,7 @@ export const ru: Dictionary = {
     startOptional: 'С (необязательно)',
     graduation: 'Дата окончания',
     endBeforeStart: 'Дата окончания раньше даты начала.',
+    clearDate: 'Очистить',
     listItem: (number) => `Элемент ${number}`,
     addListItem: 'Добавить элемент',
     order: {

@@ -14,6 +14,8 @@ import type { TextSelection } from './pageFieldInput'
 // - `expect` – fokus po zmianie struktury z pola (podział, złączenie, wklejenie wielu linii, przeniesienie): pole
 //   staje się aktywne od razu, a fokus z zaznaczeniem `selection` dostaje po najbliższym podziale stron, gdy jego tekst
 //   jest już nowy (pole mogło dopiero powstać albo zostać przemontowane).
+// - `activate` – pole staje się aktywne (jego fragment – rozwinięty i odsłonięty) bez fokusu: fokus ma Field popover
+//   pola (np. popover daty otwarty kliknięciem w napis dat), który po zamknięciu oddaje go polu.
 // - `leave` – wyjście z Edit mode: żadne pole nie jest aktywne.
 // - `restore` – po każdym nowym podziale stron: oczekujący fokus albo pole aktywne, które zgubiło fokus przez
 //   przemontowanie, dostaje go z powrotem z zapamiętanym zaznaczeniem, bez przewijania.
@@ -67,6 +69,9 @@ export function createActiveFieldStore() {
       // aktywny fragment na chwilę by zniknął, a z nim pola linii złączonej, do której właśnie idzie fokus.
       const toField = next instanceof HTMLElement && (next.dataset['fieldKey'] !== undefined || next.dataset['joined'] !== undefined)
       if (toField && next.closest('.cv-pages')) return
+      // Fokus idzie do Field popover pola (np. wybór daty z żetonu): pole zostaje aktywne, a jego fragment odsłonięty –
+      // popover stoi przy nim. Po zamknięciu popovera fokus wraca na pole albo popover woła `blurred` jeszcze raz.
+      if (next instanceof HTMLElement && next.closest('[data-field-popover]')) return
       // Po zakończeniu bieżącego renderu: przywrócenie fokusu w nowym węźle pola dzieje się w tym samym zadaniu.
       queueMicrotask(() => {
         const element = window.document.activeElement
@@ -90,6 +95,11 @@ export function createActiveFieldStore() {
       pending = null
       selection = null
       setActive(null)
+    },
+    activate(field: ActiveField) {
+      pending = null
+      selection = null
+      setActive(field)
     },
     expect(field: ActiveField, at: TextSelection) {
       setActive(field)
@@ -122,7 +132,7 @@ export function createActiveFieldStore() {
       const element = pageFieldElement(root, active.key)
       if (!element) return
       element.focus({ preventScroll: true })
-      if (selection) writeSelection(element, selection)
+      if (selection && element.isContentEditable) writeSelection(element, selection)
       element.scrollIntoView({ block: 'nearest' })
     }
   }
@@ -147,7 +157,8 @@ export function useActiveFragment(store: ActiveFieldStore | undefined): string |
 function focusField(element: HTMLElement, caret: Pending['caret'], { scroll }: { scroll: 'center' | 'nearest' }) {
   element.focus({ preventScroll: true })
   const position = caret === 'start' ? 0 : (element.textContent ?? '').length
-  writeSelection(element, typeof caret === 'object' ? caret : { start: position, end: position })
+  // Żeton daty (przycisk) nie ma kursora tekstowego.
+  if (element.isContentEditable) writeSelection(element, typeof caret === 'object' ? caret : { start: position, end: position })
   element.scrollIntoView({ block: scroll })
 }
 

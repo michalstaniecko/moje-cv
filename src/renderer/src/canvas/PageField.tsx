@@ -3,6 +3,7 @@ import type { CvEditor } from '../editor/cvEditor'
 import type { JoinedFieldsProps, PageFieldProps } from '../template/editable'
 import { caretAfterChange, fieldValue, normalizePastedText, pastedLines, replaceSelection, type TextSelection } from './pageFieldInput'
 import { fieldChange, isListField, mergeBackward, mergeForward, moveField, pasteLines, splitField, type FieldEdit } from './pageFields'
+import type { DatePopoverStore } from './DatePopover'
 import { offsetOf, readSelection, writeSelection, type ActiveFieldStore } from './useActiveField'
 
 // Page field (GLOSSARY.md; docs/specs/wysiwyg-editing.md, W5–W8, W19, W22, W24): tekst jednego pola CV edytowany wprost
@@ -30,10 +31,17 @@ import { offsetOf, readSelection, writeSelection, type ActiveFieldStore } from '
 //   bo tylko tam szablon rysuje pusty element pola.
 // W kontenerze pomiarowym (`measuring`) – ten sam tekst i placeholder w zwykłym `span` (ta sama geometria).
 
-export type PageFieldsContext = { editor: CvEditor; active: ActiveFieldStore }
+// `dates` – otwarty Field popover daty (DatePopover.tsx).
+export type PageFieldsContext = { editor: CvEditor; active: ActiveFieldStore; dates: DatePopoverStore }
 
 const Context = createContext<PageFieldsContext | null>(null)
 export const PageFieldsProvider = Context.Provider
+
+export function usePageFieldsContext(): PageFieldsContext {
+  const context = useContext(Context)
+  if (!context) throw new Error('Page field poza PageFieldsProvider')
+  return context
+}
 
 export function PageField({ field, text, measuring }: PageFieldProps) {
   if (measuring) {
@@ -101,26 +109,26 @@ function DormantJoined({ fields, separator, text }: Omit<JoinedFieldsProps, 'mea
 // Rozwija fragment linii złączonej `span` i stawia kursor w polu pod znakiem `offset` tej linii (w separatorze – na
 // bliższym brzegu sąsiedniego pola). Fokus pole dostaje po przerysowaniu stron z rozwiniętym fragmentem.
 export function activateJoined(span: HTMLElement, offset: number, active: ActiveFieldStore) {
+  const target = joinedTarget(span, offset)
+  const fragment = span.dataset['fragment']
+  if (!target || fragment === undefined) return
+  active.expect({ key: target.key, fragment }, { start: target.caret, end: target.caret })
+}
+
+// Pole linii złączonej `span` pod znakiem `offset` i miejsce w nim (null – linia bez pól).
+export function joinedTarget(span: HTMLElement, offset: number): { key: string; caret: number } | null {
   const parts = JSON.parse(span.dataset['joined'] ?? '[]') as [string, number][]
   const separator = Number(span.dataset['separator'] ?? 0)
-  const fragment = span.dataset['fragment']
-  if (parts.length === 0 || fragment === undefined) return
+  if (parts.length === 0) return null
   let start = 0
-  let target = { key: parts[0]![0], caret: 0 }
   for (const [index, [key, length]] of parts.entries()) {
     const end = start + length
     const nextStart = end + separator
-    if (offset <= end || index === parts.length - 1) {
-      target = { key, caret: Math.max(0, Math.min(offset - start, length)) }
-      break
-    }
-    if (offset < nextStart && offset - end <= nextStart - offset) {
-      target = { key, caret: length }
-      break
-    }
+    if (offset <= end || index === parts.length - 1) return { key, caret: Math.max(0, Math.min(offset - start, length)) }
+    if (offset < nextStart && offset - end <= nextStart - offset) return { key, caret: length }
     start = nextStart
   }
-  active.expect({ key: target.key, fragment }, { start: target.caret, end: target.caret })
+  return { key: parts[0]![0], caret: 0 }
 }
 
 const multilineWhiteSpace = new Set(['pre', 'pre-line', 'pre-wrap', 'break-spaces'])
@@ -355,8 +363,8 @@ function flatten(span: HTMLElement) {
   if (selection && window.document.activeElement === span) writeSelection(span, selection)
 }
 
-// Page fields i linie złączone (poza aktywnym fragmentem) stron w kolejności dokumentu (= kolejność czytania szablonu,
-// przez granice stron).
+// Page fields, żetony dat i linie złączone (poza aktywnym fragmentem) stron w kolejności dokumentu (= kolejność czytania
+// szablonu, przez granice stron).
 function pageFields(span: HTMLElement): HTMLElement[] {
   const root = span.closest('.cv-pages')
   return root ? [...root.querySelectorAll<HTMLElement>('[data-field-key], [data-joined]')] : []
@@ -369,12 +377,13 @@ function focusAt(target: HTMLElement, caret: number, active: ActiveFieldStore) {
     return
   }
   target.focus({ preventScroll: true })
-  writeSelection(target, { start: caret, end: caret })
+  // Żeton daty to przycisk – bez kursora tekstowego.
+  if (target.isContentEditable) writeSelection(target, { start: caret, end: caret })
   target.scrollIntoView({ block: 'nearest' })
 }
 
 // Enter w polu jednowierszowym: następne Page field w kolejności dokumentu (też na kolejnej stronie), kursor na początku.
-function focusNextField(span: HTMLElement, active: ActiveFieldStore) {
+export function focusNextField(span: HTMLElement, active: ActiveFieldStore) {
   const fields = pageFields(span)
   const next = fields[fields.indexOf(span) + 1]
   if (next) focusAt(next, 0, active)
@@ -403,7 +412,7 @@ function onEdgeLine(span: HTMLElement, edge: 'first' | 'last'): boolean {
 // ←/→, ↑/↓ na krawędzi pola: poprzednie (`-1`) albo następne (`1`) Page field. Strzałka w pionie zachowuje położenie
 // kursora w poziomie (kursor w ostatniej linii poprzedniego / pierwszej linii następnego pola), w poziomie – kursor
 // na końcu poprzedniego / początku następnego.
-function focusSibling(span: HTMLElement, direction: -1 | 1, vertical: boolean, active: ActiveFieldStore): boolean {
+export function focusSibling(span: HTMLElement, direction: -1 | 1, vertical: boolean, active: ActiveFieldStore): boolean {
   const fields = pageFields(span)
   const target = fields[fields.indexOf(span) + direction]
   if (!target) return false
@@ -422,7 +431,7 @@ function focusSibling(span: HTMLElement, direction: -1 | 1, vertical: boolean, a
 }
 
 // Uchwyt menu fragmentu pola w warstwie edycji (tytuł sekcji, wpis) – Shift+F10 z pola go „klika”.
-function fragmentHandle(span: HTMLElement, fragment: string): HTMLButtonElement | null {
+export function fragmentHandle(span: HTMLElement, fragment: string): HTMLButtonElement | null {
   const panel = span.closest('.preview')
   return panel?.querySelector<HTMLButtonElement>(`.edit-layer .edit-handle[data-fragment="${CSS.escape(fragment)}"] .row-handle`) ?? null
 }

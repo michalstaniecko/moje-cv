@@ -282,6 +282,8 @@ export const en = {
     startOptional: 'From (optional)',
     graduation: 'Graduation date',
     endBeforeStart: 'The end date is earlier than the start date.',
+    // Field popover daty na stronie: usuwa datę.
+    clearDate: 'Clear',
     listItem: (number: number) => `Item ${number}`,
     addListItem: 'Add item',
     // Elementy list z ręczną kolejnością w etykiecie uchwytu i komunikatach (np. „Actions for section “Languages””).

@@ -1,4 +1,4 @@
-import { CompanyLine, CvText, EducationDetails, useShown } from '../editable'
+import { CompanyLine, CvText, DateRange, EducationDetails, useShown } from '../editable'
 import type { BlockContentView, PageFooterView, TemplateDefinition } from '../templateDefinition'
 import './bold.css'
 
@@ -42,18 +42,24 @@ const Header: BlockContentView<'header'> = ({ block }) => {
   )
 }
 
-// Daty na jasnym odcieniu akcentu – tylko gdy niepuste, żeby nie zostawało puste tło.
+// Daty na jasnym odcieniu akcentu – tylko gdy niepuste, żeby nie zostawało puste tło (w Edit mode także w odsłoniętym
+// wpisie: żetony dat z placeholderami).
 const ExperienceEntry: BlockContentView<'experienceEntry'> = ({ block }) => {
   const shownRole = useShown(block, 'role', block.role)
   const shownCompany = useShown(block, 'company', block.companyLine)
+  const shownDates = useShown(block, 'start', block.dates)
   return (
     <div className="cv-entry">
-      {(shownRole || block.dates) && (
+      {(shownRole || shownDates) && (
         <div className="cv-role-row">
           <div className="cv-role">
             <CvText block={block} slot="role" text={block.role} />
           </div>
-          {block.dates && <div className="cv-date">{block.dates}</div>}
+          {shownDates && (
+            <div className="cv-date">
+              <DateRange block={block} />
+            </div>
+          )}
         </div>
       )}
       {shownCompany && (
@@ -75,6 +81,7 @@ const ExperienceEntry: BlockContentView<'experienceEntry'> = ({ block }) => {
 const EducationEntry: BlockContentView<'educationEntry'> = ({ block }) => {
   const shownLevel = useShown(block, 'level', block.level)
   const shownDetails = useShown(block, 'field', block.details)
+  const shownDates = useShown(block, 'start', block.dates)
   return (
     <div className="cv-entry">
       <div className="cv-role-row">
@@ -87,7 +94,11 @@ const EducationEntry: BlockContentView<'educationEntry'> = ({ block }) => {
           {shownLevel && shownDetails && ', '}
           <EducationDetails block={block} />
         </div>
-        {block.dates && <div className="cv-date">{block.dates}</div>}
+        {shownDates && (
+          <div className="cv-date">
+            <DateRange block={block} />
+          </div>
+        )}
       </div>
     </div>
   )

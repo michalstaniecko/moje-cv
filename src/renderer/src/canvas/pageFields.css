@@ -33,10 +33,34 @@
   outline-offset: 2px;
 }
 
-/* Daty wpisów otwierają jeszcze kartę wpisu (do S3 – żetony dat). */
+/* Żeton daty (W12): przycisk w napisie dat wpisu, otwiera Field popover daty. Jak pole – bez zmiany geometrii (obrys
+   nie zajmuje miejsca); pusta data odsłoniętego wpisu pokazuje placeholder („From”, „To”). Klik w resztę `.cv-date`
+   (kropka osi czasu, tło żetonu w Bold) otwiera najbliższą datę. */
+.cv-editing .cv-page-date:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ui-page-placeholder);
+}
+
 .cv-editing .cv-pages [data-block='experienceEntry'] .cv-date,
 .cv-editing .cv-pages [data-block='educationEntry'] .cv-date {
   cursor: pointer;
+}
+
+.cv-editing .cv-pages .cv-page-date[role='button'],
+.cv-editing .cv-pages .cv-page-dates {
+  outline: none;
+}
+
+.cv-editing .cv-pages .cv-page-date[role='button']:hover,
+.cv-editing .cv-pages .cv-page-dates:hover {
+  outline: 1px solid var(--ui-fragment-outline);
+  outline-offset: 2px;
+}
+
+.cv-editing .cv-pages .cv-page-date[role='button']:focus,
+.cv-editing .cv-pages .cv-page-date[aria-expanded='true'] {
+  outline: 2px solid var(--ui-fragment-outline);
+  outline-offset: 2px;
 }
 
 /* Linia złączona z kilku pól poza aktywnym wpisem (jeden napis jak w PDF): klik stawia kursor w polu pod znakiem. */

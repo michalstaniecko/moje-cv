@@ -1,6 +1,6 @@
 import type { ComponentType, Ref } from 'react'
 import type { CvBlock } from '../domain/blocks'
-import { CompanyLine, CvText, EducationLine, useShown } from './editable'
+import { CompanyLine, CvText, DateRange, EducationLine, useShown } from './editable'
 import type { BlockViewOverrides } from './templateDefinition'
 
 // Wspólne komponenty bloków – szablon może nadpisać dowolny rodzaj bloku (BlockViewOverrides). Tekst pól przez sloty
@@ -91,7 +91,9 @@ function EntryContent({ block }: { block: Exclude<CvBlock, { kind: 'header' | 's
     case 'educationEntry':
       return (
         <div className="cv-entry">
-          <div className="cv-date cv-date--dot">{block.dates}</div>
+          <div className="cv-date cv-date--dot">
+            <DateRange block={block} />
+          </div>
           <div>
             <EducationLine block={block} />
           </div>
@@ -105,7 +107,9 @@ function ExperienceEntry({ block }: { block: Extract<CvBlock, { kind: 'experienc
   const shownCompany = useShown(block, 'company', block.companyLine)
   return (
     <div className="cv-entry">
-      <div className="cv-date cv-date--dot">{block.dates}</div>
+      <div className="cv-date cv-date--dot">
+        <DateRange block={block} />
+      </div>
       <div>
         {shownRole && (
           <div className="cv-role">

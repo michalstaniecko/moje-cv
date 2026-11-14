@@ -246,8 +246,8 @@ const dedupe = (names: string[]) => names.filter((name, index) => name !== names
 const positions = ['Senior Procurement Specialist', 'Procurement Specialist', 'Procurement Assistant', 'Junior Customer Service Specialist']
 const educations = ['Postgraduate diploma, Procurement Management', 'Master’s degree, Logistics']
 const card = (name: string) => window.getByRole('dialog', { name, exact: true })
-// Daty wpisu na stronie (klik otwiera kartę wpisu – do żetonów dat w S3).
-const entryDate = (blockId: string) => window.locator(`.preview .cv-page [data-block-id="${blockId}"] .cv-date`)
+// Daty wpisu na stronie (żetony dat – docs/specs/wysiwyg-editing.md, S3).
+const entryDate = (blockId: string) => window.locator(`.preview .cv-pages [data-block-id="${blockId}"] .cv-date`)
 // Stanowisko wpisu na stronie (Page field) – najechanie pokazuje uchwyt i pigułkę „+” sekcji.
 const pageRole = (role: string) => window.locator('.preview .cv-page .cv-role', { hasText: new RegExp(`^${role}$`) })
 const pageName = () => window.locator('.preview .cv-page .cv-name')
@@ -307,6 +307,8 @@ const caret = () =>
     range.setEnd(selection.focusNode, selection.focusOffset)
     return { key: field.dataset.fieldKey, offset: range.toString().length, collapsed: selection.isCollapsed }
   })()`)
+// Klucz Page field albo żetonu daty z fokusem (null – fokus poza nimi).
+const focusedKey = () => window.evaluate<string | null>(`document.activeElement?.dataset.fieldKey ?? null`)
 // Klik myszą w lewą część znaku `index` pola – kursor staje przed tym znakiem.
 async function clickAtCharacter(field: Locator, index: number) {
   await field.scrollIntoViewIfNeeded()
@@ -523,18 +525,17 @@ test('composing text with an input method changes the document only when the com
   await expect.poll(caret).toEqual({ key: 'header:fullName', offset: 6, collapsed: true })
 })
 
-test('cards still open for the parts without page fields and for the dates of entries: one card at a time, Escape returns the focus to its fragment, a click on a page field or the page background closes it', async () => {
+test('cards still open for the parts without page fields: one card at a time, Escape returns the focus to its fragment, a click on a page field or the page background closes it', async () => {
   await openFirstCv()
   const preview = window.locator('.preview')
   const firstContact = preview.locator('.cv-page .cv-contact > *').first()
-  // Daty wpisu otwierają jeszcze kartę wpisu (do żetonów dat, docs/specs/wysiwyg-editing.md, S3).
-  await clickOnPage(entryDate('e1'))
-  await expect(card(`Position “${positions[0]}”`)).toBeVisible()
+  await clickOnPage(preview.locator('.cv-page .cv-photo'))
+  await expect(card('Photo')).toBeVisible()
 
-  // Jedna karta naraz: klik innego fragmentu (kontakt jest nad stanowiskiem, więc karta go nie zasłania) przełącza kartę.
+  // Jedna karta naraz: klik innego fragmentu przełącza kartę.
   await clickOnPage(firstContact)
   await expect(card('Contact')).toBeVisible()
-  await expect(card(`Position “${positions[0]}”`)).toHaveCount(0)
+  await expect(card('Photo')).toHaveCount(0)
   await window.keyboard.press('Escape')
   await expect(window.getByRole('dialog')).toHaveCount(0)
   await expect(fragment('Contact')).toBeFocused()
@@ -565,10 +566,11 @@ test('cards still open for the parts without page fields and for the dates of en
   await expect(card('Contact')).toBeVisible()
 })
 
-test('the pages work from the keyboard alone: Tab goes through every page field in document order, also into the joined lines of entries, then through the editing layer; Enter opens a card, Tab leaves it', async () => {
+test('the pages work from the keyboard alone: Tab goes through every page field and date in document order, also into the joined lines of entries, then through the editing layer; Enter opens a card, Tab leaves it', async () => {
   await openFirstCv()
-  // Pola stron w kolejności czytania (Classic: tytuł listy obok niej); linia złączona z kilku pól wpisu bez fokusu
-  // (np. „firma – miejscowość”) to jeden napis, którego pola Tab odwiedza po kolei.
+  // Pola i żetony dat stron w kolejności czytania (Classic: daty przed stanowiskiem, tytuł listy obok niej); linia
+  // złączona z kilku pól wpisu bez fokusu (np. „firma – miejscowość”, daty) to jeden napis, którego pola Tab odwiedza po
+  // kolei.
   const expected = await window.locator('.preview .cv-pages').evaluate((root) =>
     [...root.querySelectorAll('[data-field-key], [data-joined]')].flatMap((element) => {
       const joined = element.getAttribute('data-joined')
@@ -579,23 +581,23 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
     'header:fullName',
     'header:summary',
     'section:experience:title',
+    'experience:e1:start',
+    'experience:e1:end',
     'experience:e1:role',
     'experience:e1:company',
-    'experience:e1:location',
-    'experience:e1:bullet:e1-b1',
-    'experience:e1:bullet:e1-b2'
+    'experience:e1:location'
   ])
+  expect(expected).toContain('education:ed1:end')
   expect(expected).toContain('education:ed2:institution')
   expect(expected.slice(-3)).toEqual(['section:languages:title', 'list:l1:text', 'list:l2:text'])
-  const focusedKey = () => window.evaluate<string | null>(`document.activeElement?.dataset.fieldKey ?? null`)
   await pageField('Full name').focus()
   for (const key of expected.slice(1)) {
     await window.keyboard.press('Tab')
     await expect.poll(focusedKey).toBe(key)
   }
 
-  // Warstwa edycji: części z Edit card (wpisy – z klawiatury, dla dat), uchwyty, pigułki „+” i pasek.
-  const names = ['Photo', 'Contact', ...positions.map((role) => `Position “${role}”`), ...educations.map((name) => `Education “${name}”`)]
+  // Warstwa edycji: części z Edit card (wpisy już nie), uchwyty, pigułki „+” i pasek.
+  const names = ['Photo', 'Contact']
   await expect.poll(() => fragmentNames()).toEqual(expect.arrayContaining(names))
   expect(dedupe(await fragmentNames())).toEqual(names)
   const stops = window.locator(
@@ -605,7 +607,7 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
   expect(stopNames.slice(2, 4)).toEqual(['Actions for section “Work experience”', 'Actions for position “Senior Procurement Specialist”'])
   expect(stopNames.slice(-3)).toEqual(['Actions for section “Languages”', '+ Item', 'Consent clause'])
   const educationHandle = stopNames.indexOf('Actions for section “Education”')
-  expect(stopNames.slice(educationHandle - 2, educationHandle)).toEqual([`Edit: Position “${positions[3]}”`, '+ Position'])
+  expect(stopNames.slice(educationHandle - 2, educationHandle)).toEqual([`Actions for position “${positions[3]}”`, '+ Position'])
   const count = await stops.count()
   await window.keyboard.press('Tab')
   await expect(stops.first()).toBeFocused()
@@ -619,15 +621,15 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
   const contactCard = card('Contact')
   await expect(contactCard.getByRole('combobox', { name: 'Contact label 1' })).toBeFocused()
 
-  // Spacja też otwiera (wpis – karta z jego datami); „×” zamyka i fokus wraca na fragment.
-  const position = fragment(`Position “${positions[0]}”`).first()
-  await position.focus()
+  // Spacja też otwiera; „×” zamyka i fokus wraca na fragment.
+  const photo = fragment('Photo')
+  await photo.focus()
   await window.keyboard.press('Space')
-  const positionCard = card(`Position “${positions[0]}”`)
-  await expect(positionCard.getByRole('textbox', { name: 'Job title' })).toBeFocused()
-  await positionCard.getByRole('button', { name: 'Close' }).click()
+  const photoCard = card('Photo')
+  await expect(photoCard.getByRole('button', { name: 'Change photo' })).toBeFocused()
+  await photoCard.getByRole('button', { name: 'Close' }).click()
   await expect(window.getByRole('dialog')).toHaveCount(0)
-  await expect(position).toBeFocused()
+  await expect(photo).toBeFocused()
 })
 
 test('the Edit card follows its fragment when the page split and the zoom change, always at 100%', async () => {
@@ -639,33 +641,37 @@ test('the Edit card follows its fragment when the page split and the zoom change
   await preview.getByRole('button', { name: 'Zoom out' }).click()
   await expect(preview.locator('.preview-zoom-value')).toHaveText('50%')
 
-  // Długie podsumowanie przenosi pierwsze stanowisko na drugą stronę; karta otwarta przy nim.
+  // Długie podsumowanie przenosi klauzulę zgody na kolejną stronę; karta otwarta przy niej.
+  await enableConsent('I agree to the processing of my personal data.')
+  const clause = fragment('Consent clause')
+  const pageBefore = await clause.getAttribute('data-page')
   await formField('Summary').fill('Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(70))
-  const position = fragment(`Position “${positions[0]}”`).first()
-  await expect(position).toHaveAttribute('data-page', '1')
-  await clickOnPage(entryDate('e1'))
-  const positionCard = card(`Position “${positions[0]}”`)
-  await expect(positionCard).toBeVisible()
-  await expectCardNextTo(positionCard, position)
+  await expect(clause).not.toHaveAttribute('data-page', pageBefore!)
+  await clickOnPage(window.locator('.preview .cv-page .cv-consent'))
+  const clauseCard = card('Consent clause')
+  await expect(clauseCard).toBeVisible()
+  await expectCardNextTo(clauseCard, clause)
   // Położenie na stronach, nie w oknie: przewijanie panelu (scroll anchoring) może trzymać fragment w miejscu okna.
-  const offset = () => position.evaluate((button) => (button as unknown as { offsetTop: number }).offsetTop)
+  const offset = () => clause.evaluate((button) => (button as unknown as { offsetTop: number }).offsetTop)
   const before = await offset()
 
   // Cofnięcie (z fokusem w karcie) zmienia podział stron – karta jedzie za fragmentem.
   await window.keyboard.press('Meta+z')
   await expect(formField('Summary')).not.toHaveValue(/Lorem/)
-  await expect(position).toHaveAttribute('data-page', '0')
+  await expect(clause).toHaveAttribute('data-page', pageBefore!)
   await expect.poll(offset).not.toBeCloseTo(before, 0)
-  await expect(positionCard).toBeVisible()
-  await expectCardNextTo(positionCard, position)
+  await expect(clauseCard).toBeVisible()
+  await expectCardNextTo(clauseCard, clause)
 
   // Zmiana skali: fragment rośnie, karta zostaje w skali 1:1 i dalej stoi przy nim.
-  const small = (await position.boundingBox())!
+  const small = (await clause.boundingBox())!
   await preview.getByRole('button', { name: 'Zoom in' }).click()
   await expect(preview.locator('.preview-zoom-value')).toHaveText('75%')
-  await expect.poll(async () => (await position.boundingBox())!.width).toBeGreaterThan(small.width * 1.4)
-  await expect(positionCard).toBeVisible()
-  await expectCardNextTo(positionCard, position)
+  await expect.poll(async () => (await clause.boundingBox())!.width).toBeGreaterThan(small.width * 1.4)
+  await expect(clauseCard).toBeVisible()
+  // Klauzula na dole ostatniej strony – w powiększeniu może wyjść poza okno (karta zostaje wtedy w oknie).
+  await clause.scrollIntoViewIfNeeded()
+  await expectCardNextTo(clauseCard, clause)
 })
 
 test('Preview mode has no editing layer and no page fields: switching closes the open card and focuses the toggle; Edit mode does not reopen it', async () => {
@@ -692,8 +698,8 @@ test('Preview mode has no editing layer and no page fields: switching closes the
 // Kontrakt znaczników edycji (ADR-0009) i Page fields (ADR-0010): w każdym szablonie każde pole tekstowe Sample CV
 // (z włączoną klauzulą zgody) jest Page field w swoim elemencie strony – imię i nazwisko, podsumowanie, tytuły sekcji,
 // stanowiska, punkty, elementy list; linie złączone z kilku pól (firma – miejscowość, poziom, kierunek, uczelnia) są
-// polami po wejściu we wpis – a każdy fragment, który ma jeszcze Edit card, ma swój przycisk w warstwie edycji na swoim
-// fragmencie strony. Tytuły list w Classic stoją obok listy (wewnątrz wiersza listy), w Modern i Bold nad nią.
+// polami po wejściu we wpis; daty każdego wpisu to przycisk w jego `.cv-date` (żetony dat po wejściu we wpis) – a każdy
+// fragment, który ma jeszcze Edit card, ma swój przycisk w warstwie edycji na swoim fragmencie strony. Tytuły list w Classic stoją obok listy (wewnątrz wiersza listy), w Modern i Bold nad nią.
 for (const template of ['Classic', 'Modern', 'Bold'] as const) {
   test(`markup contract: every text field of the Sample CV in the ${template} template is a page field, and every part with a card has its element in the editing layer`, async () => {
     await openFirstCv()
@@ -732,12 +738,14 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     const items = preview.locator('.cv-pages [data-block-id]:not([data-block="header"]) li')
     expect(await items.count()).toBeGreaterThan(20)
     expect(await preview.locator('.cv-pages [data-block-id]:not([data-block="header"]) li > [data-field-key]').count()).toBe(await items.count())
+    // Daty: w `.cv-date` każdego wpisu przycisk otwierający popover daty, z napisem dat.
+    const dates = preview.locator('.cv-pages .cv-date [role="button"][aria-haspopup="dialog"]')
+    await expect(dates).toHaveCount(positions.length + educations.length)
+    await expect(dates.first()).toHaveText('03.2023 – present')
 
     const expected: [string, Locator][] = [
       ['Photo', page('.cv-photo')],
       ...[0, 1, 2, 3].map((index): [string, Locator] => ['Contact', contacts.nth(index)]),
-      ...positions.map((role): [string, Locator] => [`Position “${role}”`, page('.cv-role', role)]),
-      ...educations.map((name, index): [string, Locator] => [`Education “${name}”`, page(`[data-block-id="ed${index + 1}"] > :first-child`)]),
       ['Consent clause', page('.cv-consent')]
     ]
     await expect
@@ -760,7 +768,7 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     await clickAtCharacter(company.locator('[data-joined]'), 23)
     await expect(pageField('City – Position “Procurement Specialist”')).toBeFocused()
     await expect.poll(caret).toEqual({ key: 'experience:e2:location', offset: 1, collapsed: true })
-    const education = page('[data-block-id="ed2"] [data-joined]')
+    const education = page('[data-block-id="ed2"] .cv-page-joined')
     await expect(education).toContainText('Logistics, Fictional Academy')
     const institutionAt = ((await education.textContent()) ?? '').indexOf('Fictional') + 2
     await clickAtCharacter(education, institutionAt)
@@ -768,10 +776,13 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     await clickAtCharacter(pageField('Item 2 – List “Languages”'), 3)
     await expect.poll(caret).toEqual({ key: 'list:l2:text', offset: 3, collapsed: true })
 
-    // Daty i klauzula zgody – jeszcze w kartach; zdjęcie i kontakty też.
+    // Klik w daty: popover daty przy żetonie; Escape wraca na żeton.
     await clickOnPage(entryDate('e3'))
-    await expect(card('Position “Procurement Assistant”')).toBeVisible()
+    await expect(window.getByRole('dialog', { name: /^(From|To) – Position “Procurement Assistant”$/ })).toBeVisible()
     await window.keyboard.press('Escape')
+    await expect(window.getByRole('dialog')).toHaveCount(0)
+    await expect.poll(focusedKey).toMatch(/^experience:e3:(start|end)$/)
+    // Klauzula zgody – jeszcze w karcie; zdjęcie i kontakty też.
     await clickOnPage(page('.cv-consent'))
     await expect(card('Consent clause').getByRole('textbox', { name: 'Text in this CV' })).toBeFocused()
     await window.keyboard.press('Escape')
@@ -853,7 +864,7 @@ test('the text of positions, education entries and lists is edited on the page: 
   await expect(form.getByLabel('Bullet 1', { exact: true }).nth(2)).toHaveValue(/^Daily: Issuing purchase orders/)
 
   // Wykształcenie: kierunek w linii „poziom, kierunek, uczelnia” (Classic – jeden napis).
-  const education = window.locator('.preview .cv-pages [data-block-id="ed2"] [data-joined]')
+  const education = window.locator('.preview .cv-pages [data-block-id="ed2"] .cv-page-joined')
   await clickAtCharacter(education, ((await education.textContent()) ?? '').indexOf('Logistics') + 3)
   await expect.poll(caret).toEqual({ key: 'education:ed2:field', offset: 3, collapsed: true })
   await window.keyboard.type('X')
@@ -1020,12 +1031,21 @@ test('list items split, join and move like bullets; pasting several lines into a
   await expect(pageField('Company – Position “Procurement Assistant”')).toHaveText(/^Supplier audits\s+Contract management\s*$/)
 })
 
-test('arrow keys go on to the previous or next field at the edges of a field, also into a joined line and onto another page; Alt+Shift+arrows in a field of an entry move the entry and Shift+F10 opens its menu', async () => {
+test('arrow keys go on to the previous or next field at the edges of a field, also through dates, into a joined line and onto another page; Alt+Shift+arrows in a field of an entry move the entry and Shift+F10 opens its menu', async () => {
   await openFirstCv()
-  // ← na początku stanowiska: koniec ostatniego punktu poprzedniego wpisu; → na jego końcu – z powrotem.
+  // ← na początku stanowiska: daty wpisu (Classic: przed stanowiskiem – żetony końca i początku), potem koniec
+  // ostatniego punktu poprzedniego wpisu; → wraca tą samą drogą (w napisie dat poprzedniego wpisu – na dacie początku).
   await clickAtCharacter(roleField(positions[1]), 0)
   await window.keyboard.press('ArrowLeft')
+  await expect.poll(focusedKey).toBe('experience:e2:end')
+  await window.keyboard.press('ArrowLeft')
+  await expect.poll(focusedKey).toBe('experience:e2:start')
+  await window.keyboard.press('ArrowLeft')
   await expect.poll(caret).toEqual({ key: 'experience:e1:bullet:e1-b8', offset: 'Onboarding new members of the procurement team.'.length, collapsed: true })
+  await window.keyboard.press('ArrowRight')
+  await expect.poll(focusedKey).toBe('experience:e2:start')
+  await window.keyboard.press('ArrowRight')
+  await expect.poll(focusedKey).toBe('experience:e2:end')
   await window.keyboard.press('ArrowRight')
   await expect.poll(caret).toEqual({ key: 'experience:e2:role', offset: 0, collapsed: true })
   // ↓ w (jedynej) linii stanowiska – następne pole: firma; ↑ – z powrotem w stanowisku.
@@ -1036,20 +1056,32 @@ test('arrow keys go on to the previous or next field at the edges of a field, al
 
   // Przez granicę stron: z ostatniego pola pierwszej strony do pierwszego na drugiej i z powrotem.
   const pages = window.locator('.preview .cv-pages > .cv-page')
-  const lastOnFirst = pages.first().locator('[data-field-key]').last()
+  const lastOnFirst = pages.first().locator('[data-field-key][contenteditable]').last()
   const lastKey = (await lastOnFirst.getAttribute('data-field-key'))!
-  const firstKey = (await pages.nth(1).locator('[data-field-key]').first().getAttribute('data-field-key'))!
+  // Pierwsze pole drugiej strony (w napisie złączonym – jego pierwsze pole).
+  const firstKey = await pages
+    .nth(1)
+    .locator('[data-field-key], [data-joined]')
+    .first()
+    .evaluate((element) => element.getAttribute('data-field-key') ?? (JSON.parse(element.getAttribute('data-joined')!) as [string, number][])[0]![0])
   await clickAtCharacter(lastOnFirst, 0)
   await window.keyboard.press('Meta+ArrowRight')
   await window.keyboard.press('ArrowRight')
-  await expect.poll(caret).toEqual({ key: firstKey, offset: 0, collapsed: true })
+  await expect.poll(focusedKey).toBe(firstKey)
   await window.keyboard.press('ArrowLeft')
   await expect.poll(caret).toEqual(expect.objectContaining({ key: lastKey }))
-  // Z tytułu sekcji w linię złączoną pierwszego wykształcenia (jeden napis, dopóki wpis nie ma fokusu) i z powrotem.
+  // Z tytułu sekcji w napis dat pierwszego wykształcenia (jeden napis, dopóki wpis nie ma fokusu; wejście odsłania
+  // pustą datę początku), dalej w linię złączoną i z powrotem.
   await clickAtCharacter(titleField('Education'), 0)
   await window.keyboard.press('Meta+ArrowRight')
   await window.keyboard.press('ArrowRight')
+  await expect.poll(focusedKey).toBe('education:ed1:end')
+  await window.keyboard.press('ArrowRight')
   await expect.poll(caret).toEqual({ key: 'education:ed1:level', offset: 0, collapsed: true })
+  await window.keyboard.press('ArrowLeft')
+  await expect.poll(focusedKey).toBe('education:ed1:end')
+  await window.keyboard.press('ArrowLeft')
+  await expect.poll(focusedKey).toBe('education:ed1:start')
   await window.keyboard.press('ArrowLeft')
   await expect.poll(caret).toEqual({ key: 'section:education:title', offset: 'Education'.length, collapsed: true })
 
@@ -1101,65 +1133,115 @@ test('a cleared field of an entry keeps its place with a placeholder, and the em
   await expect.poll(pageSplit).toEqual(edit)
 })
 
-test('removing a bullet or a whole position in a card says “Removed.” over the pages; Undo brings it back and the focus returns to it', async () => {
+// ---------- Żetony dat (docs/specs/wysiwyg-editing.md, S3) ----------
+
+// Popover daty (Field popover) i żeton daty na stronie – nazwy „<data> – <część CV>”, żeton z napisem daty.
+const datePopover = (name: string) => window.getByRole('dialog', { name, exact: true })
+const dateToken = (name: string) => window.locator('.preview .cv-pages').getByRole('button', { name: new RegExp(`^${name}(: |$)`) })
+
+test('the dates of entries change in a date popover at the date on the page, with the mouse and from the keyboard; reversed dates are marked; each change is one undo step', async () => {
   await openFirstCv()
-  const preview = window.locator('.preview')
-  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
-  const second = 'Sourcing and qualifying new suppliers in Europe and Asia.'
-  // Karta wpisu otwiera się jeszcze z jego dat (do S3).
-  await clickOnPage(entryDate('e2'))
-  const positionCard = card('Position “Procurement Specialist”')
-  await expect(positionCard).toBeVisible()
+  const form = window.locator('.editor-form')
+  const warning = 'The end date is earlier than the start date.'
+  const specialist = 'Position “Procurement Specialist”'
+  const dates = entryDate('e2')
+  await expect(dates).toHaveText('02.2019 – 02.2023')
 
-  // Punkt: „Remove” w menu wiersza.
-  await positionCard.getByRole('button', { name: 'Actions for bullet 2' }).click()
-  await window.getByRole('menuitem', { name: 'Remove' }).click()
-  await expect(pageItem(second)).toHaveCount(0)
-  await expect(removed).toBeVisible()
-  // Komunikat pływa w lewym dolnym rogu panelu stron, nie w kolumnie formularza.
-  await expect(window.locator('.editor-form').getByRole('status').filter({ hasText: 'Removed.' })).toHaveCount(0)
-  const message = (await removed.locator('.removal-message-content').boundingBox())!
-  const pages = (await preview.boundingBox())!
-  expect(message.x).toBeGreaterThanOrEqual(pages.x)
-  expect(message.x).toBeLessThan(pages.x + 40)
-  expect(message.y + message.height).toBeGreaterThan(pages.y + pages.height - 40)
+  // Klik w datę końca: wpis się rozwija, popover daty końca przy jej żetonie, fokus na polu miesiąca.
+  await clickAtCharacter(dates.locator('.cv-page-dates'), 12)
+  const end = datePopover(`To – ${specialist}`)
+  const to = end.getByLabel('To', { exact: true })
+  await expect(to).toBeFocused()
+  await expect(to).toHaveValue('2023-02')
+  const endToken = dateToken(`To – ${specialist}`)
+  await expect(endToken).toHaveAttribute('aria-expanded', 'true')
+  const [popoverBox, tokenBox] = [(await end.boundingBox())!, (await endToken.boundingBox())!]
+  expect(popoverBox.y >= tokenBox.y + tokenBox.height || popoverBox.y + popoverBox.height <= tokenBox.y).toBe(true)
+  // Zmiana widać od razu – na stronie i w formularzu; Enter zamyka i wraca na żeton.
+  await to.fill('2023-05')
+  await expect(dates).toHaveText('02.2019 – 05.2023')
+  await expect(form.getByLabel('To', { exact: true }).nth(1)).toHaveValue('2023-05')
+  await to.press('Enter')
+  await expect(end).toHaveCount(0)
+  await expect(endToken).toBeFocused()
+  await window.keyboard.press('Meta+z')
+  await expect(dates).toHaveText('02.2019 – 02.2023')
 
-  // „Undo” (klik nie zamyka karty) przywraca punkt, a fokus wraca na niego w karcie.
-  await removed.getByRole('button', { name: 'Undo' }).click()
-  await expect(pageItem(second)).toHaveCount(1)
-  await expect(positionCard.getByLabel('Bullet 2', { exact: true })).toBeFocused()
-  await expect(positionCard.getByLabel('Bullet 2', { exact: true })).toHaveValue(second)
+  // Z klawiatury: spacja na żetonie otwiera; „I currently work here” – „present”; Escape wraca na żeton.
+  await window.keyboard.press('Space')
+  await expect(to).toBeFocused()
+  await end.getByLabel('I currently work here').check()
+  await expect(dates).toHaveText('02.2019 – present')
+  await expect(to).toBeDisabled()
+  await window.keyboard.press('Escape')
+  await expect(end).toHaveCount(0)
+  await expect(endToken).toBeFocused()
+  await expect(endToken).toHaveAccessibleName(`To – ${specialist}: present`)
+  await window.keyboard.press('Meta+z')
+  await expect(dates).toHaveText('02.2019 – 02.2023')
 
-  // Cały wpis: „Remove position” w karcie zamyka ją (wpisu już nie ma), fokus nie ginie.
-  await positionCard.getByRole('button', { name: 'Remove position' }).click()
-  await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^Procurement Specialist$/ })).toHaveCount(0)
-  await expect(window.getByRole('dialog')).toHaveCount(0)
-  await expect(removed).toBeVisible()
-  await expect.poll(() => window.evaluate('document.activeElement !== document.body')).toBe(true)
-  // „Undo” przywraca wpis i otwiera jego kartę z fokusem na pierwszym polu.
-  await removed.getByRole('button', { name: 'Undo' }).click()
-  await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^Procurement Specialist$/ })).toHaveCount(1)
-  await expect(card('Position “Procurement Specialist”').getByLabel('Job title')).toBeFocused()
+  // Odwrócone daty: znaczek ⚠ obok dat w warstwie edycji, ostrzeżenie w popoverze i opis żetonów dla czytnika ekranu.
+  await window.keyboard.press('ArrowLeft')
+  const startToken = dateToken(`From – ${specialist}`)
+  await expect(startToken).toBeFocused()
+  await window.keyboard.press('Enter')
+  const start = datePopover(`From – ${specialist}`)
+  const from = start.getByLabel('From', { exact: true })
+  await from.fill('2024-01')
+  await expect(start.getByText(warning)).toBeVisible()
+  await expect(from).toHaveAccessibleDescription(warning)
+  await expect(window.locator('.edit-layer .edit-date-warning')).toHaveCount(1)
+  await window.keyboard.press('Escape')
+  await expect(startToken).toBeFocused()
+  await expect(startToken).toHaveAccessibleDescription(warning)
+  await expect(endToken).toHaveAccessibleDescription(warning)
+
+  // „Clear” usuwa datę (pusta data wpisu z fokusem – żeton z placeholderem); ostrzeżenia już nie ma.
+  await window.keyboard.press('Enter')
+  await start.getByRole('button', { name: 'Clear' }).click()
+  await expect(form.getByLabel('From', { exact: true }).nth(1)).toHaveValue('')
+  await expect(window.locator('.edit-layer .edit-date-warning')).toHaveCount(0)
+  await expect(start.getByText(warning)).toHaveCount(0)
+  await window.keyboard.press('Escape')
+  await expect(startToken).toBeFocused()
+  expect(await placeholderOf(startToken)).toBe('"From"')
+  // Po wyjściu z wpisu daty są znowu jednym napisem, jak w PDF.
+  await clickAtCharacter(pageField('Full name'), 0)
+  await expect(dates).toHaveText('02.2023')
+  // Każda zmiana to jeden krok cofania.
+  await window.keyboard.press('Meta+z')
+  await expect(dates).toHaveText('01.2024 – 02.2023')
+  await window.keyboard.press('Meta+z')
+  await expect(dates).toHaveText('02.2019 – 02.2023')
+
+  // Wykształcenie bez daty początku: klik w datę ukończenia odsłania pusty żeton początku; klik obok popovera go zamyka.
+  const diploma = `Education “${educations[0]}”`
+  await clickAtCharacter(entryDate('ed1').locator('.cv-page-dates'), 2)
+  const graduation = datePopover(`Graduation date – ${diploma}`)
+  await expect(graduation.getByLabel('Graduation date')).toBeFocused()
+  await expect(graduation.getByLabel('I currently work here')).toHaveCount(0)
+  expect(await placeholderOf(dateToken(`From \\(optional\\) – ${diploma}`))).toBe('"From"')
+  const firstPage = (await window.locator('.preview .cv-page').first().boundingBox())!
+  await window.mouse.click(firstPage.x + 4, firstPage.y + 4)
+  await expect(graduation).toHaveCount(0)
 })
 
 test('Cmd+Z with the card of a newly added position open undoes the adding, closes the card and keeps the focus', async () => {
   await openFirstCv()
   const form = window.locator('.editor-form')
-  await form.getByRole('button', { name: 'Add position' }).click()
-  await form.getByLabel('Job title').last().fill('Buyer')
+  await handle('section “Work experience”').click()
+  await blockMenu('section “Work experience”').getByRole('menuitem', { name: 'Add position' }).click()
+  const added = card('Position “New position”')
+  await expect(added.getByLabel('Job title')).toBeFocused()
+  await window.keyboard.type('Buyer')
   const role = window.locator('.preview .cv-page .cv-role', { hasText: /^Buyer$/ })
   await expect(role).toHaveCount(1)
-
-  // Karta wpisu z klawiatury (przycisk fragmentu – mysz trafia w pola na stronie).
-  await fragment('Position “Buyer”').first().focus()
-  await window.keyboard.press('Enter')
-  const buyer = card('Position “Buyer”')
-  await expect(buyer.getByLabel('Job title')).toBeFocused()
+  await expect(card('Position “Buyer”').getByLabel('Job title')).toBeFocused()
   // Cofnięcie wpisanej nazwy: wpis bez treści znika ze strony, ale karta zostaje (wpis istnieje).
   await window.keyboard.press('Meta+z')
   await expect(role).toHaveCount(0)
-  await expect(card('Position “New position”')).toBeVisible()
-  await expect(card('Position “New position”').getByLabel('Job title')).toBeFocused()
+  await expect(added).toBeVisible()
+  await expect(added.getByLabel('Job title')).toBeFocused()
   // Cofnięcie dodania: wpisu nie ma, karta się zamyka, fokus przechodzi w bezpieczne miejsce – na pasek boczny (przy
   // CV form – jego przycisk w przełączniku Outline / Form).
   await window.keyboard.press('Meta+z')
@@ -1457,8 +1539,7 @@ const blockMenu = (name: string) => window.getByRole('menu', { name: `Actions fo
 const announcement = () => window.locator('.edit-layer [aria-live]')
 // Tytuły sekcji na stronach (Page fields) w kolejności dokumentu.
 const sectionTitles = () => window.locator('.preview .cv-pages [data-fragment^="sectionTitle:"]').allTextContents()
-const positionNames = async () =>
-  dedupe(await fragmentNames()).flatMap((name) => name.match(/^Position “(.*)”$/)?.slice(1) ?? [])
+const positionNames = async () => window.locator('.preview .cv-pages .cv-role').allTextContents()
 // Uchwyt jest zawsze w DOM, a widać go (nieprzezroczysty) tylko przy najechaniu, fokusie i otwartym menu.
 const handleBox = (name: string) =>
   window.locator('.edit-layer .edit-handle', { has: window.getByRole('button', { name: `Actions for ${name}`, exact: true }) })
@@ -1539,17 +1620,17 @@ test('the handle of a position moves it within its section, also to another page
   // jego uchwycie, już na innej stronie.
   await second.click()
   await blockMenu(`position “${positions[1]}”`).getByRole('menuitemcheckbox', { name: 'New page before this entry' }).click()
-  const third = fragment(`Position “${positions[2]}”`).first()
-  await expect(third).toHaveAttribute('data-page', '1')
+  const third = () => pageIndexOf(roleField(positions[2]))
+  await expect.poll(third).toBe(1)
   await handle(`position “${positions[2]}”`).focus()
   await window.keyboard.press('Alt+Shift+ArrowUp')
   await expect.poll(positionNames).toEqual([positions[0], positions[2], positions[1], positions[3]])
-  await expect(third).toHaveAttribute('data-page', '0')
+  await expect.poll(third).toBe(0)
   await expect(handle(`position “${positions[2]}”`)).toBeFocused()
   await expect(announcement()).toHaveText(`Moved position “${positions[2]}” to position 2 of 4.`)
   await window.keyboard.press('Meta+z')
   await expect.poll(positionNames).toEqual(positions)
-  await expect(third).toHaveAttribute('data-page', '1')
+  await expect.poll(third).toBe(1)
 })
 
 test('“New page before” and “Hide section” in the menu on the page work like the form checkboxes', async () => {
@@ -1577,14 +1658,14 @@ test('“New page before” and “Hide section” in the menu on the page work 
   await expect(form.getByRole('region', { name: 'Skills' }).getByLabel('New page before this section')).not.toBeChecked()
 
   // Wpis: nowa strona przed stanowiskiem, jak pole w jego karcie.
-  const second = fragment(`Position “${positions[1]}”`)
-  await expect(second).toHaveAttribute('data-page', '0')
+  const second = () => pageIndexOf(roleField(positions[1]))
+  await expect.poll(second).toBe(0)
   await handle(`position “${positions[1]}”`).click()
   await blockMenu(`position “${positions[1]}”`).getByRole('menuitemcheckbox', { name: 'New page before this entry' }).click()
-  await expect(second).toHaveAttribute('data-page', '1')
+  await expect.poll(second).toBe(1)
   await expect(handle(`position “${positions[1]}”`)).toBeFocused()
   await window.keyboard.press('Meta+z')
-  await expect(second).toHaveAttribute('data-page', '0')
+  await expect.poll(second).toBe(0)
 
   // Ukrycie: sekcja znika ze stron, fokus na kolejnym fragmencie, w formularzu zaznaczone „Hide section”.
   await skills.click()
@@ -1613,9 +1694,9 @@ test('“Add …” in the menu of a section title adds an element: a position o
   await window.keyboard.type('Buyer')
   await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^Buyer$/ })).toHaveCount(1)
   await expect(card('Position “Buyer”')).toBeVisible()
-  await expectCardNextTo(card('Position “Buyer”'), fragment('Position “Buyer”').first())
+  await expectCardNextTo(card('Position “Buyer”'), roleField('Buyer'))
   await window.keyboard.press('Escape')
-  await expect(fragment('Position “Buyer”').first()).toBeFocused()
+  await expect(roleField('Buyer')).toBeFocused()
 
   // Lista: nowy, pusty element na stronie (z placeholderem), z kursorem w nim – bez karty.
   await handle('section “Skills”').click()
@@ -1660,9 +1741,9 @@ test('the menu works from the keyboard alone, and there are no handles below 50%
   await preview.getByRole('button', { name: 'Zoom out' }).click()
   await expect(window.locator('.edit-layer')).toHaveAttribute('data-compact', 'true')
   await expect(window.locator('.edit-layer .edit-handle')).toHaveCount(0)
-  // Edycja dalej działa: tytuł jest Page field, a pozostałe części mają przyciski fragmentów.
+  // Edycja dalej działa: tytuł jest Page field, a części z kartą mają przyciski fragmentów.
   await expect(titleField('Education')).toHaveCount(1)
-  await expect(fragment(`Education “${educations[0]}”`)).toHaveCount(1)
+  await expect(fragment('Contact')).toHaveCount(1)
 })
 
 // ---------- Dodawanie na stronach: pigułki „+”, pasek „Add to CV”, puste CV ----------
@@ -1770,7 +1851,8 @@ test('the “+” pill under a section adds an entry: its card opens at the pill
   // Pigułka stoi pod ostatnim wpisem sekcji.
   await window.locator('.preview .cv-page li', { hasText: 'Handling complaints.' }).hover()
   await expect(position).toHaveCSS('opacity', '1')
-  const last = (await fragment(`Position “${positions[3]}”`).last().boundingBox())!
+  // Ostatni punkt ostatniego wpisu sekcji.
+  const last = (await window.locator('.preview .cv-pages li', { hasText: 'Working with partners abroad.' }).boundingBox())!
   const pillBox = (await position.boundingBox())!
   expect(pillBox.y).toBeGreaterThanOrEqual(last.y + last.height)
   expect(pillBox.y).toBeLessThan(last.y + last.height + 8)
@@ -1783,13 +1865,13 @@ test('the “+” pill under a section adds an entry: its card opens at the pill
   await window.keyboard.type('B')
   const buyer = card('Position “B”')
   await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^B$/ })).toHaveCount(1)
-  await expectCardNextTo(buyer, fragment('Position “B”').first())
+  await expectCardNextTo(buyer, roleField('B'))
   await window.keyboard.type('uyer')
   await expect(card('Position “Buyer”')).toBeVisible()
 
   // Pigułki listy i wykształcenia; z klawiatury – pigułka jest w kolejności Tab za ostatnim fragmentem sekcji.
   await window.keyboard.press('Escape')
-  await expect(fragment('Position “Buyer”').first()).toBeFocused()
+  await expect(roleField('Buyer')).toBeFocused()
   await handle('section “Skills”').focus()
   await window.keyboard.press('Tab')
   const item = pill('Item').first()
@@ -1897,6 +1979,11 @@ test('a full CV can be built from a new CV with the editing layer and cards alon
     }
     await window.keyboard.press('Escape')
   }
+  // Escape z karty wraca na stanowisko na stronie (wpis z pustymi polami jest wtedy odsłonięty); klik w margines kartki
+  // zabiera fokus z pól – strony w spoczynku.
+  const firstPage = (await window.locator('.preview .cv-page').first().boundingBox())!
+  await window.mouse.click(firstPage.x + 4, firstPage.y + 4)
+  await expect.poll(() => window.evaluate('document.activeElement?.dataset.fieldKey ?? null')).toBeNull()
   const edit = await pageSplit()
   expect(edit.length).toBeGreaterThan(1)
   await window.keyboard.press('Meta+Shift+P')
@@ -2061,7 +2148,7 @@ test('in a new CV the Outline marks the empty sections; “Add …” in a row m
   await expect(window.locator('.preview .cv-page .cv-role')).toHaveText(['Buyer'])
   await expect(outlineRow('Work experience')).toHaveText(/^Work experience1$/)
   // Po pierwszym znaku karta przeskakuje do bloku na stronie.
-  await expectCardNextTo(card('Position “Buyer”'), fragment('Position “Buyer”'))
+  await expectCardNextTo(card('Position “Buyer”'), roleField('Buyer'))
   await window.keyboard.press('Escape')
 
   const consentSwitch = nav.getByRole('switch', { name: 'Show on CV' })

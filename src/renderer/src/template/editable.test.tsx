@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { generateBlocks, type CvBlock } from '../domain/blocks'
+import { formatYearMonth } from '../domain/dates'
 import { sampleCvs } from '../domain/sampleCv'
 import type { CvDocument, EducationItem, ExperienceItem, Section } from '../domain/schema'
 import { CvBlockView } from './CvBlockView'
@@ -18,6 +19,18 @@ function Field({ field, text, measuring }: PageFieldProps) {
   )
 }
 
+function DateToken({ field, text }: PageFieldProps) {
+  return (
+    <span data-date-key={field.key} data-placeholder={field.placeholder}>
+      {text}
+    </span>
+  )
+}
+
+function JoinedDates({ fields, text }: JoinedFieldsProps) {
+  return <span data-joined-dates={fields.map((field) => field.key).join(' ')}>{text}</span>
+}
+
 function Joined({ fields, text }: JoinedFieldsProps) {
   return <span data-joined={fields.map((field) => field.key).join(' ')}>{text}</span>
 }
@@ -33,7 +46,8 @@ const entryOf = (document: CvDocument, itemId: string) => {
 // Edycja testowa: pole dla każdego slotu, z wartością z dokumentu. Klucze i fragmenty jak w warstwie edycji
 // (canvas/pageFields.ts), ale rozwiązane tu prosto z id bloków. Tytuł w wierszu listy – tylko w pierwszym wierszu.
 // `expanded` – fragmenty z liniami złączonymi rozwiniętymi w pola (domyślnie: odsłonięte).
-function editingWith(document: CvDocument, reveal: string[] = [], expanded: string[] = reveal): PageEditing {
+// `dates` – daty wpisów jako żetony (bez – napis dokumentu, jak przed żetonami).
+function editingWith(document: CvDocument, reveal: string[] = [], expanded: string[] = reveal, { dates = false } = {}): PageEditing {
   const field = (key: string, fragment: string, value: string): EditableField => ({
     key,
     fragment,
@@ -75,6 +89,11 @@ function editingWith(document: CvDocument, reveal: string[] = [], expanded: stri
         return field(`experience:${first}:bullet:${bullet.id}`, fragment, bullet.text)
       }
       const prefix = entry.section.type === 'experience' ? 'experience' : 'education'
+      if (slot === 'start' || slot === 'end') {
+        if (!dates) return null
+        const date = (entry.item as ExperienceItem)[slot]
+        return field(`${prefix}:${first}:${slot}`, fragment, date === null ? '' : date === 'present' ? 'present' : formatYearMonth(date))
+      }
       const value = (entry.item as unknown as Record<string, unknown>)[slot]
       return typeof value === 'string' ? field(`${prefix}:${first}:${slot}`, fragment, value) : null
     },
@@ -82,6 +101,8 @@ function editingWith(document: CvDocument, reveal: string[] = [], expanded: stri
     expanded: new Set([...reveal, ...expanded]),
     Field,
     Joined,
+    DateToken,
+    JoinedDates,
     onPagesCommitted: () => {}
   }
 }
@@ -258,6 +279,36 @@ describe('editing slots', () => {
     })
   }
 
+  for (const templateId of templateIds) {
+    it(`draw the dates of an entry outside an expanded fragment as one text, in the ${templateId} template`, () => {
+      const page = render(sample, templateId, editingWith(sample, [], [], { dates: true }))
+      expect(blockHtml(page.html, 'e1')).toMatch(
+        /class="cv-date[^"]*"><span data-joined-dates="experience:e1:start experience:e1:end">03\.2023 – present<\/span><\/div>/
+      )
+      expect(blockHtml(page.html, 'ed1')).toMatch(/class="cv-date[^"]*"><span data-joined-dates="education:ed1:end">06\.2024<\/span><\/div>/)
+    })
+
+    it(`draw the dates of every expanded entry as two date tokens with the separator between filled ones, in the ${templateId} template`, () => {
+      const page = render(sample, templateId, editingWith(sample, [], allEntries, { dates: true }))
+      expect(blockHtml(page.html, 'e1')).toMatch(
+        /class="cv-date[^"]*"><span data-date-key="experience:e1:start" data-placeholder="start">03\.2023<\/span> – <span data-date-key="experience:e1:end" data-placeholder="end">present<\/span><\/div>/
+      )
+      // Wykształcenie bez daty początku: sam żeton końca, bez separatora.
+      expect(blockHtml(page.html, 'ed1')).toMatch(/class="cv-date[^"]*"><span data-date-key="education:ed1:end"[^>]*>06\.2024<\/span><\/div>/)
+    })
+
+    it(`draw the empty dates of a revealed entry as tokens with placeholders, also where the Template hides empty dates, in the ${templateId} template`, () => {
+      const document = withEntries({ start: null, end: null }, { start: null, end: null })
+      expect(blockHtml(render(document, templateId, editingWith(document, [], [], { dates: true })).html, 'e1')).not.toContain('data-date-key')
+      const page = render(document, templateId, editingWith(document, ['item:e1', 'item:ed1'], [], { dates: true }))
+      for (const [id, prefix] of [['e1', 'experience'], ['ed1', 'education']] as const) {
+        expect(blockHtml(page.html, id)).toMatch(
+          new RegExp(`class="cv-date[^"]*"><span data-date-key="${prefix}:${id}:start"[^>]*></span> – <span data-date-key="${prefix}:${id}:end"[^>]*></span></div>`)
+        )
+      }
+    })
+  }
+
   it('draw the measuring copy with the same fields, marked as measuring', () => {
     const page = render(sample, 'modern', editingWith(sample), { measuring: true })
     expect(page.fields.length).toBeGreaterThan(6)
@@ -269,7 +320,7 @@ describe('editing slots', () => {
     expect(page.html.split('\n').filter((block) => block.includes('data-block="listRow"') && block.includes(':title"'))).toEqual([])
   })
 
-  it('keep a role without text in the Modern role row with the dates as plain text, without a field', () => {
+  it('keep a role without text in the Modern role row next to the dates, without a field', () => {
     const document = withEntries({ role: '' }, {})
     const entry = blockHtml(render(document, 'modern', editingWith(document)).html, 'e1')
     expect(entry).toContain('<div class="cv-role"></div>')

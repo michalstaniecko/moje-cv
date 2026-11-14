@@ -251,6 +251,7 @@ export const id: Dictionary = {
     startOptional: 'Dari (opsional)',
     graduation: 'Tanggal lulus',
     endBeforeStart: 'Tanggal selesai lebih awal dari tanggal mulai.',
+    clearDate: 'Hapus',
     listItem: (number) => `Item ${number}`,
     addListItem: 'Tambah item',
     order: {

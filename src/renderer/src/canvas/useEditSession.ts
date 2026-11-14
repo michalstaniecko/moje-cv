@@ -3,6 +3,7 @@ import type { CvDocument } from '../domain/schema'
 import { sectionShown } from './addOnPage'
 import { fragmentKey, targetExists, type EditTarget } from './editTargets'
 import { pageFieldKey } from './pageFields'
+import { createDatePopoverStore } from './DatePopover'
 import { createActiveFieldStore } from './useActiveField'
 
 // Edit mode (strony z kontrolkami edycji i paskiem bocznym) albo Preview mode (strony dokładnie jak w PDF) – GLOSSARY.md.
@@ -20,15 +21,17 @@ export type EditSession = ReturnType<typeof useEditSession>
 // - Jedna karta naraz: otwarcie innej zastępuje bieżącą; przejście do Preview mode zamyka kartę (powrót jej nie otwiera).
 // - Po każdej zmianie dokumentu (także cofnij/ponów) sesja sprawdza, czy część CV z karty nadal istnieje; jeśli nie,
 //   zamyka kartę i woła `onCardGone` (edytor przenosi fokus w bezpieczne miejsce).
-// - Aktywne pole (`activeField`, useActiveField.ts): Page field z fokusem na stronach (docs/specs/wysiwyg-editing.md).
+// - Aktywne pole (`activeField`, useActiveField.ts): Page field z fokusem na stronach (docs/specs/wysiwyg-editing.md);
+//   otwarty Field popover daty (`datePopover`, DatePopover.tsx) – zamykany przy przejściu do Preview mode.
 //   Części CV edytowane już na stronie (imię i nazwisko, podsumowanie, tytuł sekcji, pole tekstowe wpisu, element
 //   listy) nie mają karty: „otwarcie” ich z Outline, „Add to CV” czy menu stawia kursor w ich polu na stronie (pusta
 //   część jest odsłaniana). Karta tytułu i listy zostaje tylko dla sekcji, której nie ma na stronach (ukrytej albo
-//   pustej) – do czasu odsłaniania sekcji (S5); karta wpisu – dla jego dat i nowego wpisu (do S3 i S5).
+//   pustej) – do czasu odsłaniania sekcji (S5); karta wpisu – tylko dla nowego wpisu (do S5; daty zmienia żeton daty).
 export function useEditSession(document: CvDocument, { onCardGone }: { onCardGone?: () => void } = {}) {
   const [mode, setModeState] = useState<EditorMode>('edit')
   const [card, setCard] = useState<OpenCard | null>(null)
   const [activeField] = useState(createActiveFieldStore)
+  const [datePopover] = useState(createDatePopoverStore)
   const cardGone = useRef(onCardGone)
   const latestDocument = useRef(document)
   useEffect(() => {
@@ -50,16 +53,18 @@ export function useEditSession(document: CvDocument, { onCardGone }: { onCardGon
       setModeState(next)
       if (next === 'preview') {
         setCard(null)
+        datePopover.close()
         activeField.leave()
       }
     },
-    [activeField]
+    [activeField, datePopover]
   )
   const togglePreview = useCallback(() => {
     setModeState((current) => (current === 'edit' ? 'preview' : 'edit'))
     setCard(null)
+    datePopover.close()
     activeField.leave()
-  }, [activeField])
+  }, [activeField, datePopover])
   const openCard = useCallback(
     (target: EditTarget, anchor: string) => {
       const key = pageFieldKey(target, latestDocument.current)
@@ -72,7 +77,7 @@ export function useEditSession(document: CvDocument, { onCardGone }: { onCardGon
   )
   const closeCard = useCallback(() => setCard(null), [])
 
-  return { mode, setMode, togglePreview, card, openCard, closeCard, activeField }
+  return { mode, setMode, togglePreview, card, openCard, closeCard, activeField, datePopover }
 }
 
 // Czy część CV edytowana na stronie może tam dostać kursor: nagłówek zawsze (pusty jest odsłaniany), tytuł sekcji –

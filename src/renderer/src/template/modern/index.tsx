@@ -1,4 +1,4 @@
-import { CompanyLine, CvText, EducationDetails, useShown } from '../editable'
+import { CompanyLine, CvText, DateRange, EducationDetails, useShown } from '../editable'
 import type { BlockContentView, PageFooterView, TemplateDefinition } from '../templateDefinition'
 import './modern.css'
 
@@ -51,7 +51,9 @@ const ExperienceEntry: BlockContentView<'experienceEntry'> = ({ block }) => {
           <div className="cv-role">
             <CvText block={block} slot="role" text={block.role} />
           </div>
-          <div className="cv-date">{block.dates}</div>
+          <div className="cv-date">
+            <DateRange block={block} />
+          </div>
         </div>
       )}
       {shownCompany && (
@@ -86,7 +88,9 @@ const EducationEntry: BlockContentView<'educationEntry'> = ({ block }) => {
           {shownLevel && shownDetails && ', '}
           <EducationDetails block={block} />
         </div>
-        <div className="cv-date">{block.dates}</div>
+        <div className="cv-date">
+          <DateRange block={block} />
+        </div>
       </div>
     </div>
   )

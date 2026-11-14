@@ -255,6 +255,7 @@ export const it: Dictionary = {
     startOptional: 'Dal (facoltativo)',
     graduation: 'Data di conseguimento',
     endBeforeStart: 'La data di fine è precedente alla data di inizio.',
+    clearDate: 'Cancella',
     listItem: (number) => `Voce ${number}`,
     addListItem: 'Aggiungi voce',
     order: {

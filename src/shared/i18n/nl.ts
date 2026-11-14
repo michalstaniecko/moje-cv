@@ -258,6 +258,7 @@ export const nl: Dictionary = {
     startOptional: 'Van (optioneel)',
     graduation: 'Afstudeerdatum',
     endBeforeStart: 'De einddatum ligt vóór de begindatum.',
+    clearDate: 'Wissen',
     listItem: (number) => `Item ${number}`,
     addListItem: 'Voeg item toe',
     order: {

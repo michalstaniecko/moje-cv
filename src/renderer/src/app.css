@@ -25,6 +25,8 @@
   --ui-fragment-fill: rgb(31 111 207 / 0.07);
   /* Placeholder pustego Page field na kartce (też tylko jedna wartość): neutralna szarość, 4.1:1 na bieli. */
   --ui-page-placeholder: #75808c;
+  /* Znaczek ⚠ odwróconych dat obok napisu dat na kartce (też tylko jedna wartość): ostrzeżenie jasnego wyglądu. */
+  --ui-page-warning: #8a5a00;
 }
 
 /* Ciemna paleta: te same tokeny z innymi wartościami. Proces główny ustawia `nativeTheme.themeSource`, a Electron
@@ -73,6 +75,7 @@ body {
 .editor-rail,
 .row-menu,
 .edit-card,
+.field-popover,
 .edit-pill,
 .edit-start-hint,
 .add-to-cv,
@@ -284,12 +287,6 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
-/* Fragment z Page fields, który ma jeszcze kartę (wpis – jego daty): przycisk tylko dla klawiatury, mysz trafia w pola
-   pod nim (docs/specs/wysiwyg-editing.md, S2). */
-.edit-layer .edit-fragment--keys {
-  pointer-events: none;
-}
-
 .edit-layer .edit-fragment:hover:not(:disabled) {
   background: var(--ui-fragment-fill);
   outline: 1px solid var(--ui-fragment-outline);
@@ -414,6 +411,52 @@ textarea:focus-visible {
   .edit-layer .edit-pill {
     transition: none;
   }
+}
+
+/* Znaczek ⚠ przy odwróconych datach wpisu (W12): w warstwie, obok napisu dat na kartce; tylko informuje (opis dla czytnika
+   ekranu wskazują żetony dat), nie przechwytuje kliknięć. Kolor ostrzeżenia na białej kartce w obu wyglądach – stały
+   ciemny odcień (token jasnego wyglądu), jak placeholdery pól. */
+.edit-layer .edit-date-warning {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  font: 12px/16px system-ui, sans-serif;
+  text-align: center;
+  color: var(--ui-page-warning);
+  pointer-events: none;
+}
+
+/* Field popover (docs/specs/wysiwyg-editing.md, W12): mała kontrolka wartości przy polu na stronie – w warstwie górnej,
+   zawsze 1:1, pozycję od pola ustawia komponent. Wygląd jak menu wiersza: panel, delikatna ramka i cień. */
+.field-popover {
+  position: fixed;
+  inset: auto;
+  box-sizing: border-box;
+  width: 240px;
+  max-width: calc(100vw - 8px);
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px var(--ui-shadow);
+}
+
+.field-popover .form-field {
+  margin-bottom: 8px;
+}
+
+.field-popover .form-checkbox {
+  margin-bottom: 8px;
+}
+
+.field-popover .form-warning {
+  margin-bottom: 8px;
+}
+
+.field-popover-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* Edit card: w warstwie górnej (popover), pozycję od fragmentu ustawia EditCard; skala zawsze 1:1. Bez nagłówka –

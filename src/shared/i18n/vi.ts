@@ -251,6 +251,7 @@ export const vi: Dictionary = {
     startOptional: 'Từ (không bắt buộc)',
     graduation: 'Ngày tốt nghiệp',
     endBeforeStart: 'Ngày kết thúc sớm hơn ngày bắt đầu.',
+    clearDate: 'Xóa',
     listItem: (number) => `Mục ${number}`,
     addListItem: 'Thêm mục',
     order: {

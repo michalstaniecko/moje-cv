@@ -251,6 +251,7 @@ export const tr: Dictionary = {
     startOptional: 'Başlangıç (isteğe bağlı)',
     graduation: 'Mezuniyet tarihi',
     endBeforeStart: 'Bitiş tarihi başlangıç tarihinden önce.',
+    clearDate: 'Temizle',
     listItem: (number) => `Öğe ${number}`,
     addListItem: 'Öğe ekle',
     order: {

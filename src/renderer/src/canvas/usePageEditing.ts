@@ -4,6 +4,7 @@ import type { CvDocument } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
 import { useDictionary } from '../i18n'
 import type { PageEditing } from '../template/editable'
+import { DateToken, JoinedDates, type DatePopoverStore } from './DatePopover'
 import { JoinedFields, PageField, type PageFieldsContext } from './PageField'
 import { fragmentHasEmptyField, fragmentHasJoinedFields, pageFieldOf } from './pageFields'
 import { readSelection, useActiveFragment, type ActiveFieldStore } from './useActiveField'
@@ -20,11 +21,13 @@ export function usePageEditing({
   document,
   editor,
   active,
+  dates,
   panel
 }: {
   document: CvDocument
   editor: CvEditor | undefined
   active: ActiveFieldStore | undefined
+  dates: DatePopoverStore | undefined
   panel: RefObject<HTMLElement | null>
 }): { editing: PageEditing; fields: PageFieldsContext } | null {
   const t = useDictionary().editor
@@ -47,11 +50,13 @@ export function usePageEditing({
       expanded,
       Field: PageField,
       Joined: JoinedFields,
+      DateToken,
+      JoinedDates,
       onPagesCommitted
     }),
     [document, t, reveal, expanded, onPagesCommitted]
   )
-  const fields = useMemo(() => (editor && active ? { editor, active } : null), [editor, active])
+  const fields = useMemo(() => (editor && active && dates ? { editor, active, dates } : null), [editor, active, dates])
 
   // Zaznaczenie aktywnego pola na bieżąco – do przywrócenia, gdy pole zostanie przemontowane; utrata fokusu pola.
   useEffect(() => {

@@ -258,6 +258,7 @@ export const de: Dictionary = {
     startOptional: 'Von (optional)',
     graduation: 'Abschlussdatum',
     endBeforeStart: 'Das Enddatum liegt vor dem Startdatum.',
+    clearDate: 'Löschen',
     listItem: (number) => `Eintrag ${number}`,
     addListItem: 'Eintrag hinzufügen',
     order: {

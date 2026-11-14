@@ -256,6 +256,7 @@ export const cs: Dictionary = {
     startOptional: 'Od (nepovinné)',
     graduation: 'Datum ukončení',
     endBeforeStart: 'Datum ukončení je dřívější než datum zahájení.',
+    clearDate: 'Vymazat',
     listItem: (number) => `Položka ${number}`,
     addListItem: 'Přidat položku',
     order: {

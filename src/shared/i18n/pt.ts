@@ -255,6 +255,7 @@ export const pt: Dictionary = {
     startOptional: 'De (opcional)',
     graduation: 'Data de conclusão',
     endBeforeStart: 'A data de término é anterior à data de início.',
+    clearDate: 'Limpar',
     listItem: (number) => `Item ${number}`,
     addListItem: 'Adicionar item',
     order: {

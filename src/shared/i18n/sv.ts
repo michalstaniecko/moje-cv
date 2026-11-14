@@ -256,6 +256,7 @@ export const sv: Dictionary = {
     startOptional: 'Från (valfritt)',
     graduation: 'Examensdatum',
     endBeforeStart: 'Slutdatumet är tidigare än startdatumet.',
+    clearDate: 'Rensa',
     listItem: (number) => `Post ${number}`,
     addListItem: 'Lägg till post',
     order: {
