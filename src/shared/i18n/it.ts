@@ -169,6 +169,15 @@ export const it: Dictionary = {
     exportCutOffHint: 'I frammenti troppo lunghi sono evidenziati in modalità modifica.',
     mode: { label: 'Modalità', edit: 'Modifica', preview: 'Anteprima' },
     cvDesignButton: 'Design',
+    outline: {
+      title: 'Struttura',
+      empty: 'vuota',
+      hidden: 'nascosta',
+      form: 'Modulo',
+      collapse: 'Comprimi',
+      expand: 'Espandi',
+      showOnCv: 'Mostra nel CV'
+    },
     canvas: {
       edit: (what) => `Modifica: ${what}`,
       addToCv: 'Aggiungi al CV:',

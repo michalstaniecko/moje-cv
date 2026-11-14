@@ -169,6 +169,15 @@ export const pl: Dictionary = {
     exportCutOffHint: 'Za długie fragmenty są wyróżnione w trybie edycji.',
     mode: { label: 'Tryb', edit: 'Edycja', preview: 'Podgląd' },
     cvDesignButton: 'Projekt CV',
+    outline: {
+      title: 'Konspekt',
+      empty: 'pusta',
+      hidden: 'ukryta',
+      form: 'Formularz',
+      collapse: 'Zwiń',
+      expand: 'Rozwiń',
+      showOnCv: 'Pokaż na CV'
+    },
     canvas: {
       edit: (what) => `Edytuj: ${what}`,
       addToCv: 'Dodaj do CV:',

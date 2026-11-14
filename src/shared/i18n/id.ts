@@ -169,6 +169,15 @@ export const id: Dictionary = {
     exportCutOffHint: 'Bagian yang terlalu panjang ditandai di mode edit.',
     mode: { label: 'Mode', edit: 'Edit', preview: 'Pratinjau' },
     cvDesignButton: 'Desain CV',
+    outline: {
+      title: 'Kerangka',
+      empty: 'kosong',
+      hidden: 'tersembunyi',
+      form: 'Formulir',
+      collapse: 'Ciutkan',
+      expand: 'Bentangkan',
+      showOnCv: 'Tampilkan di CV'
+    },
     canvas: {
       edit: (what) => `Edit: ${what}`,
       addToCv: 'Tambahkan ke CV:',

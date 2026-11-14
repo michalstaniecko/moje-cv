@@ -191,6 +191,16 @@ export const en = {
     mode: { label: 'Mode', edit: 'Edit', preview: 'Preview' },
     // Przycisk „Projekt CV” w pasku narzędzi: otwiera panel CV design (krótko – pasek mieści się w oknie minimalnym).
     cvDesignButton: 'CV design',
+    // Pasek boczny w Edit mode: Outline (konspekt CV) i przełącznik Outline / CV form / szyna.
+    outline: {
+      title: 'Outline',
+      empty: 'empty',
+      hidden: 'hidden',
+      form: 'Form',
+      collapse: 'Collapse',
+      expand: 'Expand',
+      showOnCv: 'Show on CV'
+    },
     // Edycja na stronach CV w Edit mode: przycisk fragmentu strony („Edit: <co>”) i Edit card.
     canvas: {
       edit: (what: string) => `Edit: ${what}`,

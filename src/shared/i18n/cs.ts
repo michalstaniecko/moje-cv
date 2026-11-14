@@ -169,6 +169,15 @@ export const cs: Dictionary = {
     exportCutOffHint: 'Příliš dlouhé části jsou zvýrazněné v režimu úprav.',
     mode: { label: 'Režim', edit: 'Úpravy', preview: 'Náhled' },
     cvDesignButton: 'Design CV',
+    outline: {
+      title: 'Osnova',
+      empty: 'prázdná',
+      hidden: 'skrytá',
+      form: 'Formulář',
+      collapse: 'Sbalit',
+      expand: 'Rozbalit',
+      showOnCv: 'Zobrazit v CV'
+    },
     canvas: {
       edit: (what) => `Upravit: ${what}`,
       addToCv: 'Přidat do CV:',

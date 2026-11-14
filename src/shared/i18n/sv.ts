@@ -174,6 +174,15 @@ export const sv: Dictionary = {
     exportCutOffHint: 'De för långa avsnitten är markerade i redigeringsläget.',
     mode: { label: 'Läge', edit: 'Redigera', preview: 'Förhandsvisning' },
     cvDesignButton: 'Design',
+    outline: {
+      title: 'Disposition',
+      empty: 'tomt',
+      hidden: 'dolt',
+      form: 'Formulär',
+      collapse: 'Fäll ihop',
+      expand: 'Fäll ut',
+      showOnCv: 'Visa i cv:t'
+    },
     canvas: {
       edit: (what) => `Redigera: ${what}`,
       addToCv: 'Lägg till i cv:',

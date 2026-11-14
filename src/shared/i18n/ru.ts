@@ -169,6 +169,15 @@ export const ru: Dictionary = {
     exportCutOffHint: 'Слишком длинные фрагменты выделены в режиме редактирования.',
     mode: { label: 'Режим', edit: 'Правка', preview: 'Просмотр' },
     cvDesignButton: 'Дизайн',
+    outline: {
+      title: 'Структура',
+      empty: 'пустой',
+      hidden: 'скрытый',
+      form: 'Форма',
+      collapse: 'Свернуть',
+      expand: 'Развернуть',
+      showOnCv: 'Показать в резюме'
+    },
     canvas: {
       edit: (what) => `Изменить: ${what}`,
       addToCv: 'Добавить в резюме:',

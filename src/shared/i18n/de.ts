@@ -176,6 +176,15 @@ export const de: Dictionary = {
     exportCutOffHint: 'Die zu langen Abschnitte sind im Bearbeitungsmodus hervorgehoben.',
     mode: { label: 'Modus', edit: 'Bearbeiten', preview: 'Vorschau' },
     cvDesignButton: 'Design',
+    outline: {
+      title: 'Gliederung',
+      empty: 'leer',
+      hidden: 'ausgeblendet',
+      form: 'Formular',
+      collapse: 'Einklappen',
+      expand: 'Ausklappen',
+      showOnCv: 'Im Lebenslauf zeigen'
+    },
     canvas: {
       edit: (what) => `Bearbeiten: ${what}`,
       addToCv: 'Zum Lebenslauf hinzufügen:',
