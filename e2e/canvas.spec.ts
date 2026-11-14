@@ -1133,6 +1133,53 @@ test('a cleared field of an entry keeps its place with a placeholder, and the em
   await expect.poll(pageSplit).toEqual(edit)
 })
 
+test('“Remove position” and “Remove education” in the handle menu remove the entry and say “Removed.” over the pages; Undo brings it back with the caret in it; each is one undo step', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+
+  // Pozycja destrukcyjna na końcu menu, oddzielona kreską.
+  await handle(`position “${positions[1]}”`).click()
+  const menu = blockMenu(`position “${positions[1]}”`)
+  await expect(menu.getByRole('menuitem')).toHaveText(['Move up', 'Move down', 'Remove position'])
+  await expect(menu.getByRole('separator')).toHaveCount(1)
+  await menu.getByRole('menuitem', { name: 'Remove position' }).click()
+  await expect.poll(positionNames).toEqual([positions[0], ...positions.slice(2)])
+  await expect(window.locator('.editor-form').getByLabel('Job title', { exact: true })).toHaveCount(3)
+  await expect(removed).toBeVisible()
+  // Komunikat pływa w lewym dolnym rogu panelu stron, nie w kolumnie formularza.
+  await expect(window.locator('.editor-form').getByRole('status').filter({ hasText: 'Removed.' })).toHaveCount(0)
+  const message = (await removed.locator('.removal-message-content').boundingBox())!
+  const pages = (await preview.boundingBox())!
+  expect(message.x).toBeGreaterThanOrEqual(pages.x)
+  expect(message.x).toBeLessThan(pages.x + 40)
+  expect(message.y + message.height).toBeGreaterThan(pages.y + pages.height - 40)
+  // Fokus na następnym wpisie (jego pierwszym polu tekstu).
+  await expect(roleField(positions[2])).toBeFocused()
+
+  // „Undo” przywraca wpis i stawia kursor w jego pierwszym polu.
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect.poll(positionNames).toEqual(positions)
+  await expect(roleField(positions[1])).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'experience:e2:role', offset: positions[1].length, collapsed: true })
+  await expect(removed).toHaveCount(0)
+  // Jeden krok: ponowienie usuwa wpis, cofnięcie przywraca.
+  await window.keyboard.press('Meta+Shift+z')
+  await expect.poll(positionNames).toEqual([positions[0], ...positions.slice(2)])
+  await window.keyboard.press('Meta+z')
+  await expect.poll(positionNames).toEqual(positions)
+
+  // Wykształcenie: fokus nie ginie; Cmd+Z cofa usunięcie jednym krokiem.
+  await handle(`entry “${educations[1]}”`).click()
+  await blockMenu(`entry “${educations[1]}”`).getByRole('menuitem', { name: 'Remove education' }).click()
+  await expect(preview.locator('.cv-pages [data-block-id="ed2"]')).toHaveCount(0)
+  await expect(removed).toBeVisible()
+  await expect.poll(() => window.evaluate('document.activeElement !== document.body')).toBe(true)
+  await window.keyboard.press('Meta+z')
+  await expect(preview.locator('.cv-pages [data-block-id="ed2"]')).toHaveCount(1)
+  await expect(removed).toHaveCount(0)
+})
+
 // ---------- Żetony dat (docs/specs/wysiwyg-editing.md, S3) ----------
 
 // Popover daty (Field popover) i żeton daty na stronie – nazwy „<data> – <część CV>”, żeton z napisem daty.
@@ -1602,7 +1649,7 @@ test('the handle of a position moves it within its section, also to another page
   const first = handle(`position “${positions[0]}”`)
   await first.click()
   await expect(blockMenu(`position “${positions[0]}”`).getByRole('menuitem', { name: 'Move up' })).toBeDisabled()
-  await expect(blockMenu(`position “${positions[0]}”`).getByRole('menuitem')).toHaveText(['Move up', 'Move down'])
+  await expect(blockMenu(`position “${positions[0]}”`).getByRole('menuitem')).toHaveText(['Move up', 'Move down', 'Remove position'])
   await window.keyboard.press('Escape')
   await expect(first).toBeFocused()
 

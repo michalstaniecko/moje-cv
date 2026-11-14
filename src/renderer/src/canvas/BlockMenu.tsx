@@ -5,6 +5,8 @@ import type { CvEditor } from '../editor/cvEditor'
 import {
   moveItem,
   moveSection,
+  removeEducationItem,
+  removeExperienceItem,
   updateEducationItem,
   updateExperienceItem,
   updateSection
@@ -12,6 +14,7 @@ import {
 import { educationName, entryName } from '../editor/fields/entryNames'
 import { sectionName } from '../editor/fields/SectionTitleField'
 import type { MoveOffset } from '../editor/moveShortcut'
+import type { RemoveWithUndo } from '../editor/removalUndo'
 import { RowMenu, type RowMenuAction } from '../editor/RowMenu'
 import { useDictionary } from '../i18n'
 import { addSectionElement, type AddedAnchor } from './AddControls'
@@ -35,7 +38,9 @@ const FIRST_LINE_OFFSET = 4
 // - „Ukryj sekcję” przenosi fokus na fragment za sekcją (albo przed nią); karta otwarta w tej sekcji się zamyka.
 // - „Dodaj …” dodaje element na końcu sekcji i otwiera jego kartę z fokusem na pierwszym polu; dopóki nowy wpis nie ma
 //   treści (nie ma go na stronie), karta stoi przy uchwycie, z którego go dodano (`added`).
-// Usuwania tu nie ma: wpisy usuwa się przyciskiem tekstowym w karcie (Q11).
+// - „Usuń stanowisko” / „Usuń wykształcenie” (docs/specs/wysiwyg-editing.md, W21 – wpisów nie usuwa już przycisk
+//   w karcie): oddzielone kreską, z „Usunięto. Cofnij”; fokus przechodzi na fragment za wpisem (albo przed nim),
+//   a „Cofnij” stawia kursor w pierwszym polu przywróconego wpisu.
 export function useBlockMenu({
   editor,
   document,
@@ -44,7 +49,8 @@ export function useBlockMenu({
   layer,
   session,
   added,
-  onFocusLost
+  onFocusLost,
+  onRemove
 }: {
   editor: CvEditor
   document: CvDocument
@@ -54,6 +60,7 @@ export function useBlockMenu({
   session: EditSession
   added: AddedAnchor
   onFocusLost: () => void
+  onRemove: RemoveWithUndo
 }) {
   const t = useDictionary().editor
   const [announcement, setAnnouncement] = useState<{ text: string; key: number } | null>(null)
@@ -160,7 +167,10 @@ export function useBlockMenu({
         handleName: t.order.handle.position(name),
         movedName: t.order.position(name),
         pageBreakBefore: item.pageBreakBefore,
-        setPageBreakBefore: (pageBreakBefore) => updateExperienceItem(section.id, itemId, (entry) => ({ ...entry, pageBreakBefore }))
+        setPageBreakBefore: (pageBreakBefore) => updateExperienceItem(section.id, itemId, (entry) => ({ ...entry, pageBreakBefore })),
+        removeLabel: t.removePosition,
+        remove: removeExperienceItem(section.id, itemId),
+        firstField: `experience:${itemId}:role`
       })
     }
     if (section.type === 'education') {
@@ -171,7 +181,10 @@ export function useBlockMenu({
         handleName: t.order.handle.education(name),
         movedName: t.order.education(name),
         pageBreakBefore: item.pageBreakBefore,
-        setPageBreakBefore: (pageBreakBefore) => updateEducationItem(section.id, itemId, { pageBreakBefore })
+        setPageBreakBefore: (pageBreakBefore) => updateEducationItem(section.id, itemId, { pageBreakBefore }),
+        removeLabel: t.removeEducation,
+        remove: removeEducationItem(section.id, itemId),
+        firstField: `education:${itemId}:level`
       })
     }
     return null
@@ -186,6 +199,10 @@ export function useBlockMenu({
       movedName: string
       pageBreakBefore: boolean
       setPageBreakBefore: (pageBreakBefore: boolean) => (document: CvDocument) => CvDocument
+      // „Usuń …”: nazwa pozycji, zmiana i klucz pierwszego pola wpisu (kursor po „Cofnij”).
+      removeLabel: string
+      remove: (document: CvDocument) => CvDocument
+      firstField: string
     }
   ): BlockMenu => {
     const plan = (offset: MoveOffset) => {
@@ -210,6 +227,22 @@ export function useBlockMenu({
           run: () => {
             editor.edit(entry.setPageBreakBefore(!entry.pageBreakBefore))
             focusAfterChange(fragment.key, 'handle')
+          }
+        },
+        {
+          label: entry.removeLabel,
+          danger: true,
+          run: () => {
+            const next = neighbourAfterHiding(fragments, new Set([fragment.key]))
+            if (session.card?.anchor === fragment.key) session.closeCard()
+            session.datePopover.close()
+            onRemove(entry.remove, {
+              entryId: itemId,
+              listId: sectionId,
+              restore: () => session.activeField.request({ key: entry.firstField, fragment: fragment.key }, window.document, 'end')
+            })
+            if (next) focusAfterChange(next, 'fragment')
+            else onFocusLost()
           }
         }
       ]

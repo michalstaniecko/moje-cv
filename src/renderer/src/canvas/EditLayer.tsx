@@ -81,7 +81,7 @@ export function EditLayer({
       ),
     []
   )
-  const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, added, onFocusLost })
+  const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, added, onFocusLost, onRemove })
   const compact = scale < CONTROLS_MIN_SCALE
   const addOnPage = useAddControls({ editor, document, session, fragments, pages, layer, added, compact })
   // Element, przy którym stoi karta: przycisk fragmentu albo – fragmentu edytowanego na stronie (nowy wpis, do S5) – jego
