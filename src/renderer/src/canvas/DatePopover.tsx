@@ -128,12 +128,15 @@ export function DateToken({ field, text, measuring }: PageFieldProps) {
 }
 
 function LiveDateToken({ field, text }: Omit<PageFieldProps, 'measuring'>) {
-  const { editor, active, dates } = usePageFieldsContext()
+  const { editor, active, dates, announce } = usePageFieldsContext()
   const open = useSyncExternalStore(dates.subscribe, () => dates.get() === field.key)
   const element = useRef<HTMLSpanElement>(null)
+  const t = useDictionary().editor
   const latest = useRef(field)
+  const dictionary = useRef(t)
   useEffect(() => {
     latest.current = field
+    dictionary.current = t
   })
 
   // Jak w Page field: obsługi podpięte przed malowaniem (żeton przemontowany na innej stronie dostaje fokus
@@ -156,10 +159,11 @@ function LiveDateToken({ field, text }: Omit<PageFieldProps, 'measuring'>) {
       if (event.altKey && event.shiftKey && !event.metaKey && !event.ctrlKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
         // ⌥⇧↑/↓ – cały wpis, jak z jego pól.
         event.preventDefault()
-        const change = moveField(latest.current.key, editor.store.getState().document, event.key === 'ArrowUp' ? -1 : 1)
-        if (change) {
+        const moved = moveField(latest.current.key, editor.store.getState().document, event.key === 'ArrowUp' ? -1 : 1)
+        if (moved) {
           active.expect(current(), { start: 0, end: 0 })
-          editor.edit(change)
+          editor.edit(moved.change)
+          announce(moved.announce(dictionary.current))
         }
         return
       }
@@ -190,7 +194,7 @@ function LiveDateToken({ field, text }: Omit<PageFieldProps, 'measuring'>) {
       span.removeEventListener('focus', onFocus)
       span.removeEventListener('keydown', onKeyDown)
     }
-  }, [editor, active, dates])
+  }, [editor, active, dates, announce])
 
   return (
     <span

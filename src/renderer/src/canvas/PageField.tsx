@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef } from 'react'
 import type { CvEditor } from '../editor/cvEditor'
+import { useDictionary } from '../i18n'
 import type { JoinedFieldsProps, PageFieldProps } from '../template/editable'
 import { caretAfterChange, fieldValue, normalizePastedText, pastedLines, replaceSelection, type TextSelection } from './pageFieldInput'
 import { fieldChange, isListField, mergeBackward, mergeForward, moveField, pasteLines, splitField, splitsOnEnter, type FieldEdit } from './pageFields'
@@ -23,8 +24,10 @@ import { offsetOf, readSelection, writeSelection, type ActiveFieldStore } from '
 //   z poprzednim (pusty – usuwa), Delete na końcu łączy z następnym, wklejenie wielu linii tworzy kolejne elementy.
 //   Kontakty: Enter w wartości dodaje za kontaktem nowy (kursor w jego etykiecie), Backspace w pustym kontakcie go usuwa.
 //   Każda taka zmiana to osobny krok cofania, a kursor staje we wskazanym polu po nowym podziale stron
-//   (`active.expect` – nowe pole powstaje dopiero z nowymi blokami).
-// - ⌥⇧↑/↓ przenosi punkt albo element listy o pozycję, a w polu wpisu – cały wpis; kursor zostaje w polu.
+//   (`active.expect` – nowe pole powstaje dopiero z nowymi blokami); czytnik ekranu słyszy ją z regionu `aria-live`
+//   warstwy edycji („New bullet 4.”, „Joined with bullet 3.”, „Removed contact 3.”, W22).
+// - ⌥⇧↑/↓ przenosi punkt albo element listy o pozycję, a w polu wpisu – cały wpis; kursor zostaje w polu, komunikat
+//   jak po przeniesieniu z menu wiersza.
 // - Strzałki: ←/→ na początku/końcu pola, ↑/↓ w jego pierwszej/ostatniej linii przechodzą do poprzedniego/następnego
 //   Page field w kolejności stron (też przez granicę stron, W8). Shift+F10 / klawisz menu otwiera menu uchwytu
 //   fragmentu pola (jeśli fragment ma uchwyt, W22).
@@ -33,8 +36,8 @@ import { offsetOf, readSelection, writeSelection, type ActiveFieldStore } from '
 //   bo tylko tam szablon rysuje pusty element pola.
 // W kontenerze pomiarowym (`measuring`) – ten sam tekst i placeholder w zwykłym `span` (ta sama geometria).
 
-// `dates` – otwarty Field popover daty (DatePopover.tsx).
-export type PageFieldsContext = { editor: CvEditor; active: ActiveFieldStore; dates: DatePopoverStore }
+// `dates` – otwarty Field popover daty (DatePopover.tsx); `announce` – komunikat `aria-live` (announcer.tsx).
+export type PageFieldsContext = { editor: CvEditor; active: ActiveFieldStore; dates: DatePopoverStore; announce: (text: string) => void }
 
 const Context = createContext<PageFieldsContext | null>(null)
 export const PageFieldsProvider = Context.Provider
@@ -140,13 +143,16 @@ const isMultiline = (element: HTMLElement) => multilineWhiteSpace.has(getCompute
 function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
   const context = useContext(Context)
   if (!context) throw new Error('PageField poza PageFieldsProvider')
-  const { editor, active } = context
+  const { editor, active, announce } = context
   const element = useRef<HTMLSpanElement>(null)
   const composing = useRef(false)
-  // Bieżące pole dla obsługi zdarzeń (podpięte raz, natywnie – `beforeinput` niesie `inputType` tylko natywnie).
+  // Bieżące pole i słownik dla obsługi zdarzeń (podpięte raz, natywnie – `beforeinput` niesie `inputType` tylko natywnie).
+  const t = useDictionary().editor
   const latest = useRef(field)
+  const dictionary = useRef(t)
   useEffect(() => {
     latest.current = field
+    dictionary.current = t
   })
 
   // Tekst z dokumentu do pola – tylko gdy się różni (i nigdy w trakcie kompozycji).
@@ -193,11 +199,13 @@ function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
       commit()
     }
     const documentNow = () => editor.store.getState().document
-    // Zmiana struktury: osobny krok cofania (bez klucza łączenia), kursor we wskazanym polu po nowym podziale stron.
+    // Zmiana struktury: osobny krok cofania (bez klucza łączenia), kursor we wskazanym polu po nowym podziale stron,
+    // komunikat dla czytnika ekranu (W22).
     const restructure = (edit: FieldEdit | null) => {
       if (!edit) return false
       active.expect({ key: edit.focus.key, fragment: latest.current.fragment }, { start: edit.focus.caret, end: edit.focus.caret })
       editor.edit(edit.change)
+      announce(edit.announce(dictionary.current))
       return true
     }
     // Wklejony albo upuszczony tekst: w punkcie i elemencie listy wiele linii to kolejne elementy (W6).
@@ -266,11 +274,12 @@ function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
           : undefined
       if (move) {
         event.preventDefault()
-        const change = moveField(key, documentNow(), move)
+        const moved = moveField(key, documentNow(), move)
         const selection = readSelection(span)
-        if (change && selection) {
+        if (moved && selection) {
           active.expect({ key, fragment: latest.current.fragment }, selection)
-          editor.edit(change)
+          editor.edit(moved.change)
+          announce(moved.announce(dictionary.current))
         }
         return
       }
@@ -337,7 +346,7 @@ function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
       span.removeEventListener('paste', onPaste)
       span.removeEventListener('drop', onDrop)
     }
-  }, [editor, active])
+  }, [editor, active, announce])
 
   // Etykieta kontaktu ma podpowiedzi (ContactLabelSuggestions.tsx): combobox, którego `aria-expanded`
   // i `aria-activedescendant` ustawia lista podpowiedzi.

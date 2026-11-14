@@ -185,7 +185,17 @@ export const id: Dictionary = {
     canvas: {
       addToCv: 'Tambahkan ke CV:',
       startHint: 'Mulailah dengan nama lengkap Anda',
-      add: { position: 'Posisi', education: 'Pendidikan', item: 'Item' }
+      add: { position: 'Posisi', education: 'Pendidikan', item: 'Item' },
+      announce: {
+        newBullet: (number) => `Poin baru ${number}.`,
+        newListItem: (number) => `Item baru ${number}.`,
+        newContact: (number) => `Kontak baru ${number}.`,
+        joinedBullet: (number) => `Digabung dengan poin ${number}.`,
+        joinedListItem: (number) => `Digabung dengan item ${number}.`,
+        removedBullet: (number) => `Poin ${number} dihapus.`,
+        removedListItem: (number) => `Item ${number} dihapus.`,
+        removedContact: (number) => `Kontak ${number} dihapus.`
+      }
     },
     part: {
       position: (name) => `Posisi “${name}”`,

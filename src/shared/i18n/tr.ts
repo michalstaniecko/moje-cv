@@ -185,7 +185,17 @@ export const tr: Dictionary = {
     canvas: {
       addToCv: 'CV’ye ekle:',
       startHint: 'Ad soyadınızla başlayın',
-      add: { position: 'Pozisyon', education: 'Eğitim', item: 'Öğe' }
+      add: { position: 'Pozisyon', education: 'Eğitim', item: 'Öğe' },
+      announce: {
+        newBullet: (number) => `Yeni madde: ${number}.`,
+        newListItem: (number) => `Yeni öğe: ${number}.`,
+        newContact: (number) => `Yeni iletişim: ${number}.`,
+        joinedBullet: (number) => `${number}. madde ile birleştirildi.`,
+        joinedListItem: (number) => `${number}. öğe ile birleştirildi.`,
+        removedBullet: (number) => `${number}. madde kaldırıldı.`,
+        removedListItem: (number) => `${number}. öğe kaldırıldı.`,
+        removedContact: (number) => `${number}. iletişim kaldırıldı.`
+      }
     },
     part: {
       position: (name) => `“${name}” pozisyonu`,

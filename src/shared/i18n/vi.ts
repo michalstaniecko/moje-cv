@@ -185,7 +185,17 @@ export const vi: Dictionary = {
     canvas: {
       addToCv: 'Thêm vào CV:',
       startHint: 'Bắt đầu với họ và tên của bạn',
-      add: { position: 'Vị trí', education: 'Học vấn', item: 'Mục' }
+      add: { position: 'Vị trí', education: 'Học vấn', item: 'Mục' },
+      announce: {
+        newBullet: (number) => `Ý mới ${number}.`,
+        newListItem: (number) => `Mục mới ${number}.`,
+        newContact: (number) => `Liên hệ mới ${number}.`,
+        joinedBullet: (number) => `Đã gộp với ý ${number}.`,
+        joinedListItem: (number) => `Đã gộp với mục ${number}.`,
+        removedBullet: (number) => `Đã xóa ý ${number}.`,
+        removedListItem: (number) => `Đã xóa mục ${number}.`,
+        removedContact: (number) => `Đã xóa liên hệ ${number}.`
+      }
     },
     part: {
       position: (name) => `Vị trí “${name}”`,

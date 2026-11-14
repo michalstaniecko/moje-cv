@@ -192,7 +192,17 @@ export const de: Dictionary = {
     canvas: {
       addToCv: 'Zum Lebenslauf hinzufügen:',
       startHint: 'Beginne mit deinem vollständigen Namen',
-      add: { position: 'Position', education: 'Ausbildung', item: 'Eintrag' }
+      add: { position: 'Position', education: 'Ausbildung', item: 'Eintrag' },
+      announce: {
+        newBullet: (number) => `Neuer Punkt ${number}.`,
+        newListItem: (number) => `Neuer Eintrag ${number}.`,
+        newContact: (number) => `Neuer Kontakt ${number}.`,
+        joinedBullet: (number) => `Mit Punkt ${number} verbunden.`,
+        joinedListItem: (number) => `Mit Eintrag ${number} verbunden.`,
+        removedBullet: (number) => `Punkt ${number} entfernt.`,
+        removedListItem: (number) => `Eintrag ${number} entfernt.`,
+        removedContact: (number) => `Kontakt ${number} entfernt.`
+      }
     },
     part: {
       position: (name) => `Position „${name}“`,

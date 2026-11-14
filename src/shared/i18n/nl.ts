@@ -192,7 +192,17 @@ export const nl: Dictionary = {
     canvas: {
       addToCv: 'Toevoegen aan cv:',
       startHint: 'Begin met je volledige naam',
-      add: { position: 'Functie', education: 'Opleiding', item: 'Item' }
+      add: { position: 'Functie', education: 'Opleiding', item: 'Item' },
+      announce: {
+        newBullet: (number) => `Nieuw punt ${number}.`,
+        newListItem: (number) => `Nieuw item ${number}.`,
+        newContact: (number) => `Nieuw contact ${number}.`,
+        joinedBullet: (number) => `Samengevoegd met punt ${number}.`,
+        joinedListItem: (number) => `Samengevoegd met item ${number}.`,
+        removedBullet: (number) => `Punt ${number} verwijderd.`,
+        removedListItem: (number) => `Item ${number} verwijderd.`,
+        removedContact: (number) => `Contact ${number} verwijderd.`
+      }
     },
     part: {
       position: (name) => `Functie “${name}”`,

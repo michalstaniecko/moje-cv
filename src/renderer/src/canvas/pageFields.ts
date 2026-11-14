@@ -518,8 +518,10 @@ export const fragmentHasJoinedFields = (fragment: string) => fragment.startsWith
 
 // Gdzie stawiamy kursor po zmianie struktury: pole i przesunięcie znaków w nim.
 export type FieldFocus = { key: string; caret: number }
-// Zmiana struktury (osobny krok cofania, bez klucza łączenia) i kursor po niej.
-export type FieldEdit = { change: Change<CvDocument>; focus: FieldFocus }
+// Komunikat `aria-live` o zmianie struktury (W22) w Interface language, np. „New bullet 3.”.
+export type Announce = (t: Dictionary['editor']) => string
+// Zmiana struktury (osobny krok cofania, bez klucza łączenia), kursor po niej i komunikat o niej dla czytnika ekranu.
+export type FieldEdit = { change: Change<CvDocument>; focus: FieldFocus; announce: Announce }
 
 // Punkt stanowiska albo element listy – pola, które Enter dzieli, a Backspace/Delete łączą.
 type ListRef = Extract<FieldRef, { kind: 'bullet' | 'listItem' }>
@@ -531,6 +533,15 @@ function listRef(key: string, document: CvDocument): ListRef | null {
 
 const listItems = (ref: ListRef): TextItem[] => (ref.kind === 'bullet' ? ref.item.bullets : ref.section.items)
 const listKey = (ref: ListRef, itemId: string) => (ref.kind === 'bullet' ? bulletKey(ref.item.id, itemId) : listItemKey(itemId))
+// Komunikaty o elemencie numer `number` (od 1) listy `ref`.
+const announceList = {
+  added: (ref: ListRef, number: number): Announce => (t) =>
+    ref.kind === 'bullet' ? t.canvas.announce.newBullet(number) : t.canvas.announce.newListItem(number),
+  joined: (ref: ListRef, number: number): Announce => (t) =>
+    ref.kind === 'bullet' ? t.canvas.announce.joinedBullet(number) : t.canvas.announce.joinedListItem(number),
+  removed: (ref: ListRef, number: number): Announce => (t) =>
+    ref.kind === 'bullet' ? t.canvas.announce.removedBullet(number) : t.canvas.announce.removedListItem(number)
+}
 const mergeIntoPrevious = (ref: ListRef, itemId: string) =>
   ref.kind === 'bullet' ? mergeBulletIntoPrevious(ref.sectionId, ref.item.id, itemId) : mergeListItemIntoPrevious(ref.section.id, itemId)
 
@@ -547,7 +558,11 @@ export function splitField(key: string, document: CvDocument, selection: TextSel
   if (contact?.kind === 'contact') {
     if (contact.field !== 'value' || !isFilled(contact.contact.value)) return null
     const id = newItemId ?? crypto.randomUUID()
-    return { change: insertContactAfter(contact.contact.id, id), focus: { key: contactKey(id, 'label'), caret: 0 } }
+    return {
+      change: insertContactAfter(contact.contact.id, id),
+      focus: { key: contactKey(id, 'label'), caret: 0 },
+      announce: (t) => t.canvas.announce.newContact(contact.index + 2)
+    }
   }
   const ref = listRef(key, document)
   if (!ref) return null
@@ -555,7 +570,7 @@ export function splitField(key: string, document: CvDocument, selection: TextSel
   if (!isFilled(current.text)) return null
   const at = textSplit(Math.min(selection.start, selection.end), Math.max(selection.start, selection.end), newItemId)
   const change = ref.kind === 'bullet' ? splitBullet(ref.sectionId, ref.item.id, current.id, at) : splitListItem(ref.section.id, current.id, at)
-  return { change, focus: { key: listKey(ref, at.newItemId), caret: 0 } }
+  return { change, focus: { key: listKey(ref, at.newItemId), caret: 0 }, announce: announceList.added(ref, ref.index + 2) }
 }
 
 // Backspace na początku: pusty element znika (kursor na końcu poprzedniego), niepusty dołącza do poprzedniego (kursor
@@ -565,16 +580,20 @@ export function mergeBackward(key: string, document: CvDocument): FieldEdit | nu
   if (contact?.kind === 'contact') {
     const previous = document.header.contacts[contact.index - 1]
     if (!previous || isFilled(contact.contact.label) || isFilled(contact.contact.value)) return null
-    return { change: removeContact(contact.contact.id), focus: { key: contactKey(previous.id, 'value'), caret: previous.value.length } }
+    return {
+      change: removeContact(contact.contact.id),
+      focus: { key: contactKey(previous.id, 'value'), caret: previous.value.length },
+      announce: (t) => t.canvas.announce.removedContact(contact.index + 1)
+    }
   }
   const ref = listRef(key, document)
   if (!ref || ref.index === 0) return null
   const items = listItems(ref)
   const [previous, current] = [items[ref.index - 1]!, items[ref.index]!]
   const focus = { key: listKey(ref, previous.id), caret: previous.text.length }
-  if (isFilled(current.text)) return { change: mergeIntoPrevious(ref, current.id), focus }
+  if (isFilled(current.text)) return { change: mergeIntoPrevious(ref, current.id), focus, announce: announceList.joined(ref, ref.index) }
   const change = ref.kind === 'bullet' ? removeBullet(ref.sectionId, ref.item.id, current.id) : removeListItem(ref.section.id, current.id)
-  return { change, focus }
+  return { change, focus, announce: announceList.removed(ref, ref.index + 1) }
 }
 
 // Delete na końcu: następny element dołącza do bieżącego (kursor zostaje w miejscu złączenia); ostatni – nic.
@@ -584,7 +603,11 @@ export function mergeForward(key: string, document: CvDocument): FieldEdit | nul
   const items = listItems(ref)
   const next = items[ref.index + 1]
   if (!next) return null
-  return { change: mergeIntoPrevious(ref, next.id), focus: { key, caret: items[ref.index]!.text.length } }
+  return {
+    change: mergeIntoPrevious(ref, next.id),
+    focus: { key, caret: items[ref.index]!.text.length },
+    announce: announceList.joined(ref, ref.index + 2)
+  }
 }
 
 // Wklejenie wielu linii (`lines`, co najmniej dwie) w punkt albo element listy: kolejne elementy, kursor na końcu
@@ -601,18 +624,32 @@ export function pasteLines(
   const paste = textPaste(Math.min(selection.start, selection.end), Math.max(selection.start, selection.end), lines, newItemIds)
   const id = listItems(ref)[ref.index]!.id
   const change = ref.kind === 'bullet' ? pasteIntoBullet(ref.sectionId, ref.item.id, id, paste) : pasteIntoListItem(ref.section.id, id, paste)
-  return { change, focus: { key: listKey(ref, paste.newItemIds.at(-1)!), caret: lines.at(-1)!.length } }
+  return {
+    change,
+    focus: { key: listKey(ref, paste.newItemIds.at(-1)!), caret: lines.at(-1)!.length },
+    announce: announceList.added(ref, ref.index + paste.newItemIds.length + 1)
+  }
 }
 
 // ⌥⇧↑/↓ w polu: punkt i element listy – o jedną pozycję w swojej liście; pole albo żeton daty wpisu – cały wpis wśród wpisów sekcji na
 // stronach (jak „Przenieś wyżej/niżej” w menu uchwytu). Na krańcu albo w innym polu – null. Kursor zostaje w polu.
-export function moveField(key: string, document: CvDocument, offset: MoveOffset): Change<CvDocument> | null {
+// Komunikat – ten sam co po przeniesieniu z menu wiersza („Moved bullet 2 to position 1 of 4.”).
+export function moveField(
+  key: string,
+  document: CvDocument,
+  offset: MoveOffset
+): { change: Change<CvDocument>; announce: Announce } | null {
   const ref = refOf(key, document)
   if (ref?.kind === 'bullet' || ref?.kind === 'listItem') {
     const to = ref.index + offset
-    if (to < 0 || to >= listItems(ref).length) return null
+    const total = listItems(ref).length
+    if (to < 0 || to >= total) return null
     const id = listItems(ref)[ref.index]!.id
-    return ref.kind === 'bullet' ? moveBullet(ref.sectionId, ref.item.id, id, to) : moveItem(ref.section.id, id, to)
+    const number = ref.index + 1
+    return {
+      change: ref.kind === 'bullet' ? moveBullet(ref.sectionId, ref.item.id, id, to) : moveItem(ref.section.id, id, to),
+      announce: (t) => t.order.moved(ref.kind === 'bullet' ? t.order.bullet(number) : t.order.listItem(number), to + 1, total)
+    }
   }
   if (ref?.kind !== 'experience' && ref?.kind !== 'education' && ref?.kind !== 'date') return null
   const itemId = ref.kind === 'date' ? ref.entry.item.id : ref.item.id
@@ -620,5 +657,16 @@ export function moveField(key: string, document: CvDocument, offset: MoveOffset)
   const onPages = new Set(generateBlocks(document, templates[document.settings.template].geometry).map((block) => block.id))
   onPages.add(itemId)
   const plan = moveAmongShown(section.items.map((item) => item.id), onPages, itemId, offset)
-  return plan ? moveItem(section.id, itemId, plan.toIndex) : null
+  if (!plan) return null
+  const entry: Entry =
+    ref.kind === 'date' ? ref.entry : ref.kind === 'experience' ? { type: 'experience', item: ref.item } : { type: 'education', item: ref.item }
+  return {
+    change: moveItem(section.id, itemId, plan.toIndex),
+    announce: (t) =>
+      t.order.moved(
+        entry.type === 'experience' ? t.order.position(entryName(entry.item.role, t.newPosition)) : t.order.education(educationName(entry.item, t)),
+        plan.position,
+        plan.total
+      )
+  }
 }

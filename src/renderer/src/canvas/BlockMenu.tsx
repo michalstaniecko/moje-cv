@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useLayoutEffect, useRef, type RefObject } from 'react'
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument, Section } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
@@ -60,8 +60,7 @@ export function useBlockMenu({
   onRemove: RemoveWithUndo
 }) {
   const t = useDictionary().editor
-  const [announcement, setAnnouncement] = useState<{ text: string; key: number } | null>(null)
-  const announce = (text: string) => setAnnouncement((previous) => ({ text, key: (previous?.key ?? 0) + 1 }))
+  const { announce } = session.announcer
 
   const handleButton = (key: string) =>
     layer.current?.querySelector<HTMLButtonElement>(`.edit-handle[data-fragment="${CSS.escape(key)}"] .row-handle`) ?? null
@@ -252,13 +251,7 @@ export function useBlockMenu({
     return menu ? [{ fragment, menu }] : []
   })
 
-  const liveRegion: ReactNode = (
-    <div className="visually-hidden" aria-live="polite" aria-atomic="true">
-      {announcement && <span key={announcement.key}>{announcement.text}</span>}
-    </div>
-  )
-
-  return { handles, liveRegion }
+  return { handles }
 }
 
 type BlockMenu = { label: string; actions: RowMenuAction[]; onMoveShortcut: (offset: MoveOffset) => void }

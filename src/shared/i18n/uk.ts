@@ -190,7 +190,17 @@ export const uk: Dictionary = {
     canvas: {
       addToCv: 'Додати до резюме:',
       startHint: 'Почніть з імені та прізвища',
-      add: { position: 'Посада', education: 'Освіта', item: 'Елемент' }
+      add: { position: 'Посада', education: 'Освіта', item: 'Елемент' },
+      announce: {
+        newBullet: (number) => `Новий пункт ${number}.`,
+        newListItem: (number) => `Новий елемент ${number}.`,
+        newContact: (number) => `Новий контакт ${number}.`,
+        joinedBullet: (number) => `Об’єднано з пунктом ${number}.`,
+        joinedListItem: (number) => `Об’єднано з елементом ${number}.`,
+        removedBullet: (number) => `Пункт ${number} видалено.`,
+        removedListItem: (number) => `Елемент ${number} видалено.`,
+        removedContact: (number) => `Контакт ${number} видалено.`
+      }
     },
     part: {
       position: (name) => `Посада «${name}»`,

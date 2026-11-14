@@ -190,7 +190,17 @@ export const cs: Dictionary = {
     canvas: {
       addToCv: 'Přidat do CV:',
       startHint: 'Začněte jménem a příjmením',
-      add: { position: 'Pozice', education: 'Vzdělání', item: 'Položka' }
+      add: { position: 'Pozice', education: 'Vzdělání', item: 'Položka' },
+      announce: {
+        newBullet: (number) => `Nový bod ${number}.`,
+        newListItem: (number) => `Nová položka ${number}.`,
+        newContact: (number) => `Nový kontakt ${number}.`,
+        joinedBullet: (number) => `Spojeno s bodem ${number}.`,
+        joinedListItem: (number) => `Spojeno s položkou ${number}.`,
+        removedBullet: (number) => `Odstraněn bod ${number}.`,
+        removedListItem: (number) => `Odstraněna položka ${number}.`,
+        removedContact: (number) => `Odstraněn kontakt ${number}.`
+      }
     },
     part: {
       position: (name) => `Pozice „${name}“`,

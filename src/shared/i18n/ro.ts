@@ -189,7 +189,17 @@ export const ro: Dictionary = {
     canvas: {
       addToCv: 'Adaugă în CV:',
       startHint: 'Începe cu numele complet',
-      add: { position: 'Post', education: 'Studii', item: 'Element' }
+      add: { position: 'Post', education: 'Studii', item: 'Element' },
+      announce: {
+        newBullet: (number) => `Punct nou ${number}.`,
+        newListItem: (number) => `Element nou ${number}.`,
+        newContact: (number) => `Contact nou ${number}.`,
+        joinedBullet: (number) => `Unit cu punctul ${number}.`,
+        joinedListItem: (number) => `Unit cu elementul ${number}.`,
+        removedBullet: (number) => `Punctul ${number} a fost eliminat.`,
+        removedListItem: (number) => `Elementul ${number} a fost eliminat.`,
+        removedContact: (number) => `Contactul ${number} a fost eliminat.`
+      }
     },
     part: {
       position: (name) => `Postul „${name}”`,

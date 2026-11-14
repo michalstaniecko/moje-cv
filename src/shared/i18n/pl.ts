@@ -190,7 +190,17 @@ export const pl: Dictionary = {
     canvas: {
       addToCv: 'Dodaj do CV:',
       startHint: 'Zacznij od imienia i nazwiska',
-      add: { position: 'Stanowisko', education: 'Wykształcenie', item: 'Element' }
+      add: { position: 'Stanowisko', education: 'Wykształcenie', item: 'Element' },
+      announce: {
+        newBullet: (number) => `Nowy punkt ${number}.`,
+        newListItem: (number) => `Nowy element ${number}.`,
+        newContact: (number) => `Nowy kontakt ${number}.`,
+        joinedBullet: (number) => `Połączono z punktem ${number}.`,
+        joinedListItem: (number) => `Połączono z elementem ${number}.`,
+        removedBullet: (number) => `Usunięto punkt ${number}.`,
+        removedListItem: (number) => `Usunięto element ${number}.`,
+        removedContact: (number) => `Usunięto kontakt ${number}.`
+      }
     },
     part: {
       position: (name) => `Stanowisko „${name}”`,

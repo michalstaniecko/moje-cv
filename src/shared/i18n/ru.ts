@@ -190,7 +190,17 @@ export const ru: Dictionary = {
     canvas: {
       addToCv: 'Добавить в резюме:',
       startHint: 'Начните с имени и фамилии',
-      add: { position: 'Должность', education: 'Образование', item: 'Элемент' }
+      add: { position: 'Должность', education: 'Образование', item: 'Элемент' },
+      announce: {
+        newBullet: (number) => `Новый пункт ${number}.`,
+        newListItem: (number) => `Новый элемент ${number}.`,
+        newContact: (number) => `Новый контакт ${number}.`,
+        joinedBullet: (number) => `Объединено с пунктом ${number}.`,
+        joinedListItem: (number) => `Объединено с элементом ${number}.`,
+        removedBullet: (number) => `Пункт ${number} удалён.`,
+        removedListItem: (number) => `Элемент ${number} удалён.`,
+        removedContact: (number) => `Контакт ${number} удалён.`
+      }
     },
     part: {
       position: (name) => `Должность «${name}»`,

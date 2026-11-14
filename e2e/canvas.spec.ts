@@ -236,6 +236,8 @@ async function clickOnPage(element: Locator) {
 }
 
 // Przycisk zdjęcia w warstwie edycji (otwiera Field popover zdjęcia, S4).
+// Region `aria-live` warstwy edycji: komunikaty o zmianach struktury z menu uchwytu i z klawiatury w polach (W22).
+const announcement = () => window.locator('.edit-layer [aria-live]')
 const photoButton = () => window.locator('.edit-layer .edit-photo').and(window.getByRole('button', { name: 'Photo', exact: true }))
 const photoPopover = () => window.getByRole('dialog', { name: 'Photo', exact: true })
 // Tekst klauzuli zgody na stronie (Page field) i pasek klauzuli nad nią (S4).
@@ -864,11 +866,14 @@ test('Enter splits a bullet at the caret, Backspace at its start joins it back a
   await expect(bulletField(4)).toBeFocused()
   await expect.poll(caret).toEqual(expect.objectContaining({ offset: 0, collapsed: true }))
   await expect(form.getByLabel('Bullet 4', { exact: true }).first()).toHaveValue('quests for quotation and bid comparisons.')
+  // Czytnik ekranu słyszy każdą zmianę struktury (W22).
+  await expect(announcement()).toHaveText('New bullet 4.')
 
   // Backspace na początku łączy z poprzednim; kursor w miejscu złączenia.
   await window.keyboard.press('Backspace')
   await expect(bulletField(3)).toHaveText(third)
   await expect(bulletField(4)).toHaveText(fourth)
+  await expect(announcement()).toHaveText('Joined with bullet 3.')
   await expect.poll(caret).toEqual({ key: 'experience:e1:bullet:e1-b3', offset: 26, collapsed: true })
   // Złączenie i podział to osobne kroki cofania.
   await window.keyboard.press('Meta+z')
@@ -891,6 +896,7 @@ test('Enter splits a bullet at the caret, Backspace at its start joins it back a
   await window.keyboard.press('Backspace')
   await expect(bulletField(4)).toHaveText(fourth)
   await expect.poll(caret).toEqual({ key: 'experience:e1:bullet:e1-b3', offset: third.length, collapsed: true })
+  await expect(announcement()).toHaveText('Removed bullet 4.')
 
   // Cofnięcie podziału, gdy kursor jest w nowym punkcie: punktu już nie ma, kursor na końcu poprzedniego (W19).
   await window.keyboard.press('Enter')
@@ -902,6 +908,7 @@ test('Enter splits a bullet at the caret, Backspace at its start joins it back a
   // Delete na końcu łączy z następnym.
   await window.keyboard.press('Delete')
   await expect(bulletField(3)).toHaveText(third + fourth)
+  await expect(announcement()).toHaveText('Joined with bullet 4.')
   await expect.poll(caret).toEqual({ key: 'experience:e1:bullet:e1-b3', offset: third.length, collapsed: true })
   await window.keyboard.press('Meta+z')
   await expect(bulletField(4)).toHaveText(fourth)
@@ -911,6 +918,7 @@ test('Enter splits a bullet at the caret, Backspace at its start joins it back a
   await window.keyboard.press('Alt+Shift+ArrowUp')
   await expect(bulletField(2)).toHaveText(third)
   await expect(bulletField(2)).toBeFocused()
+  await expect(announcement()).toHaveText('Moved bullet 3 to position 2 of 8.')
   await expect.poll(caret).toEqual({ key: 'experience:e1:bullet:e1-b3', offset: 2, collapsed: true })
   await expect(form.getByLabel('Bullet 2', { exact: true }).first()).toHaveValue(third)
   await window.keyboard.press('Meta+z')
@@ -1053,6 +1061,7 @@ test('arrow keys go on to the previous or next field at the edges of a field, al
   await expect.poll(positionNames).toEqual([positions[1], positions[0], ...positions.slice(2)])
   await expect(roleField(positions[1])).toBeFocused()
   await expect.poll(caret).toEqual({ key: 'experience:e2:role', offset: 3, collapsed: true })
+  await expect(announcement()).toHaveText(`Moved position “${positions[1]}” to position 1 of 4.`)
   await window.keyboard.press('Meta+z')
   await expect.poll(positionNames).toEqual(positions)
 
@@ -1438,6 +1447,7 @@ test('contacts are edited on the page: a Classic contact is one “label: value�
   expect(await placeholderOf(pageField('Contact value 3'))).toBe('"Value"')
   await expect(contacts).toHaveCount(5)
   await expect(formValues).toHaveCount(5)
+  await expect(announcement()).toHaveText('New contact 3.')
   await window.keyboard.type('GitHub')
   // Enter w etykiecie – do wartości.
   await window.keyboard.press('Enter')
@@ -1466,6 +1476,7 @@ test('contacts are edited on the page: a Classic contact is one “label: value�
   await window.keyboard.press('Backspace')
   await expect(formValues).toHaveCount(4)
   await expect.poll(caret).toEqual({ key: 'contact:c2:value', offset: 'jane.example@example.com.uk'.length, collapsed: true })
+  await expect(announcement()).toHaveText('Removed contact 3.')
   await window.keyboard.press('Meta+z')
   await expect(formValues).toHaveCount(5)
 
@@ -1728,7 +1739,6 @@ test('changing the Template and the accent colour in the CV design panel changes
 
 const handle = (name: string) => window.locator('.edit-layer').getByRole('button', { name: `Actions for ${name}`, exact: true })
 const blockMenu = (name: string) => window.getByRole('menu', { name: `Actions for ${name}`, exact: true })
-const announcement = () => window.locator('.edit-layer [aria-live]')
 // Tytuły sekcji na stronach (Page fields) w kolejności dokumentu.
 const sectionTitles = () => window.locator('.preview .cv-pages [data-fragment^="sectionTitle:"]').allTextContents()
 const positionNames = async () => window.locator('.preview .cv-pages .cv-role').allTextContents()

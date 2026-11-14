@@ -214,7 +214,18 @@ export const en = {
       // Dodawanie na stronach: pasek pod ostatnią stroną, podpowiedź w pustym CV i pigułki „+ …” pod sekcjami.
       addToCv: 'Add to CV:',
       startHint: 'Start with your full name',
-      add: { position: 'Position', education: 'Education', item: 'Item' }
+      add: { position: 'Position', education: 'Education', item: 'Item' },
+      // Komunikaty dla czytnika ekranu po zmianie struktury z klawiatury na stronie (Enter, Backspace, Delete).
+      announce: {
+        newBullet: (number: number) => `New bullet ${number}.`,
+        newListItem: (number: number) => `New item ${number}.`,
+        newContact: (number: number) => `New contact ${number}.`,
+        joinedBullet: (number: number) => `Joined with bullet ${number}.`,
+        joinedListItem: (number: number) => `Joined with item ${number}.`,
+        removedBullet: (number: number) => `Removed bullet ${number}.`,
+        removedListItem: (number: number) => `Removed item ${number}.`,
+        removedContact: (number: number) => `Removed contact ${number}.`
+      }
     },
     part: {
       // Nazwy wpisów i sekcji listowych w nazwach ich Page fields (np. „Company – Position “Buyer””).

@@ -57,6 +57,7 @@ export function PreviewPane({
     editor: editing?.editor,
     active: editing?.session.activeField,
     dates: editing?.session.datePopover,
+    announcer: editing?.session.announcer,
     panel
   })
   const editable = mode === 'edit' && pageEditing !== null

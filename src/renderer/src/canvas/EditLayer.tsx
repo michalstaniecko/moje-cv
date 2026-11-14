@@ -6,6 +6,7 @@ import type { CvEditor } from '../editor/cvEditor'
 import type { RemoveWithUndo } from '../editor/removalUndo'
 import { useDictionary } from '../i18n'
 import { useAddControls } from './AddControls'
+import { LiveRegion } from './announcer'
 import { BlockHandle, useBlockMenu } from './BlockMenu'
 import { ContactLabelSuggestions } from './ContactLabelSuggestions'
 import { DatePopover, openDatesAt, type DatePopoverStore } from './DatePopover'
@@ -78,7 +79,7 @@ export function EditLayer({
         )
       })}
       {addOnPage.bar}
-      {blockMenu.liveRegion}
+      <LiveRegion announcer={session.announcer} />
       <DateWarnings document={document} panel={panel} layer={layer} fragments={fragments} hidden={compact} />
       {photo.popover}
       {photo.adding}

@@ -408,14 +408,42 @@ describe('the structure of bullets and list items from the keyboard', () => {
   })
 
   it('moves a bullet or a list item by one place, and a whole entry from any of its fields, with Alt+Shift+arrows', () => {
-    expect(listTexts(moveField('list:l1:text', sample, 1)!(sample), 'languages')).toEqual(['German – B2', 'English – native'])
+    expect(listTexts(moveField('list:l1:text', sample, 1)!.change(sample), 'languages')).toEqual(['German – B2', 'English – native'])
     expect(moveField('list:l1:text', sample, -1)).toBeNull()
-    expect(bulletTexts(moveField('experience:e1:bullet:e1-b2', sample, -1)!(sample), 'e1')[0]).toBe(bulletTexts(sample, 'e1')[1])
-    const moved = moveField('experience:e2:company', sample, -1)!(sample)
+    expect(bulletTexts(moveField('experience:e1:bullet:e1-b2', sample, -1)!.change(sample), 'e1')[0]).toBe(bulletTexts(sample, 'e1')[1])
+    const moved = moveField('experience:e2:company', sample, -1)!.change(sample)
     expect(sectionOf(moved, 'experience').items.map((item) => item.id)).toEqual(['e2', 'e1', 'e3', 'e4'])
     expect(moveField('experience:e1:role', sample, -1)).toBeNull()
-    expect(sectionOf(moveField('education:ed1:level', sample, 1)!(sample), 'education').items.map((item) => item.id)).toEqual(['ed2', 'ed1'])
-    expect(sectionOf(moveField('experience:e3:start', sample, -1)!(sample), 'experience').items.map((item) => item.id)).toEqual(['e1', 'e3', 'e2', 'e4'])
+    expect(sectionOf(moveField('education:ed1:level', sample, 1)!.change(sample), 'education').items.map((item) => item.id)).toEqual(['ed2', 'ed1'])
+    expect(sectionOf(moveField('experience:e3:start', sample, -1)!.change(sample), 'experience').items.map((item) => item.id)).toEqual(['e1', 'e3', 'e2', 'e4'])
     expect(moveField('header:fullName', sample, 1)).toBeNull()
+  })
+})
+
+describe('announcing changes of structure from the keyboard', () => {
+  // Komunikat `aria-live` po zmianie (W22): nowy element, złączenie, usunięcie, przeniesienie – z numerem w liście.
+  it('says what Enter added: the bullet, the list item or the contact, with its number', () => {
+    expect(splitField('experience:e1:bullet:e1-b1', sample, { start: 5, end: 5 }, 'new')!.announce(t)).toBe('New bullet 2.')
+    expect(splitField('list:l2:text', sample, { start: 3, end: 3 }, 'new')!.announce(t)).toBe('New item 3.')
+    expect(splitField('contact:c2:value', sample, { start: 3, end: 3 }, 'new')!.announce(t)).toBe('New contact 3.')
+  })
+
+  it('says what Backspace and Delete joined or removed', () => {
+    expect(mergeBackward('list:l2:text', sample)!.announce(t)).toBe('Joined with item 1.')
+    expect(mergeForward('list:l1:text', sample)!.announce(t)).toBe('Joined with item 2.')
+    expect(mergeBackward('experience:e1:bullet:e1-b3', sample)!.announce(t)).toBe('Joined with bullet 2.')
+    const withEmpty = fieldChange('experience:e1:bullet:e1-b2', '')(sample)
+    expect(mergeBackward('experience:e1:bullet:e1-b2', withEmpty)!.announce(t)).toBe('Removed bullet 2.')
+    const emptyContact = fieldChange('contact:c3:value', '')(fieldChange('contact:c3:label', '')(sample))
+    expect(mergeBackward('contact:c3:value', emptyContact)!.announce(t)).toBe('Removed contact 3.')
+  })
+
+  it('says where Alt+Shift+arrows moved a bullet, a list item or an entry, like the handle menu', () => {
+    expect(moveField('list:l1:text', sample, 1)!.announce(t)).toBe('Moved item 1 to position 2 of 2.')
+    expect(moveField('experience:e1:bullet:e1-b2', sample, -1)!.announce(t)).toBe('Moved bullet 2 to position 1 of 8.')
+    expect(moveField('experience:e2:company', sample, -1)!.announce(t)).toBe('Moved position “Procurement Specialist” to position 1 of 4.')
+    expect(moveField('education:ed1:level', sample, 1)!.announce(t)).toBe(
+      'Moved entry “Postgraduate diploma, Procurement Management” to position 2 of 2.'
+    )
   })
 })

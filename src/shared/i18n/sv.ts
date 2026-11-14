@@ -190,7 +190,17 @@ export const sv: Dictionary = {
     canvas: {
       addToCv: 'Lägg till i cv:',
       startHint: 'Börja med ditt fullständiga namn',
-      add: { position: 'Tjänst', education: 'Utbildning', item: 'Post' }
+      add: { position: 'Tjänst', education: 'Utbildning', item: 'Post' },
+      announce: {
+        newBullet: (number) => `Ny punkt ${number}.`,
+        newListItem: (number) => `Ny post ${number}.`,
+        newContact: (number) => `Ny kontakt ${number}.`,
+        joinedBullet: (number) => `Sammanfogad med punkt ${number}.`,
+        joinedListItem: (number) => `Sammanfogad med post ${number}.`,
+        removedBullet: (number) => `Punkt ${number} borttagen.`,
+        removedListItem: (number) => `Post ${number} borttagen.`,
+        removedContact: (number) => `Kontakt ${number} borttagen.`
+      }
     },
     part: {
       position: (name) => `Tjänst ”${name}”`,

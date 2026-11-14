@@ -5,6 +5,7 @@ import { fragmentKey, type EditTarget } from './editTargets'
 import { pageFieldKey } from './pageFields'
 import { createDatePopoverStore } from './DatePopover'
 import { createActiveFieldStore } from './useActiveField'
+import { createAnnouncer } from './announcer'
 
 // Edit mode (strony z kontrolkami edycji i paskiem bocznym) albo Preview mode (strony dokładnie jak w PDF) – GLOSSARY.md.
 export type EditorMode = 'edit' | 'preview'
@@ -20,6 +21,7 @@ export type EditSession = ReturnType<typeof useEditSession>
 // - Otwarty Field popover daty (`datePopover`, DatePopover.tsx) – zamykany przy przejściu do Preview mode.
 // - `focusPart` stawia kursor w części CV na stronie (Outline, „Add to CV”, pigułki „+”, menu uchwytu): w jej polu,
 //   a pustą część – także nowy wpis – odsłania (W10, W21). Edit card nie ma (W20).
+// - `announcer` – komunikaty `aria-live` o zmianach struktury z klawiatury i z menu uchwytu (W22, announcer.tsx).
 // `current` – bieżący dokument edytora: część CV dodana tuż przed „otwarciem” (nowy kontakt, włączona klauzula) jest już
 // w nim, choć `document` z ostatniego renderu jeszcze jej nie ma.
 export function useEditSession(
@@ -30,6 +32,7 @@ export function useEditSession(
   const focusLost = useRef(onFocusLost)
   const [activeField] = useState(() => createActiveFieldStore({ onLost: () => focusLost.current?.() }))
   const [datePopover] = useState(createDatePopoverStore)
+  const [announcer] = useState(createAnnouncer)
   const latestDocument = useRef(document)
   const currentDocument = useRef(current)
   useEffect(() => {
@@ -66,7 +69,7 @@ export function useEditSession(
     [activeField]
   )
 
-  return { mode, setMode, togglePreview, focusPart, activeField, datePopover }
+  return { mode, setMode, togglePreview, focusPart, activeField, datePopover, announcer }
 }
 
 // Czy część CV edytowana na stronie może tam dostać kursor: nagłówek (imię i nazwisko, podsumowanie, kontakty) zawsze
