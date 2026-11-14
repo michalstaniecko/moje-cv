@@ -168,6 +168,7 @@ export const vi: Dictionary = {
     exportCutOff: 'Một phần nội dung không vừa trên một trang và sẽ bị cắt. Vẫn xuất?',
     exportCutOffHint: 'Các đoạn quá dài được đánh dấu trong chế độ chỉnh sửa.',
     mode: { label: 'Chế độ', edit: 'Chỉnh sửa', preview: 'Xem trước' },
+    cvDesignButton: 'Thiết kế',
     canvas: { edit: (what) => `Sửa: ${what}` },
     card: {
       close: 'Đóng',

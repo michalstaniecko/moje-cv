@@ -168,6 +168,7 @@ export const id: Dictionary = {
     exportCutOff: 'Sebagian konten tidak muat di satu halaman dan akan terpotong. Tetap ekspor?',
     exportCutOffHint: 'Bagian yang terlalu panjang ditandai di mode edit.',
     mode: { label: 'Mode', edit: 'Edit', preview: 'Pratinjau' },
+    cvDesignButton: 'Desain CV',
     canvas: { edit: (what) => `Edit: ${what}` },
     card: {
       close: 'Tutup',

@@ -175,6 +175,7 @@ export const de: Dictionary = {
     exportCutOff: 'Ein Teil des Inhalts passt nicht auf eine Seite und wird abgeschnitten. Trotzdem exportieren?',
     exportCutOffHint: 'Die zu langen Abschnitte sind im Bearbeitungsmodus hervorgehoben.',
     mode: { label: 'Modus', edit: 'Bearbeiten', preview: 'Vorschau' },
+    cvDesignButton: 'Design',
     canvas: { edit: (what) => `Bearbeiten: ${what}` },
     card: {
       close: 'Schließen',

@@ -168,6 +168,7 @@ export const pt: Dictionary = {
     exportCutOff: 'Parte do conteúdo não cabe em uma página e será cortada. Exportar mesmo assim?',
     exportCutOffHint: 'Os trechos longos demais estão destacados no modo de edição.',
     mode: { label: 'Modo', edit: 'Edição', preview: 'Pré-visualização' },
+    cvDesignButton: 'Design',
     canvas: { edit: (what) => `Editar: ${what}` },
     card: {
       close: 'Fechar',

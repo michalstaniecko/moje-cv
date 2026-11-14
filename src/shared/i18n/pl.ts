@@ -168,6 +168,7 @@ export const pl: Dictionary = {
     exportCutOff: 'Część treści nie zmieści się na stronie i zostanie ucięta. Eksportować mimo to?',
     exportCutOffHint: 'Za długie fragmenty są wyróżnione w trybie edycji.',
     mode: { label: 'Tryb', edit: 'Edycja', preview: 'Podgląd' },
+    cvDesignButton: 'Projekt CV',
     canvas: { edit: (what) => `Edytuj: ${what}` },
     card: {
       close: 'Zamknij',

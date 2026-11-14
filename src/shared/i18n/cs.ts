@@ -168,6 +168,7 @@ export const cs: Dictionary = {
     exportCutOff: 'Část obsahu se nevejde na stránku a bude oříznuta. Přesto exportovat?',
     exportCutOffHint: 'Příliš dlouhé části jsou zvýrazněné v režimu úprav.',
     mode: { label: 'Režim', edit: 'Úpravy', preview: 'Náhled' },
+    cvDesignButton: 'Design CV',
     canvas: { edit: (what) => `Upravit: ${what}` },
     card: {
       close: 'Zavřít',

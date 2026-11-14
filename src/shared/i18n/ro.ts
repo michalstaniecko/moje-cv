@@ -168,6 +168,7 @@ export const ro: Dictionary = {
     exportCutOff: 'O parte din conținut nu încape pe o pagină și va fi tăiată. Exporți totuși?',
     exportCutOffHint: 'Fragmentele prea lungi sunt evidențiate în modul de editare.',
     mode: { label: 'Mod', edit: 'Editare', preview: 'Previzualizare' },
+    cvDesignButton: 'Design',
     canvas: { edit: (what) => `Editează: ${what}` },
     card: {
       close: 'Închide',
