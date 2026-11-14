@@ -1,7 +1,7 @@
 import type { Clause, CvDocument, EducationItem, ExperienceItem, Section, TextItem } from '../domain/schema'
 
 type Contact = CvDocument['header']['contacts'][number]
-type Change<T> = (value: T) => T
+export type Change<T> = (value: T) => T
 
 const replaceById = <T extends { id: string }>(items: T[], id: string, change: Change<T>): T[] =>
   items.map((item) => (item.id === id ? change(item) : item))
