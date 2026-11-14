@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
-import { editMarkupContract, headerParts } from './editTargets'
+import { CONSENT_BLOCK_ID, editMarkupContract, headerParts } from './editTargets'
 import { fragmentRects, sameFragments, unionRect, type Fragment, type MeasuredBlock, type Rect } from './fragmentRects'
 
 const headerSelector = headerParts.map((part) => editMarkupContract[part]).join(', ')
@@ -95,6 +95,9 @@ function readBlocks(layer: HTMLElement, panel: HTMLElement): MeasuredBlock[] {
       }
       blocks.push({ blockId: element.dataset['blockId']!, page: index, rect, parts })
     })
+    // Klauzula zgody na dole ostatniej strony – poza blokami, ale z własną Edit card.
+    const consent = union(page.querySelectorAll(editMarkupContract.consent))
+    if (consent) blocks.push({ blockId: CONSENT_BLOCK_ID, page: index, rect: consent, parts: [] })
   })
   return blocks
 }

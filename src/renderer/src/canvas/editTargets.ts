@@ -21,7 +21,8 @@ export type EditTarget =
 // Kontrakt znaczników edycji: klasy, których używają wszystkie szablony (wspólny markup w CvBlockView i nadpisania
 // bloków). Z nich warstwa edycji dzieli nagłówek na fragmenty i rozpoznaje kliknięte pole. Brak klasy w nowym szablonie
 // kosztuje tylko wygodę (fokus na pierwszym polu karty, nagłówek jako jeden fragment), nigdy treść.
-// `contact` – dzieci elementu to kolejne kontakty; `item` – punkt stanowiska albo element wiersza listy.
+// `contact` – dzieci elementu to kolejne kontakty; `item` – punkt stanowiska albo element wiersza listy; `consent` –
+// klauzula zgody na dole ostatniej strony (rysuje ją wspólny `CvPages`, nie szablon i nie jako blok).
 export const editMarkupContract = {
   name: '.cv-name',
   photo: '.cv-photo',
@@ -32,7 +33,8 @@ export const editMarkupContract = {
   company: '.cv-company',
   date: '.cv-date',
   educationLevel: '.cv-education-level',
-  item: 'li'
+  item: 'li',
+  consent: '.cv-consent'
 } as const
 export type ContractPart = keyof typeof editMarkupContract
 
@@ -81,11 +83,16 @@ export function fragmentTarget(target: EditTarget): EditTarget {
 
 const isFilled = (text: string) => text.trim() !== ''
 
+// Klauzula zgody nie jest blokiem dokumentu (nie ma `data-block-id`); warstwa edycji mierzy ją pod tym umownym id,
+// którego nie ma żaden blok (id bloków nie zaczynają się od „#”).
+export const CONSENT_BLOCK_ID = '#consent'
+
 // Identyfikatory bloków niosą źródło (domain/blocks.ts): `header`, `<sekcja>:title`, `<wpis>`, `<wpis>:<punkt>` i
 // `<sekcja>:<pierwszy element wiersza>`. Blok nagłówka bez klas kontraktu to w całości imię i nazwisko.
 // Blok spoza dokumentu (np. układ sprzed ponownego podziału stron) – null.
 export function blockTarget(blockId: string, document: CvDocument): EditTarget | null {
   if (blockId === 'header') return { kind: 'fullName' }
+  if (blockId === CONSENT_BLOCK_ID) return { kind: 'consent' }
   const separator = blockId.indexOf(':')
   if (separator === -1) return itemTarget(blockId, document)
 

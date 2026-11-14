@@ -3,7 +3,7 @@ import { generateBlocks } from '../domain/blocks'
 import { sampleCvs } from '../domain/sampleCv'
 import type { CvDocument } from '../domain/schema'
 import { templates } from '../template/templates'
-import { blockTarget, fragmentKey, fragmentTarget, hitTarget, targetExists, type EditTarget } from './editTargets'
+import { blockTarget, CONSENT_BLOCK_ID, fragmentKey, fragmentTarget, hitTarget, targetExists, type EditTarget } from './editTargets'
 
 const sample = sampleCvs.en
 const none = { part: null, index: 0 }
@@ -50,6 +50,11 @@ describe('blockTarget', () => {
     expect(blockTarget('skills:s3', sample)).toEqual({ kind: 'listSection', sectionId: 'skills' })
   })
 
+  it('maps the consent clause on the last page (not a block of the document) to the consent card', () => {
+    expect(blockTarget(CONSENT_BLOCK_ID, sample)).toEqual({ kind: 'consent' })
+    expect(fragmentKey({ kind: 'consent' })).toBe('consent')
+  })
+
   it('returns null for a block no longer in the document', () => {
     expect(blockTarget('gone', sample)).toBeNull()
     expect(blockTarget('gone:title', sample)).toBeNull()
@@ -81,6 +86,13 @@ describe('hitTarget', () => {
     expect(hitTarget('e1', { part: 'item', index: 0 }, sample)).toEqual({ ...entry, bulletId: 'e1-b1' })
     expect(hitTarget('e1:e1-b4', { part: 'item', index: 0 }, sample)).toEqual({ ...entry, bulletId: 'e1-b4' })
     expect(hitTarget('e1', none, sample)).toEqual(entry)
+    // Kliknięty punkt dalej w bloku wpisu (np. trzeci) – po bloku punktu, nie po numerze dziecka.
+    expect(hitTarget('e2:e2-b3', { part: 'item', index: 0 }, sample)).toEqual({
+      kind: 'experienceItem',
+      sectionId: 'experience',
+      itemId: 'e2',
+      bulletId: 'e2-b3'
+    })
 
     const education = { kind: 'educationItem', sectionId: 'education', itemId: 'ed2' } as const
     expect(hitTarget('ed2', { part: 'educationLevel', index: 0 }, sample)).toEqual({ ...education, field: 'level' })
@@ -158,5 +170,26 @@ describe('targetExists', () => {
     expect(targetExists(entry, withoutEntry)).toBe(false)
     expect(targetExists({ ...entry, itemId: 'e1' }, withoutEntry)).toBe(true)
     expect(targetExists(education, withoutSection('education'))).toBe(false)
+  })
+
+  it('keeps an entry or a list card open when only one of its bullets or items is removed', () => {
+    const withoutBullet: CvDocument = {
+      ...sample,
+      sections: sample.sections.map((section) =>
+        section.type === 'experience'
+          ? { ...section, items: section.items.map((item) => ({ ...item, bullets: item.bullets.filter((bullet) => bullet.id !== 'e2-b1') })) }
+          : section
+      )
+    }
+    const withoutListItem: CvDocument = {
+      ...sample,
+      sections: sample.sections.map((section) =>
+        section.type === 'list' ? { ...section, items: section.items.filter((item) => item.id !== 's1') } : section
+      )
+    }
+    expect(targetExists({ kind: 'experienceItem', sectionId: 'experience', itemId: 'e2', bulletId: 'e2-b1' }, withoutBullet)).toBe(true)
+    expect(targetExists({ kind: 'listSection', sectionId: 'skills', itemId: 's1' }, withoutListItem)).toBe(true)
+    // Wpis wykształcenia nie jest stanowiskiem – cel innego rodzaju o tym samym id nie istnieje.
+    expect(targetExists({ kind: 'experienceItem', sectionId: 'education', itemId: 'ed1' }, sample)).toBe(false)
   })
 })

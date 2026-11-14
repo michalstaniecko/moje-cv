@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { sampleCvs } from '../domain/sampleCv'
+import { CONSENT_BLOCK_ID } from './editTargets'
 import { fragmentRects, sameFragments, type MeasuredBlock, type Rect } from './fragmentRects'
 
 const sample = sampleCvs.en
@@ -12,6 +13,13 @@ const block = (blockId: string, page: number, measured: Rect, parts: MeasuredBlo
 })
 
 describe('fragmentRects', () => {
+  it('gives the consent clause at the bottom of the last page its own fragment', () => {
+    expect(fragmentRects([block('ed2', 1, rect(100, 130)), block(CONSENT_BLOCK_ID, 1, rect(700, 740))], sample)).toEqual([
+      { key: 'item:ed2', target: { kind: 'educationItem', sectionId: 'education', itemId: 'ed2' }, page: 1, rect: rect(100, 130) },
+      { key: 'consent', target: { kind: 'consent' }, page: 1, rect: rect(700, 740) }
+    ])
+  })
+
   it('joins an entry with its bullets into one fragment per page', () => {
     const fragments = fragmentRects(
       [
