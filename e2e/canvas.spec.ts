@@ -362,14 +362,17 @@ test('the editing layer works from the keyboard alone: Tab goes through the frag
     'Section title “Languages”',
     'List “Languages”'
   ]
-  const buttons = window.locator('.edit-layer .edit-fragment')
   await expect.poll(() => fragmentNames()).toEqual(expect.arrayContaining(names))
   expect(dedupe(await fragmentNames())).toEqual(names)
-  const count = await buttons.count()
-  await buttons.first().focus()
+  // Tytuły sekcji i wpisy mają uchwyt menu tuż przed sobą (w marginesie kartki, jak uchwyt wiersza w CV form).
+  const stops = window.locator('.edit-layer .edit-fragment, .edit-layer .edit-handle .row-handle')
+  expect(await stops.evaluateAll((elements) => elements.map((element) => element.textContent || element.getAttribute('aria-label'))))
+    .toEqual(expect.arrayContaining(['Actions for section “Work experience”', 'Edit: Section title “Work experience”']))
+  const count = await stops.count()
+  await stops.first().focus()
   for (let index = 1; index < count; index++) {
     await window.keyboard.press('Tab')
-    await expect(buttons.nth(index)).toBeFocused()
+    await expect(stops.nth(index)).toBeFocused()
   }
 
   await fragment('Summary').focus()
@@ -377,10 +380,10 @@ test('the editing layer works from the keyboard alone: Tab goes through the frag
   const summaryCard = card('Summary')
   const summary = summaryCard.getByLabel('Summary')
   await expect(summary).toBeFocused()
-  // Karta nie więzi fokusu: Tab z ostatniego pola – kolejny fragment, Shift+Tab z niego – fragment karty, a Tab z niego
-  // wraca do karty (karta jest „za” swoim fragmentem).
+  // Karta nie więzi fokusu: Tab z ostatniego pola – kolejny element warstwy (tu uchwyt tytułu sekcji), Shift+Tab z niego
+  // – fragment karty, a Tab z niego wraca do karty (karta jest „za” swoim fragmentem).
   await window.keyboard.press('Tab')
-  await expect(fragment('Section title “Work experience”')).toBeFocused()
+  await expect(window.locator('.edit-layer').getByRole('button', { name: 'Actions for section “Work experience”' })).toBeFocused()
   await expect(summaryCard).toBeVisible()
   await window.keyboard.press('Shift+Tab')
   await expect(fragment('Summary')).toBeFocused()
@@ -992,4 +995,209 @@ test('changing the Template and the accent colour in the CV design panel changes
   await editButton().click()
   await expect(window.locator('.editor-form').getByLabel('Accent color')).toHaveValue('#8a2be2')
   await expect(window.locator('.editor-form').getByRole('radio', { name: 'Classic' })).toBeChecked()
+})
+
+// ---------- Menu fragmentu na stronie ----------
+
+const handle = (name: string) => window.locator('.edit-layer').getByRole('button', { name: `Actions for ${name}`, exact: true })
+const blockMenu = (name: string) => window.getByRole('menu', { name: `Actions for ${name}`, exact: true })
+const announcement = () => window.locator('.edit-layer [aria-live]')
+const sectionTitles = async () =>
+  dedupe(await fragmentNames()).flatMap((name) => name.match(/^Section title “(.*)”$/)?.slice(1) ?? [])
+const positionNames = async () =>
+  dedupe(await fragmentNames()).flatMap((name) => name.match(/^Position “(.*)”$/)?.slice(1) ?? [])
+// Uchwyt jest zawsze w DOM, a widać go (nieprzezroczysty) tylko przy najechaniu, fokusie i otwartym menu.
+const handleBox = (name: string) =>
+  window.locator('.edit-layer .edit-handle', { has: window.getByRole('button', { name: `Actions for ${name}`, exact: true }) })
+
+test('the handle of a section title shows on hover and moves the section from its menu and with Alt+Shift+arrows; each move is one undo step and the focus stays on the handle', async () => {
+  await openFirstCv()
+  const education = handle('section “Education”')
+  await expect(education).toHaveCount(1)
+  // Uchwyt jest w marginesie kartki, przed lewą krawędzią fragmentu, i pokazuje się dopiero przy najechaniu.
+  const titleBox = (await fragment('Section title “Education”').boundingBox())!
+  expect((await education.boundingBox())!.x + 24).toBeLessThanOrEqual(titleBox.x)
+  await expect(handleBox('section “Education”')).toHaveCSS('opacity', '0')
+  await fragment('Section title “Education”').hover()
+  await expect(handleBox('section “Education”')).toHaveCSS('opacity', '1')
+
+  await education.click()
+  const menu = blockMenu('section “Education”')
+  await expect(menu.getByRole('menuitem', { name: 'Move up' })).toBeFocused()
+  await expect(menu.getByRole('menuitemcheckbox', { name: 'New page before this section' })).toHaveAttribute('aria-checked', 'false')
+  await expect(menu.getByRole('menuitem')).toHaveText(['Move up', 'Move down', 'Hide section', 'Add education'])
+  await menu.getByRole('menuitem', { name: 'Move up' }).click()
+  await expect.poll(sectionTitles).toEqual(['Education', 'Work experience', 'Skills', 'Languages'])
+  await expect(education).toBeFocused()
+  await expect(announcement()).toHaveText('Moved section “Education” to position 1 of 4.')
+  // Ten sam porządek w CV form.
+  await expect(window.locator('.editor-form .form-section[aria-label]').first()).toHaveAttribute('aria-label', 'Education')
+
+  await window.keyboard.press('Meta+z')
+  await expect.poll(sectionTitles).toEqual(['Work experience', 'Education', 'Skills', 'Languages'])
+
+  await education.focus()
+  await window.keyboard.press('Alt+Shift+ArrowDown')
+  await expect.poll(sectionTitles).toEqual(['Work experience', 'Skills', 'Education', 'Languages'])
+  await expect(education).toBeFocused()
+  await expect(announcement()).toHaveText('Moved section “Education” to position 3 of 4.')
+  await window.keyboard.press('Alt+Shift+ArrowDown')
+  await expect.poll(sectionTitles).toEqual(['Work experience', 'Skills', 'Languages', 'Education'])
+  await expect(education).toBeFocused()
+  // Na końcu nic się nie dzieje, a „Move down” w menu jest wyłączone.
+  await window.keyboard.press('Alt+Shift+ArrowDown')
+  await window.keyboard.press('Enter')
+  await expect(menu.getByRole('menuitem', { name: 'Move down' })).toBeDisabled()
+  await window.keyboard.press('Escape')
+  await expect(education).toBeFocused()
+
+  await window.keyboard.press('Meta+z')
+  await expect.poll(sectionTitles).toEqual(['Work experience', 'Skills', 'Education', 'Languages'])
+  await window.keyboard.press('Meta+z')
+  await expect.poll(sectionTitles).toEqual(['Work experience', 'Education', 'Skills', 'Languages'])
+})
+
+test('the handle of a position moves it within its section, also to another page, with the focus on its handle in the new place', async () => {
+  await openFirstCv()
+  const first = handle(`position “${positions[0]}”`)
+  await first.click()
+  await expect(blockMenu(`position “${positions[0]}”`).getByRole('menuitem', { name: 'Move up' })).toBeDisabled()
+  await expect(blockMenu(`position “${positions[0]}”`).getByRole('menuitem')).toHaveText(['Move up', 'Move down'])
+  await window.keyboard.press('Escape')
+  await expect(first).toBeFocused()
+
+  // Z menu: drugie stanowisko na pierwsze miejsce, jeden krok cofania.
+  const second = handle(`position “${positions[1]}”`)
+  await second.click()
+  await blockMenu(`position “${positions[1]}”`).getByRole('menuitem', { name: 'Move up' }).click()
+  await expect.poll(positionNames).toEqual([positions[1], positions[0], ...positions.slice(2)])
+  await expect(second).toBeFocused()
+  await expect(announcement()).toHaveText(`Moved position “${positions[1]}” to position 1 of 4.`)
+  await window.keyboard.press('Meta+z')
+  await expect.poll(positionNames).toEqual(positions)
+
+  // Nowa strona przed drugim stanowiskiem: trzecie jest na drugiej stronie, ⌥⇧↑ przenosi je na pierwszą – fokus na
+  // jego uchwycie, już na innej stronie.
+  await second.click()
+  await blockMenu(`position “${positions[1]}”`).getByRole('menuitemcheckbox', { name: 'New page before this entry' }).click()
+  const third = fragment(`Position “${positions[2]}”`).first()
+  await expect(third).toHaveAttribute('data-page', '1')
+  await handle(`position “${positions[2]}”`).focus()
+  await window.keyboard.press('Alt+Shift+ArrowUp')
+  await expect.poll(positionNames).toEqual([positions[0], positions[2], positions[1], positions[3]])
+  await expect(third).toHaveAttribute('data-page', '0')
+  await expect(handle(`position “${positions[2]}”`)).toBeFocused()
+  await expect(announcement()).toHaveText(`Moved position “${positions[2]}” to position 2 of 4.`)
+  await window.keyboard.press('Meta+z')
+  await expect.poll(positionNames).toEqual(positions)
+  await expect(third).toHaveAttribute('data-page', '1')
+})
+
+test('“New page before” and “Hide section” in the menu on the page work like the form checkboxes', async () => {
+  await openFirstCv()
+  const form = window.locator('.editor-form')
+  const skills = handle('section “Skills”')
+  const skillsTitle = fragment('Section title “Skills”')
+  const page = Number(await skillsTitle.getAttribute('data-page'))
+
+  await skills.click()
+  await blockMenu('section “Skills”').getByRole('menuitemcheckbox', { name: 'New page before this section' }).click()
+  await expect(skillsTitle).toHaveAttribute('data-page', String(page + 1))
+  await expect(form.getByRole('region', { name: 'Skills' }).getByLabel('New page before this section')).toBeChecked()
+  await expect(skills).toBeFocused()
+  await window.keyboard.press('Enter')
+  await expect(blockMenu('section “Skills”').getByRole('menuitemcheckbox', { name: 'New page before this section' })).toHaveAttribute(
+    'aria-checked',
+    'true'
+  )
+  await window.keyboard.press('Escape')
+  await window.keyboard.press('Meta+z')
+  await expect(skillsTitle).toHaveAttribute('data-page', String(page))
+  await expect(form.getByRole('region', { name: 'Skills' }).getByLabel('New page before this section')).not.toBeChecked()
+
+  // Wpis: nowa strona przed stanowiskiem, jak pole w jego karcie.
+  const second = fragment(`Position “${positions[1]}”`)
+  await expect(second).toHaveAttribute('data-page', '0')
+  await handle(`position “${positions[1]}”`).click()
+  await blockMenu(`position “${positions[1]}”`).getByRole('menuitemcheckbox', { name: 'New page before this entry' }).click()
+  await expect(second).toHaveAttribute('data-page', '1')
+  await expect(handle(`position “${positions[1]}”`)).toBeFocused()
+  await window.keyboard.press('Meta+z')
+  await expect(second).toHaveAttribute('data-page', '0')
+
+  // Ukrycie: sekcja znika ze stron, fokus na kolejnym fragmencie, w formularzu zaznaczone „Hide section”.
+  await skills.click()
+  await blockMenu('section “Skills”').getByRole('menuitem', { name: 'Hide section' }).click()
+  await expect(skillsTitle).toHaveCount(0)
+  await expect(fragment('List “Skills”')).toHaveCount(0)
+  await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: 'Skills' })).toHaveCount(0)
+  await expect(form.getByRole('region', { name: 'Skills' }).getByLabel('Hide section')).toBeChecked()
+  await expect(handle('section “Languages”')).toHaveCount(1)
+  await expect(fragment('Section title “Languages”')).toBeFocused()
+  await window.keyboard.press('Meta+z')
+  await expect(skillsTitle).toHaveCount(1)
+})
+
+test('“Add …” in the menu of a section title adds an element and opens its card with the focus on the first field', async () => {
+  await openFirstCv()
+  await window.setViewportSize({ width: 1600, height: 1000 })
+  const form = window.locator('.editor-form')
+  await handle('section “Work experience”').click()
+  await blockMenu('section “Work experience”').getByRole('menuitem', { name: 'Add position' }).click()
+  // Nowy wpis jest pusty (nie ma go na stronie) – karta stoi przy uchwycie, z którego go dodano.
+  const added = card('Position “New position”')
+  await expect(added.getByLabel('Job title')).toBeFocused()
+  await expect(form.getByLabel('Job title')).toHaveCount(5)
+  await expectCardNextTo(added, handle('section “Work experience”'))
+  await window.keyboard.type('Buyer')
+  await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^Buyer$/ })).toHaveCount(1)
+  await expect(card('Position “Buyer”')).toBeVisible()
+  await expectCardNextTo(card('Position “Buyer”'), fragment('Position “Buyer”').first())
+  await window.keyboard.press('Escape')
+  await expect(fragment('Position “Buyer”').first()).toBeFocused()
+
+  // Lista: nowy element w karcie listy, z fokusem w nim.
+  await handle('section “Skills”').click()
+  await blockMenu('section “Skills”').getByRole('menuitem', { name: 'Add item' }).click()
+  const list = card('List “Skills”')
+  const items = list.getByRole('textbox')
+  await expect(items.last()).toBeFocused()
+  await expect(items.last()).toHaveValue('')
+})
+
+test('the menu works from the keyboard alone, and there are no handles below 50% zoom', async () => {
+  await openFirstCv()
+  await fragment('Section title “Education”').focus()
+  await window.keyboard.press('Shift+Tab')
+  const education = handle('section “Education”')
+  await expect(education).toBeFocused()
+  await expect(handleBox('section “Education”')).toHaveCSS('opacity', '1')
+  await window.keyboard.press('Space')
+  const menu = blockMenu('section “Education”')
+  await expect(menu.getByRole('menuitem', { name: 'Move up' })).toBeFocused()
+  await window.keyboard.press('ArrowDown')
+  await expect(menu.getByRole('menuitem', { name: 'Move down' })).toBeFocused()
+  await window.keyboard.press('ArrowDown')
+  await expect(menu.getByRole('menuitemcheckbox', { name: 'New page before this section' })).toBeFocused()
+  await window.keyboard.press('End')
+  await expect(menu.getByRole('menuitem', { name: 'Add education' })).toBeFocused()
+  await window.keyboard.press('Escape')
+  await expect(menu).toHaveCount(0)
+  await expect(education).toBeFocused()
+  await window.keyboard.press('Enter')
+  await window.keyboard.press('ArrowUp')
+  await window.keyboard.press('Enter')
+  await expect(card('Education “New education”').getByLabel('Level')).toBeFocused()
+
+  const preview = window.locator('.preview')
+  await preview.getByRole('button', { name: '100%' }).click()
+  await preview.getByRole('button', { name: 'Zoom out' }).click()
+  await preview.getByRole('button', { name: 'Zoom out' }).click()
+  await expect(preview.locator('.preview-zoom-value')).toHaveText('50%')
+  await expect(window.locator('.edit-layer .edit-handle').first()).toBeAttached()
+  await preview.getByRole('button', { name: 'Zoom out' }).click()
+  await expect(window.locator('.edit-layer')).toHaveAttribute('data-compact', 'true')
+  await expect(window.locator('.edit-layer .edit-handle')).toHaveCount(0)
+  // Edycja dalej działa przez klik we fragment.
+  await expect(fragment('Section title “Education”')).toHaveCount(1)
 })
