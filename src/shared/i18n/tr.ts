@@ -181,7 +181,6 @@ export const tr: Dictionary = {
       sidebar: 'Kenar çubuğu'
     },
     canvas: {
-      edit: (what) => `Düzenle: ${what}`,
       addToCv: 'CV’ye ekle:',
       startHint: 'Ad soyadınızla başlayın',
       add: { position: 'Pozisyon', education: 'Eğitim', item: 'Öğe' }
@@ -290,7 +289,8 @@ export const tr: Dictionary = {
       saveAsNew: 'Yeni metin olarak kaydet',
       newName: 'Yeni metnin adı',
       newNamePlaceholder: 'Ad, ör. Talent Partners',
-      saveFailed: 'Metin kaydedilemedi.'
+      saveFailed: 'Metin kaydedilemedi.',
+      hide: 'Metni gizle'
     },
     photo: {
       legend: 'Fotoğraf',

@@ -18,6 +18,7 @@ import {
   textPaste,
   textSplit,
   updateBullet,
+  updateConsent,
   updateContact,
   updateEducationItem,
   updateExperienceItem,
@@ -42,9 +43,10 @@ import type { TextSelection } from './pageFieldInput'
 // Klucz pola = klucz łączenia kroków cofania pola CV form (te same kroki cofania na stronie i w formularzu)
 // = `data-field-key` na stronie: `header:fullName`, `header:summary`, `section:<sekcja>:title`,
 // `experience:<wpis>:role|company|location`, `experience:<wpis>:bullet:<punkt>`, `education:<wpis>:level|field|institution`,
-// `list:<element>:text`, `contact:<kontakt>:label|value`; żetony dat (W12): `experience|education:<wpis>:start|end`.
-// Fragment pola (aktywny fragment, `reveal`) – klucz fragmentu warstwy edycji (`fragmentKey`): `fullName`, `summary`,
-// `contacts` (wszystkie kontakty), `sectionTitle:<sekcja>`, `item:<wpis>` (wpis z punktami), `list:<sekcja>`.
+// `list:<element>:text`, `contact:<kontakt>:label|value`, `consent:text`; żetony dat (W12):
+// `experience|education:<wpis>:start|end`. Fragment pola (aktywny fragment, `reveal`) – klucz fragmentu warstwy edycji
+// (`fragmentKey`): `fullName`, `summary`, `contacts` (wszystkie kontakty), `sectionTitle:<sekcja>`, `item:<wpis>` (wpis
+// z punktami), `list:<sekcja>`, `consent`.
 
 type ExperienceText = 'role' | 'company' | 'location'
 type EducationText = 'level' | 'field' | 'institution'
@@ -57,6 +59,7 @@ type FieldRef =
   | { kind: 'fullName' }
   | { kind: 'summary' }
   | { kind: 'contact'; contact: Contact; index: number; field: ContactText }
+  | { kind: 'consent' }
   | { kind: 'title'; section: Section }
   | { kind: 'experience'; sectionId: string; item: ExperienceItem; field: ExperienceText }
   | { kind: 'bullet'; sectionId: string; item: ExperienceItem; index: number }
@@ -68,6 +71,7 @@ type FieldRef =
 type Entry = { type: 'experience'; item: ExperienceItem } | { type: 'education'; item: EducationItem }
 
 const fullNameKey = 'header:fullName'
+const consentKey = 'consent:text'
 const summaryKey = 'header:summary'
 const contactKey = (contactId: string, field: ContactText) => `contact:${contactId}:${field}`
 const titleKey = (sectionId: string) => `section:${sectionId}:title`
@@ -87,6 +91,8 @@ function keyOf(ref: FieldRef): string {
       return summaryKey
     case 'contact':
       return contactKey(ref.contact.id, ref.field)
+    case 'consent':
+      return consentKey
     case 'title':
       return titleKey(ref.section.id)
     case 'experience':
@@ -106,6 +112,7 @@ function fragmentOf(ref: FieldRef): string {
   switch (ref.kind) {
     case 'fullName':
     case 'summary':
+    case 'consent':
       return ref.kind
     case 'contact':
       return 'contacts'
@@ -128,6 +135,8 @@ function valueOf(ref: FieldRef, document: CvDocument): string {
       return document.header.summary
     case 'contact':
       return ref.contact[ref.field]
+    case 'consent':
+      return document.consent.text
     case 'title':
       return ref.section.title
     case 'experience':
@@ -178,6 +187,7 @@ function findListItem(document: CvDocument, itemId: string): FieldRef | null {
 function refOf(key: string, document: CvDocument): FieldRef | null {
   if (key === fullNameKey) return { kind: 'fullName' }
   if (key === summaryKey) return { kind: 'summary' }
+  if (key === consentKey) return { kind: 'consent' }
   const contact = /^contact:(.+):(label|value)$/.exec(key)
   if (contact) return findContact(document, contact[1]!, contact[2] as ContactText)
   const title = /^section:(.+):title$/.exec(key)
@@ -232,6 +242,8 @@ export function pageFieldKey(target: EditTarget, document?: CvDocument): string 
       if (!contact) return null
       return contactKey(contact.id, isFilled(contact.label) ? 'value' : 'label')
     }
+    case 'consent':
+      return consentKey
     case 'sectionTitle':
       return titleKey(target.sectionId)
     case 'experienceItem':
@@ -262,6 +274,8 @@ export function pageFieldTarget(key: string, document: CvDocument): EditTarget |
       return { kind: 'summary' }
     case 'contact':
       return { kind: 'contacts', contactId: ref.contact.id }
+    case 'consent':
+      return { kind: 'consent' }
     case 'title':
       return { kind: 'sectionTitle', sectionId: ref.section.id }
     case 'experience':
@@ -292,6 +306,8 @@ function describe(ref: FieldRef, t: Dictionary['editor']): Pick<EditableField, '
       return ref.field === 'label'
         ? { label: t.contactLabel(ref.index + 1), placeholder: t.contactLabelPlaceholder, spellcheck: false }
         : { label: t.contactValue(ref.index + 1), placeholder: t.contactValuePlaceholder, spellcheck: false }
+    case 'consent':
+      return { label: t.consent.title, placeholder: t.consent.title, spellcheck: true }
     case 'title':
       return { label: t.sectionTitle(sectionName(ref.section, t)), placeholder: t.sectionTypes[ref.section.type], spellcheck: true }
     case 'experience':
@@ -340,6 +356,10 @@ function field(ref: FieldRef | null, document: CvDocument, t: Dictionary['editor
   const described = ref.kind === 'date' && isEndBeforeStart(ref.entry.item.start, ref.entry.item.end) ? { describedBy: dateWarningId(ref.entry.item.id) } : {}
   return { key: keyOf(ref), fragment: fragmentOf(ref), value: valueOf(ref, document), ...describe(ref, t), ...described }
 }
+
+// Pole tekstu klauzuli zgody (rysuje ją `CvPages` pod blokami ostatniej strony) albo null – klauzula wyłączona.
+export const consentFieldOf = (document: CvDocument, t: Dictionary['editor']): EditableField | null =>
+  document.consent.enabled ? field({ kind: 'consent' }, document, t) : null
 
 // Elementy, które pokazuje fragment: w odsłoniętym wszystkie, w pozostałych – niepuste (jak domain/blocks.ts).
 const shownItems = <T extends { text: string }>(items: T[], revealed: boolean) => (revealed ? items : items.filter((item) => isFilled(item.text)))
@@ -441,6 +461,8 @@ export function fieldChange(key: string, value: string): Change<CvDocument> {
         return updateHeader({ summary: value })(document)
       case 'contact':
         return updateContact(ref.contact.id, { [ref.field]: value })(document)
+      case 'consent':
+        return updateConsent({ text: value })(document)
       case 'title':
         return updateSection(ref.section.id, { title: value })(document)
       case 'experience':
@@ -463,6 +485,7 @@ export function fieldChange(key: string, value: string): Change<CvDocument> {
 export function fragmentHasEmptyField(fragment: string, document: CvDocument): boolean {
   if (fragment === 'fullName') return !isFilled(document.header.fullName)
   if (fragment === 'summary') return !isFilled(document.header.summary)
+  if (fragment === 'consent') return document.consent.enabled && !isFilled(document.consent.text)
   if (fragment === 'contacts') return document.header.contacts.some((contact) => !isFilled(contact.label) || !isFilled(contact.value))
   const separator = fragment.indexOf(':')
   const [kind, id] = [fragment.slice(0, separator), fragment.slice(separator + 1)]

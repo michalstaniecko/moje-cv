@@ -206,9 +206,8 @@ export const en = {
       // Nazwa zwiniętego paska bocznego (szyny) dla czytnika ekranu.
       sidebar: 'Sidebar'
     },
-    // Edycja na stronach CV w Edit mode: przycisk fragmentu strony („Edit: <co>”) i Edit card.
+    // Edycja na stronach CV w Edit mode.
     canvas: {
-      edit: (what: string) => `Edit: ${what}`,
       // Dodawanie na stronach: pasek pod ostatnią stroną, podpowiedź w pustym CV i pigułki „+ …” pod sekcjami.
       addToCv: 'Add to CV:',
       startHint: 'Start with your full name',
@@ -328,7 +327,9 @@ export const en = {
       saveAsNew: 'Save as new clause',
       newName: 'New clause name',
       newNamePlaceholder: 'Name, e.g. Talent Partners',
-      saveFailed: 'Couldn’t save the clause.'
+      saveFailed: 'Couldn’t save the clause.',
+      // Pasek klauzuli na stronie (Field popover): wyłącza klauzulę w tym CV.
+      hide: 'Hide clause'
     },
     photo: {
       legend: 'Photo',

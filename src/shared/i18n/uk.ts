@@ -186,7 +186,6 @@ export const uk: Dictionary = {
       sidebar: 'Бічна панель'
     },
     canvas: {
-      edit: (what) => `Редагувати: ${what}`,
       addToCv: 'Додати до резюме:',
       startHint: 'Почніть з імені та прізвища',
       add: { position: 'Посада', education: 'Освіта', item: 'Елемент' }
@@ -295,7 +294,8 @@ export const uk: Dictionary = {
       saveAsNew: 'Зберегти як нову згоду',
       newName: 'Назва нової згоди',
       newNamePlaceholder: 'Назва, напр., Talent Partners',
-      saveFailed: 'Не вдалося зберегти згоду.'
+      saveFailed: 'Не вдалося зберегти згоду.',
+      hide: 'Приховати згоду'
     },
     photo: {
       legend: 'Фото',

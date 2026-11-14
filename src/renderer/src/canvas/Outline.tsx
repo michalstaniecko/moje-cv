@@ -21,7 +21,8 @@ import type { EditSession } from './useEditSession'
 //   myszą i menu („Przenieś wyżej/niżej”, „Nowa strona przed”, „Ukryj sekcję” z zaznaczeniem, „Dodaj …”) – każda zmiana
 //   to jeden krok cofania. Klik w sekcję przewija strony do jej tytułu i stawia kursor na jego końcu (Page field); sekcja
 //   ukryta albo pusta (bez tytułu na stronie) dostaje kartę tytułu przy swoim wierszu Outline (useEditSession.ts).
-// - „Klauzula zgody” otwiera jej kartę; przełącznik „Pokaż na CV” włącza ją i wyłącza.
+// - „Klauzula zgody” stawia kursor w jej tekście na stronie (pusty jest odsłaniany), a wyłączona – przenosi fokus na
+//   przełącznik „Pokaż na CV”, który ją włącza i wyłącza.
 // Karty otwierane stąd mają kotwicę w wierszu Outline (`added`); gdy część CV jest na stronie, karta stoi przy jej
 // fragmencie (warstwa edycji szuka najpierw fragmentu). Nie pokazuje treści CV poza nazwami.
 export function Outline({
@@ -41,6 +42,7 @@ export function Outline({
   const language = useInterfaceLanguage()
   const countId = useId()
   const outline = useRef<HTMLElement>(null)
+  const consentSwitch = useRef<HTMLInputElement>(null)
   const find = (selector: string) => () => outline.current?.querySelector<HTMLElement>(selector) ?? null
   const rowSelector = (key: string) => `[data-outline-row="${CSS.escape(key)}"]`
 
@@ -49,7 +51,7 @@ export function Outline({
     const key = fragmentKey(target)
     added.remember(key, from)
     window.document
-      .querySelector(`.edit-layer .edit-fragment[data-fragment="${CSS.escape(key)}"]`)
+      .querySelector(`.cv-pages [data-fragment="${CSS.escape(key)}"]`)
       ?.scrollIntoView({ block: 'center' })
     session.openCard(target, key)
   }
@@ -149,13 +151,13 @@ export function Outline({
             type="button"
             className="outline-row-button"
             data-outline-row={fragmentKey({ kind: 'consent' })}
-            aria-haspopup="dialog"
-            onClick={() => openRow({ kind: 'consent' })}
+            onClick={() => (document.consent.enabled ? openRow({ kind: 'consent' }) : consentSwitch.current?.focus())}
           >
             <span className="outline-row-name">{t.consent.title}</span>
           </button>
           <label className="outline-switch">
             <input
+              ref={consentSwitch}
               type="checkbox"
               role="switch"
               checked={document.consent.enabled}

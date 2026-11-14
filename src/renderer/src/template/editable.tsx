@@ -68,8 +68,11 @@ export type JoinedFieldsProps = { fields: EditableField[]; separator: string; te
 //   rozwiniętym fragmentem (jeden napis jak w dokumencie; klik rozwija wpis i otwiera popover klikniętej daty).
 // - `onPagesCommitted` – wołane przed malowaniem po każdym nowym podziale stron (np. przywrócenie kursora w polu
 //   przeniesionym na inną stronę).
+// - `consentField` – pole tekstu klauzuli zgody (rysuje ją `CvPages`, nie szablon – `ConsentText`); null – klauzula
+//   wyłączona.
 export type PageEditing = {
   fieldOf: (block: CvBlock, slot: SlotName, part?: string) => EditableField | null
+  consentField: EditableField | null
   reveal: Reveal
   expanded: ReadonlySet<string>
   Field: ComponentType<PageFieldProps>
@@ -141,6 +144,16 @@ function Joined({ fields, separator, text }: { fields: Editable[]; separator: st
       <PageFieldOf editable={editable} />
     </Fragment>
   ))
+}
+
+// Tekst klauzuli zgody na dole ostatniej strony (rysuje go `CvPages`, poza blokami): w dokumencie sam napis, w Edit
+// mode – Page field (pusty tylko w odsłoniętej klauzuli, z placeholderem).
+export function ConsentText({ text }: { text: string }) {
+  const context = useContext(EditingContext)
+  const field = context?.editing.consentField
+  if (!context || !field) return text
+  const { Field } = context.editing
+  return <Field field={field} text={field.value} measuring={context.measuring} />
 }
 
 type HeaderBlock = Extract<CvBlock, { kind: 'header' }>

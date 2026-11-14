@@ -8,6 +8,7 @@ import type { CvDocument } from '../domain/schema'
 import type { SlotName } from '../template/editable'
 import { templates } from '../template/templates'
 import {
+  consentFieldOf,
   dateChange,
   dateName,
   dateWarningId,
@@ -140,6 +141,19 @@ describe('pageFieldOf', () => {
     )
   })
 
+  it('gives the text of the consent clause while the clause is on', () => {
+    const on = { ...sample, consent: { ...sample.consent, enabled: true, text: 'I agree.' } }
+    expect(consentFieldOf(on, t)).toEqual({
+      key: 'consent:text',
+      fragment: 'consent',
+      label: 'Consent clause',
+      placeholder: 'Consent clause',
+      spellcheck: true,
+      value: 'I agree.'
+    })
+    expect(consentFieldOf({ ...on, consent: { ...on.consent, enabled: false } }, t)).toBeNull()
+  })
+
   it('gives no field for a slot of another block or a block from outside the document', () => {
     const blocks = generateBlocks(sample, templates.classic.geometry)
     const entry = blocks.find((block) => block.id === 'e1')!
@@ -165,6 +179,7 @@ describe('field keys', () => {
     expect(source('ListItemsFields.tsx')).toContain('`list:${item.id}:text`')
     expect(source('ContactsFields.tsx')).toContain('`contact:${contact.id}:label`')
     expect(source('ContactsFields.tsx')).toContain('`contact:${contact.id}:value`')
+    expect(source('ConsentFields.tsx')).toContain(`'consent:text'`)
   })
 
   it('map to the part of the CV and back', () => {
@@ -176,7 +191,8 @@ describe('field keys', () => {
       { kind: 'experienceItem', sectionId: 'experience', itemId: 'e2', field: 'company' },
       { kind: 'experienceItem', sectionId: 'experience', itemId: 'e2', bulletId: 'e2-b3' },
       { kind: 'educationItem', sectionId: 'education', itemId: 'ed1', field: 'institution' },
-      { kind: 'listSection', sectionId: 'skills', itemId: 's2' }
+      { kind: 'listSection', sectionId: 'skills', itemId: 's2' },
+      { kind: 'consent' }
     ] as const
     for (const target of targets) expect(pageFieldTarget(pageFieldKey(target)!, titled)).toEqual(target)
     expect(pageFieldKey({ kind: 'photo' })).toBeNull()
@@ -265,6 +281,7 @@ describe('fieldChange', () => {
     expect(listTexts(fieldChange('list:l2:text', 'French')(sample), 'languages')).toEqual(['English – native', 'French'])
     expect(fieldChange('contact:c2:label', 'E-mail')(sample).header.contacts[1]).toEqual({ id: 'c2', label: 'E-mail', value: 'jane.example@example.com' })
     expect(fieldChange('contact:c2:value', 'jane@example.com')(sample).header.contacts[1]!.value).toBe('jane@example.com')
+    expect(fieldChange('consent:text', 'I agree.\nLine 2')(sample).consent.text).toBe('I agree.\nLine 2')
     expect(fieldChange('experience:gone:role', 'x')(sample)).toBe(sample)
   })
 })
@@ -288,6 +305,10 @@ describe('fragmentHasEmptyField', () => {
     expect(fragmentHasEmptyField('item:ed2', fieldChange('education:ed2:level', '')(sample))).toBe(true)
     expect(fragmentHasEmptyField('list:skills', fieldChange('list:s3:text', '')(sample))).toBe(true)
     expect(fragmentHasEmptyField('contacts', sample)).toBe(false)
+    const consent = (enabled: boolean, text: string) => ({ ...sample, consent: { ...sample.consent, enabled, text } })
+    expect(fragmentHasEmptyField('consent', consent(true, 'I agree.'))).toBe(false)
+    expect(fragmentHasEmptyField('consent', consent(true, ' '))).toBe(true)
+    expect(fragmentHasEmptyField('consent', consent(false, ''))).toBe(false)
     expect(fragmentHasEmptyField('contacts', fieldChange('contact:c3:label', ' ')(sample))).toBe(true)
     expect(fragmentHasEmptyField('contacts', fieldChange('contact:c3:value', '')(sample))).toBe(true)
   })

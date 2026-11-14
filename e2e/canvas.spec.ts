@@ -240,6 +240,9 @@ const fragment = (what: string) => window.locator('.edit-layer').getByRole('butt
 // Przycisk zdjęcia w warstwie edycji (otwiera Field popover zdjęcia, S4).
 const photoButton = () => window.locator('.edit-layer .edit-photo').and(window.getByRole('button', { name: 'Photo', exact: true }))
 const photoPopover = () => window.getByRole('dialog', { name: 'Photo', exact: true })
+// Tekst klauzuli zgody na stronie (Page field) i pasek klauzuli nad nią (S4).
+const consentField = () => window.locator('.preview .cv-pages').getByRole('textbox', { name: 'Consent clause', exact: true })
+const consentToolbar = () => window.getByRole('toolbar', { name: 'Consent clause', exact: true })
 const fragmentNames = () =>
   window
     .locator('.edit-layer .edit-fragment')
@@ -537,7 +540,7 @@ test('composing text with an input method changes the document only when the com
   await expect.poll(caret).toEqual({ key: 'header:fullName', offset: 6, collapsed: true })
 })
 
-test('the pages work from the keyboard alone: Tab goes through every page field and date in document order, also into the joined lines of entries, then through the editing layer; Enter opens a card, Tab leaves it', async () => {
+test('the pages work from the keyboard alone: Tab goes through every page field and date in document order, also into the joined lines of entries and contacts, then through the editing layer; Enter opens the photo popover, Tab leaves it', async () => {
   await openFirstCv()
   // Pola i żetony dat stron w kolejności czytania (Classic: daty przed stanowiskiem, tytuł listy obok niej); linia
   // złączona z kilku pól wpisu bez fokusu (np. „firma – miejscowość”, daty) to jeden napis, którego pola Tab odwiedza po
@@ -572,9 +575,7 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
   // Warstwa edycji: przycisk zdjęcia (żadna część strony nie ma już Edit card), uchwyty, pigułki „+” i pasek.
   await expect(photoButton()).toBeVisible()
   expect(await fragmentNames()).toEqual([])
-  const stops = window.locator(
-    '.edit-layer .edit-fragment, .edit-layer .edit-photo, .edit-layer .edit-handle .row-handle, .edit-layer .edit-pill, .edit-layer .add-to-cv button'
-  )
+  const stops = window.locator('.edit-layer .edit-photo, .edit-layer .edit-handle .row-handle, .edit-layer .edit-pill, .edit-layer .add-to-cv button')
   const stopNames = await stops.evaluateAll((elements) => elements.map((element) => element.textContent || element.getAttribute('aria-label')))
   expect(stopNames.slice(1, 3)).toEqual(['Actions for section “Work experience”', 'Actions for position “Senior Procurement Specialist”'])
   expect(stopNames.slice(-3)).toEqual(['Actions for section “Languages”', '+ Item', 'Consent clause'])
@@ -611,7 +612,7 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
   await expect(stops.nth(1)).toBeFocused()
 })
 
-test('the Edit card follows its fragment when the page split and the zoom change, always at 100%', async () => {
+test('the consent clause toolbar stands above the clause while the clause has the focus, at 100% at any zoom, and follows the clause to another page', async () => {
   await openFirstCv()
   await window.setViewportSize({ width: 1600, height: 1500 })
   const preview = window.locator('.preview')
@@ -619,38 +620,47 @@ test('the Edit card follows its fragment when the page split and the zoom change
   await preview.getByRole('button', { name: 'Zoom out' }).click()
   await preview.getByRole('button', { name: 'Zoom out' }).click()
   await expect(preview.locator('.preview-zoom-value')).toHaveText('50%')
-
-  // Długie podsumowanie przenosi klauzulę zgody na kolejną stronę; karta otwarta przy niej.
   await enableConsent('I agree to the processing of my personal data.')
-  const clause = fragment('Consent clause')
-  const pageBefore = await clause.getAttribute('data-page')
-  await formField('Summary').fill('Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(70))
-  await expect(clause).not.toHaveAttribute('data-page', pageBefore!)
-  await clickOnPage(window.locator('.preview .cv-page .cv-consent'))
-  const clauseCard = card('Consent clause')
-  await expect(clauseCard).toBeVisible()
-  await expectCardNextTo(clauseCard, clause)
-  // Położenie na stronach, nie w oknie: przewijanie panelu (scroll anchoring) może trzymać fragment w miejscu okna.
-  const offset = () => clause.evaluate((button) => (button as unknown as { offsetTop: number }).offsetTop)
-  const before = await offset()
+  const clause = consentField()
+  const toolbar = consentToolbar()
+  await expect(toolbar).toHaveCount(0)
+  await clickAtCharacter(clause, 3)
+  await expect(toolbar).toBeVisible()
+  const expectAbove = () =>
+    expect
+      .poll(async () => {
+        const bar = (await toolbar.boundingBox())!
+        const text = (await clause.boundingBox())!
+        return Math.abs(bar.y + bar.height - (text.y - 6)) < 1.5 && bar.x >= text.x - 1
+      })
+      .toBe(true)
+  await expectAbove()
+  const width = (await toolbar.boundingBox())!.width
 
-  // Cofnięcie (z fokusem w karcie) zmienia podział stron – karta jedzie za fragmentem.
+  // Długi tekst klauzuli przenosi ją na kolejną stronę: pasek jedzie za nią, kursor zostaje w niej.
+  const pageBefore = await pageIndexOf(clause)
+  await window.keyboard.press('Meta+ArrowDown')
+  await window.keyboard.insertText(' Lorem ipsum dolor sit amet, consectetur adipiscing elit.'.repeat(150))
+  await expect.poll(() => pageIndexOf(clause)).toBeGreaterThan(pageBefore)
+  await expect(clause).toBeFocused()
+  await clause.scrollIntoViewIfNeeded()
+  await expectAbove()
   await window.keyboard.press('Meta+z')
-  await expect(formField('Summary')).not.toHaveValue(/Lorem/)
-  await expect(clause).toHaveAttribute('data-page', pageBefore!)
-  await expect.poll(offset).not.toBeCloseTo(before, 0)
-  await expect(clauseCard).toBeVisible()
-  await expectCardNextTo(clauseCard, clause)
+  await expect.poll(() => pageIndexOf(clause)).toBe(pageBefore)
+  await expectAbove()
 
-  // Zmiana skali: fragment rośnie, karta zostaje w skali 1:1 i dalej stoi przy nim.
+  // Zmiana skali: klauzula rośnie, pasek zostaje w skali 1:1 i dalej stoi nad nią.
   const small = (await clause.boundingBox())!
   await preview.getByRole('button', { name: 'Zoom in' }).click()
   await expect(preview.locator('.preview-zoom-value')).toHaveText('75%')
   await expect.poll(async () => (await clause.boundingBox())!.width).toBeGreaterThan(small.width * 1.4)
-  await expect(clauseCard).toBeVisible()
-  // Klauzula na dole ostatniej strony – w powiększeniu może wyjść poza okno (karta zostaje wtedy w oknie).
   await clause.scrollIntoViewIfNeeded()
-  await expectCardNextTo(clauseCard, clause)
+  await expectAbove()
+  expect((await toolbar.boundingBox())!.width).toBeCloseTo(width, 0)
+
+  // Klik obok klauzuli i paska chowa pasek.
+  await clickAtCharacter(pageField('Full name'), 1)
+  await expect(toolbar).toHaveCount(0)
 })
 
 test('Preview mode has no editing layer and no page fields: switching closes the open Field popover and focuses the toggle; Edit mode does not reopen it', async () => {
@@ -675,12 +685,12 @@ test('Preview mode has no editing layer and no page fields: switching closes the
 })
 
 // Kontrakt znaczników edycji (ADR-0009) i Page fields (ADR-0010): w każdym szablonie każde pole tekstowe Sample CV
-// (z włączoną klauzulą zgody) jest Page field w swoim elemencie strony – imię i nazwisko, podsumowanie, tytuły sekcji,
-// stanowiska, punkty, elementy list; linie złączone z kilku pól (firma – miejscowość, poziom, kierunek, uczelnia) są
-// polami po wejściu we wpis; daty każdego wpisu to przycisk w jego `.cv-date` (żetony dat po wejściu we wpis) – a każdy
-// fragment, który ma jeszcze Edit card, ma swój przycisk w warstwie edycji na swoim fragmencie strony. Tytuły list w Classic stoją obok listy (wewnątrz wiersza listy), w Modern i Bold nad nią.
+// (z włączoną klauzulą zgody) jest Page field w swoim elemencie strony – imię i nazwisko, kontakty, podsumowanie, tytuły
+// sekcji, stanowiska, punkty, elementy list, klauzula; linie złączone z kilku pól (firma – miejscowość, poziom, kierunek,
+// uczelnia, w Classic „etykieta: wartość”) są polami po wejściu we wpis albo kontakty; daty każdego wpisu to przycisk
+// w jego `.cv-date` (żetony dat po wejściu we wpis), a zdjęcie ma przycisk w warstwie edycji. Tytuły list w Classic stoją obok listy (wewnątrz wiersza listy), w Modern i Bold nad nią.
 for (const template of ['Classic', 'Modern', 'Bold'] as const) {
-  test(`markup contract: every text field of the Sample CV in the ${template} template is a page field, and every part with a card has its element in the editing layer`, async () => {
+  test(`markup contract: every text field of the Sample CV in the ${template} template is a page field, and the photo has its button in the editing layer`, async () => {
     await openFirstCv()
     const preview = window.locator('.preview')
     const picker = window.getByRole('radiogroup', { name: 'Template' })
@@ -722,22 +732,13 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     await expect(dates).toHaveCount(positions.length + educations.length)
     await expect(dates.first()).toHaveText('03.2023 – present')
 
-    const expected: [Locator, Locator][] = [
-      [photoButton(), page('.cv-photo')],
-      [fragment('Consent clause'), page('.cv-consent')]
-    ]
-    await expect.poll(async () => [...new Set(await fragmentNames())].sort()).toEqual(['Consent clause'])
-    for (const [button, element] of expected) {
-      const name = (await button.first().textContent())!
-      const box = (await element.boundingBox())!
-      const [x, y] = [box.x + box.width / 2, box.y + box.height / 2]
-      // Fragment rozdzielony podziałem stron ma przycisk na każdej stronie – element leży pod jednym z nich.
-      const buttons = await Promise.all((await button.all()).map((candidate) => candidate.boundingBox()))
-      expect(
-        buttons.some((button) => button && x >= button.x && x <= button.x + button.width && y >= button.y && y <= button.y + button.height),
-        name
-      ).toBe(true)
-    }
+    // Żadna część strony nie ma już przycisku fragmentu (Edit card); zdjęcie ma przycisk nad sobą.
+    expect(await fragmentNames()).toEqual([])
+    const photoBox = (await page('.cv-photo').boundingBox())!
+    const buttonBox = (await photoButton().boundingBox())!
+    const [x, y] = [photoBox.x + photoBox.width / 2, photoBox.y + photoBox.height / 2]
+    expect(x >= buttonBox.x && x <= buttonBox.x + buttonBox.width && y >= buttonBox.y && y <= buttonBox.y + buttonBox.height).toBe(true)
+    await expect(page('.cv-consent').getByRole('textbox', { name: 'Consent clause', exact: true })).toHaveText('I agree to the processing of my personal data.')
 
     // Klik w tekst stawia kursor w klikniętym polu w każdym szablonie – także w linii złączonej z kilku pól.
     const company = page('[data-block-id="e2"] .cv-company')
@@ -759,10 +760,10 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     await window.keyboard.press('Escape')
     await expect(window.getByRole('dialog')).toHaveCount(0)
     await expect.poll(focusedKey).toMatch(/^experience:e3:(start|end)$/)
-    // Klauzula zgody – jeszcze w karcie; zdjęcie i kontakty też.
-    await clickOnPage(page('.cv-consent'))
-    await expect(card('Consent clause').getByRole('textbox', { name: 'Text in this CV' })).toBeFocused()
-    await window.keyboard.press('Escape')
+    // Klauzula zgody: kursor w klikniętym znaku, nad nią pasek klauzuli.
+    await clickAtCharacter(consentField(), 2)
+    await expect.poll(caret).toEqual({ key: 'consent:text', offset: 2, collapsed: true })
+    await expect(consentToolbar()).toBeVisible()
     // N-te dziecko `.cv-contact` to n-ty kontakt: etykieta i wartość to Page fields (w Classic – jedna linia
     // „etykieta: wartość” do wejścia w kontakty); klik stawia kursor w klikniętym znaku.
     for (const index of [1, 3]) {
@@ -1557,6 +1558,81 @@ test('the label of a contact on the page suggests the usual labels in a list und
   await expect(list).toHaveCount(0)
 })
 
+test('the consent clause is edited on the page; its toolbar saves the text as a new clause, applies and restores a library clause and hides the clause; each change is one undo step', async () => {
+  await openFirstCv()
+  await enableConsent('I agree to the processing of my personal data.')
+  const form = window.locator('.editor-form')
+  const formText = form.getByLabel('Text in this CV')
+  const clause = consentField()
+  const toolbar = consentToolbar()
+  const library = toolbar.getByLabel('Clause from the library')
+
+  // Pisanie i Enter (klauzula pokazuje nowe linie we wszystkich szablonach) zmieniają stronę, formularz i PDF.
+  await clickAtCharacter(clause, 'I agree to the processing of my personal data'.length)
+  await window.keyboard.press('ArrowRight')
+  await window.keyboard.press('Enter')
+  await window.keyboard.type('Second line.')
+  await expect(formText).toHaveValue('I agree to the processing of my personal data.\nSecond line.')
+  const pdfPath = join(outputDir, 'clause.pdf')
+  await stubSaveDialog(pdfPath)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: clause.pdf')).toBeVisible()
+  expect(await pdfText(pdfPath)).toContain('Second line.')
+
+  // Pasek: pusta biblioteka – wybór nieaktywny; Tab z tekstu wchodzi do paska, Shift+Tab wraca.
+  await clickAtCharacter(clause, 2)
+  await expect(toolbar).toBeVisible()
+  await expect(library).toBeDisabled()
+  await expect(toolbar.getByRole('button')).toHaveText(['Save as new clause', 'Hide clause'])
+  await window.keyboard.press('Tab')
+  await expect(toolbar.getByRole('button', { name: 'Save as new clause' })).toBeFocused()
+  await window.keyboard.press('Shift+Tab')
+  await expect(clause).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'consent:text', offset: 2, collapsed: true })
+
+  // „Save as new clause” pyta tylko o nazwę; klauzula z biblioteki wybrana, kursor wraca do tekstu.
+  await window.keyboard.press('Tab')
+  await window.keyboard.press('Enter')
+  await expect(toolbar.getByLabel('New clause name')).toBeFocused()
+  await window.keyboard.type('Recruitment')
+  await window.keyboard.press('Enter')
+  await expect(clause).toBeFocused()
+  await expect(library.locator('option:checked')).toHaveText('Recruitment')
+  await expect(form.getByLabel('Clause from the library').locator('option:checked')).toHaveText('Recruitment')
+
+  // Poprawka w tekście – „Restore from library” przywraca treść z biblioteki.
+  await window.keyboard.type('Dear Sir. ')
+  const restore = toolbar.getByRole('button', { name: 'Restore from library' })
+  await expect(restore).toBeVisible()
+  await restore.click()
+  await expect(formText).toHaveValue('I agree to the processing of my personal data.\nSecond line.')
+  await expect(restore).toHaveCount(0)
+  await expect(clause).toBeFocused()
+
+  // Druga klauzula i wybór z biblioteki w pasku: tekst w CV to kopia klauzuli; wybór to jeden krok cofania.
+  await window.keyboard.press('Meta+a')
+  await window.keyboard.type('Short clause.')
+  await toolbar.getByRole('button', { name: 'Save as new clause' }).click()
+  await window.keyboard.type('Short')
+  await window.keyboard.press('Enter')
+  await expect(library.locator('option:checked')).toHaveText('Short')
+  await library.selectOption({ label: 'Recruitment' })
+  await expect(formText).toHaveValue('I agree to the processing of my personal data.\nSecond line.')
+  await expect(clause).toHaveText(/^I agree to the processing of my personal data\.\s*Second line\.$/)
+  await clickAtCharacter(clause, 1)
+  await window.keyboard.press('Meta+z')
+  await expect(formText).toHaveValue('Short clause.')
+
+  // „Hide clause”: klauzula znika ze strony (zostaje w CV), pasek też; cofnięcie ją przywraca.
+  await toolbar.getByRole('button', { name: 'Hide clause' }).click()
+  await expect(window.locator('.preview .cv-page .cv-consent')).toHaveCount(0)
+  await expect(toolbar).toHaveCount(0)
+  await expect(form.getByLabel('Show the clause at the bottom of the last page')).not.toBeChecked()
+  await window.keyboard.press('Meta+z')
+  await expect(clause).toHaveText('Short clause.')
+  await expect(form.getByLabel('Show the clause at the bottom of the last page')).toBeChecked()
+})
+
 // ---------- „Projekt CV” w pasku narzędzi ----------
 
 const designButton = () => window.locator('.toolbar').getByRole('button', { name: 'CV design', exact: true })
@@ -2099,14 +2175,12 @@ test('a full CV can be built from a new CV with the editing layer and cards alon
     await window.keyboard.type(`${text} 2`)
   }
 
-  // Klauzula zgody: włączona przyciskiem paska, fokus na tekście.
+  // Klauzula zgody: włączona przyciskiem paska, kursor w jej pustym tekście na stronie (z placeholderem).
   await bar('Consent clause').click()
-  const consent = card('Consent clause')
-  await expect(consent.getByLabel('Show the clause at the bottom of the last page')).toBeChecked()
-  await expect(consent.getByLabel('Text in this CV')).toBeFocused()
+  await expect(consentField()).toBeFocused()
+  expect(await placeholderOf(consentField())).toBe('"Consent clause"')
   await window.keyboard.type('I agree to the processing of my personal data.')
   await expect(window.locator('.preview .cv-page .cv-consent')).toHaveText('I agree to the processing of my personal data.')
-  await window.keyboard.press('Escape')
 
   // Wszystko jest na stronach – pasek znika.
   await expect(addBar()).toHaveCount(0)
@@ -2280,7 +2354,7 @@ test('sections are reordered in the Outline by dragging and from the row menu, a
   await expect.poll(pageSectionTitles).toEqual(['Work experience', 'Education', 'Skills', 'Languages'])
 })
 
-test('in a new CV the Outline marks the empty sections; “Add …” in a row menu opens the new entry’s card at the row, and the consent clause is switched on and edited from the Outline', async () => {
+test('in a new CV the Outline marks the empty sections; “Add …” in a row menu opens the new entry’s card at the row, and the consent clause is switched on from the Outline and edited on the page', async () => {
   await openNewCv()
   const nav = outline()
   await expect(nav.locator('.outline-section')).toHaveText([/^Work experienceempty$/, /^Educationempty$/, /^Skillsempty$/, /^Languagesempty$/])
@@ -2297,14 +2371,16 @@ test('in a new CV the Outline marks the empty sections; “Add …” in a row m
   await expectCardNextTo(card('Position “Buyer”'), roleField('Buyer'))
   await window.keyboard.press('Escape')
 
+  // Wyłączona klauzula: klik w jej wiersz przenosi fokus na przełącznik; włączona – kursor w jej tekście na stronie.
   const consentSwitch = nav.getByRole('switch', { name: 'Show on CV' })
+  await nav.getByRole('button', { name: 'Consent clause' }).click()
+  await expect(consentSwitch).toBeFocused()
   await consentSwitch.check()
   await nav.getByRole('button', { name: 'Consent clause' }).click()
-  const consent = card('Consent clause')
-  await expect(consent.getByLabel('Text in this CV')).toBeFocused()
-  await consent.getByLabel('Text in this CV').fill('I agree to the processing of my data.')
+  await expect(consentField()).toBeFocused()
+  await window.keyboard.type('I agree to the processing of my data.')
   await expect(window.locator('.preview .cv-page .cv-consent')).toHaveText('I agree to the processing of my data.')
-  await window.keyboard.press('Escape')
+  await expect(window.getByRole('dialog')).toHaveCount(0)
   await consentSwitch.uncheck()
   await expect(window.locator('.preview .cv-page .cv-consent')).toHaveCount(0)
   await expect(consentSwitch).not.toBeChecked()

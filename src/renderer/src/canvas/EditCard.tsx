@@ -1,8 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type Ref } from 'react'
 import type { Dictionary } from '../../../shared/i18n/en'
-import type { Clause, ClauseContent, CvDocument, EducationItem, ExperienceItem } from '../domain/schema'
+import type { CvDocument, EducationItem, ExperienceItem } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
-import { ConsentFields } from '../editor/fields/ConsentFields'
 import { EducationItemFields } from '../editor/fields/EducationItemFields'
 import { educationName, entryName } from '../editor/fields/entryNames'
 import { ExperienceItemFields } from '../editor/fields/ExperienceItemFields'
@@ -17,14 +16,9 @@ import { markInput } from '../preview/keystrokeTiming'
 import { anchoredPosition, type Box } from './anchoredPosition'
 import type { EditTarget } from './editTargets'
 
-// Części CV, które na stronie otwierają Edit card (przycisk fragmentu warstwy edycji). Imię i nazwisko, kontakty,
-// podsumowanie, tytuły sekcji, wpisy (tekst i żetony dat) i listy edytuje się już wprost na stronie (Page fields,
-// pageFields.ts):
-// karta tytułu i listy otwiera się jeszcze tylko z Outline i dodawania dla sekcji, której nie ma na stronach
-// (useEditSession.ts), karta wpisu – tylko dla nowego, pustego wpisu, a karta zdjęcia – z „Add to CV”, gdy zdjęcia nie
-// ma (do S5). Zdjęcie na stronie ma Field popover (PhotoPopover.tsx).
-const cardKinds: ReadonlySet<EditTarget['kind']> = new Set(['consent'])
-export const hasCard = (target: EditTarget) => cardKinds.has(target.kind)
+// Edit card (wycofywana, docs/specs/wysiwyg-editing.md, W20): żadna część strony już jej nie otwiera – tekst CV to
+// Page fields, a wartości nietekstowe mają Field popovers. Zostaje do S5 dla tego, czego jeszcze nie ma na stronach:
+// nowego, pustego wpisu, sekcji ukrytej albo pustej (z Outline i dodawania) i zdjęcia z „Add to CV”, gdy zdjęcia nie ma.
 
 const findSection = (document: CvDocument, sectionId: string) =>
   document.sections.find((candidate) => candidate.id === sectionId)
@@ -39,7 +33,7 @@ const findEducation = (document: CvDocument, sectionId: string, itemId: string):
   return section?.type === 'education' ? section.items.find((item) => item.id === itemId) : undefined
 }
 
-// Nazwa części CV: w przycisku fragmentu („Edit: <nazwa>”) i jako nazwa karty (`aria-label`).
+// Nazwa części CV – nazwa karty (`aria-label`).
 export function cardLabel(target: EditTarget, document: CvDocument, t: Dictionary['editor']): string {
   switch (target.kind) {
     case 'fullName':
@@ -71,22 +65,9 @@ export function cardLabel(target: EditTarget, document: CvDocument, t: Dictionar
   }
 }
 
-// Biblioteka klauzul dla karty klauzuli zgody (jak w CV form).
-export type ClauseLibrary = { clauses: Clause[]; onSaveClause: (content: ClauseContent) => Promise<Clause> }
-
 // Pola karty – te same komponenty co w CV form (te same klucze łączenia kroków cofania). Część CV, której już nie ma
 // (chwilę przed zamknięciem karty po cofnięciu albo usunięciu), nie ma pól.
-function CardFields({
-  target,
-  editor,
-  document,
-  library
-}: {
-  target: EditTarget
-  editor: CvEditor
-  document: CvDocument
-  library: ClauseLibrary
-}) {
+function CardFields({ target, editor, document }: { target: EditTarget; editor: CvEditor; document: CvDocument }) {
   const t = useDictionary().editor
   switch (target.kind) {
     case 'fullName':
@@ -122,19 +103,6 @@ function CardFields({
         </>
       )
     }
-    case 'consent':
-      return (
-        <>
-          <CardHeading>{t.consent.title}</CardHeading>
-          <ConsentFields
-          editor={editor}
-          consent={document.consent}
-          clauses={library.clauses}
-          onSaveClause={library.onSaveClause}
-            inCard
-          />
-        </>
-      )
     default:
       return null
   }
@@ -160,8 +128,6 @@ function focusKey(target: EditTarget): string | undefined {
       return target.field
     case 'listSection':
       return target.itemId
-    case 'consent':
-      return 'text'
     default:
       return undefined
   }
@@ -194,7 +160,6 @@ export function EditCard({
   target,
   editor,
   document,
-  library,
   locate,
   onClose,
   onTabOut,
@@ -204,7 +169,6 @@ export function EditCard({
   target: EditTarget
   editor: CvEditor
   document: CvDocument
-  library: ClauseLibrary
   locate: () => CardAnchor
   onClose: () => void
   onTabOut: (direction: 'forward' | 'backward') => boolean
@@ -305,7 +269,7 @@ export function EditCard({
       </button>
       <div className="form">
         <RemoveProvider value={onRemove}>
-          <CardFields target={target} editor={editor} document={document} library={library} />
+          <CardFields target={target} editor={editor} document={document} />
         </RemoveProvider>
       </div>
     </div>

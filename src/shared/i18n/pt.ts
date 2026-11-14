@@ -185,7 +185,6 @@ export const pt: Dictionary = {
       sidebar: 'Barra lateral'
     },
     canvas: {
-      edit: (what) => `Editar: ${what}`,
       addToCv: 'Adicionar ao currículo:',
       startHint: 'Comece pelo seu nome completo',
       add: { position: 'Cargo', education: 'Formação', item: 'Item' }
@@ -294,7 +293,8 @@ export const pt: Dictionary = {
       saveAsNew: 'Salvar como nova cláusula',
       newName: 'Nome da nova cláusula',
       newNamePlaceholder: 'Nome, ex.: Talent Partners',
-      saveFailed: 'Não foi possível salvar a cláusula.'
+      saveFailed: 'Não foi possível salvar a cláusula.',
+      hide: 'Ocultar a cláusula'
     },
     photo: {
       legend: 'Foto',

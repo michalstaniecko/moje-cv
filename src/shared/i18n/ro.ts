@@ -185,7 +185,6 @@ export const ro: Dictionary = {
       sidebar: 'Bară laterală'
     },
     canvas: {
-      edit: (what) => `Editează: ${what}`,
       addToCv: 'Adaugă în CV:',
       startHint: 'Începe cu numele complet',
       add: { position: 'Post', education: 'Studii', item: 'Element' }
@@ -294,7 +293,8 @@ export const ro: Dictionary = {
       saveAsNew: 'Salvează ca clauză nouă',
       newName: 'Numele noii clauze',
       newNamePlaceholder: 'Nume, ex. Talent Partners',
-      saveFailed: 'Clauza nu a putut fi salvată.'
+      saveFailed: 'Clauza nu a putut fi salvată.',
+      hide: 'Ascunde clauza'
     },
     photo: {
       legend: 'Fotografie',

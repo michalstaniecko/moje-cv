@@ -181,7 +181,6 @@ export const id: Dictionary = {
       sidebar: 'Bilah samping'
     },
     canvas: {
-      edit: (what) => `Edit: ${what}`,
       addToCv: 'Tambahkan ke CV:',
       startHint: 'Mulailah dengan nama lengkap Anda',
       add: { position: 'Posisi', education: 'Pendidikan', item: 'Item' }
@@ -290,7 +289,8 @@ export const id: Dictionary = {
       saveAsNew: 'Simpan sebagai klausul baru',
       newName: 'Nama klausul baru',
       newNamePlaceholder: 'Nama, mis. Talent Partners',
-      saveFailed: 'Tidak dapat menyimpan klausul.'
+      saveFailed: 'Tidak dapat menyimpan klausul.',
+      hide: 'Sembunyikan klausul'
     },
     photo: {
       legend: 'Foto',

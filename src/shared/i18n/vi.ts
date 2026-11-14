@@ -181,7 +181,6 @@ export const vi: Dictionary = {
       sidebar: 'Thanh bên'
     },
     canvas: {
-      edit: (what) => `Sửa: ${what}`,
       addToCv: 'Thêm vào CV:',
       startHint: 'Bắt đầu với họ và tên của bạn',
       add: { position: 'Vị trí', education: 'Học vấn', item: 'Mục' }
@@ -290,7 +289,8 @@ export const vi: Dictionary = {
       saveAsNew: 'Lưu thành điều khoản mới',
       newName: 'Tên điều khoản mới',
       newNamePlaceholder: 'Tên, vd. Talent Partners',
-      saveFailed: 'Không thể lưu điều khoản.'
+      saveFailed: 'Không thể lưu điều khoản.',
+      hide: 'Ẩn điều khoản'
     },
     photo: {
       legend: 'Ảnh',

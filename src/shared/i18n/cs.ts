@@ -186,7 +186,6 @@ export const cs: Dictionary = {
       sidebar: 'Postranní panel'
     },
     canvas: {
-      edit: (what) => `Upravit: ${what}`,
       addToCv: 'Přidat do CV:',
       startHint: 'Začněte jménem a příjmením',
       add: { position: 'Pozice', education: 'Vzdělání', item: 'Položka' }
@@ -295,7 +294,8 @@ export const cs: Dictionary = {
       saveAsNew: 'Uložit jako nový souhlas',
       newName: 'Název nového souhlasu',
       newNamePlaceholder: 'Název, např. Talent Partners',
-      saveFailed: 'Souhlas se nepodařilo uložit.'
+      saveFailed: 'Souhlas se nepodařilo uložit.',
+      hide: 'Skrýt souhlas'
     },
     photo: {
       legend: 'Fotka',

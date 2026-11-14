@@ -5,6 +5,7 @@ import { formatYearMonth } from '../domain/dates'
 import { sampleCvs } from '../domain/sampleCv'
 import type { CvDocument, EducationItem, ExperienceItem, Section } from '../domain/schema'
 import { CvBlockView } from './CvBlockView'
+import { CvPages } from './CvPages'
 import { EditingProvider, type EditableField, type JoinedFieldsProps, type PageEditing, type PageFieldProps, type SlotName } from './editable'
 import { templates } from './templates'
 
@@ -100,6 +101,7 @@ function editingWith(document: CvDocument, reveal: string[] = [], expanded: stri
       const value = (entry.item as unknown as Record<string, unknown>)[slot]
       return typeof value === 'string' ? field(`${prefix}:${first}:${slot}`, fragment, value) : null
     },
+    consentField: document.consent.enabled ? field('consent:text', 'consent', document.consent.text) : null,
     reveal: new Set(reveal),
     expanded: new Set([...reveal, ...expanded]),
     Field,
@@ -354,6 +356,17 @@ describe('editing slots', () => {
       }
     })
   }
+
+  it('draw the text of the consent clause as a field, also empty while the clause is revealed', () => {
+    const consent = (text: string): CvDocument => ({ ...sample, consent: { enabled: true, clauseId: null, text } })
+    const measured = (document: CvDocument, reveal: string[] = []) => renderToStaticMarkup(<CvPages document={document} editing={editingWith(document, reveal)} />)
+    expect(measured(consent('I agree.\nLine 2'))).toContain(
+      '<p class="cv-consent"><span data-field-key="consent:text" data-measuring="true" data-placeholder="text">I agree.\nLine 2</span></p>'
+    )
+    expect(measured(consent(' '))).not.toContain('cv-consent')
+    expect(measured(consent(''), ['consent'])).toContain('<p class="cv-consent"><span data-field-key="consent:text" data-measuring="true" data-placeholder="text"></span></p>')
+    expect(measured({ ...consent(''), consent: { enabled: false, clauseId: null, text: '' } }, ['consent'])).not.toContain('cv-consent')
+  })
 
   it('draw the measuring copy with the same fields, marked as measuring', () => {
     const page = render(sample, 'modern', editingWith(sample), { measuring: true })

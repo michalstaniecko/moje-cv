@@ -188,7 +188,6 @@ export const de: Dictionary = {
       sidebar: 'Seitenleiste'
     },
     canvas: {
-      edit: (what) => `Bearbeiten: ${what}`,
       addToCv: 'Zum Lebenslauf hinzufügen:',
       startHint: 'Beginne mit deinem vollständigen Namen',
       add: { position: 'Position', education: 'Ausbildung', item: 'Eintrag' }
@@ -297,7 +296,8 @@ export const de: Dictionary = {
       saveAsNew: 'Als neue Erklärung sichern',
       newName: 'Name der neuen Erklärung',
       newNamePlaceholder: 'Name, z. B. Talent Partners',
-      saveFailed: 'Die Erklärung konnte nicht gesichert werden.'
+      saveFailed: 'Die Erklärung konnte nicht gesichert werden.',
+      hide: 'Erklärung ausblenden'
     },
     photo: {
       legend: 'Foto',

@@ -1,15 +1,4 @@
-import {
-  Fragment as Group,
-  memo,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type MouseEvent,
-  type RefObject
-} from 'react'
+import { Fragment as Group, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { isEndBeforeStart } from '../domain/dates'
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
@@ -20,18 +9,9 @@ import { useAddControls, type AddedAnchor } from './AddControls'
 import { BlockHandle, useBlockMenu } from './BlockMenu'
 import { ContactLabelSuggestions } from './ContactLabelSuggestions'
 import { DatePopover, openDatesAt, type DatePopoverStore } from './DatePopover'
-import { cardLabel, EditCard, hasCard, type CardAnchor, type ClauseLibrary } from './EditCard'
-import {
-  blockTarget,
-  editMarkupContract,
-  fragmentKey,
-  fragmentTarget,
-  hitTarget,
-  sectionOf,
-  type ContractHit,
-  type ContractPart,
-  type EditTarget
-} from './editTargets'
+import { ConsentToolbar, type ClauseLibrary } from './ConsentToolbar'
+import { EditCard, type CardAnchor } from './EditCard'
+import { blockTarget, fragmentTarget, sectionOf } from './editTargets'
 import type { Fragment, Rect } from './fragmentRects'
 import { dateWarningId } from './pageFields'
 import { activateJoined } from './PageField'
@@ -44,15 +24,16 @@ import type { EditSession } from './useEditSession'
 // fragment (docs/specs/inline-editing-redesign.md, Q26).
 export const CONTROLS_MIN_SCALE = 0.5
 
-// Warstwa edycji (ADR-0009): leży w przewijanym panelu stron obok `.preview-pages`, poza korzeniem `.cv`, więc nie
-// zmienia ani piksela stron. Każdy fragment strony z Edit card to przezroczysty przycisk „Edit: <co>” nad nim
-// (kolejność dokumentu, obrys przy najechaniu i fokusie), który otwiera kartę: klik – z fokusem na klikniętym polu
-// (kontrakt znaczników), Enter/spacja – na pierwszym polu. Istnieje tylko w Edit mode.
-// Tytuły sekcji i wpisy mają przed przyciskiem fragmentu uchwyt menu w marginesie kartki (BlockMenu.tsx); przy skali
+// Warstwa edycji (ADR-0009, ADR-0010): leży w przewijanym panelu stron obok `.preview-pages`, poza korzeniem `.cv`, więc
+// nie zmienia ani piksela stron. Tekst CV edytuje się na stronach (Page fields), więc żadna część strony nie otwiera już
+// Edit card; w warstwie są to, co nie jest tekstem: przycisk zdjęcia (Field popover zdjęcia, PhotoPopover.tsx), Field
+// popovers dat, podpowiedzi etykiet kontaktu i pasek klauzuli zgody, ⚠ odwróconych dat. Istnieje tylko w Edit mode.
+// Tytuły sekcji i wpisy mają uchwyt menu w marginesie kartki (BlockMenu.tsx); przy skali
 // poniżej CONTROLS_MIN_SCALE uchwytów nie ma. Dodawanie (AddControls.tsx): pigułki „+” pod sekcjami (też tylko od
 // CONTROLS_MIN_SCALE), pasek „Add to CV” pod ostatnią stroną i podpowiedź w pustym CV – wszystko poza treścią kartek.
-// Kartę zamyka Escape (fokus wraca na fragment), klik w tło strony lub poza stronę (poza kartą, fragmentami i paskiem
-// podglądu), przejście do Preview mode i wyjście z edytora. `onFocusLost` – fokus nie ma dokąd wrócić (fragment zniknął).
+// Kartę (już tylko nowego, pustego wpisu i sekcji, której nie ma na stronach – do S5) zamyka Escape (fokus wraca na jej
+// kotwicę), klik w tło strony lub poza stronę (poza kartą, kontrolkami warstwy i paskiem podglądu), przejście do Preview
+// mode i wyjście z edytora. `onFocusLost` – fokus nie ma dokąd wrócić (fragment zniknął).
 export function EditLayer({
   document,
   editor,
@@ -73,27 +54,18 @@ export function EditLayer({
   const layer = useRef<HTMLDivElement>(null)
   const card = useRef<HTMLDivElement>(null)
   const { fragments, pages } = useFragmentRects({ layer, panel, document, layout, scale })
-  const t = useDictionary().editor
   const { card: open, openCard, closeCard } = session
 
-  const fragmentButtons = useCallback(
-    (key?: string) =>
-      [...(layer.current?.querySelectorAll<HTMLButtonElement>('.edit-fragment') ?? [])].filter(
-        (button) => key === undefined || button.dataset['fragment'] === key
-      ),
-    []
-  )
   const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, added, onFocusLost, onRemove })
   const compact = scale < CONTROLS_MIN_SCALE
   const addOnPage = useAddControls({ editor, document, session, fragments, pages, layer, added, compact })
-  // Element, przy którym stoi karta: przycisk fragmentu albo – fragmentu edytowanego na stronie (nowy wpis, do S5) – jego
-  // pierwsze pole tekstu na stronie (nie żeton daty), a dla nowego, jeszcze pustego elementu – przycisk, którym go dodano (uchwyt menu, pigułka
-  // „+”, pasek „Add to CV”, podpowiedź w pustym CV).
-  // Najpierw Page field (fokus w nim nie rozwija wpisu), dopiero potem linia złączona.
+  // Element, przy którym stoi karta: pierwsze pole tekstu fragmentu na stronie (nie żeton daty; nowy wpis, do S5), a dla
+  // nowego, jeszcze pustego elementu – przycisk, którym go dodano (uchwyt menu, pigułka „+”, pasek „Add to CV”,
+  // podpowiedź w pustym CV, wiersz Outline). Najpierw Page field (fokus w nim nie rozwija wpisu), dopiero potem linia
+  // złączona.
   const onPage = (key: string): HTMLElement | undefined => {
     const selector = `.cv-pages [data-fragment="${CSS.escape(key)}"]`
     return (
-      fragmentButtons(key)[0] ??
       panel.current?.querySelector<HTMLElement>(`${selector}[contenteditable]`) ??
       panel.current?.querySelector<HTMLElement>(`${selector}:not(.cv-page-date, .cv-page-dates)`) ??
       undefined
@@ -128,38 +100,12 @@ export function EditLayer({
   useEffect(() => {
     latestDocument.current = document
   })
-  const onOpen = useCallback(
-    (fragment: Fragment, event: MouseEvent<HTMLButtonElement>) => {
-      // Klik myszą: pole pod kursorem; klawiatura (Enter/spacja dają `detail` 0) – pierwsze pole karty.
-      const hit =
-        event.detail > 0 && panel.current ? targetAt(event.clientX, event.clientY, panel.current, latestDocument.current) : null
-      openCard(hit && fragmentKey(hit) === fragment.key ? hit : fragment.target, fragment.key)
-    },
-    [openCard, panel]
-  )
 
-  // Tab z (ostatniego) przycisku fragmentu otwartej karty wchodzi do karty – karta jest „za” swoim fragmentem.
-  const onFragmentKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLButtonElement>) => {
-      if (event.key !== 'Tab' || event.shiftKey || !card.current || anchorKey === undefined) return
-      if (event.currentTarget !== fragmentButtons(anchorKey).at(-1)) return
-      const first = card.current.querySelector<HTMLElement>('button, input, select, textarea')
-      if (!first) return
-      event.preventDefault()
-      first.focus()
-    },
-    [anchorKey, fragmentButtons]
-  )
-
+  // Shift+Tab z pierwszego pola karty wraca na jej kotwicę; Tab z ostatniego – zwykła kolejność Tab.
   const onTabOut = (direction: 'forward' | 'backward') => {
-    if (anchorKey === undefined) return false
-    // Przyciski fragmentów, uchwyty i przyciski dodawania – kolejne miejsce w kolejności Tab warstwy.
-    const all = [...(layer.current?.querySelectorAll<HTMLButtonElement>(layerControls) ?? [])]
-    const own = fragmentButtons(anchorKey)
-    // Karta bez fragmentu na stronie (np. ukryta sekcja otwarta z Outline) – Shift+Tab wraca na jej kotwicę.
-    const next = direction === 'backward' ? (own[0] ?? anchorElement(anchorKey)) : all[all.indexOf(own.at(-1)!) + 1]
-    if (!next || (direction === 'forward' && own.length === 0)) return false
-    next.focus()
+    const anchor = direction === 'backward' ? anchorElement(anchorKey) : undefined
+    if (!anchor) return false
+    anchor.focus()
     return true
   }
 
@@ -207,7 +153,7 @@ export function EditLayer({
     }
     window.document.addEventListener('pointerdown', onPointerDown)
     return () => window.document.removeEventListener('pointerdown', onPointerDown)
-  }, [open, closeCard, fragmentButtons])
+  }, [open, closeCard])
 
   const photo = usePhotoEditing({ editor, photo: document.header.photo, onRemove, onFocusLost })
 
@@ -224,15 +170,6 @@ export function EditLayer({
           <Group key={`${fragment.key}@${fragment.page}`}>
             {handle && <BlockHandle fragment={fragment} menu={handle.menu} />}
             {fragment.target.kind === 'photo' && photo.button(fragment)}
-            {hasCard(fragment.target) && (
-              <FragmentButton
-                fragment={fragment}
-                label={t.canvas.edit(cardLabel(fragment.target, document, t))}
-                expanded={anchorKey === fragment.key}
-                onOpen={onOpen}
-                onKeyDown={onFragmentKeyDown}
-              />
-            )}
             {addOnPage.pillAfter(fragment)}
           </Group>
         )
@@ -243,6 +180,7 @@ export function EditLayer({
       {photo.popover}
       <DatePopover editor={editor} document={document} dates={session.datePopover} active={session.activeField} />
       <ContactLabelSuggestions editor={editor} document={document} active={session.activeField} />
+      <ConsentToolbar editor={editor} document={document} active={session.activeField} library={library} onFocusLost={onFocusLost} />
       {open && (
         <EditCard
           // Inny fragment = nowa karta (nowe pola, fokus); inne pole tego samego fragmentu – ta sama karta.
@@ -251,7 +189,6 @@ export function EditLayer({
           target={open.target}
           editor={editor}
           document={document}
-          library={library}
           locate={locate}
           onClose={() => {
             closeCard()
@@ -276,50 +213,6 @@ export type EditingContext = {
   library: ClauseLibrary
   added: AddedAnchor
 }
-
-type FragmentButtonProps = {
-  fragment: Fragment
-  label: string
-  expanded: boolean
-  onOpen: (fragment: Fragment, event: MouseEvent<HTMLButtonElement>) => void
-  onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void
-}
-
-// Przycisk fragmentu – przerysowany tylko, gdy zmienił się jego prostokąt, nazwa albo stan karty.
-const FragmentButton = memo(
-  function FragmentButton({ fragment, label, expanded, onOpen, onKeyDown }: FragmentButtonProps) {
-    const { rect } = fragment
-    return (
-      <button
-        type="button"
-        className="edit-fragment"
-        data-fragment={fragment.key}
-        data-section={sectionOf(fragment.target) ?? undefined}
-        data-page={fragment.page}
-        aria-haspopup="dialog"
-        aria-expanded={expanded}
-        style={{ top: rect.top, left: rect.left, width: rect.right - rect.left, height: rect.bottom - rect.top }}
-        onClick={(event) => onOpen(fragment, event)}
-        onKeyDown={onKeyDown}
-      >
-        {/* Nazwa z (ukrytej) treści, nie z `aria-label`: wyszukiwanie po etykiecie (np. „Full name”, `getByLabel` w e2e)
-            wskazuje wtedy tylko pole formularza, a nie także przycisk „Edit: Full name”. */}
-        <span className="visually-hidden">{label}</span>
-      </button>
-    )
-  },
-  (previous, next) =>
-    previous.label === next.label &&
-    previous.expanded === next.expanded &&
-    previous.onOpen === next.onOpen &&
-    previous.onKeyDown === next.onKeyDown &&
-    previous.fragment.key === next.fragment.key &&
-    previous.fragment.page === next.fragment.page &&
-    previous.fragment.rect.top === next.fragment.rect.top &&
-    previous.fragment.rect.left === next.fragment.rect.left &&
-    previous.fragment.rect.right === next.fragment.rect.right &&
-    previous.fragment.rect.bottom === next.fragment.rect.bottom
-)
 
 // Uchwyt menu fragmentu edytowanego na stronie (Page fields – bez przycisku fragmentu, nad którym CSS pokazuje uchwyt)
 // pokazuje się, gdy kursor myszy jest nad polem fragmentu (`data-hovered`) albo pole ma fokus (`data-focused`).
@@ -454,31 +347,9 @@ function nearestField(block: Element, selector: string, x: number, y: number): {
   return { field, caret }
 }
 
-// Przyciski warstwy w kolejności Tab (poza uchwytami menu): fragmenty, zdjęcie, pigułki „+”, pasek „Add to CV”
-// i podpowiedź w pustym CV.
-const layerControls = '.edit-fragment, .edit-photo, .edit-handle .row-handle, .edit-pill, .add-to-cv button, .edit-start-hint'
-
-const contractParts = Object.entries(editMarkupContract) as [ContractPart, string][]
-
-// Część CV pod punktem okna: element strony pod przyciskiem fragmentu, jego blok (`data-block-id`) i najbliższa klasa
-// kontraktu znaczników nad nim. Kontakt rozpoznajemy po rodzicu `.cv-contact` (jego dzieci bywają `li`).
-function targetAt(x: number, y: number, panel: HTMLElement, document: CvDocument): EditTarget | null {
-  const element = window.document.elementsFromPoint(x, y).find((candidate) => candidate.closest('.cv-pages') && panel.contains(candidate))
-  const block = element?.closest<HTMLElement>('[data-block-id]')
-  if (!element || !block) return null
-  return hitTarget(block.dataset['blockId']!, contractHit(element, block), document)
-}
-
-function contractHit(element: Element, block: Element): ContractHit {
-  const childIndex = (container: Element) => [...container.children].findIndex((child) => child.contains(element))
-  const contacts = element.closest(editMarkupContract.contact)
-  if (contacts && block.contains(contacts)) return { part: 'contact', index: childIndex(contacts) }
-  for (let current: Element | null = element; current && current !== block.parentElement; current = current.parentElement) {
-    const part = contractParts.find(([, selector]) => current!.matches(selector))?.[0]
-    if (part) return { part, index: part === 'item' && current.parentElement ? childIndex(current.parentElement) : 0 }
-  }
-  return { part: null, index: 0 }
-}
+// Kontrolki warstwy (klik w nie nie zamyka karty): zdjęcie, uchwyty menu, pigułki „+”, pasek „Add to CV” i podpowiedź
+// w pustym CV.
+const layerControls = '.edit-photo, .edit-handle .row-handle, .edit-pill, .add-to-cv button, .edit-start-hint'
 
 // Ostrzeżenie o odwróconych datach wpisu (W12): znaczek ⚠ w warstwie edycji przy dacie na stronie (poza treścią kartki,
 // tylko w Edit mode) i opis dla czytnika ekranu, który żetony dat wpisu wskazują przez `aria-describedby`

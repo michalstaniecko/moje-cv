@@ -186,7 +186,6 @@ export const sv: Dictionary = {
       sidebar: 'Sidofält'
     },
     canvas: {
-      edit: (what) => `Redigera: ${what}`,
       addToCv: 'Lägg till i cv:',
       startHint: 'Börja med ditt fullständiga namn',
       add: { position: 'Tjänst', education: 'Utbildning', item: 'Post' }
@@ -295,7 +294,8 @@ export const sv: Dictionary = {
       saveAsNew: 'Spara som ny klausul',
       newName: 'Namn på ny klausul',
       newNamePlaceholder: 'Namn, t.ex. Talent Partners',
-      saveFailed: 'Det gick inte att spara klausulen.'
+      saveFailed: 'Det gick inte att spara klausulen.',
+      hide: 'Dölj klausulen'
     },
     photo: {
       legend: 'Foto',

@@ -186,7 +186,6 @@ export const pl: Dictionary = {
       sidebar: 'Pasek boczny'
     },
     canvas: {
-      edit: (what) => `Edytuj: ${what}`,
       addToCv: 'Dodaj do CV:',
       startHint: 'Zacznij od imienia i nazwiska',
       add: { position: 'Stanowisko', education: 'Wykształcenie', item: 'Element' }
@@ -295,7 +294,8 @@ export const pl: Dictionary = {
       saveAsNew: 'Zapisz jako nową klauzulę',
       newName: 'Nazwa nowej klauzuli',
       newNamePlaceholder: 'Nazwa, np. Talent Partners',
-      saveFailed: 'Nie udało się zapisać klauzuli.'
+      saveFailed: 'Nie udało się zapisać klauzuli.',
+      hide: 'Ukryj klauzulę'
     },
     photo: {
       legend: 'Zdjęcie',

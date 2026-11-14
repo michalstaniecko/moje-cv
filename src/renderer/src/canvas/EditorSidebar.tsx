@@ -57,7 +57,7 @@ export function EditorSidebar({
 
   const closeOutlineCard = () => {
     const card = session.card
-    if (card && !window.document.querySelector(`.edit-layer .edit-fragment[data-fragment="${CSS.escape(card.anchor)}"]`)) {
+    if (card && !window.document.querySelector(`.cv-pages [data-fragment="${CSS.escape(card.anchor)}"]`)) {
       session.closeCard()
     }
   }

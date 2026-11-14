@@ -6,7 +6,7 @@ import { paginate, type PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import { contentAreaMm, pageMetricsPx, type TemplateGeometry } from '../domain/templateGeometry'
 import { CvBlockView } from './CvBlockView'
-import { EditingProvider, type PageEditing } from './editable'
+import { ConsentText, EditingProvider, type PageEditing } from './editable'
 import { fontStack, loadTemplateFonts } from './fonts'
 import './pages.css'
 import type { TemplateDefinition } from './templateDefinition'
@@ -81,9 +81,10 @@ function useReadySignal(
 // `onReady` – wywoływane, gdy fonty są załadowane, podział policzony, a zdjęcie wczytane.
 // `onLayout` – wywoływane po każdym podziale stron; `oversizedMessage` wyróżnia bloki wyższe niż strona i podpisuje je
 // tym komunikatem (tylko podgląd – okno wydruku nie zna języka interfejsu i niczego nie wyróżnia).
-// `editing` – tylko Edit mode (ADR-0010): sloty szablonu rysują tekst pól jako Page fields (editable.tsx), fragmenty
-// z `editing.reveal` mają bloki mimo pustych pól, a stopki stron są ukryte przed czytnikiem ekranu (strony są wtedy
-// dla niego CV z polami tekstowymi). Bez `editing` – dokument jak dotąd (podgląd w Preview mode, PDF, miniatury).
+// `editing` – tylko Edit mode (ADR-0010): sloty szablonu i tekst klauzuli zgody rysują tekst pól jako Page fields
+// (editable.tsx), fragmenty z `editing.reveal` mają bloki (a odsłonięta klauzula – miejsce) mimo pustych pól, a stopki
+// stron są ukryte przed czytnikiem ekranu (strony są wtedy dla niego CV z polami tekstowymi). Bez `editing` – dokument
+// jak dotąd (podgląd w Preview mode, PDF, miniatury).
 export function CvPages({
   document,
   template = templates[document.settings.template],
@@ -104,7 +105,8 @@ export function CvPages({
   const { geometry, blockViews: views, PageFooter } = template
   const reveal = editing?.reveal
   const blocks = useMemo(() => generateBlocks(document, geometry, { reveal }), [document, geometry, reveal])
-  const consent = consentText(document)
+  // Klauzula odsłonięta w Edit mode (aktywna, pusta) jest na stronie mimo pustego tekstu – jest gdzie postawić kursor.
+  const consent = consentText(document) ?? (reveal?.has('consent') && document.consent.enabled ? document.consent.text : null)
   const { layout, layoutBlocks, measureRef, consentElement } = usePagination(blocks, document.settings.font, consent, geometry)
   const blocksById = useMemo(() => new Map(blocks.map((block) => [block.id, block])), [blocks])
   const pagesElement = useRef<HTMLDivElement>(null)
@@ -152,12 +154,12 @@ export function CvPages({
           {blocks.map((block) => (
             <CvBlockView key={block.id} block={block} views={views} ref={measureRef(block.id)} />
           ))}
+          {consent !== null && (
+            <p ref={consentElement} className="cv-consent">
+              <ConsentText text={consent} />
+            </p>
+          )}
         </EditingProvider>
-        {consent !== null && (
-          <p ref={consentElement} className="cv-consent">
-            {consent}
-          </p>
-        )}
       </div>
 
       {/* Ramka i warstwa stron pozwalają podglądowi skalować same strony, bez wpływu na pomiar bloków. */}
@@ -178,7 +180,9 @@ export function CvPages({
                     </p>
                   )}
                   {consent !== null && index === pageCount - 1 && (
-                    <p className="cv-consent">{consent}</p>
+                    <p className="cv-consent">
+                      <ConsentText text={consent} />
+                    </p>
                   )}
                 </div>
                 {PageFooter && editing ? (

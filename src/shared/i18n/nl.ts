@@ -188,7 +188,6 @@ export const nl: Dictionary = {
       sidebar: 'Zijbalk'
     },
     canvas: {
-      edit: (what) => `Bewerken: ${what}`,
       addToCv: 'Toevoegen aan cv:',
       startHint: 'Begin met je volledige naam',
       add: { position: 'Functie', education: 'Opleiding', item: 'Item' }
@@ -297,7 +296,8 @@ export const nl: Dictionary = {
       saveAsNew: 'Bewaar als nieuwe verklaring',
       newName: 'Naam van nieuwe verklaring',
       newNamePlaceholder: 'Naam, bijv. Talent Partners',
-      saveFailed: 'Kan de verklaring niet bewaren.'
+      saveFailed: 'Kan de verklaring niet bewaren.',
+      hide: 'Verklaring verbergen'
     },
     photo: {
       legend: 'Foto',

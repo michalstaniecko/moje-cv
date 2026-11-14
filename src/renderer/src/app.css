@@ -276,7 +276,6 @@ textarea:focus-visible {
   height: 0;
 }
 
-.edit-layer .edit-fragment,
 .edit-layer .edit-photo {
   position: absolute;
   box-sizing: border-box;
@@ -288,15 +287,12 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
-.edit-layer .edit-fragment:hover:not(:disabled),
 .edit-layer .edit-photo:hover {
   background: var(--ui-fragment-fill);
   outline: 1px solid var(--ui-fragment-outline);
   outline-offset: 2px;
 }
 
-.edit-layer .edit-fragment:focus-visible,
-.edit-layer .edit-fragment[aria-expanded='true'],
 .edit-layer .edit-photo:focus-visible,
 .edit-layer .edit-photo[aria-expanded='true'] {
   background: var(--ui-fragment-fill);
@@ -320,10 +316,7 @@ textarea:focus-visible {
 .edit-layer .edit-handle:focus-within,
 .edit-layer .edit-handle[data-hovered],
 .edit-layer .edit-handle[data-focused],
-.edit-layer .edit-handle:has(.row-handle[aria-expanded='true']),
-.edit-layer .edit-handle:has(+ .edit-fragment:hover),
-.edit-layer .edit-handle:has(+ .edit-fragment:focus-visible),
-.edit-layer .edit-handle:has(+ .edit-fragment[aria-expanded='true']) {
+.edit-layer .edit-handle:has(.row-handle[aria-expanded='true']) {
   opacity: 1;
 }
 

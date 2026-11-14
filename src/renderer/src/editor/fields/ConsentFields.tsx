@@ -91,9 +91,10 @@ export function ConsentFields({
   )
 }
 
-// „Zapisz jako nową klauzulę”: pyta o nazwę w miejscu przycisku, żeby nie przerywać edycji CV oknem dialogowym.
-// Escape w polu nazwy anuluje tylko nazwę (nie zamyka Edit card, w której stoi pole).
-function SaveAsNewClause({ text, onSave }: { text: string; onSave: (name: string) => Promise<void> }) {
+// „Zapisz jako nową klauzulę”: pyta o nazwę w miejscu przycisku, żeby nie przerywać edycji CV oknem dialogowym –
+// w CV form i w pasku klauzuli na stronie (canvas/ConsentToolbar.tsx). Escape w polu nazwy anuluje tylko nazwę (nie
+// zamyka paska, w którym stoi pole).
+export function SaveAsNewClause({ text, onSave }: { text: string; onSave: (name: string) => Promise<void> }) {
   const [name, setName] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
   const { common, editor } = useDictionary()

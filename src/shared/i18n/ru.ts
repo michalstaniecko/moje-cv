@@ -186,7 +186,6 @@ export const ru: Dictionary = {
       sidebar: 'Боковая панель'
     },
     canvas: {
-      edit: (what) => `Изменить: ${what}`,
       addToCv: 'Добавить в резюме:',
       startHint: 'Начните с имени и фамилии',
       add: { position: 'Должность', education: 'Образование', item: 'Элемент' }
@@ -295,7 +294,8 @@ export const ru: Dictionary = {
       saveAsNew: 'Сохранить как новое согласие',
       newName: 'Название нового согласия',
       newNamePlaceholder: 'Название, например, Talent Partners',
-      saveFailed: 'Не удалось сохранить согласие.'
+      saveFailed: 'Не удалось сохранить согласие.',
+      hide: 'Скрыть согласие'
     },
     photo: {
       legend: 'Фото',

@@ -6,7 +6,7 @@ import { useDictionary } from '../i18n'
 import type { PageEditing } from '../template/editable'
 import { DateToken, JoinedDates, type DatePopoverStore } from './DatePopover'
 import { JoinedFields, PageField, type PageFieldsContext } from './PageField'
-import { fragmentHasEmptyField, fragmentHasJoinedFields, pageFieldOf } from './pageFields'
+import { consentFieldOf, fragmentHasEmptyField, fragmentHasJoinedFields, pageFieldOf } from './pageFields'
 import { readSelection, useActiveFragment, type ActiveFieldStore } from './useActiveField'
 import './pageFields.css'
 
@@ -46,6 +46,7 @@ export function usePageEditing({
   const editing = useMemo(
     (): PageEditing => ({
       fieldOf: (block, slot, part) => pageFieldOf(block, slot, document, t, reveal, part),
+      consentField: consentFieldOf(document, t),
       reveal,
       expanded,
       Field: PageField,
