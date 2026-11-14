@@ -276,7 +276,8 @@ textarea:focus-visible {
   height: 0;
 }
 
-.edit-layer .edit-fragment {
+.edit-layer .edit-fragment,
+.edit-layer .edit-photo {
   position: absolute;
   box-sizing: border-box;
   margin: 0;
@@ -287,14 +288,17 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
-.edit-layer .edit-fragment:hover:not(:disabled) {
+.edit-layer .edit-fragment:hover:not(:disabled),
+.edit-layer .edit-photo:hover {
   background: var(--ui-fragment-fill);
   outline: 1px solid var(--ui-fragment-outline);
   outline-offset: 2px;
 }
 
 .edit-layer .edit-fragment:focus-visible,
-.edit-layer .edit-fragment[aria-expanded='true'] {
+.edit-layer .edit-fragment[aria-expanded='true'],
+.edit-layer .edit-photo:focus-visible,
+.edit-layer .edit-photo[aria-expanded='true'] {
   background: var(--ui-fragment-fill);
   outline: 2px solid var(--ui-fragment-outline);
   outline-offset: 2px;
@@ -457,6 +461,32 @@ textarea:focus-visible {
 .field-popover-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+/* Field popover zdjęcia: przyciski jeden pod drugim, jak pozycje menu. */
+.field-popover--menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: auto;
+  min-width: 160px;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.field-popover--menu > button {
+  text-align: left;
+  white-space: nowrap;
+  border-color: transparent;
+}
+
+.field-popover--menu > button.danger:hover:not(:disabled) {
+  border-color: transparent;
+}
+
+.field-popover--menu > .form-error {
+  max-width: 240px;
+  margin: 4px 8px;
 }
 
 /* Podpowiedzi etykiety kontaktu pod polem na stronie: lista jak menu wiersza, wybrana pozycja podświetlona. */

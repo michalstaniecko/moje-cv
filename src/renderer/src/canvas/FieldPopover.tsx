@@ -16,6 +16,18 @@ import { anchoredPosition } from './anchoredPosition'
 
 export const FIELD_POPOVER_CONTROLS = 'input:not(:disabled), select:not(:disabled), button:not(:disabled)'
 
+const TABBABLE =
+  'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [contenteditable="true"], [tabindex]:not([tabindex="-1"])'
+
+// Tab z ostatniej kontrolki popovera: fokus na następnym w kolejności Tab elemencie za kotwicą `element` (pomija
+// Field popovers i to, czego nie widać), jakby popover stał tuż za kotwicą.
+export function focusAfter(element: HTMLElement) {
+  const all = [...window.document.querySelectorAll<HTMLElement>(TABBABLE)].filter(
+    (candidate) => candidate === element || (!candidate.closest('[data-field-popover], [inert], [aria-hidden="true"]') && candidate.getClientRects().length > 0)
+  )
+  all[all.indexOf(element) + 1]?.focus()
+}
+
 export function FieldPopover({
   anchor,
   anchored = 0,

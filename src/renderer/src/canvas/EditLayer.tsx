@@ -35,6 +35,7 @@ import {
 import type { Fragment, Rect } from './fragmentRects'
 import { dateWarningId } from './pageFields'
 import { activateJoined } from './PageField'
+import { usePhotoEditing } from './PhotoPopover'
 import { offsetOf, writeSelection, type ActiveFieldStore } from './useActiveField'
 import { useFragmentRects } from './useFragmentRects'
 import type { EditSession } from './useEditSession'
@@ -197,7 +198,7 @@ export function EditLayer({
     if (!open) return
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Element | null
-      if (target?.closest(`.edit-card, ${layerControls}, .edit-handle, .preview-bar, .removal-message, .outline`)) return
+      if (target?.closest(`.edit-card, ${layerControls}, .edit-handle, .preview-bar, .removal-message, .outline, [data-field-popover]`)) return
       const anchor = anchorElement(open.anchor)
       closeCard()
       requestAnimationFrame(() => {
@@ -207,6 +208,8 @@ export function EditLayer({
     window.document.addEventListener('pointerdown', onPointerDown)
     return () => window.document.removeEventListener('pointerdown', onPointerDown)
   }, [open, closeCard, fragmentButtons])
+
+  const photo = usePhotoEditing({ editor, photo: document.header.photo, onRemove, onFocusLost })
 
   useHandlesOfPageFields(panel, layer)
   usePointerOnPages(panel, session.activeField, session.datePopover)
@@ -220,6 +223,7 @@ export function EditLayer({
         return (
           <Group key={`${fragment.key}@${fragment.page}`}>
             {handle && <BlockHandle fragment={fragment} menu={handle.menu} />}
+            {fragment.target.kind === 'photo' && photo.button(fragment)}
             {hasCard(fragment.target) && (
               <FragmentButton
                 fragment={fragment}
@@ -236,6 +240,7 @@ export function EditLayer({
       {addOnPage.bar}
       {blockMenu.liveRegion}
       <DateWarnings document={document} panel={panel} layer={layer} fragments={fragments} hidden={compact} />
+      {photo.popover}
       <DatePopover editor={editor} document={document} dates={session.datePopover} active={session.activeField} />
       <ContactLabelSuggestions editor={editor} document={document} active={session.activeField} />
       {open && (
@@ -449,9 +454,9 @@ function nearestField(block: Element, selector: string, x: number, y: number): {
   return { field, caret }
 }
 
-// Przyciski warstwy w kolejności Tab (poza uchwytami menu): fragmenty, pigułki „+”, pasek „Add to CV” i podpowiedź
-// w pustym CV.
-const layerControls = '.edit-fragment, .edit-handle .row-handle, .edit-pill, .add-to-cv button, .edit-start-hint'
+// Przyciski warstwy w kolejności Tab (poza uchwytami menu): fragmenty, zdjęcie, pigułki „+”, pasek „Add to CV”
+// i podpowiedź w pustym CV.
+const layerControls = '.edit-fragment, .edit-photo, .edit-handle .row-handle, .edit-pill, .add-to-cv button, .edit-start-hint'
 
 const contractParts = Object.entries(editMarkupContract) as [ContractPart, string][]
 

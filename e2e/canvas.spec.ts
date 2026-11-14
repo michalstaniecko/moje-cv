@@ -237,6 +237,9 @@ async function clickOnPage(element: Locator) {
 }
 
 const fragment = (what: string) => window.locator('.edit-layer').getByRole('button', { name: `Edit: ${what}`, exact: true })
+// Przycisk zdjęcia w warstwie edycji (otwiera Field popover zdjęcia, S4).
+const photoButton = () => window.locator('.edit-layer .edit-photo').and(window.getByRole('button', { name: 'Photo', exact: true }))
+const photoPopover = () => window.getByRole('dialog', { name: 'Photo', exact: true })
 const fragmentNames = () =>
   window
     .locator('.edit-layer .edit-fragment')
@@ -529,48 +532,6 @@ test('composing text with an input method changes the document only when the com
   await expect.poll(caret).toEqual({ key: 'header:fullName', offset: 6, collapsed: true })
 })
 
-test('cards still open for the parts without page fields: one card at a time, Escape returns the focus to its fragment, a click on a page field or the page background closes it', async () => {
-  await openFirstCv()
-  await enableConsent('I agree to the processing of my personal data.')
-  const preview = window.locator('.preview')
-  const clause = preview.locator('.cv-page .cv-consent')
-  await clickOnPage(preview.locator('.cv-page .cv-photo'))
-  await expect(card('Photo')).toBeVisible()
-
-  // Jedna karta naraz: klik innego fragmentu przełącza kartę.
-  await clickOnPage(clause)
-  await expect(card('Consent clause')).toBeVisible()
-  await expect(card('Photo')).toHaveCount(0)
-  await window.keyboard.press('Escape')
-  await expect(window.getByRole('dialog')).toHaveCount(0)
-  await expect(fragment('Consent clause')).toBeFocused()
-
-  // Klik w Page field zamyka kartę i stawia kursor w polu.
-  await clickOnPage(clause)
-  await expect(card('Consent clause')).toBeVisible()
-  await clickAtCharacter(pageField('Full name'), 2)
-  await expect(window.getByRole('dialog')).toHaveCount(0)
-  await expect(pageField('Full name')).toBeFocused()
-
-  // Klik w tło strony (margines kartki) albo obok strony zamyka kartę.
-  const firstPage = preview.locator('.cv-page').first()
-  await clickOnPage(preview.locator('.cv-page .cv-photo'))
-  await expect(card('Photo')).toBeVisible()
-  let page = (await firstPage.boundingBox())!
-  await window.mouse.click(page.x + 4, page.y + 4)
-  await expect(window.getByRole('dialog')).toHaveCount(0)
-  await clickOnPage(preview.locator('.cv-page .cv-photo'))
-  await expect(card('Photo')).toBeVisible()
-  page = (await firstPage.boundingBox())!
-  await window.mouse.click(page.x - 8, page.y + 40)
-  await expect(window.getByRole('dialog')).toHaveCount(0)
-
-  // Pasek podglądu nie zamyka karty (powiększenie przy otwartej karcie).
-  await clickOnPage(preview.locator('.cv-page .cv-photo'))
-  await preview.getByRole('button', { name: 'Zoom out' }).click()
-  await expect(card('Photo')).toBeVisible()
-})
-
 test('the pages work from the keyboard alone: Tab goes through every page field and date in document order, also into the joined lines of entries, then through the editing layer; Enter opens a card, Tab leaves it', async () => {
   await openFirstCv()
   // Pola i żetony dat stron w kolejności czytania (Classic: daty przed stanowiskiem, tytuł listy obok niej); linia
@@ -603,12 +564,11 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
     await expect.poll(focusedKey).toBe(key)
   }
 
-  // Warstwa edycji: części z Edit card (wpisy i kontakty już nie), uchwyty, pigułki „+” i pasek.
-  const names = ['Photo']
-  await expect.poll(() => fragmentNames()).toEqual(expect.arrayContaining(names))
-  expect(dedupe(await fragmentNames())).toEqual(names)
+  // Warstwa edycji: przycisk zdjęcia (żadna część strony nie ma już Edit card), uchwyty, pigułki „+” i pasek.
+  await expect(photoButton()).toBeVisible()
+  expect(await fragmentNames()).toEqual([])
   const stops = window.locator(
-    '.edit-layer .edit-fragment, .edit-layer .edit-handle .row-handle, .edit-layer .edit-pill, .edit-layer .add-to-cv button'
+    '.edit-layer .edit-fragment, .edit-layer .edit-photo, .edit-layer .edit-handle .row-handle, .edit-layer .edit-pill, .edit-layer .add-to-cv button'
   )
   const stopNames = await stops.evaluateAll((elements) => elements.map((element) => element.textContent || element.getAttribute('aria-label')))
   expect(stopNames.slice(1, 3)).toEqual(['Actions for section “Work experience”', 'Actions for position “Senior Procurement Specialist”'])
@@ -623,15 +583,27 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
     await expect(stops.nth(index)).toBeFocused()
   }
 
-  // Spacja otwiera kartę; „×” zamyka i fokus wraca na fragment.
-  const photo = fragment('Photo')
-  await photo.focus()
-  await window.keyboard.press('Space')
-  const photoCard = card('Photo')
-  await expect(photoCard.getByRole('button', { name: 'Change photo' })).toBeFocused()
-  await photoCard.getByRole('button', { name: 'Close' }).click()
-  await expect(window.getByRole('dialog')).toHaveCount(0)
+  // Enter i spacja otwierają Field popover zdjęcia z fokusem na pierwszym przycisku; Escape zamyka i wraca na zdjęcie.
+  const photo = photoButton()
+  for (const key of ['Enter', 'Space']) {
+    await photo.focus()
+    await window.keyboard.press(key)
+    await expect(photoPopover().getByRole('button', { name: 'Change photo' })).toBeFocused()
+    await expect(photo).toHaveAttribute('aria-expanded', 'true')
+    await window.keyboard.press('Escape')
+    await expect(window.getByRole('dialog')).toHaveCount(0)
+    await expect(photo).toBeFocused()
+  }
+  // Tab z ostatniego przycisku popovera – dalej za zdjęciem.
+  await window.keyboard.press('Enter')
+  await window.keyboard.press('Shift+Tab')
   await expect(photo).toBeFocused()
+  await expect(photoPopover()).toHaveCount(0)
+  await window.keyboard.press('Enter')
+  await photoPopover().getByRole('button', { name: 'Remove photo' }).focus()
+  await window.keyboard.press('Tab')
+  await expect(photoPopover()).toHaveCount(0)
+  await expect(stops.nth(1)).toBeFocused()
 })
 
 test('the Edit card follows its fragment when the page split and the zoom change, always at 100%', async () => {
@@ -676,11 +648,11 @@ test('the Edit card follows its fragment when the page split and the zoom change
   await expectCardNextTo(clauseCard, clause)
 })
 
-test('Preview mode has no editing layer and no page fields: switching closes the open card and focuses the toggle; Edit mode does not reopen it', async () => {
+test('Preview mode has no editing layer and no page fields: switching closes the open Field popover and focuses the toggle; Edit mode does not reopen it', async () => {
   await openFirstCv()
   await expect(window.locator('.edit-layer')).toHaveCount(1)
   await clickOnPage(window.locator('.preview .cv-page .cv-photo'))
-  await expect(card('Photo')).toBeVisible()
+  await expect(photoPopover()).toBeVisible()
 
   await window.keyboard.press('Meta+Shift+P')
   await expectPreviewMode()
@@ -692,7 +664,7 @@ test('Preview mode has no editing layer and no page fields: switching closes the
   await editButton().click()
   await expectEditMode()
   await expect(window.locator('.edit-layer')).toHaveCount(1)
-  await expect(fragment('Photo')).toBeVisible()
+  await expect(photoButton()).toBeVisible()
   await expect(pageField('Full name')).toBeVisible()
   await expect(window.getByRole('dialog')).toHaveCount(0)
 })
@@ -745,18 +717,17 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     await expect(dates).toHaveCount(positions.length + educations.length)
     await expect(dates.first()).toHaveText('03.2023 – present')
 
-    const expected: [string, Locator][] = [
-      ['Photo', page('.cv-photo')],
-      ['Consent clause', page('.cv-consent')]
+    const expected: [Locator, Locator][] = [
+      [photoButton(), page('.cv-photo')],
+      [fragment('Consent clause'), page('.cv-consent')]
     ]
-    await expect
-      .poll(async () => [...new Set(await fragmentNames())].sort())
-      .toEqual([...new Set(expected.map(([name]) => name))].sort())
-    for (const [name, element] of expected) {
+    await expect.poll(async () => [...new Set(await fragmentNames())].sort()).toEqual(['Consent clause'])
+    for (const [button, element] of expected) {
+      const name = (await button.first().textContent())!
       const box = (await element.boundingBox())!
       const [x, y] = [box.x + box.width / 2, box.y + box.height / 2]
       // Fragment rozdzielony podziałem stron ma przycisk na każdej stronie – element leży pod jednym z nich.
-      const buttons = await Promise.all((await fragment(name).all()).map((button) => button.boundingBox()))
+      const buttons = await Promise.all((await button.all()).map((candidate) => candidate.boundingBox()))
       expect(
         buttons.some((button) => button && x >= button.x && x <= button.x + button.width && y >= button.y && y <= button.y + button.height),
         name
@@ -798,11 +769,11 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
       await expect(labelField(index + 1)).toHaveText(contact.label)
       await expect(contacts.nth(index)).toHaveText(new RegExp(`^${contact.label}(: )?${contact.value.replace(/[.+]/g, '\\$&')}$`))
     }
-    // Zdjęcie: karta zdjęcia z fokusem na „Change photo” (karta nie ma pól tekstowych).
+    // Zdjęcie: Field popover zdjęcia z fokusem na „Change photo”.
     await clickOnPage(page('.cv-photo'))
-    await expect(card('Photo').getByRole('button', { name: 'Change photo' })).toBeFocused()
+    await expect(photoPopover().getByRole('button', { name: 'Change photo' })).toBeFocused()
     await window.keyboard.press('Escape')
-    await expect(fragment('Photo')).toBeFocused()
+    await expect(photoButton()).toBeFocused()
   })
 }
 
@@ -1368,66 +1339,87 @@ async function pdfImagesPerPage(path: string): Promise<number[]> {
   return counts
 }
 
-test('clicking the photo opens its card: changing and cropping the photo there changes the page and the PDF; removing it says “Removed.” and Undo brings it back', async () => {
+test('clicking the photo opens its Field popover: changing and cropping the photo there changes the page and the PDF; removing it says “Removed.” and Undo brings it back', async () => {
   const photoPath = await writeRedBluePhoto()
   await openFirstCv()
   const photo = window.locator('.preview .cv-page .cv-photo')
   const before = await photo.getAttribute('src')
   await clickOnPage(photo)
-  const photoCard = card('Photo')
-  await expect(photoCard.getByRole('img', { name: 'Photo in the CV' })).toBeVisible()
-  await expect(photoCard.getByRole('button', { name: 'Change photo' })).toBeFocused()
+  const popover = photoPopover()
+  await expect(popover.getByRole('button')).toHaveText(['Change photo', 'Crop photo', 'Remove photo'])
+  await expect(popover.getByRole('button', { name: 'Change photo' })).toBeFocused()
+  await expect(photoButton()).toHaveAttribute('aria-expanded', 'true')
+  // Popover stoi przy zdjęciu, w skali 1:1.
+  const photoBox = (await photo.boundingBox())!
+  const popoverBox = (await popover.boundingBox())!
+  expect(Math.abs(popoverBox.y - (photoBox.y + photoBox.height + 6)) < 2 || Math.abs(popoverBox.y + popoverBox.height - (photoBox.y - 6)) < 2).toBe(true)
 
-  // Escape w oknie kadrowania zamyka tylko to okno – karta zostaje, zdjęcie bez zmian.
+  // Escape w oknie kadrowania zamyka tylko to okno – popover zostaje, fokus wraca na „Change photo”, zdjęcie bez zmian.
   await stubOpenDialog(photoPath)
-  await photoCard.getByRole('button', { name: 'Change photo' }).click()
+  await popover.getByRole('button', { name: 'Change photo' }).click()
   const cropper = window.getByRole('dialog', { name: 'Crop photo' })
   await expect(cropper).toBeVisible()
   await window.keyboard.press('Escape')
   await expect(cropper).toHaveCount(0)
-  await expect(photoCard).toBeVisible()
+  await expect(popover).toBeVisible()
+  await expect(popover.getByRole('button', { name: 'Change photo' })).toBeFocused()
   await expect(photo).toHaveAttribute('src', before!)
 
   // Kadr przesunięty maksymalnie w prawo – na zdjęciu zostaje sam niebieski.
-  await photoCard.getByRole('button', { name: 'Change photo' }).click()
+  await popover.getByRole('button', { name: 'Change photo' }).click()
   const frame = cropper.getByRole('img', { name: 'Frame preview' })
-  const box = (await frame.boundingBox())!
-  await window.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-  await window.mouse.down()
-  await window.mouse.move(box.x - box.width * 3, box.y + box.height / 2, { steps: 10 })
-  await window.mouse.up()
+  const dragAcross = async (dx: number) => {
+    const box = (await frame.boundingBox())!
+    await window.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await window.mouse.down()
+    await window.mouse.move(box.x + box.width / 2 + dx * box.width * 3, box.y + box.height / 2, { steps: 10 })
+    await window.mouse.up()
+  }
+  await dragAcross(-1)
   await cropper.getByRole('button', { name: 'Apply' }).click()
   await expect(cropper).toHaveCount(0)
-  await expect(photoCard).toBeVisible()
+  await expect(popover).toBeVisible()
   await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
   for (const [r = 0, , b = 0] of await photoCorners(photo)) {
     expect(b).toBeGreaterThan(200)
     expect(r).toBeLessThan(40)
   }
-  await expect(photoCard.getByRole('img', { name: 'Photo in the CV' })).toHaveAttribute('src', (await photo.getAttribute('src'))!)
+
+  // „Crop photo” kadruje zdjęcie z CV jeszcze raz (powiększone – inny kadr).
+  const cropped = await photo.getAttribute('src')
+  await popover.getByRole('button', { name: 'Crop photo' }).click()
+  await expect(cropper).toBeVisible()
+  await cropper.getByRole('slider', { name: 'Zoom' }).fill('2')
+  await cropper.getByRole('button', { name: 'Apply' }).click()
+  await expect(cropper).toHaveCount(0)
+  await expect(popover.getByRole('button', { name: 'Crop photo' })).toBeFocused()
+  await expect(photo).not.toHaveAttribute('src', cropped!)
+  await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
 
   const pdfPath = join(outputDir, 'with-photo.pdf')
   await stubSaveDialog(pdfPath)
   await window.getByRole('button', { name: 'Export to PDF' }).click()
   await expect(window.getByText('Saved PDF: with-photo.pdf')).toBeVisible()
   expect((await pdfImagesPerPage(pdfPath))[0]).toBe(1)
+  // Klik poza popoverem (pasek narzędzi) go zamknął.
+  await expect(popover).toHaveCount(0)
 
-  // Usunięcie z karty (klik w pasek narzędzi zamknął kartę – otwieramy ją znowu): zdjęcia nie ma na stronie ani
-  // w PDF, karta zostaje z „Choose photo”.
+  // Usunięcie z popovera: zdjęcia nie ma na stronie ani w PDF, popover i przycisk zdjęcia znikają.
   await clickOnPage(photo)
-  await expect(photoCard.getByRole('button', { name: 'Change photo' })).toBeFocused()
   const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
-  await photoCard.getByRole('button', { name: 'Remove photo' }).click()
+  await popover.getByRole('button', { name: 'Remove photo' }).click()
   await expect(photo).toHaveCount(0)
   await expect(removed).toBeVisible()
-  await expect(photoCard.getByRole('button', { name: 'Choose photo' })).toBeVisible()
+  await expect(popover).toHaveCount(0)
+  await expect(photoButton()).toHaveCount(0)
 
-  // „Undo” przywraca wykadrowane zdjęcie, a fokus wraca do karty.
+  // „Undo” przywraca wykadrowane zdjęcie, a fokus wraca na przycisk zdjęcia.
   await removed.getByRole('button', { name: 'Undo' }).click()
   await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
-  await expect(photoCard.getByRole('button', { name: 'Change photo' })).toBeFocused()
+  await expect(photoButton()).toBeFocused()
 
-  await photoCard.getByRole('button', { name: 'Remove photo' }).click()
+  await photoButton().press('Enter')
+  await popover.getByRole('button', { name: 'Remove photo' }).click()
   await expect(photo).toHaveCount(0)
   const withoutPhoto = join(outputDir, 'without-photo.pdf')
   await stubSaveDialog(withoutPhoto)
@@ -1582,11 +1574,11 @@ test('CV design in the toolbar opens a panel with the colour, font, Template and
   await openFirstCv()
   await expect(designButton()).toHaveAttribute('aria-expanded', 'false')
 
-  // Otwarcie panelu zamyka otwartą Edit card; fokus na pierwszym polu panelu.
+  // Otwarcie panelu zamyka otwarty Field popover; fokus na pierwszym polu panelu.
   await clickOnPage(window.locator('.preview .cv-page .cv-photo'))
-  await expect(card('Photo')).toBeVisible()
+  await expect(photoPopover()).toBeVisible()
   await designButton().click()
-  await expect(card('Photo')).toHaveCount(0)
+  await expect(photoPopover()).toHaveCount(0)
   const panel = designPanel()
   await expect(panel).toBeVisible()
   await expect(designButton()).toHaveAttribute('aria-expanded', 'true')
@@ -1889,9 +1881,9 @@ test('the menu works from the keyboard alone, and there are no handles below 50%
   await preview.getByRole('button', { name: 'Zoom out' }).click()
   await expect(window.locator('.edit-layer')).toHaveAttribute('data-compact', 'true')
   await expect(window.locator('.edit-layer .edit-handle')).toHaveCount(0)
-  // Edycja dalej działa: tytuł jest Page field, a części z kartą mają przyciski fragmentów.
+  // Edycja dalej działa: tytuł jest Page field, a zdjęcie ma swój przycisk.
   await expect(titleField('Education')).toHaveCount(1)
-  await expect(fragment('Photo')).toHaveCount(1)
+  await expect(photoButton()).toHaveCount(1)
 })
 
 // ---------- Dodawanie na stronach: pigułki „+”, pasek „Add to CV”, puste CV ----------

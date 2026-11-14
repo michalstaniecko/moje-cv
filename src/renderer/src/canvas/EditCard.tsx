@@ -21,8 +21,9 @@ import type { EditTarget } from './editTargets'
 // podsumowanie, tytuły sekcji, wpisy (tekst i żetony dat) i listy edytuje się już wprost na stronie (Page fields,
 // pageFields.ts):
 // karta tytułu i listy otwiera się jeszcze tylko z Outline i dodawania dla sekcji, której nie ma na stronach
-// (useEditSession.ts), a karta wpisu – tylko dla nowego, pustego wpisu (do S5).
-const cardKinds: ReadonlySet<EditTarget['kind']> = new Set(['photo', 'consent'])
+// (useEditSession.ts), karta wpisu – tylko dla nowego, pustego wpisu, a karta zdjęcia – z „Add to CV”, gdy zdjęcia nie
+// ma (do S5). Zdjęcie na stronie ma Field popover (PhotoPopover.tsx).
+const cardKinds: ReadonlySet<EditTarget['kind']> = new Set(['consent'])
 export const hasCard = (target: EditTarget) => cardKinds.has(target.kind)
 
 const findSection = (document: CvDocument, sectionId: string) =>

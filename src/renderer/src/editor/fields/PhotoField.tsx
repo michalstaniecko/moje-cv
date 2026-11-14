@@ -21,6 +21,74 @@ const ARROW_DIRECTIONS: Record<string, [number, number]> = {
   ArrowDown: [0, 1]
 }
 
+// Wybór zdjęcia z dysku i kadrowanie przed zapisem (docs/specs/wysiwyg-editing.md, W13) – wspólne dla CV form, karty
+// i Field popover zdjęcia na stronie. `pick` – systemowe okno wyboru pliku, potem okno kadrowania; `crop` – ponowne
+// kadrowanie zdjęcia z CV; `error` – nieudany wybór; `cropper` – okno kadrowania (modalny `dialog`) do wyrenderowania
+// przez użytkownika hooka. `onCropEnd` – okno kadrowania się zamknęło (zatwierdzone albo anulowane).
+export function usePhotoPicker(editor: CvEditor, { onCropEnd }: { onCropEnd?: () => void } = {}) {
+  const [source, setSource] = useState<HTMLImageElement | null>(null)
+  const [error, setError] = useState<PickError | null>(null)
+
+  async function open(dataUrl: string) {
+    const image = new Image()
+    image.src = dataUrl
+    await image.decode()
+    setSource(image)
+  }
+
+  async function pick() {
+    setError(null)
+    try {
+      const result = await window.api.photo.pick()
+      if (result.status === 'canceled') return
+      if (result.status !== 'picked') {
+        setError(result.status)
+        return
+      }
+      await open(result.dataUrl)
+    } catch {
+      // Plik nie dał się odczytać z dysku albo zdekodować jako obraz.
+      setError('undecodable')
+    }
+  }
+
+  async function crop(dataUrl: string) {
+    setError(null)
+    try {
+      await open(dataUrl)
+    } catch {
+      setError('undecodable')
+    }
+  }
+
+  // Po zamknięciu okna kadrowania (już bez niego w DOM – fokus poza otwartym modalnym oknem jest zablokowany).
+  const ended = useRef(false)
+  const cropEnd = useRef(onCropEnd)
+  useEffect(() => {
+    cropEnd.current = onCropEnd
+  })
+  useEffect(() => {
+    if (source !== null || !ended.current) return
+    ended.current = false
+    cropEnd.current?.()
+  }, [source])
+  const end = () => {
+    ended.current = true
+    setSource(null)
+  }
+  const cropper = source && (
+    <PhotoCropper
+      source={source}
+      onApply={(dataUrl) => {
+        editor.edit(updateHeader({ photo: { dataUrl } }))
+        end()
+      }}
+      onCancel={end}
+    />
+  )
+  return { pick, crop, error, cropper }
+}
+
 // Zdjęcie w nagłówku: wybór z dysku, kadrowanie przed zapisem i usunięcie (nagłówek bez kolumny na zdjęcie).
 // W CV form – grupa z legendą; w Edit card zdjęcia (`inCard`) – same pola, bo nazwą jest nazwa karty.
 // `data-entry-id="photo"`: tu wraca fokus po „Cofnij” usunięcia zdjęcia.
@@ -33,29 +101,9 @@ export function PhotoField({
   photo: CvDocument['header']['photo']
   inCard?: boolean
 }) {
-  const [source, setSource] = useState<HTMLImageElement | null>(null)
-  const [error, setError] = useState<PickError | null>(null)
   const t = useDictionary().editor.photo
   const remove = useRemove()
-
-  async function pick() {
-    setError(null)
-    try {
-      const result = await window.api.photo.pick()
-      if (result.status === 'canceled') return
-      if (result.status !== 'picked') {
-        setError(result.status)
-        return
-      }
-      const image = new Image()
-      image.src = result.dataUrl
-      await image.decode()
-      setSource(image)
-    } catch {
-      // Plik nie dał się odczytać z dysku albo zdekodować jako obraz.
-      setError('undecodable')
-    }
-  }
+  const { pick, error, cropper } = usePhotoPicker(editor)
 
   const fields = (
     <>
@@ -75,16 +123,7 @@ export function PhotoField({
           {t.errors[error]}
         </p>
       )}
-      {source && (
-        <PhotoCropper
-          source={source}
-          onApply={(dataUrl) => {
-            editor.edit(updateHeader({ photo: { dataUrl } }))
-            setSource(null)
-          }}
-          onCancel={() => setSource(null)}
-        />
-      )}
+      {cropper}
     </>
   )
 
