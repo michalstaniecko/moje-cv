@@ -135,6 +135,10 @@ export function useAddControls({
         data-page={fragment.page}
         data-active={hovered === section.id || focused === section.id || undefined}
         style={{ top: pill.top + PILL_GAP, left: pill.left }}
+        // Klik nie zabiera fokusu polu na stronie przed kliknięciem: utrata fokusu chowa placeholdery odsłoniętego wpisu
+        // (docs/specs/wysiwyg-editing.md, W10), strony przesuwają się, a z nimi pigułka spod kursora – klik by nie
+        // trafił. Fokus przenosi dopiero dodanie (karta albo nowe pole).
+        onMouseDown={(event) => event.preventDefault()}
         onClick={() => openAdded(addSectionElement(editor, section), find(selector))}
       >
         + {pillLabel[section.type]}
