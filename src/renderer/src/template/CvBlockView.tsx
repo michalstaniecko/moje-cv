@@ -88,6 +88,7 @@ export function CvBlockView({
       ref={ref}
       className={oversized ? 'cv-block cv-block--oversized' : 'cv-block'}
       data-block={block.kind}
+      data-block-id={block.id}
       data-section-position={'sectionPosition' in block ? block.sectionPosition : undefined}
       style={{ paddingBottom: `${block.spaceAfterMm}mm` }}
     >
