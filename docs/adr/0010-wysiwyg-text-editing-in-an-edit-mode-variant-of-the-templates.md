@@ -1,0 +1,20 @@
+# WYSIWYG text editing in an Edit-mode variant of the Templates, with unchanged document output
+
+Status: proposed – experiment (decision log: `docs/specs/wysiwyg-editing.md`). Supersedes the parts of ADR-0009 that rejected in-place text editing and placeholders.
+
+The owner asked that, in Edit mode, CV content is edited directly on the pages, without any content form. We decided that every Template draws the text of CV fields through small editing slots (`template/editable.tsx`): without an editing context (Preview mode, the PDF window, Template thumbnails) a slot returns exactly today's markup, and with the context that `CvPages` receives only from the Edit-mode preview it draws each field as its own `contenteditable="plaintext-only"` span (a Page field) inside the same Template element, with separators such as " – " and ", " as plain text between fields. So text being edited sits in the real Template layout and wraps exactly as in the PDF, and joined lines (dates, "company – location", "level, field, institution", "label: value") are edited per field. Values that are not text (dates, "currently", the photo, choosing a clause from the library) get small Field popovers next to the field; Edit cards are retired, and the CV form stays as the full linear alternative. Empty fields show placeholders only in the part of the CV that holds the focus (or was just added), and those placeholders take space: Edit mode paginates like the PDF whenever no field is being edited, and differs only by the active part's placeholders while one is. `generateBlocks` gets an optional `reveal` option for that, which the PDF and DOCX never pass.
+
+## Considered Options
+
+- **`contenteditable` on today's Template nodes**: rejected. One node often carries several fields, so edits cannot be mapped back to fields, and React would overwrite the text on every render.
+- **A text field laid over the text on the page**: rejected again (ADR-0009): it wraps differently from the Template and leaves joined lines unsolved.
+- **Separate editable copies of the Template components**: rejected. Two copies of three Templates drift apart, and every drift is a lie about what the PDF will look like.
+- **Placeholders for every empty field in Edit mode** (or none at all): rejected. Always-on placeholders make Edit mode pages permanently differ from the PDF; none leave no place to put the caret for a missing company or date.
+- **Keeping blocks mounted across page breaks** to protect the caret: rejected, it changes the structure of `CvPages`; the caret is restored by field key before paint instead.
+
+## Consequences
+
+- "Templates unchanged" now means "document output unchanged", checked by machines: a golden-markup Vitest of every block in every Template without the editing context, the golden pages e2e test in Preview mode, the same baselines for idle Edit mode, and unchanged DOCX tests.
+- A new Template must draw field text through the slots; the class contract of ADR-0009 remains only for outlines and handles.
+- In Edit mode the pages are exposed to screen readers as the CV with labelled text fields; in Preview mode they stay hidden.
+- Typing on the page uses the CV form's undo merge keys, so both produce the same undo steps; the native undo of editable elements is always replaced by the editor's.

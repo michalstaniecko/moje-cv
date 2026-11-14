@@ -18,6 +18,10 @@ Przeczytane: `CLAUDE.md`, `docs/agents/*.md`, `GLOSSARY.md`, ADR 0001–0008, `d
 Nowe pojęcia w `GLOSSARY.md`: **Edit mode**, **Preview mode**, **Edit card**, **Outline**, **CV form**.
 Nowy ADR: `docs/adr/0009-on-page-editing-as-overlay-over-unchanged-templates.md` (status *proposed* – eksperyment).
 
+**Dalszy kierunek (2026-11-14):** właściciel zdecydował, że w Edit mode treść edytuje się wprost na stronach (WYSIWYG),
+bez Edit card – to odwraca Q1, Q3 i Q8 tego speca. Zob. `docs/specs/wysiwyg-editing.md` i ADR-0010 (zastępuje część
+ADR-0009).
+
 ---
 
 ## Kontekst

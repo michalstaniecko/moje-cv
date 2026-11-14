@@ -45,7 +45,7 @@ The light or dark look of the app's own interface (panels, forms, toolbars), cho
 _Avoid_: Theme, dark mode (as the name of the setting), skin, color scheme (as the name of the setting); for the settings of a single CV's document, say CV design
 
 **Edit mode**:
-The state of the CV editor in which the CV pages carry editing controls (outlines, handles, "+" buttons, Edit cards) and the Outline or CV form is shown beside them. Every opened CV starts in it. Its pages are split exactly like the PDF: editing controls never take space in the document.
+The state of the CV editor in which the text on the CV pages is edited in place (Page fields), with Field popovers for values that are not text, editing controls around the content (outlines, handles, "+" buttons) and the Outline or CV form beside the pages. Every opened CV starts in it. When no field is being edited its pages look and split exactly like the PDF; only the part of the CV holding the focus may show placeholders for its empty fields.
 _Avoid_: Design mode, edit view, inline mode
 
 **Preview mode**:
@@ -53,15 +53,23 @@ The state of the CV editor in which the CV pages are shown exactly as they will 
 _Avoid_: Print preview, read-only mode, live preview (that is the pages shown in either mode)
 
 **Edit card**:
-The floating panel opened next to one part of a CV page in Edit mode (the name, the photo, the contacts, the summary, a section title, one entry with its bullets, one list section or the consent clause), holding the fields of only that part. Changes apply at once, like everywhere in the editor; it has no Save button.
+Being retired (ADR-0010). The floating panel with the form fields of one part of a CV page, opened next to it in Edit mode before text was edited in place; replaced by Page fields and Field popovers.
 _Avoid_: Popup, modal, inline form, tooltip, inspector
+
+**Page field**:
+One editable piece of CV text on a page in Edit mode: the text of exactly one field (a name, a company, a bullet, a contact label…), drawn by the Template in its place on the page, so it wraps as in the PDF. Text only, without formatting; separators between fields (" – ", ", ") belong to no Page field.
+_Avoid_: Inline input, text box, editable area, contenteditable (as the name of the concept)
+
+**Field popover**:
+The small panel opened next to a Page field or another part of a page in Edit mode for a value that is not typed as text: a date with "currently", the photo, the consent clause's library actions, contact label suggestions. Holds the controls of one value, never the fields of a whole part of the CV.
+_Avoid_: Edit card, form, dialog (except the modal photo crop), tooltip
 
 **Outline**:
 The narrow side panel of the CV editor listing the header, every section in CV order (also the hidden and empty ones) and the consent clause, for jumping to a part of the CV, reordering sections and hiding them. Never shows CV content beyond names.
 _Avoid_: Navigator, table of contents, sidebar (as the name of the panel)
 
 **CV form**:
-The complete form with every field of the CV, one under another, kept in the CV editor as an alternative to the Edit cards and as the way screen readers edit a CV.
+The complete form with every field of the CV, one under another, kept in the CV editor as an alternative view of the sidebar beside the editable pages and as a complete linear way to edit a CV.
 _Avoid_: Editor (that is the whole screen), sidebar
 
 **Sponsor bar**:
