@@ -30,11 +30,13 @@ import {
   updateContact,
   updateEducationItem,
   updateExperienceItem,
-  updateHeader,
   updateListItem,
   updateSection,
   updateSettings
 } from './documentEdits'
+import { FullNameField } from './fields/FullNameField'
+import { SectionTitleField, sectionName } from './fields/SectionTitleField'
+import { SummaryField } from './fields/SummaryField'
 import { handleListFieldKeyDown } from './listFieldKeys'
 import { MonthField } from './MonthField'
 import { PhotoField } from './PhotoField'
@@ -43,8 +45,6 @@ import { SortableList } from './SortableList'
 import { TemplatePicker } from './TemplatePicker'
 
 type EditorText = Dictionary['editor']
-
-const sectionName = (section: Section, t: EditorText) => section.title.trim() || t.sectionTypes[section.type]
 
 // Formularz edycji CV: nagłówek, sekcje w kolejności z CV i klauzula zgody. Każda zmiana trafia do edytora (historia + autozapis).
 // `clauses` – biblioteka klauzul; `onSaveClause` dodaje do niej nową klauzulę; `onRemove` wykonuje usunięcia z formularza
@@ -143,13 +143,7 @@ function HeaderFields({ editor, header }: { editor: CvEditor; header: CvDocument
   return (
     <section className="form-section">
       <h2 className="form-section-title">{t.header}</h2>
-      <label className="form-field">
-        <span>{t.fullName}</span>
-        <input
-          value={header.fullName}
-          onChange={(event) => editor.edit(updateHeader({ fullName: event.target.value }), 'header:fullName')}
-        />
-      </label>
+      <FullNameField editor={editor} header={header} />
 
       <PhotoField editor={editor} photo={header.photo} />
 
@@ -191,14 +185,7 @@ function HeaderFields({ editor, header }: { editor: CvEditor; header: CvDocument
         </button>
       </fieldset>
 
-      <label className="form-field">
-        <span>{t.summary}</span>
-        <textarea
-          rows={4}
-          value={header.summary}
-          onChange={(event) => editor.edit(updateHeader({ summary: event.target.value }), 'header:summary')}
-        />
-      </label>
+      <SummaryField editor={editor} header={header} />
     </section>
   )
 }
@@ -233,13 +220,7 @@ function SectionFields({ editor, section, handle }: { editor: CvEditor; section:
     <section className={section.hidden ? 'form-section form-section--hidden' : 'form-section'} aria-label={name}>
       <div className="form-section-header">
         {handle}
-        <input
-          className="form-section-title-input"
-          aria-label={t.sectionTitle(name)}
-          placeholder={t.sectionTypes[section.type]}
-          value={section.title}
-          onChange={(event) => editor.edit(updateSection(section.id, { title: event.target.value }), `section:${section.id}:title`)}
-        />
+        <SectionTitleField editor={editor} section={section} />
       </div>
       <div className="form-row">
         <Checkbox
