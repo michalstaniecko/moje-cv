@@ -7,9 +7,8 @@ import { sectionName } from '../editor/fields/SectionTitleField'
 import type { RowMenuAction } from '../editor/RowMenu'
 import { SortableList } from '../editor/SortableList'
 import { useDictionary, useInterfaceLanguage } from '../i18n'
-import { addSectionElement, type AddedAnchor } from './AddControls'
+import { addSectionElement } from './AddControls'
 import { sectionShown } from './addOnPage'
-import { sectionFragmentKeys } from './blockMoves'
 import { fragmentKey, type EditTarget } from './editTargets'
 import type { EditSession } from './useEditSession'
 
@@ -31,33 +30,25 @@ export function Outline({
   editor,
   document,
   session,
-  added,
   footer
 }: {
   editor: CvEditor
   document: CvDocument
   session: EditSession
-  added: AddedAnchor
   footer: ReactNode
 }) {
   const t = useDictionary().editor
   const language = useInterfaceLanguage()
   const countId = useId()
-  const outline = useRef<HTMLElement>(null)
   const consentSwitch = useRef<HTMLInputElement>(null)
-  const find = (selector: string) => () => outline.current?.querySelector<HTMLElement>(selector) ?? null
-  const rowSelector = (key: string) => `[data-outline-row="${CSS.escape(key)}"]`
 
-  // Karta części CV: przy jej fragmencie na stronie (strony przewinięte do niego), a bez fragmentu – przy `from`.
-  const openCard = (target: EditTarget, from: () => HTMLElement | null) => {
-    const key = fragmentKey(target)
-    added.remember(key, from)
+  // Kursor w części CV na stronie (strony przewinięte do jej fragmentu, jeśli już tam jest).
+  const focusPart = (target: EditTarget) => {
     window.document
-      .querySelector(`.cv-pages [data-fragment="${CSS.escape(key)}"]`)
+      .querySelector(`.cv-pages [data-fragment="${CSS.escape(fragmentKey(target))}"]`)
       ?.scrollIntoView({ block: 'center' })
-    session.openCard(target, key)
+    session.focusPart(target)
   }
-  const openRow = (target: EditTarget) => openCard(target, find(rowSelector(fragmentKey(target))))
 
   const isEmpty = (section: Section, current = document) => !sectionShown({ ...section, hidden: false }, current)
 
@@ -69,13 +60,12 @@ export function Outline({
       switches.current.get(section.id)?.focus()
       return
     }
-    const row = find(rowSelector(fragmentKey({ kind: 'sectionTitle', sectionId: section.id })))
     if (!isEmpty(section, current)) {
-      openCard({ kind: 'sectionTitle', sectionId: section.id }, row)
+      focusPart({ kind: 'sectionTitle', sectionId: section.id })
       return
     }
     const target = addSectionElement(editor, section, { reuseEmpty: true })
-    if (target) openCard(target, row)
+    if (target) focusPart(target)
   }
   const show = (section: Section) => {
     editor.edit(updateSection(section.id, { hidden: false }))
@@ -85,7 +75,6 @@ export function Outline({
   }
 
   const sectionActions = (section: Section, focusHandle: () => void): RowMenuAction[] => {
-    const handle = find(`[data-outline-section="${CSS.escape(section.id)}"] .row-handle`)
     const addLabel = { experience: t.addPosition, education: t.addEducation, list: t.addListItem }[section.type]
     return [
       {
@@ -100,8 +89,6 @@ export function Outline({
         label: t.hideSection,
         checked: section.hidden,
         run: () => {
-          // Karta przy fragmencie sekcji, która znika ze stron, zamyka się (jak „Ukryj sekcję” w menu na stronie).
-          if (!section.hidden && session.card && sectionFragmentKeys(section).has(session.card.anchor)) session.closeCard()
           editor.edit(updateSection(section.id, { hidden: !section.hidden }))
           focusHandle()
         }
@@ -113,21 +100,20 @@ export function Outline({
           // ma na stronach – nowy element czeka w niej, a fokus idzie na jej przełącznik „Pokaż na CV”.
           const target = addSectionElement(editor, section, { reuseEmpty: isEmpty(section) })
           if (section.hidden) switches.current.get(section.id)?.focus()
-          else if (target) openCard(target, handle)
+          else if (target) focusPart(target)
         }
       }
     ]
   }
 
   return (
-    <nav ref={outline} className="outline" aria-label={t.outline.title}>
+    <nav className="outline" aria-label={t.outline.title}>
       <div className="outline-body">
         <button
           type="button"
           className="outline-row-button outline-header"
-          data-outline-row={fragmentKey({ kind: 'fullName' })}
           data-safe-focus
-          onClick={() => openRow({ kind: 'fullName' })}
+          onClick={() => focusPart({ kind: 'fullName' })}
         >
           <span className="outline-row-name">{t.header}</span>
         </button>
@@ -140,7 +126,6 @@ export function Outline({
         >
           {(section, row) => {
             const empty = isEmpty(section)
-            const target: EditTarget = { kind: 'sectionTitle', sectionId: section.id }
             const described = [
               section.items.length > 0 ? `${countId}-${section.id}` : '',
               section.hidden ? `${countId}-show-to-edit` : ''
@@ -156,7 +141,6 @@ export function Outline({
                 <button
                   type="button"
                   className="outline-row-button"
-                  data-outline-row={fragmentKey(target)}
                   aria-describedby={described || undefined}
                   onClick={() => openSection(section)}
                 >
@@ -196,8 +180,7 @@ export function Outline({
           <button
             type="button"
             className="outline-row-button"
-            data-outline-row={fragmentKey({ kind: 'consent' })}
-            onClick={() => (document.consent.enabled ? openRow({ kind: 'consent' }) : consentSwitch.current?.focus())}
+            onClick={() => (document.consent.enabled ? focusPart({ kind: 'consent' }) : consentSwitch.current?.focus())}
           >
             <span className="outline-row-name">{t.consent.title}</span>
           </button>

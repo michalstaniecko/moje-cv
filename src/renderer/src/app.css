@@ -74,7 +74,6 @@ body {
 .outline,
 .editor-rail,
 .row-menu,
-.edit-card,
 .field-popover,
 .edit-pill,
 .edit-start-hint,
@@ -264,9 +263,8 @@ textarea:focus-visible {
 
 /* ---------- Warstwa edycji na stronach (Edit mode) ----------
    Warstwa leży w przewijanym panelu stron obok .preview-pages, poza .cv (ADR-0009), i przewija się razem ze stronami.
-   Fragment to przezroczysty przycisk nad częścią strony: obrys tylko przy najechaniu, fokusie i otwartej karcie.
-   Pasek podglądu (z-index 1) zostaje nad fragmentami przy przewijaniu. Warstwa ma własny kontekst nakładania (z-index
-   0): uchwyty menu są w niej nad fragmentami, a pasek podglądu nad całą warstwą. */
+   Tekst stron to Page fields pod warstwą (canvas/pageFields.css); w warstwie są tylko kontrolki poza tekstem. Pasek
+   podglądu (z-index 1) zostaje nad nimi przy przewijaniu: warstwa ma własny kontekst nakładania (z-index 0). */
 .edit-layer {
   position: absolute;
   z-index: 0;
@@ -500,83 +498,6 @@ textarea:focus-visible {
 .field-popover-option:hover,
 .field-popover-option[aria-selected='true'] {
   background: var(--ui-accent-glow);
-}
-
-/* Edit card: w warstwie górnej (popover), pozycję od fragmentu ustawia EditCard; skala zawsze 1:1. Bez nagłówka –
-   etykiety pól są tytułem karty, a „×” stoi w rogu nad pierwszą etykietą. */
-.edit-card {
-  position: fixed;
-  inset: auto;
-  box-sizing: border-box;
-  width: 340px;
-  max-width: calc(100vw - 8px);
-  max-height: calc(100vh - 8px);
-  margin: 0;
-  padding: 0;
-  overflow: auto;
-  background: var(--ui-panel-bg);
-  border: 1px solid var(--ui-border);
-  border-radius: 10px;
-  box-shadow: 0 8px 28px var(--ui-shadow);
-}
-
-.edit-card .form {
-  padding: 12px 14px 4px;
-}
-
-.edit-card .form-field:first-child > span {
-  padding-right: 28px;
-}
-
-/* Nagłówek karty bez etykiety pola na górze (sekcja listowa, klauzula zgody) – jak etykiety pól. */
-.edit-card-heading {
-  margin: 2px 28px 10px 0;
-  color: var(--ui-text-muted);
-  font-size: 12px;
-}
-
-/* Karta ma 340 px: wiersze pól zawijają się, a pola wyboru („Obecnie tu pracuję”, „Nowa strona przed wpisem”) stoją
-   w osobnej linii, bez odstępu na etykietę pola obok. */
-.edit-card .form-row {
-  flex-wrap: wrap;
-}
-
-/* Wiersz punktu lub elementu listy (uchwyt + pole) zostaje w jednej linii i zajmuje całą szerokość karty. */
-.edit-card .form-bullets .form-row {
-  flex-wrap: nowrap;
-}
-
-/* Kontakt w karcie: etykieta, wartość i ✕ w jednej linii, jak w CV form. */
-.edit-card .form-row:has(> .form-contact-label) {
-  flex-wrap: nowrap;
-}
-
-.edit-card .form-bullets > div {
-  align-self: stretch;
-}
-
-.edit-card .form-row > .form-checkbox {
-  flex-basis: 100%;
-  padding-top: 0;
-  white-space: normal;
-}
-
-.edit-card .form-checkbox {
-  margin-bottom: 10px;
-}
-
-.edit-card-close {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  font-size: 18px;
-  line-height: 1;
-  color: var(--ui-text-muted);
-  background: transparent;
-  border-color: transparent;
 }
 
 /* ---------- Pasek narzędzi ---------- */
@@ -1079,7 +1000,7 @@ textarea:focus-visible {
 }
 
 /* Wiersz Outline: nazwa części CV (przycisk na całą szerokość), za nią oznaczenie i liczba wpisów. Bez ramki – lista,
-   nie rząd przycisków; tło akcentu przy najechaniu, fokusie i otwartej karcie. */
+   nie rząd przycisków; tło akcentu przy najechaniu. */
 .outline-row-button {
   display: flex;
   align-items: center;
@@ -1633,7 +1554,7 @@ textarea:focus-visible {
 }
 
 /* „Usunięto. Cofnij” pływa w lewym dolnym rogu panelu stron (obok paska bocznego, a w Preview mode przy lewej krawędzi),
-   wspólne dla Edit card i formularza. Kontener `role="status"` jest w warstwie górnej (popover, nad otwartą Edit card),
+   wspólne dla stron i formularza. Kontener `role="status"` jest w warstwie górnej (popover, nad otwartym Field popover),
    zakotwiczony w pustym elemencie w tym rogu; bez treści nie ma wymiarów, a czytnik ekranu ogłasza wstawioną treść. */
 .removal-message-anchor {
   position: absolute;

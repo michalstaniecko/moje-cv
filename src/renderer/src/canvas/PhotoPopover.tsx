@@ -15,7 +15,7 @@ import type { Fragment } from './fragmentRects'
 // otworzył. Escape zamyka popover i wraca na przycisk zdjęcia; „Undo” po usunięciu – też na niego, gdy wróci na stronę.
 // `button(fragment)` – przycisk zdjęcia na jego fragmencie (warstwa rysuje go w kolejności fragmentów, czyli czytania
 // strony); `popover` – otwarty Field popover zdjęcia albo nic.
-// `add(from)` – „Photo” w pasku „Add to CV” (W13): od razu systemowy wybór pliku i okno kadrowania, bez karty. Po
+// `add(from)` – „Photo” w pasku „Add to CV” (W13): od razu systemowy wybór pliku i okno kadrowania. Po
 // zatwierdzeniu kadru fokus przechodzi na przycisk nowego zdjęcia na stronie, po anulowaniu wraca na przycisk paska
 // (`from`). Pliku, którego nie da się wczytać, dotyczy Field popover przy przycisku paska: komunikat i „Choose photo”
 // (ponowny wybór); Escape wraca na przycisk paska. `adding` – okno kadrowania i ten popover (warstwa rysuje je zawsze).

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { useStore } from 'zustand'
 import type { MenuCommand } from '../../shared/api'
-import { useAddedAnchor } from './canvas/AddControls'
 import { EditorSidebar, sidebarWidth } from './canvas/EditorSidebar'
 import { useEditSession, type EditorMode } from './canvas/useEditSession'
 import type { PaginateResult } from './domain/paginate'
@@ -73,7 +72,7 @@ export function CvScreen({
   useEditorLifecycle(editor)
   const modeToggle = useRef<ModeToggleHandle>(null)
   const panes = useRef<HTMLDivElement>(null)
-  // Fokus, który nie ma dokąd wrócić (zamknięta karta części CV, której już nie ma – np. po cofnięciu), trafia na pasek
+  // Fokus, który nie ma dokąd wrócić (pole części CV, której już nie ma – np. po cofnięciu), trafia na pasek
   // boczny: „Nagłówek” w Outline, przełącznik przy CV form, ikonę Outline na szynie (`data-safe-focus`); bez paska –
   // na przełącznik trybu.
   const focusSafePlace = useCallback(() => {
@@ -96,8 +95,6 @@ export function CvScreen({
   usePreviewShortcut(session.togglePreview)
   const formWidth = useFormWidth(panes)
   const sidebar = useEditorSidebar()
-  // Kotwica kart otwartych przy kontrolce zamiast fragmentu strony – wspólna dla warstwy edycji i Outline.
-  const added = useAddedAnchor()
 
   // Ponowiony albo kolejny zapis kończy pytanie o wyjście; przy następnym błędzie pasek wraca do zwykłego komunikatu.
   useEffect(() => {
@@ -193,8 +190,8 @@ export function CvScreen({
         </button>
         <CvNameHeading name={document.name} onRename={(name) => editor.edit(updateName(name))} />
         <ModeToggle ref={modeToggle} mode={session.mode} onChange={session.setMode} />
-        {/* „Projekt CV” – w obu trybach; otwarcie panelu zamyka otwartą Edit card. */}
-        <CvDesignButton editor={editor} document={document} onOpen={session.closeCard} />
+        {/* „Projekt CV” – w obu trybach. */}
+        <CvDesignButton editor={editor} document={document} />
         {/* Przy nieudanym zapisie status jest pusty – błąd ogłasza pasek komunikatu pod paskiem narzędzi. */}
         <span className="toolbar-status" role="status">
           {saveStatus === 'failed' ? '' : t.saveStatus[saveStatus]}
@@ -280,7 +277,6 @@ export function CvScreen({
             editor={editor}
             document={document}
             session={session}
-            added={added}
             formWidth={formWidth}
             clauses={clauses}
             onSaveClause={saveClause}
@@ -297,15 +293,14 @@ export function CvScreen({
             session,
             onFocusLost: focusSafePlace,
             onRemove: removal.remove,
-            library: { clauses, onSaveClause: saveClause },
-            added
+            library: { clauses, onSaveClause: saveClause }
           }}
           onShowOversized={() => {
             session.setMode('edit')
             modeToggle.current?.focus('edit')
           }}
         />
-        {/* „Usunięto. Cofnij” z Edit card i z CV form – w lewym dolnym rogu panelu stron. */}
+        {/* „Usunięto. Cofnij” ze stron i z CV form – w lewym dolnym rogu panelu stron. */}
         <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
       </div>
     </div>

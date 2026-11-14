@@ -7,8 +7,7 @@ import { useRemove } from '../removalUndo'
 import { SortableList } from '../SortableList'
 
 // Elementy sekcji listowej (umiejętności, języki): kolejność, usuwanie z menu wiersza, Enter dzieli, Backspace łączy,
-// „Dodaj element” – w CV form i w Edit card sekcji (`data-edit-focus` = id elementu). Te same klucze łączenia kroków
-// cofania w obu miejscach.
+// „Dodaj element” – w CV form. Te same klucze łączenia kroków cofania co Page fields elementów na stronie.
 export function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; sectionId: string; items: TextItem[] }) {
   const t = useDictionary().editor
   const remove = useRemove()
@@ -26,7 +25,6 @@ export function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor
             {row.handle}
             <input
               aria-label={t.listItem(index + 1)}
-              data-edit-focus={item.id}
               value={item.text}
               onChange={(event) =>
                 editor.edit(updateListItem(sectionId, item.id, event.target.value), `list:${item.id}:text`)

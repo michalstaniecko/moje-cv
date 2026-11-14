@@ -9,7 +9,7 @@ import type { Fragment } from './fragmentRects'
 // w CV (pasek „Add to CV” pod ostatnią stroną), czy CV jest zupełnie puste (podpowiedź na pierwszej stronie) i gdzie
 // stoją pigułki „+” pod sekcjami. Bez DOM, żeby dało się testować w Node.
 
-// Brakująca część CV z przyciskiem w pasku „Add to CV”. `key` – stały identyfikator przycisku (kotwica karty).
+// Brakująca część CV z przyciskiem w pasku „Add to CV”. `key` – stały identyfikator przycisku.
 export type AddToCvItem =
   | { kind: 'fullName'; key: 'fullName' }
   | { kind: 'photo'; key: 'photo' }

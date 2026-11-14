@@ -7,17 +7,15 @@ import type { CvEditor } from './cvEditor'
 type Change = (document: CvDocument) => CvDocument
 
 // Dokąd wraca fokus po „Cofnij”: do pierwszego pola przywróconej pozycji (element z `data-entry-id`), a gdy go nie ma,
-// do przycisku dodawania w tej samej liście (`data-add-for`). `root` – gdzie najpierw szukać (Edit card, z której
-// usunięto; ten sam wpis jest też w CV form); `restore` – zamiast szukania pola (np. ponowne otwarcie karty
-// przywróconego wpisu, która zamknęła się po jego usunięciu).
+// do przycisku dodawania w tej samej liście (`data-add-for`). `restore` – zamiast szukania pola (np. kursor w przywróconym
+// wpisie na stronie).
 export type RemovalFocus = {
   entryId: string
   listId: string
-  root?: () => ParentNode | null
   restore?: () => void
 }
 
-// Usunięcie z formularza albo z Edit card (kontakt, zdjęcie, stanowisko, punkt, wykształcenie, element listy) –
+// Usunięcie z formularza albo ze stron (kontakt, zdjęcie, stanowisko, punkt, wykształcenie, element listy) –
 // z komunikatem „Usunięto. Cofnij”.
 export type RemoveWithUndo = (change: Change, focus: RemovalFocus) => void
 
@@ -73,7 +71,7 @@ export function useRemovalUndo(editor: CvEditor) {
   return { removal, remove, undo, dismiss }
 }
 
-function focusNear({ entryId, listId, root, restore }: RemovalFocus) {
+function focusNear({ entryId, listId, restore }: RemovalFocus) {
   if (restore) {
     restore()
     return
@@ -86,11 +84,10 @@ function focusNear({ entryId, listId, root, restore }: RemovalFocus) {
       scope.querySelector<HTMLElement>(`[data-add-for="${CSS.escape(listId)}"]`)
     )
   }
-  const scope = root?.()
-  ;((scope && near(scope)) ?? near(window.document))?.focus()
+  near(window.document)?.focus()
 }
 
-// „Usunięto. Cofnij” – pływający komunikat w lewym dolnym rogu panelu stron, wspólny dla Edit card i CV form (widoczny
+// „Usunięto. Cofnij” – pływający komunikat w lewym dolnym rogu panelu stron, wspólny dla stron i CV form (widoczny
 // niezależnie od paska bocznego). Kontener `role="status"` jest stale w DOM, a treść pojawia się po
 // usunięciu, żeby czytnik ekranu ją ogłosił. Fokus nie jest przenoszony; „Cofnij” jest osiągalne Tabem.
 export function RemovalMessage({
@@ -102,8 +99,8 @@ export function RemovalMessage({
   onUndo: () => void
   onExpire: () => void
 }) {
-  // Komunikat jest w warstwie górnej (`popover`), żeby otwarta Edit card (też w warstwie górnej) nie zasłoniła „Cofnij”;
-  // każde nowe usunięcie stawia go na jej wierzchu. Położenie – od kotwicy w rogu panelu stron (CSS anchor positioning).
+  // Komunikat jest w warstwie górnej (`popover`), żeby otwarty Field popover (też w warstwie górnej) nie zasłonił
+  // „Cofnij”; każde nowe usunięcie stawia go na jego wierzchu. Położenie – od kotwicy w rogu panelu stron (CSS anchor positioning).
   const element = useRef<HTMLDivElement>(null)
   const key = removal?.key
   useLayoutEffect(() => {

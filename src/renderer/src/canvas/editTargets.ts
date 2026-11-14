@@ -1,12 +1,13 @@
 import type { CvDocument, Section } from '../domain/schema'
 
-// Edycja na stronach CV (ADR-0009, docs/specs/inline-editing-redesign.md, Q6, Q21): co edytuje Edit card otwarta przy
-// danym fragmencie strony. Czyste funkcje – bez DOM – żeby mapowanie bloków na części CV było testowalne w Node.
+// Edycja na stronach CV (ADR-0009, ADR-0010): części CV, które pokazują fragmenty stron – dla obrysów, uchwytów menu,
+// pigułek „+” i wejść stawiających kursor w części CV (`session.focusPart`). Czyste funkcje – bez DOM – żeby mapowanie
+// bloków na części CV było testowalne w Node.
 
 export type ExperienceField = 'role' | 'company' | 'location' | 'start' | 'end'
 export type EducationField = 'level' | 'field' | 'institution' | 'start' | 'end'
 
-// Część CV, którą edytuje jedna Edit card, z opcjonalnym polem, na które trafia fokus (kliknięte miejsce).
+// Część CV (fragment strony) z opcjonalnym polem, w którym ma stanąć kursor.
 export type EditTarget =
   | { kind: 'fullName' }
   | { kind: 'photo' }
@@ -52,8 +53,8 @@ const headerPartTargets: Record<(typeof headerParts)[number], EditTarget> = {
 
 export const headerPartTarget = (part: (typeof headerParts)[number]): EditTarget => headerPartTargets[part]
 
-// Fragment strony: część CV edytowana jedną kartą (wpis razem z punktami, sekcja listowa ze wszystkimi wierszami).
-// Klucz nie zależy od pola ani punktu, więc karta trzyma się fragmentu po każdym podziale stron.
+// Fragment strony: jedna część CV (wpis razem z punktami, sekcja listowa ze wszystkimi wierszami). Klucz nie zależy od
+// pola ani punktu, więc uchwyt i obrys trzymają się fragmentu po każdym podziale stron.
 export function fragmentKey(target: EditTarget): string {
   switch (target.kind) {
     case 'sectionTitle':
@@ -71,7 +72,7 @@ export function fragmentKey(target: EditTarget): string {
 // Sekcja CV, do której należy część (tytuł sekcji, wpis, sekcja listowa); nagłówek i klauzula zgody – null.
 export const sectionOf = (target: EditTarget): string | null => ('sectionId' in target ? target.sectionId : null)
 
-// Cel fragmentu bez pola i punktu – to, co otwiera klawiatura (fokus na pierwszym polu karty).
+// Cel fragmentu bez pola i punktu.
 export function fragmentTarget(target: EditTarget): EditTarget {
   switch (target.kind) {
     case 'contacts':
@@ -85,8 +86,6 @@ export function fragmentTarget(target: EditTarget): EditTarget {
       return target
   }
 }
-
-const isFilled = (text: string) => text.trim() !== ''
 
 // Klauzula zgody nie jest blokiem dokumentu (nie ma `data-block-id`); warstwa edycji mierzy ją pod tym umownym id,
 // którego nie ma żaden blok (id bloków nie zaczynają się od „#”).
@@ -130,76 +129,4 @@ function findItem(document: CvDocument, itemId: string) {
     if (item) return item
   }
   return null
-}
-
-// Miejsce kliknięcia na stronie: najbliższa klasa kontraktu nad klikniętym elementem i numer dziecka (n-ty kontakt
-// w `.cv-contact`, n-ty `li` w punktach lub wierszu listy). `part: null` – kliknięto poza klasami kontraktu.
-export type ContractHit = { part: ContractPart | null; index: number }
-
-// Cel klikniętego miejsca bloku `blockId`: cel bloku uzupełniony o pole (fokus karty) według kontraktu znaczników.
-// Brak dopasowania – cel bloku bez pola (fokus na pierwszym polu karty).
-export function hitTarget(blockId: string, hit: ContractHit, document: CvDocument): EditTarget | null {
-  const target = blockTarget(blockId, document)
-  if (!target) return null
-  switch (target.kind) {
-    case 'fullName': {
-      // Blok nagłówka: część według klasy kontraktu.
-      if (hit.part === 'photo' || hit.part === 'name' || hit.part === 'summary') return headerPartTarget(hit.part)
-      if (hit.part === 'contact') {
-        const contacts = document.header.contacts.filter((contact) => isFilled(contact.value))
-        const contact = contacts[hit.index]
-        return contact ? { kind: 'contacts', contactId: contact.id } : { kind: 'contacts' }
-      }
-      return target
-    }
-    case 'experienceItem': {
-      if (hit.part === 'role') return { ...target, field: 'role' }
-      if (hit.part === 'company') return { ...target, field: 'company' }
-      if (hit.part === 'date') return { ...target, field: 'start' }
-      // Punkt w bloku wpisu to pierwszy niepusty punkt; kolejne punkty mają własne bloki (z `bulletId`).
-      if (hit.part === 'item' && !target.bulletId) {
-        const item = findItem(document, target.itemId)
-        const first = item && 'bullets' in item ? item.bullets.find((bullet) => isFilled(bullet.text)) : undefined
-        return first ? { ...target, bulletId: first.id } : target
-      }
-      return target
-    }
-    case 'educationItem':
-      if (hit.part === 'educationLevel') return { ...target, field: 'level' }
-      if (hit.part === 'date') return { ...target, field: 'start' }
-      return target
-    case 'listSection': {
-      // Tytuł obok listy (`listSectionLayout.title: 'beside'`) leży w pierwszym wierszu listy.
-      if (hit.part === 'sectionTitle') return { kind: 'sectionTitle', sectionId: target.sectionId }
-      if (hit.part !== 'item') return target
-      const section = document.sections.find((candidate) => candidate.id === target.sectionId)
-      const items = section?.type === 'list' ? section.items.filter((item) => isFilled(item.text)) : []
-      const firstOfRow = items.findIndex((item) => `${target.sectionId}:${item.id}` === blockId)
-      const item = items[firstOfRow + hit.index]
-      return firstOfRow === -1 || !item ? target : { ...target, itemId: item.id }
-    }
-    default:
-      return target
-  }
-}
-
-// Czy część CV, którą edytuje karta, nadal istnieje (sprawdzane po każdej zmianie dokumentu, także cofnij/ponów).
-// Nagłówek i klauzula zgody istnieją zawsze – nawet gdy ich fragment zniknął ze strony (np. wyczyszczone imię), karta
-// zostaje otwarta. Zniknięcie punktu, kontaktu czy elementu listy nie zamyka karty całego wpisu, kontaktów czy listy.
-export function targetExists(target: EditTarget, document: CvDocument): boolean {
-  switch (target.kind) {
-    case 'sectionTitle':
-    case 'listSection':
-      return document.sections.some((section) => section.id === target.sectionId)
-    case 'experienceItem':
-    case 'educationItem':
-      return document.sections.some(
-        (section) =>
-          section.id === target.sectionId &&
-          section.type === (target.kind === 'experienceItem' ? 'experience' : 'education') &&
-          section.items.some((item) => item.id === target.itemId)
-      )
-    default:
-      return true
-  }
 }

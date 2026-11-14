@@ -5,7 +5,7 @@ import { addContact, addEducationItem, addExperienceItem, addListItem, updateCon
 import { sectionName } from '../editor/fields/SectionTitleField'
 import { useDictionary } from '../i18n'
 import { addToCvItems, isEmptyCv, sectionPills, type AddToCvItem, type SectionPill } from './addOnPage'
-import { fragmentKey, type EditTarget } from './editTargets'
+import type { EditTarget } from './editTargets'
 import type { Fragment, Rect } from './fragmentRects'
 import type { EditSession } from './useEditSession'
 
@@ -17,7 +17,7 @@ const PILL_LINGER_MS = 300
 
 // Element sekcji do dodania na stronach (pigułka „+”, pasek „Add to CV”, menu tytułu sekcji): nowy wpis albo element
 // listy na końcu sekcji. `reuseEmpty` – sekcja bez treści na stronach (pasek): jej istniejący, jeszcze pusty element
-// zamiast kolejnego pustego. Zwraca cel karty nowego elementu.
+// zamiast kolejnego pustego. Zwraca nowy (albo odsłaniany) element – cel `session.focusPart`.
 export function addSectionElement(editor: CvEditor, section: Section, { reuseEmpty = false } = {}): EditTarget | null {
   const reused = reuseEmpty ? section.items[0] : undefined
   if (!reused) {
@@ -36,21 +36,6 @@ export function addSectionElement(editor: CvEditor, section: Section, { reuseEmp
     : { kind: section.type === 'experience' ? 'experienceItem' : 'educationItem', sectionId: section.id, itemId: item.id }
 }
 
-// Kotwica karty nowego, jeszcze pustego elementu (nie ma go na stronie, dopóki czegoś nie wpisano): klucz jego
-// fragmentu i przycisk, którym go dodano (szukany na nowo przy każdym położeniu karty – po nowym podziale stron to może
-// być inny element DOM). Gdy fragment powstanie, karta przeskakuje do niego (warstwa szuka najpierw fragmentu).
-export function useAddedAnchor() {
-  const added = useRef<{ key: string; find: () => HTMLElement | null } | null>(null)
-  return {
-    remember: (key: string, find: () => HTMLElement | null) => {
-      added.current = { key, find }
-    },
-    anchor: (key: string) => (added.current?.key === key ? added.current.find() : null)
-  }
-}
-
-export type AddedAnchor = ReturnType<typeof useAddedAnchor>
-
 // Dodawanie na stronach w Edit mode (docs/specs/inline-editing-redesign.md, Q8, Q10) – wszystko w warstwie edycji,
 // nic na kartkach (podział stron jak w Preview mode i PDF):
 // - pigułki „+ Position / Education / Item” pod ostatnim fragmentem sekcji, widoczne przy najechaniu na sekcję albo
@@ -67,7 +52,6 @@ export function useAddControls({
   fragments,
   pages,
   layer,
-  added,
   compact,
   addPhoto
 }: {
@@ -77,17 +61,13 @@ export function useAddControls({
   fragments: Fragment[]
   pages: Rect[]
   layer: RefObject<HTMLElement | null>
-  added: AddedAnchor
   compact: boolean
   addPhoto: (from: () => HTMLElement | null) => void
 }) {
   const t = useDictionary().editor
   const find = (selector: string) => () => layer.current?.querySelector<HTMLElement>(selector) ?? null
-  const openAdded = (target: EditTarget | null, from: () => HTMLElement | null) => {
-    if (!target) return
-    const key = fragmentKey(target)
-    added.remember(key, from)
-    session.openCard(target, key)
+  const openAdded = (target: EditTarget | null) => {
+    if (target) session.focusPart(target)
   }
   const sectionById = (sectionId: string) => document.sections.find((section) => section.id === sectionId)
 
@@ -129,7 +109,6 @@ export function useAddControls({
     const pill = pills.get(fragment)
     const section = pill && sectionById(pill.sectionId)
     if (!pill || !section) return null
-    const selector = `.edit-pill[data-section="${CSS.escape(section.id)}"]`
     return (
       <button
         type="button"
@@ -140,9 +119,9 @@ export function useAddControls({
         style={{ top: pill.top + PILL_GAP, left: pill.left }}
         // Klik nie zabiera fokusu polu na stronie przed kliknięciem: utrata fokusu chowa placeholdery odsłoniętego wpisu
         // (docs/specs/wysiwyg-editing.md, W10), strony przesuwają się, a z nimi pigułka spod kursora – klik by nie
-        // trafił. Fokus przenosi dopiero dodanie (karta albo nowe pole).
+        // trafił. Fokus przenosi dopiero dodanie (kursor w nowym polu).
         onMouseDown={(event) => event.preventDefault()}
-        onClick={() => openAdded(addSectionElement(editor, section), find(selector))}
+        onClick={() => openAdded(addSectionElement(editor, section))}
       >
         + {pillLabel[section.type]}
       </button>
@@ -173,7 +152,7 @@ export function useAddControls({
     switch (item.kind) {
       case 'fullName':
       case 'summary':
-        return openAdded({ kind: item.kind }, from)
+        return openAdded({ kind: item.kind })
       case 'photo':
         // Od razu wybór pliku i kadrowanie (PhotoPopover.tsx) – zdjęcie nie ma pola na stronie.
         return addPhoto(from)
@@ -184,15 +163,15 @@ export function useAddControls({
           editor.edit(addContact())
           contact = editor.store.getState().document.header.contacts.at(-1)
         }
-        return openAdded({ kind: 'contacts', contactId: contact?.id }, from)
+        return openAdded({ kind: 'contacts', contactId: contact?.id })
       }
       case 'section': {
         const section = sectionById(item.sectionId)
-        return section ? openAdded(addSectionElement(editor, section, { reuseEmpty: true }), from) : undefined
+        return section ? openAdded(addSectionElement(editor, section, { reuseEmpty: true })) : undefined
       }
       case 'consent':
         if (!document.consent.enabled) editor.edit(updateConsent({ enabled: true }))
-        return openAdded({ kind: 'consent' }, from)
+        return openAdded({ kind: 'consent' })
     }
   }
 
@@ -224,7 +203,7 @@ export function useAddControls({
       className="edit-start-hint button-primary"
       data-page={0}
       style={{ top: (firstPage.top + firstPage.bottom) / 2, left: (firstPage.left + firstPage.right) / 2 }}
-      onClick={() => openAdded({ kind: 'fullName' }, find('.edit-start-hint'))}
+      onClick={() => openAdded({ kind: 'fullName' })}
     >
       {t.canvas.startHint}
     </button>

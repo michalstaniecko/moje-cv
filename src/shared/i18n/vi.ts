@@ -187,9 +187,7 @@ export const vi: Dictionary = {
       startHint: 'Bắt đầu với họ và tên của bạn',
       add: { position: 'Vị trí', education: 'Học vấn', item: 'Mục' }
     },
-    card: {
-      close: 'Đóng',
-      sectionTitle: 'Tiêu đề mục',
+    part: {
       position: (name) => `Vị trí “${name}”`,
       education: (name) => `Học vấn “${name}”`,
       list: (name) => `Danh sách “${name}”`

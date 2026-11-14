@@ -191,9 +191,7 @@ export const it: Dictionary = {
       startHint: 'Inizia da nome e cognome',
       add: { position: 'Posizione', education: 'Titolo di studio', item: 'Voce' }
     },
-    card: {
-      close: 'Chiudi',
-      sectionTitle: 'Titolo della sezione',
+    part: {
       position: (name) => `Posizione «${name}»`,
       education: (name) => `Formazione «${name}»`,
       list: (name) => `Elenco «${name}»`

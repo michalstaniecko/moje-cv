@@ -5,13 +5,12 @@ import type { CvDocument } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
 import type { RemoveWithUndo } from '../editor/removalUndo'
 import { useDictionary } from '../i18n'
-import { useAddControls, type AddedAnchor } from './AddControls'
+import { useAddControls } from './AddControls'
 import { BlockHandle, useBlockMenu } from './BlockMenu'
 import { ContactLabelSuggestions } from './ContactLabelSuggestions'
 import { DatePopover, openDatesAt, type DatePopoverStore } from './DatePopover'
 import { ConsentToolbar, type ClauseLibrary } from './ConsentToolbar'
-import { EditCard, type CardAnchor } from './EditCard'
-import { blockTarget, fragmentTarget, sectionOf } from './editTargets'
+import { blockTarget, sectionOf } from './editTargets'
 import type { Fragment, Rect } from './fragmentRects'
 import { dateWarningId } from './pageFields'
 import { activateJoined } from './PageField'
@@ -25,15 +24,13 @@ import type { EditSession } from './useEditSession'
 export const CONTROLS_MIN_SCALE = 0.5
 
 // Warstwa edycji (ADR-0009, ADR-0010): leży w przewijanym panelu stron obok `.preview-pages`, poza korzeniem `.cv`, więc
-// nie zmienia ani piksela stron. Tekst CV edytuje się na stronach (Page fields), więc żadna część strony nie otwiera już
-// Edit card; w warstwie są to, co nie jest tekstem: przycisk zdjęcia (Field popover zdjęcia, PhotoPopover.tsx), Field
-// popovers dat, podpowiedzi etykiet kontaktu i pasek klauzuli zgody, ⚠ odwróconych dat. Istnieje tylko w Edit mode.
+// nie zmienia ani piksela stron. Tekst CV edytuje się na stronach (Page fields); w warstwie jest to, co nie jest
+// tekstem: przycisk zdjęcia (Field popover zdjęcia, PhotoPopover.tsx), Field popovers dat, podpowiedzi etykiet kontaktu
+// i pasek klauzuli zgody, ⚠ odwróconych dat. Istnieje tylko w Edit mode.
 // Tytuły sekcji i wpisy mają uchwyt menu w marginesie kartki (BlockMenu.tsx); przy skali
 // poniżej CONTROLS_MIN_SCALE uchwytów nie ma. Dodawanie (AddControls.tsx): pigułki „+” pod sekcjami (też tylko od
 // CONTROLS_MIN_SCALE), pasek „Add to CV” pod ostatnią stroną i podpowiedź w pustym CV – wszystko poza treścią kartek.
-// Kartę (po S5 nic jej nie otwiera – do usunięcia w S6) zamyka Escape (fokus wraca na jej
-// kotwicę), klik w tło strony lub poza stronę (poza kartą, kontrolkami warstwy i paskiem podglądu), przejście do Preview
-// mode i wyjście z edytora. `onFocusLost` – fokus nie ma dokąd wrócić (fragment zniknął).
+// `onFocusLost` – fokus nie ma dokąd wrócić (fragment zniknął).
 export function EditLayer({
   document,
   editor,
@@ -43,8 +40,7 @@ export function EditLayer({
   scale,
   onFocusLost,
   onRemove,
-  library,
-  added
+  library
 }: EditingContext & {
   document: CvDocument
   panel: RefObject<HTMLElement | null>
@@ -52,109 +48,17 @@ export function EditLayer({
   scale: number
 }) {
   const layer = useRef<HTMLDivElement>(null)
-  const card = useRef<HTMLDivElement>(null)
   const { fragments, pages } = useFragmentRects({ layer, panel, document, layout, scale })
-  const { card: open, openCard, closeCard } = session
 
-  const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, added, onFocusLost, onRemove })
+  const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, onFocusLost, onRemove })
   const compact = scale < CONTROLS_MIN_SCALE
   const photo = usePhotoEditing({ editor, photo: document.header.photo, onRemove, onFocusLost })
-  const addOnPage = useAddControls({ editor, document, session, fragments, pages, layer, added, compact, addPhoto: photo.add })
-  // Element, przy którym stoi karta: pierwsze pole tekstu fragmentu na stronie (nie żeton daty), a dla
-  // nowego, jeszcze pustego elementu – przycisk, którym go dodano (uchwyt menu, pigułka „+”, pasek „Add to CV”,
-  // podpowiedź w pustym CV, wiersz Outline). Najpierw Page field (fokus w nim nie rozwija wpisu), dopiero potem linia
-  // złączona.
-  const onPage = (key: string): HTMLElement | undefined => {
-    const selector = `.cv-pages [data-fragment="${CSS.escape(key)}"]`
-    return (
-      panel.current?.querySelector<HTMLElement>(`${selector}[contenteditable]`) ??
-      panel.current?.querySelector<HTMLElement>(`${selector}:not(.cv-page-date, .cv-page-dates)`) ??
-      undefined
-    )
-  }
-  const anchorElement = (key: string | undefined): HTMLElement | undefined =>
-    key === undefined ? undefined : (onPage(key) ?? added.anchor(key) ?? undefined)
-  const anchorKey = open?.anchor
-  const focusAnchor = () => {
-    const element = anchorElement(anchorKey)
-    if (element) element.focus()
-    else onFocusLost()
-  }
-
-  // Karta nowego elementu przeskakuje z przycisku, którym go dodano (albo wiersza Outline), do jego pierwszego fragmentu
-  // na stronie: gdy ten fragment jest poza widokiem (np. na kolejnej stronie), strony przewijają się do niego, żeby
-  // karta nie stała przy krawędzi okna z dala od tego, co edytuje.
-  const lastAnchor = useRef<{ key: string; onPage: boolean } | null>(null)
-  useLayoutEffect(() => {
-    if (!open) {
-      lastAnchor.current = null
-      return
-    }
-    const fragment = onPage(open.anchor)
-    const previous = lastAnchor.current
-    lastAnchor.current = { key: open.anchor, onPage: fragment !== undefined }
-    if (fragment && previous?.key === open.anchor && !previous.onPage) fragment.scrollIntoView({ block: 'nearest' })
-  })
-
+  const addOnPage = useAddControls({ editor, document, session, fragments, pages, layer, compact, addPhoto: photo.add })
   // Bieżący dokument dla obsługi kliknięcia – bez niego w zależnościach przyciski nie przerysowują się przy każdym klawiszu.
   const latestDocument = useRef(document)
   useEffect(() => {
     latestDocument.current = document
   })
-
-  // Shift+Tab z pierwszego pola karty wraca na jej kotwicę; Tab z ostatniego – zwykła kolejność Tab.
-  const onTabOut = (direction: 'forward' | 'backward') => {
-    const anchor = direction === 'backward' ? anchorElement(anchorKey) : undefined
-    if (!anchor) return false
-    anchor.focus()
-    return true
-  }
-
-  // Usunięcie w karcie: „Cofnij” wraca do pola przywróconego punktu lub elementu w karcie, a po usunięciu całego wpisu
-  // (karta zamknęła się razem z nim) – otwiera kartę przywróconego wpisu z fokusem na jej pierwszym polu.
-  const removeInCard: RemoveWithUndo = (change, focus) => {
-    if (!open) return
-    const reopen = { target: fragmentTarget(open.target), anchor: open.anchor }
-    const wholeEntry =
-      (open.target.kind === 'experienceItem' || open.target.kind === 'educationItem') && focus.entryId === open.target.itemId
-    onRemove(change, {
-      ...focus,
-      root: () => card.current,
-      restore: wholeEntry ? () => openCard(reopen.target, reopen.anchor) : undefined
-    })
-  }
-
-  const locate = (): CardAnchor => {
-    const element = anchorElement(anchorKey)
-    if (!element || !panel.current) return null
-    const anchor = element.getBoundingClientRect()
-    const pageNumber = element.closest<HTMLElement>('[data-page]')?.dataset['page']
-    const page = panel.current.querySelectorAll('.cv-pages > .cv-page')[Number(pageNumber)]
-    const panelBox = panel.current.getBoundingClientRect()
-    return {
-      anchor,
-      beside: { edge: page?.getBoundingClientRect().right ?? anchor.right, limit: panelBox.left + panel.current.clientWidth - 8 }
-    }
-  }
-
-  // Klik w tło strony albo poza stronę zamyka kartę. Gdy fokus nie trafił w nic (tło nie przyjmuje fokusu), wraca na
-  // fragment karty, żeby nie zginął. „Usunięto. Cofnij” nie zamyka karty – „Cofnij” wraca do pola w karcie. Uchwyt
-  // i jego menu też nie: przeniesienie fragmentu z otwartą kartą zostawia kartę przy nim, a „Dodaj …” ją zastępuje –
-  // tak jak pigułki „+”, pasek „Add to CV”, podpowiedź w pustym CV i Outline (jego wiersze otwierają inną kartę).
-  useEffect(() => {
-    if (!open) return
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Element | null
-      if (target?.closest(`.edit-card, ${layerControls}, .edit-handle, .preview-bar, .removal-message, .outline, [data-field-popover]`)) return
-      const anchor = anchorElement(open.anchor)
-      closeCard()
-      requestAnimationFrame(() => {
-        if (window.document.activeElement === window.document.body) anchor?.focus({ preventScroll: true })
-      })
-    }
-    window.document.addEventListener('pointerdown', onPointerDown)
-    return () => window.document.removeEventListener('pointerdown', onPointerDown)
-  }, [open, closeCard])
 
   useHandlesOfPageFields(panel, layer)
   usePointerOnPages(panel, session.activeField, session.datePopover)
@@ -181,41 +85,21 @@ export function EditLayer({
       <DatePopover editor={editor} document={document} dates={session.datePopover} active={session.activeField} />
       <ContactLabelSuggestions editor={editor} document={document} active={session.activeField} />
       <ConsentToolbar editor={editor} document={document} active={session.activeField} library={library} onFocusLost={onFocusLost} />
-      {open && (
-        <EditCard
-          // Inny fragment = nowa karta (nowe pola, fokus); inne pole tego samego fragmentu – ta sama karta.
-          key={open.anchor}
-          ref={card}
-          target={open.target}
-          editor={editor}
-          document={document}
-          locate={locate}
-          onClose={() => {
-            closeCard()
-            focusAnchor()
-          }}
-          onTabOut={onTabOut}
-          onRemove={removeInCard}
-        />
-      )}
     </div>
   )
 }
 
-// Co edytor daje warstwie edycji (przez PreviewPane): dokument do zmian, sesję (tryb, otwarta karta), bezpieczne miejsce
-// dla fokusu, usuwanie z „Usunięto. Cofnij”, bibliotekę klauzul i kotwicę kart otwartych poza fragmentem strony
-// (`added` – wspólna z Outline: karta ukrytej lub pustej sekcji stoi przy wierszu Outline).
+// Co edytor daje warstwie edycji (przez PreviewPane): dokument do zmian, sesję (tryb, aktywne pole, popovery), bezpieczne
+// miejsce dla fokusu, usuwanie z „Usunięto. Cofnij” i bibliotekę klauzul.
 export type EditingContext = {
   editor: CvEditor
   session: EditSession
   onFocusLost: () => void
   onRemove: RemoveWithUndo
   library: ClauseLibrary
-  added: AddedAnchor
 }
 
-// Uchwyt menu fragmentu edytowanego na stronie (Page fields – bez przycisku fragmentu, nad którym CSS pokazuje uchwyt)
-// pokazuje się, gdy kursor myszy jest nad polem fragmentu (`data-hovered`) albo pole ma fokus (`data-focused`).
+// Uchwyt menu fragmentu pokazuje się, gdy kursor myszy jest nad polem fragmentu (`data-hovered`) albo pole ma fokus (`data-focused`).
 function useHandlesOfPageFields(panel: RefObject<HTMLElement | null>, layer: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const element = panel.current
@@ -243,8 +127,7 @@ function useHandlesOfPageFields(panel: RefObject<HTMLElement | null>, layer: Ref
   }, [panel, layer])
 }
 
-// Kursor nad treścią sekcji na stronie pokazuje jej pigułkę „+” (AddControls.tsx) – tak jak dotąd najechanie na
-// przycisk fragmentu, którego wpisy edytowane na stronie pod myszą już nie mają.
+// Kursor nad treścią sekcji na stronie pokazuje jej pigułkę „+” (AddControls.tsx).
 function useSectionHoverOnPages(
   panel: RefObject<HTMLElement | null>,
   latestDocument: RefObject<CvDocument>,
@@ -280,8 +163,7 @@ function useSectionHoverOnPages(
 
 // Klik myszą na stronie poza Page field (docs/specs/wysiwyg-editing.md, W9, W12): w datę wpisu obok żetonu (np. kropka
 // osi czasu w Classic, tło żetonu w Bold) – Field popover najbliższej daty; w separator, kropkę osi czasu albo puste
-// miejsce bloku – kursor w najbliższym polu tego bloku, w miejscu najbliższym kliknięciu. Tło strony poza blokami – nic
-// (zamyka kartę, jak dotąd).
+// miejsce bloku – kursor w najbliższym polu tego bloku, w miejscu najbliższym kliknięciu. Tło strony poza blokami – nic.
 function usePointerOnPages(panel: RefObject<HTMLElement | null>, active: ActiveFieldStore, dates: DatePopoverStore) {
   useEffect(() => {
     const element = panel.current
@@ -346,10 +228,6 @@ function nearestField(block: Element, selector: string, x: number, y: number): {
   const caret = point && field.contains(point.offsetNode) ? offsetOf(field, point.offsetNode, point.offset) : x < rect.left ? 0 : length
   return { field, caret }
 }
-
-// Kontrolki warstwy (klik w nie nie zamyka karty): zdjęcie, uchwyty menu, pigułki „+”, pasek „Add to CV” i podpowiedź
-// w pustym CV.
-const layerControls = '.edit-photo, .edit-handle .row-handle, .edit-pill, .add-to-cv button, .edit-start-hint'
 
 // Ostrzeżenie o odwróconych datach wpisu (W12): znaczek ⚠ w warstwie edycji przy dacie na stronie (poza treścią kartki,
 // tylko w Edit mode) i opis dla czytnika ekranu, który żetony dat wpisu wskazują przez `aria-describedby`

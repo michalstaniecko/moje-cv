@@ -194,9 +194,7 @@ export const nl: Dictionary = {
       startHint: 'Begin met je volledige naam',
       add: { position: 'Functie', education: 'Opleiding', item: 'Item' }
     },
-    card: {
-      close: 'Sluiten',
-      sectionTitle: 'Sectietitel',
+    part: {
       position: (name) => `Functie “${name}”`,
       education: (name) => `Opleiding “${name}”`,
       list: (name) => `Lijst “${name}”`

@@ -187,9 +187,7 @@ export const tr: Dictionary = {
       startHint: 'Ad soyadınızla başlayın',
       add: { position: 'Pozisyon', education: 'Eğitim', item: 'Öğe' }
     },
-    card: {
-      close: 'Kapat',
-      sectionTitle: 'Bölüm başlığı',
+    part: {
       position: (name) => `“${name}” pozisyonu`,
       education: (name) => `“${name}” eğitimi`,
       list: (name) => `“${name}” listesi`

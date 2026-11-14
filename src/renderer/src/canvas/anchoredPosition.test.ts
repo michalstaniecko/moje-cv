@@ -6,23 +6,8 @@ const anchor = { top: 300, left: 400, right: 700, bottom: 340 }
 const panel = { width: 320, height: 200 }
 
 describe('anchoredPosition', () => {
-  it('puts the panel beside the page, level with the anchor, when it fits before the edge of the pages panel', () => {
-    expect(anchoredPosition({ anchor, panel, viewport, beside: { edge: 800, limit: 1180 } })).toEqual({
-      top: 300,
-      left: 804,
-      placement: 'beside'
-    })
-    // Beside, ale nie wyżej ani niżej niż okno.
-    expect(anchoredPosition({ anchor: { ...anchor, top: -50 }, panel, viewport, beside: { edge: 800, limit: 1180 } }).top).toBe(4)
-    expect(anchoredPosition({ anchor: { ...anchor, top: 700 }, panel, viewport, beside: { edge: 800, limit: 1180 } }).top).toBe(596)
-  })
-
-  it('puts the panel below the anchor when there is no room beside the page', () => {
-    expect(anchoredPosition({ anchor, panel, viewport, beside: { edge: 900, limit: 1180 } })).toEqual({
-      top: 344,
-      left: 400,
-      placement: 'below'
-    })
+  it('puts the panel below the anchor, aligned with its left edge', () => {
+    expect(anchoredPosition({ anchor, panel, viewport })).toEqual({ top: 344, left: 400, placement: 'below' })
   })
 
   it('puts the panel above the anchor when it does not fit below, unless it does not fit above either', () => {
@@ -33,7 +18,7 @@ describe('anchoredPosition', () => {
   })
 
   it('with `contain`, puts a panel that fits neither below nor above beside the anchor itself, right or left', () => {
-    // Wysoki fragment (wpis z punktami) i wysoka karta: ani pod, ani nad nim nie ma miejsca, obok strony też nie.
+    // Wysoki fragment (wpis z punktami) i wysoki panel: ani pod, ani nad nim nie ma miejsca, obok strony też nie.
     const tallAnchor = { top: 100, left: 400, right: 700, bottom: 600 }
     const card = { width: 340, height: 500 }
     expect(anchoredPosition({ anchor: tallAnchor, panel: card, viewport, contain: true })).toEqual({
@@ -88,7 +73,7 @@ describe('anchoredPosition', () => {
   })
 
   it('with `contain`, keeps the panel in the window when its anchor has scrolled out of it', () => {
-    // Fragment przewinięty nad okno (np. wyższe strony obok wąskiego Outline): karta z fokusem nie ucieka z ekranu.
+    // Fragment przewinięty nad okno (np. wyższe strony obok wąskiego Outline): panel z fokusem nie ucieka z ekranu.
     const scrolledAbove = { top: -400, left: 400, right: 700, bottom: -360 }
     expect(anchoredPosition({ anchor: scrolledAbove, panel, viewport, contain: true })).toEqual({ top: 4, left: 400, placement: 'below' })
     const scrolledBelow = { top: 900, left: 400, right: 700, bottom: 940 }

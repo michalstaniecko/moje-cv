@@ -1,5 +1,5 @@
 // Położenie pływającego panelu w warstwie górnej (`popover`, `position: fixed`) przy elemencie, od którego go otwarto:
-// menu wiersza (RowMenu) i Edit card. Czysta logika na prostokątach w px okna.
+// menu wiersza (RowMenu), panel CV design i Field popovers. Czysta logika na prostokątach w px okna.
 
 export type Box = { top: number; left: number; right: number; bottom: number }
 export type Size = { width: number; height: number }
@@ -7,14 +7,13 @@ export type Size = { width: number; height: number }
 // Odstęp od kotwicy i minimalny margines od krawędzi okna.
 const GAP = 4
 const EDGE = 4
-// Najniższy panel, który przy `contain` może jeszcze stanąć pod lub nad kotwicą zamiast ją zasłonić (kilka pól karty).
+// Najniższy panel, który przy `contain` może jeszcze stanąć pod lub nad kotwicą zamiast ją zasłonić (kilka pól).
 export const MIN_CONTAINED_HEIGHT = 180
 
 // `anchor` – prostokąt kotwicy; `panel` – rozmiar panelu; `viewport` – rozmiar okna.
-// `beside` (Edit card): obok kartki po prawej (`edge` – prawa krawędź kartki), jeśli zmieści się przed `limit`
-// (prawa krawędź panelu stron), na wysokości kotwicy; inaczej – i zawsze bez `beside` – pod kotwicą, a gdy pod nią
-// brakuje miejsca (i jest nad nią) – nad kotwicą, wyrównany do jej lewej krawędzi. W poziomie zawsze w granicach okna.
-// `contain` (Edit card przy wysokim fragmencie): gdy panel nie mieści się ani pod, ani nad kotwicą, nie może zasłonić
+// Pod kotwicą, a gdy pod nią brakuje miejsca (i jest nad nią) – nad kotwicą, wyrównany do jej lewej krawędzi.
+// W poziomie zawsze w granicach okna.
+// `contain` (panel CV design): gdy panel nie mieści się ani pod, ani nad kotwicą, nie może zasłonić
 // kotwicy (spec Q5), więc kolejno:
 // 1. staje obok samej kotwicy w oknie – po jej prawej, a gdy tam brak miejsca, po lewej (np. nad paskiem bocznym),
 // 2. staje pod albo nad kotwicą (gdzie więcej miejsca), niższy: `maxHeight` – panel przewija się w środku – o ile
@@ -22,13 +21,12 @@ export const MIN_CONTAINED_HEIGHT = 180
 // 3. dopiero gdy i to się nie da (kotwica prawie na całą wysokość okna), staje po stronie z większą ilością miejsca,
 //    przesunięty tak, żeby był cały w oknie (zasłania wtedy część kotwicy, ale nie ucieka z ekranu).
 // Przy kotwicy przewiniętej poza okno panel stoi przy jego krawędzi.
-// `prefer: 'above'` (pasek klauzuli nad klauzulą): bez `beside` i `contain` – najpierw nad kotwicą, a gdy nad nią brakuje
+// `prefer: 'above'` (pasek klauzuli nad klauzulą): bez `contain` – najpierw nad kotwicą, a gdy nad nią brakuje
 // miejsca – pod nią.
 export function anchoredPosition({
   anchor,
   panel,
   viewport,
-  beside,
   gap = GAP,
   contain = false,
   prefer = 'below'
@@ -36,16 +34,11 @@ export function anchoredPosition({
   anchor: Box
   panel: Size
   viewport: Size
-  beside?: { edge: number; limit: number }
   gap?: number
   contain?: boolean
   prefer?: 'below' | 'above'
-}): { top: number; left: number; placement: 'beside' | 'side' | 'below' | 'above'; maxHeight?: number } {
+}): { top: number; left: number; placement: 'side' | 'below' | 'above'; maxHeight?: number } {
   const left = (preferred: number) => Math.max(EDGE, Math.min(preferred, viewport.width - panel.width - EDGE))
-  if (beside && beside.edge + gap + panel.width <= beside.limit) {
-    const top = Math.max(EDGE, Math.min(anchor.top, viewport.height - panel.height - EDGE))
-    return { top, left: beside.edge + gap, placement: 'beside' }
-  }
   const below = anchor.bottom + gap
   const above = anchor.top - gap - panel.height
   if (contain && below + panel.height > viewport.height && above < 0) {

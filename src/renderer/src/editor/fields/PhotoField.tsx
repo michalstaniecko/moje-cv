@@ -21,7 +21,7 @@ const ARROW_DIRECTIONS: Record<string, [number, number]> = {
   ArrowDown: [0, 1]
 }
 
-// Wybór zdjęcia z dysku i kadrowanie przed zapisem (docs/specs/wysiwyg-editing.md, W13) – wspólne dla CV form, karty
+// Wybór zdjęcia z dysku i kadrowanie przed zapisem (docs/specs/wysiwyg-editing.md, W13) – wspólne dla CV form
 // i Field popover zdjęcia na stronie. `pick` – systemowe okno wyboru pliku, potem okno kadrowania; `crop` – ponowne
 // kadrowanie zdjęcia z CV; `error` – nieudany wybór; `cropper` – okno kadrowania (modalny `dialog`) do wyrenderowania
 // przez użytkownika hooka. `onCropEnd` – okno kadrowania się zamknęło (zatwierdzone albo anulowane).
@@ -90,23 +90,22 @@ export function usePhotoPicker(editor: CvEditor, { onCropEnd }: { onCropEnd?: ()
 }
 
 // Zdjęcie w nagłówku: wybór z dysku, kadrowanie przed zapisem i usunięcie (nagłówek bez kolumny na zdjęcie).
-// W CV form – grupa z legendą; w Edit card zdjęcia (`inCard`) – same pola, bo nazwą jest nazwa karty.
+// W CV form – grupa z legendą (na stronie – Field popover zdjęcia, canvas/PhotoPopover.tsx).
 // `data-entry-id="photo"`: tu wraca fokus po „Cofnij” usunięcia zdjęcia.
 export function PhotoField({
   editor,
-  photo,
-  inCard = false
+  photo
 }: {
   editor: CvEditor
   photo: CvDocument['header']['photo']
-  inCard?: boolean
 }) {
   const t = useDictionary().editor.photo
   const remove = useRemove()
   const { pick, error, cropper } = usePhotoPicker(editor)
 
-  const fields = (
-    <>
+  return (
+    <fieldset className="form-group" data-entry-id="photo">
+      <legend>{t.legend}</legend>
       <div className="form-row photo-field">
         {photo && <img className="photo-thumbnail" src={photo.dataUrl} alt={t.thumbnail} />}
         <button type="button" onClick={() => void pick()}>
@@ -124,14 +123,6 @@ export function PhotoField({
         </p>
       )}
       {cropper}
-    </>
-  )
-
-  if (inCard) return <div data-entry-id="photo">{fields}</div>
-  return (
-    <fieldset className="form-group" data-entry-id="photo">
-      <legend>{t.legend}</legend>
-      {fields}
     </fieldset>
   )
 }

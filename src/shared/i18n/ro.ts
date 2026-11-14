@@ -191,9 +191,7 @@ export const ro: Dictionary = {
       startHint: 'Începe cu numele complet',
       add: { position: 'Post', education: 'Studii', item: 'Element' }
     },
-    card: {
-      close: 'Închide',
-      sectionTitle: 'Titlul secțiunii',
+    part: {
       position: (name) => `Postul „${name}”`,
       education: (name) => `Studii „${name}”`,
       list: (name) => `Lista „${name}”`

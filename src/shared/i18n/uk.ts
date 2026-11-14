@@ -192,9 +192,7 @@ export const uk: Dictionary = {
       startHint: 'Почніть з імені та прізвища',
       add: { position: 'Посада', education: 'Освіта', item: 'Елемент' }
     },
-    card: {
-      close: 'Закрити',
-      sectionTitle: 'Заголовок розділу',
+    part: {
       position: (name) => `Посада «${name}»`,
       education: (name) => `Освіта «${name}»`,
       list: (name) => `Список «${name}»`

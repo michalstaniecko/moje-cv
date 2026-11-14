@@ -11,8 +11,8 @@ import { DateOrderWarning } from './DateOrderWarning'
 import { educationName } from './entryNames'
 
 // Wykształcenie: poziom, kierunek, uczelnia, daty, nowa strona przed wpisem i „Usuń wykształcenie” (tekstowym
-// przyciskiem). W CV form – grupa z legendą i uchwytem wiersza (`handle`); w Edit card (bez `handle`) – same pola.
-// Pola mają `data-edit-focus`; te same klucze łączenia kroków cofania w obu miejscach.
+// przyciskiem). W CV form – grupa z legendą i uchwytem wiersza (`handle`). Te same klucze łączenia kroków cofania co
+// Page fields wpisu na stronie.
 export function EducationItemFields({
   editor,
   sectionId,
@@ -22,7 +22,7 @@ export function EducationItemFields({
   editor: CvEditor
   sectionId: string
   item: EducationItem
-  handle?: ReactNode
+  handle: ReactNode
 }) {
   const t = useDictionary().editor
   const remove = useRemove()
@@ -35,7 +35,6 @@ export function EducationItemFields({
       <span>{label}</span>
       <input
         placeholder={placeholder}
-        data-edit-focus={field}
         value={item[field]}
         onChange={(event) => patchItem({ [field]: event.target.value }, field)}
       />
@@ -51,14 +50,12 @@ export function EducationItemFields({
         <MonthField
           label={t.startOptional}
           value={item.start}
-          focusKey="start"
           onChange={(start) => patchItem({ start }, 'start')}
         />
         <MonthField
           label={t.graduation}
           value={item.end}
           describedBy={reversedDates ? warningId : undefined}
-          focusKey="end"
           onChange={(end) => patchItem({ end }, 'end')}
         />
       </div>
@@ -80,7 +77,6 @@ export function EducationItemFields({
     </>
   )
 
-  if (handle === undefined) return <div data-entry-id={item.id}>{fields}</div>
   return (
     <fieldset className="form-group" data-entry-id={item.id}>
       <legend>

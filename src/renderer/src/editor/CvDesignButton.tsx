@@ -8,15 +8,15 @@ import { CvDesignFields } from './fields/CvDesignFields'
 // Przycisk „Projekt CV” w pasku narzędzi z niemodalnym panelem CV design (kolor akcentu, font, Template, CV language)
 // – w Edit mode i w Preview mode (docs/specs/inline-editing-redesign.md, Q18). Zmiany idą przez edytor, więc są od razu
 // na kartkach, w autozapisie i w historii cofania – jak w CV form.
-// - Panel w warstwie górnej (`popover`, jak RowMenu i Edit card), pod przyciskiem (`anchoredPosition`); stoi w DOM
+// - Panel w warstwie górnej (`popover`, jak RowMenu i Field popovers), pod przyciskiem (`anchoredPosition`); stoi w DOM
 //   zaraz za przyciskiem, więc Tab z przycisku wchodzi do panelu, a z ostatniego pola – do dalszej części paska.
-// - Otwarcie: fokus na pierwszym polu i `onOpen` (edytor zamyka otwartą Edit card – jeden pływający panel naraz).
+// - Otwarcie: fokus na pierwszym polu (otwarty Field popover zamyka się, bo fokus wychodzi poza niego).
 // - Escape i klik poza panelem zamykają go i wracają na przycisk (kliknięta kontrolka zatrzymuje fokus); kliknięcie
 //   przycisku przy otwartym panelu też go zamyka. Fokus przeniesiony poza panel (Tab) zamyka go bez przenoszenia fokusu;
 //   utrata fokusu przez okno (natywny wybór koloru) – nie.
 const KEEPS_FOCUS = 'input, select, textarea, button, a[href], [contenteditable], [tabindex]:not([tabindex="-1"])'
 
-export function CvDesignButton({ editor, document, onOpen }: { editor: CvEditor; document: CvDocument; onOpen: () => void }) {
+export function CvDesignButton({ editor, document }: { editor: CvEditor; document: CvDocument }) {
   const t = useDictionary().editor
   const [open, setOpen] = useState(false)
   const button = useRef<HTMLButtonElement>(null)
@@ -80,10 +80,7 @@ export function CvDesignButton({ editor, document, onOpen }: { editor: CvEditor;
         className="cv-design-button"
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => {
-          if (!open) onOpen()
-          setOpen(!open)
-        }}
+        onClick={() => setOpen(!open)}
       >
         {t.cvDesignButton}
       </button>

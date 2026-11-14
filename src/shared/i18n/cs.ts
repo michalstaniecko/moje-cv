@@ -192,9 +192,7 @@ export const cs: Dictionary = {
       startHint: 'Začněte jménem a příjmením',
       add: { position: 'Pozice', education: 'Vzdělání', item: 'Položka' }
     },
-    card: {
-      close: 'Zavřít',
-      sectionTitle: 'Název sekce',
+    part: {
       position: (name) => `Pozice „${name}“`,
       education: (name) => `Vzdělání „${name}“`,
       list: (name) => `Seznam „${name}“`

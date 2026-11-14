@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 
-// Edycja na stronach CV (docs/specs/inline-editing-redesign.md): tryby Edit mode / Preview mode, warstwa edycji
-// i Edit card.
+// Edycja na stronach CV (docs/specs/inline-editing-redesign.md, docs/specs/wysiwyg-editing.md): tryby Edit mode /
+// Preview mode, Page fields, Field popovers i warstwa edycji.
 
 let app: ElectronApplication
 let window: Page
@@ -226,32 +226,23 @@ test('Preview mode does not highlight oversized fragments on the pages but warns
   await confirm.getByRole('button', { name: 'Cancel' }).click()
 })
 
-// ---------- Warstwa edycji i Edit card ----------
+// ---------- Warstwa edycji ----------
 
-// Klik w miejsce na stronie, jak użytkownik: nad stronami leży warstwa edycji (przyciski fragmentów), więc klik
-// współrzędnymi, a nie w element strony (Playwright nie kliknie elementu przykrytego przyciskiem).
+// Klik w miejsce na stronie, jak użytkownik: współrzędnymi, a nie w element strony (nad stronami leży warstwa edycji).
 async function clickOnPage(element: Locator) {
   await element.scrollIntoViewIfNeeded()
   const box = (await element.boundingBox())!
   await window.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
 }
 
-const fragment = (what: string) => window.locator('.edit-layer').getByRole('button', { name: `Edit: ${what}`, exact: true })
 // Przycisk zdjęcia w warstwie edycji (otwiera Field popover zdjęcia, S4).
 const photoButton = () => window.locator('.edit-layer .edit-photo').and(window.getByRole('button', { name: 'Photo', exact: true }))
 const photoPopover = () => window.getByRole('dialog', { name: 'Photo', exact: true })
 // Tekst klauzuli zgody na stronie (Page field) i pasek klauzuli nad nią (S4).
 const consentField = () => window.locator('.preview .cv-pages').getByRole('textbox', { name: 'Consent clause', exact: true })
 const consentToolbar = () => window.getByRole('toolbar', { name: 'Consent clause', exact: true })
-const fragmentNames = () =>
-  window
-    .locator('.edit-layer .edit-fragment')
-    .evaluateAll((buttons) => buttons.map((button) => button.textContent!.replace(/^Edit: /, '')))
-// Kolejne powtórzenia nazwy (fragmenty jednego wpisu na dwóch stronach) jako jedna nazwa.
-const dedupe = (names: string[]) => names.filter((name, index) => name !== names[index - 1])
 const positions = ['Senior Procurement Specialist', 'Procurement Specialist', 'Procurement Assistant', 'Junior Customer Service Specialist']
 const educations = ['Postgraduate diploma, Procurement Management', 'Master’s degree, Logistics']
-const card = (name: string) => window.getByRole('dialog', { name, exact: true })
 // Daty wpisu na stronie (żetony dat – docs/specs/wysiwyg-editing.md, S3).
 const entryDate = (blockId: string) => window.locator(`.preview .cv-pages [data-block-id="${blockId}"] .cv-date`)
 // Stanowisko wpisu na stronie (Page field) – najechanie pokazuje uchwyt i pigułkę „+” sekcji.
@@ -273,22 +264,6 @@ async function pdfText(path: string): Promise<string> {
     pages.push(content.items.map((item) => ('str' in item ? item.str : '')).join(''))
   }
   return pages.join('\n')
-}
-
-// Karta stoi obok kartki na wysokości fragmentu albo pod nim / nad nim (anchoredPosition) – zawsze w skali 1:1.
-async function expectCardNextTo(dialog: Locator, button: Locator) {
-  await expect
-    .poll(async () => {
-      const cardBox = (await dialog.boundingBox())!
-      const anchor = (await button.boundingBox())!
-      const viewport = window.viewportSize()!
-      const beside = Math.abs(cardBox.y - Math.max(4, Math.min(anchor.y, viewport.height - cardBox.height - 4))) < 1.5
-      const below = Math.abs(cardBox.y - (anchor.y + anchor.height + 8)) < 1.5
-      const above = Math.abs(cardBox.y + cardBox.height - (anchor.y - 8)) < 1.5
-      return (cardBox.x >= anchor.x + anchor.width && beside) || below || above
-    })
-    .toBe(true)
-  expect((await dialog.boundingBox())!.width).toBe(340)
 }
 
 // ---------- Page fields: imię i nazwisko, podsumowanie, tytuły sekcji (docs/specs/wysiwyg-editing.md, S1) ----------
@@ -348,7 +323,6 @@ test('the name is edited on the page: a click puts the caret at the clicked char
   await expect(pageName()).toHaveText('Jane X Example')
   await expect(formField('Full name')).toHaveValue('Jane X Example')
   await expect(window.getByRole('dialog')).toHaveCount(0)
-  await expect(fragment('Full name')).toHaveCount(0)
 
   // Seria znaków to jeden krok cofania; po cofnięciu kursor stoi na końcu zmienionego miejsca, pole ma dalej fokus.
   await window.keyboard.press('Meta+z')
@@ -572,9 +546,8 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
     await expect.poll(focusedKey).toBe(key)
   }
 
-  // Warstwa edycji: przycisk zdjęcia (żadna część strony nie ma już Edit card), uchwyty, pigułki „+” i pasek.
+  // Warstwa edycji: przycisk zdjęcia, uchwyty, pigułki „+” i pasek.
   await expect(photoButton()).toBeVisible()
-  expect(await fragmentNames()).toEqual([])
   const stops = window.locator('.edit-layer .edit-photo, .edit-layer .edit-handle .row-handle, .edit-layer .edit-pill, .edit-layer .add-to-cv button')
   const stopNames = await stops.evaluateAll((elements) => elements.map((element) => element.textContent || element.getAttribute('aria-label')))
   expect(stopNames.slice(1, 3)).toEqual(['Actions for section “Work experience”', 'Actions for position “Senior Procurement Specialist”'])
@@ -672,7 +645,7 @@ test('Preview mode has no editing layer and no page fields: switching closes the
   await window.keyboard.press('Meta+Shift+P')
   await expectPreviewMode()
   await expect(previewButton()).toBeFocused()
-  await expect(window.locator('.edit-layer, .edit-fragment, .edit-card')).toHaveCount(0)
+  await expect(window.locator('.edit-layer')).toHaveCount(0)
   await expect(window.locator('.preview .cv-editing, .preview [contenteditable]')).toHaveCount(0)
   await expect(window.getByRole('dialog')).toHaveCount(0)
 
@@ -732,8 +705,7 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     await expect(dates).toHaveCount(positions.length + educations.length)
     await expect(dates.first()).toHaveText('03.2023 – present')
 
-    // Żadna część strony nie ma już przycisku fragmentu (Edit card); zdjęcie ma przycisk nad sobą.
-    expect(await fragmentNames()).toEqual([])
+    // Zdjęcie ma przycisk nad sobą w warstwie edycji.
     const photoBox = (await page('.cv-photo').boundingBox())!
     const buttonBox = (await photoButton().boundingBox())!
     const [x, y] = [photoBox.x + photoBox.width / 2, photoBox.y + photoBox.height / 2]
@@ -1891,7 +1863,6 @@ test('“New page before” and “Hide section” in the menu on the page work 
   await skills.click()
   await blockMenu('section “Skills”').getByRole('menuitem', { name: 'Hide section' }).click()
   await expect(skillsTitle).toHaveCount(0)
-  await expect(fragment('List “Skills”')).toHaveCount(0)
   await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: 'Skills' })).toHaveCount(0)
   await expect(form.getByRole('region', { name: 'Skills' }).getByLabel('Hide section')).toBeChecked()
   await expect(handle('section “Languages”')).toHaveCount(1)
@@ -2114,7 +2085,6 @@ test('“Photo” in the “Add to CV” bar opens the file picker at once: a fi
   await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(1)
   await expect(barPhoto).toHaveCount(0)
   await expect(photoButton()).toBeFocused()
-  await expect(window.locator('.edit-card')).toHaveCount(0)
   await window.keyboard.press('Meta+z')
   await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(0)
   await expect(barPhoto).toHaveCount(1)
@@ -2176,9 +2146,8 @@ test('a full CV is built from a new CV in the Outline without any card and witho
   await expect(outline()).toBeVisible()
   const bar = (name: string) => addBar().getByRole('button', { name, exact: true })
   const outlineSection = (name: string) => outlineRow(name).locator('.outline-row-button')
-  // Ani Edit card, ani CV form – przez cały czas.
+  // Bez CV form – przez cały czas (Edit card nie ma w ogóle).
   const expectNoForms = async () => {
-    await expect(window.locator('.edit-card')).toHaveCount(0)
     await expect(window.locator('.editor-form')).toHaveCount(0)
   }
 

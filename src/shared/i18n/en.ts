@@ -216,10 +216,8 @@ export const en = {
       startHint: 'Start with your full name',
       add: { position: 'Position', education: 'Education', item: 'Item' }
     },
-    card: {
-      close: 'Close',
-      sectionTitle: 'Section title',
-      // Nazwy kart (i przycisków fragmentów „Edit: …”) wpisów i sekcji listowych.
+    part: {
+      // Nazwy wpisów i sekcji listowych w nazwach ich Page fields (np. „Company – Position “Buyer””).
       position: (name: string) => `Position “${name}”`,
       education: (name: string) => `Education “${name}”`,
       list: (name: string) => `List “${name}”`

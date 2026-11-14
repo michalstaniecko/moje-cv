@@ -187,9 +187,7 @@ export const id: Dictionary = {
       startHint: 'Mulailah dengan nama lengkap Anda',
       add: { position: 'Posisi', education: 'Pendidikan', item: 'Item' }
     },
-    card: {
-      close: 'Tutup',
-      sectionTitle: 'Judul bagian',
+    part: {
       position: (name) => `Posisi “${name}”`,
       education: (name) => `Pendidikan “${name}”`,
       list: (name) => `Daftar “${name}”`

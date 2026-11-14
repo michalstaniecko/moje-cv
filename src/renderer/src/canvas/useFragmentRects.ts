@@ -109,7 +109,7 @@ function readBlocks(layer: HTMLElement, panel: HTMLElement): { blocks: MeasuredB
       }
       blocks.push({ blockId: element.dataset['blockId']!, page: index, rect, parts })
     })
-    // Klauzula zgody na dole ostatniej strony – poza blokami, ale z własną Edit card.
+    // Klauzula zgody na dole ostatniej strony – poza blokami, ale z własnym fragmentem (pasek klauzuli, obrys).
     const consent = union(page.querySelectorAll(editMarkupContract.consent))
     if (consent) blocks.push({ blockId: CONSENT_BLOCK_ID, page: index, rect: consent, parts: [] })
   })

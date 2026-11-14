@@ -312,17 +312,17 @@ function describe(ref: FieldRef, t: Dictionary['editor']): Pick<EditableField, '
     case 'title':
       return { label: t.sectionTitle(sectionName(ref.section, t)), placeholder: t.sectionTypes[ref.section.type], spellcheck: true }
     case 'experience':
-      return inPart(t[ref.field], t.card.position(entryName(ref.item.role, t.newPosition)))
+      return inPart(t[ref.field], t.part.position(entryName(ref.item.role, t.newPosition)))
     case 'bullet':
-      return inPart(t.bullet(ref.index + 1), t.card.position(entryName(ref.item.role, t.newPosition)))
+      return inPart(t.bullet(ref.index + 1), t.part.position(entryName(ref.item.role, t.newPosition)))
     case 'education':
-      return inPart(t[ref.field], t.card.education(educationName(ref.item, t)))
+      return inPart(t[ref.field], t.part.education(educationName(ref.item, t)))
     case 'listItem':
-      return inPart(t.listItem(ref.index + 1), t.card.list(sectionName(ref.section, t)))
+      return inPart(t.listItem(ref.index + 1), t.part.list(sectionName(ref.section, t)))
     case 'date': {
       const { entry, field } = ref
       const name = dateName(dateKey(entry.type, entry.item.id, field), t)!
-      const part = entry.type === 'experience' ? t.card.position(entryName(entry.item.role, t.newPosition)) : t.card.education(educationName(entry.item, t))
+      const part = entry.type === 'experience' ? t.part.position(entryName(entry.item.role, t.newPosition)) : t.part.education(educationName(entry.item, t))
       return { label: `${name} – ${part}`, placeholder: field === 'start' ? t.from : t.to, spellcheck: false }
     }
   }

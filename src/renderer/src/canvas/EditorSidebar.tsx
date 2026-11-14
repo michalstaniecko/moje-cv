@@ -8,7 +8,6 @@ import type { EditorSidebarControl } from '../editor/useEditorSidebar'
 import type { FormWidth } from '../editor/useFormWidth'
 import { useDictionary } from '../i18n'
 import { markInput } from '../preview/keystrokeTiming'
-import type { AddedAnchor } from './AddControls'
 import { Outline } from './Outline'
 import type { EditSession } from './useEditSession'
 
@@ -23,14 +22,12 @@ export const sidebarWidth = (sidebar: Sidebar, formWidth: number) =>
 // i CV form przełącznik „Outline | Formularz” i „Zwiń”; szyna ma ikony obu widoków i „Rozwiń” (wraca do widoku,
 // z którego ją zwinięto). Wybór jest preferencją aplikacji (`useEditorSidebar`). Po przełączeniu fokus zostaje na
 // odpowiedniku klikniętego przycisku w nowym widoku. Element z `data-safe-focus` to miejsce dla fokusu, który nie ma
-// dokąd wrócić (zamknięta karta części CV, której już nie ma).
-// Karta zakotwiczona w wierszu Outline zamyka się przy przełączeniu (jej kotwica znika); karta przy fragmencie strony zostaje.
+// dokąd wrócić (np. pole części CV, której już nie ma).
 export function EditorSidebar({
   control,
   editor,
   document,
   session,
-  added,
   formWidth,
   clauses,
   onSaveClause,
@@ -40,7 +37,6 @@ export function EditorSidebar({
   editor: CvEditor
   document: CvDocument
   session: EditSession
-  added: AddedAnchor
   formWidth: FormWidth
   clauses: Clause[]
   onSaveClause: (content: ClauseContent) => Promise<Clause>
@@ -55,21 +51,13 @@ export function EditorSidebar({
     if (selector) window.document.querySelector<HTMLElement>(`.editor-panes [data-sidebar-control="${selector}"]`)?.focus()
   }, [sidebar])
 
-  const closeOutlineCard = () => {
-    const card = session.card
-    if (card && !window.document.querySelector(`.cv-pages [data-fragment="${CSS.escape(card.anchor)}"]`)) {
-      session.closeCard()
-    }
-  }
   // `focus` – przycisk (`data-sidebar-control`), na który przechodzi fokus w nowym widoku.
   const choose = (next: Sidebar, focus: string) => {
     if (next === sidebar) return
-    closeOutlineCard()
     pendingFocus.current = focus
     control.choose(next)
   }
   const expand = () => {
-    closeOutlineCard()
     pendingFocus.current = 'collapse'
     control.expand()
   }
@@ -78,7 +66,7 @@ export function EditorSidebar({
 
   const footer = <SidebarFooter sidebar={sidebar} onChoose={choose} />
   if (sidebar === 'outline') {
-    return <Outline editor={editor} document={document} session={session} added={added} footer={footer} />
+    return <Outline editor={editor} document={document} session={session} footer={footer} />
   }
   return (
     <>

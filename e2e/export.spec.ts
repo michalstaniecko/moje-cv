@@ -2439,7 +2439,7 @@ test('removing a position says “Removed.” with Undo, which brings it back wi
   await positions.nth(1).getByRole('button', { name: 'Remove position' }).click()
   await expect(roles).toHaveText([allRoles[0]!, allRoles[2]!, allRoles[3]!])
   await expect(removed).toBeVisible()
-  // Komunikat pływa w lewym dolnym rogu panelu stron (wspólny dla formularza i Edit card) i nie zabiera fokusu.
+  // Komunikat pływa w lewym dolnym rogu panelu stron (wspólny dla formularza i stron) i nie zabiera fokusu.
   await expect(window.locator('.editor-form').getByRole('status').filter({ hasText: 'Removed.' })).toHaveCount(0)
   const message = (await removed.locator('.removal-message-content').boundingBox())!
   const pages = (await window.locator('.preview').boundingBox())!

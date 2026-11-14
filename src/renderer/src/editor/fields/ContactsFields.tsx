@@ -5,25 +5,23 @@ import type { CvEditor } from '../cvEditor'
 import { addContact, removeContact, updateContact } from '../documentEdits'
 import { useRemove } from '../removalUndo'
 
-// Kontakty z nagłówka (etykieta z podpowiedziami + wartość, dodaj, usuń) – w CV form i w Edit card kontaktów (te same
-// klucze łączenia kroków cofania). Wartość ma `data-edit-focus` = id kontaktu (fokus karty po kliknięciu kontaktu na
-// stronie). W CV form – grupa z legendą; w Edit card (`inCard`) – same wiersze, bo nazwą jest nazwa karty.
+// Kontakty z nagłówka w CV form (etykieta z podpowiedziami + wartość, dodaj, usuń) – grupa z legendą; klucze łączenia
+// kroków cofania te same co Page fields kontaktów na stronie.
 // Wiersz ma `data-entry-id`, a „Dodaj kontakt” `data-add-for="contacts"`: tam wraca fokus po „Cofnij” usunięcia.
 export function ContactsFields({
   editor,
-  contacts,
-  inCard = false
+  contacts
 }: {
   editor: CvEditor
   contacts: CvDocument['header']['contacts']
-  inCard?: boolean
 }) {
   const suggestionsId = useId()
   const { editor: t, defaultContent } = useDictionary()
   const remove = useRemove()
 
-  const fields = (
-    <>
+  return (
+    <fieldset className="form-group">
+      <legend>{t.contact}</legend>
       <datalist id={suggestionsId}>
         {defaultContent.contactLabels.map((label) => (
           <option key={label} value={label} />
@@ -44,7 +42,6 @@ export function ContactsFields({
           <input
             aria-label={t.contactValue(index + 1)}
             placeholder={t.contactValuePlaceholder}
-            data-edit-focus={contact.id}
             value={contact.value}
             onChange={(event) =>
               editor.edit(updateContact(contact.id, { value: event.target.value }), `contact:${contact.id}:value`)
@@ -59,14 +56,6 @@ export function ContactsFields({
       <button type="button" data-add-for="contacts" onClick={() => editor.edit(addContact())}>
         {t.addContact}
       </button>
-    </>
-  )
-
-  if (inCard) return fields
-  return (
-    <fieldset className="form-group">
-      <legend>{t.contact}</legend>
-      {fields}
     </fieldset>
   )
 }

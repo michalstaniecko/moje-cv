@@ -192,9 +192,7 @@ export const ru: Dictionary = {
       startHint: 'Начните с имени и фамилии',
       add: { position: 'Должность', education: 'Образование', item: 'Элемент' }
     },
-    card: {
-      close: 'Закрыть',
-      sectionTitle: 'Заголовок раздела',
+    part: {
       position: (name) => `Должность «${name}»`,
       education: (name) => `Образование «${name}»`,
       list: (name) => `Список «${name}»`

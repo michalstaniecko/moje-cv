@@ -47,7 +47,7 @@ export function handleListFieldKeyDown(
   if (event.altKey || event.metaKey || event.ctrlKey) return
   const field = event.currentTarget
   const empty = field.value.trim() === ''
-  // Ta sama lista bywa naraz w CV form i w Edit card – fokus zostaje tam, gdzie się pisze.
+  // Pola listy szukane w CV form (`data-entry-root`), w którym się pisze.
   const root = field.closest('[data-entry-root]') ?? window.document
 
   if (event.key === 'Enter') {

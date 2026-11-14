@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CvDocument } from '../domain/schema'
 import { sectionShown } from './addOnPage'
-import { fragmentKey, targetExists, type EditTarget } from './editTargets'
+import { fragmentKey, type EditTarget } from './editTargets'
 import { pageFieldKey } from './pageFields'
 import { createDatePopoverStore } from './DatePopover'
 import { createActiveFieldStore } from './useActiveField'
@@ -9,25 +9,17 @@ import { createActiveFieldStore } from './useActiveField'
 // Edit mode (strony z kontrolkami edycji i paskiem bocznym) albo Preview mode (strony dokładnie jak w PDF) – GLOSSARY.md.
 export type EditorMode = 'edit' | 'preview'
 
-// Otwarta Edit card: co edytuje (`target`) i przy czym jest zakotwiczona (`anchor` – klucz fragmentu strony,
-// `fragmentKey`; po nim karta znajduje fragment po każdym podziale stron).
-export type OpenCard = { target: EditTarget; anchor: string }
-
 export type EditSession = ReturnType<typeof useEditSession>
 
 // Stan sesji ekranu edytora CV poza historią dokumentu (`zundo`): nie trafia do cofania ani do pliku CV i nie jest
-// preferencją – każde otwarcie CV startuje w Edit mode bez otwartej karty (docs/specs/inline-editing-redesign.md, Q16,
-// Q17, Q21). Tryb jest zgłaszany procesowi głównemu dla zaznaczenia Widok → Podgląd.
-// - Jedna karta naraz: otwarcie innej zastępuje bieżącą; przejście do Preview mode zamyka kartę (powrót jej nie otwiera).
-// - Po każdej zmianie dokumentu (także cofnij/ponów) sesja sprawdza, czy część CV z karty nadal istnieje; jeśli nie,
-//   zamyka kartę i woła `onFocusLost` (edytor przenosi fokus w bezpieczne miejsce) – tak samo, gdy z dokumentu zniknie
-//   aktywne pole, a fokus nie ma dokąd wrócić (np. cofnięte dodanie wpisu z kursorem w nim).
-// - Aktywne pole (`activeField`, useActiveField.ts): Page field z fokusem na stronach (docs/specs/wysiwyg-editing.md);
-//   otwarty Field popover daty (`datePopover`, DatePopover.tsx) – zamykany przy przejściu do Preview mode.
-//   Części CV edytowane już na stronie (imię i nazwisko, kontakty, podsumowanie, tytuł sekcji, pole tekstowe wpisu,
-//   element listy, klauzula zgody) nie mają karty: „otwarcie” ich z Outline, „Add to CV” czy menu stawia kursor w ich polu na stronie (pusta
-//   część – także nowy wpis – jest odsłaniana). Karta zostaje (do S6) tylko dla tego, czego nie ma na stronach: tytułu
-//   ukrytej albo pustej sekcji i zdjęcia – Outline i „Add to CV” już ich nie otwierają.
+// preferencją – każde otwarcie CV startuje w Edit mode (docs/specs/inline-editing-redesign.md, Q16, Q17, Q21). Tryb
+// jest zgłaszany procesowi głównemu dla zaznaczenia Widok → Podgląd.
+// - Aktywne pole (`activeField`, useActiveField.ts): Page field z fokusem na stronach (docs/specs/wysiwyg-editing.md).
+//   Gdy z dokumentu zniknie aktywne pole, a fokus nie ma dokąd wrócić (np. cofnięte dodanie wpisu z kursorem w nim),
+//   sesja woła `onFocusLost` (edytor przenosi fokus w bezpieczne miejsce).
+// - Otwarty Field popover daty (`datePopover`, DatePopover.tsx) – zamykany przy przejściu do Preview mode.
+// - `focusPart` stawia kursor w części CV na stronie (Outline, „Add to CV”, pigułki „+”, menu uchwytu): w jej polu,
+//   a pustą część – także nowy wpis – odsłania (W10, W21). Edit card nie ma (W20).
 // `current` – bieżący dokument edytora: część CV dodana tuż przed „otwarciem” (nowy kontakt, włączona klauzula) jest już
 // w nim, choć `document` z ostatniego renderu jeszcze jej nie ma.
 export function useEditSession(
@@ -35,32 +27,23 @@ export function useEditSession(
   { onFocusLost, current }: { onFocusLost?: () => void; current?: () => CvDocument } = {}
 ) {
   const [mode, setModeState] = useState<EditorMode>('edit')
-  const [card, setCard] = useState<OpenCard | null>(null)
-  const cardGone = useRef(onFocusLost)
-  const [activeField] = useState(() => createActiveFieldStore({ onLost: () => cardGone.current?.() }))
+  const focusLost = useRef(onFocusLost)
+  const [activeField] = useState(() => createActiveFieldStore({ onLost: () => focusLost.current?.() }))
   const [datePopover] = useState(createDatePopoverStore)
   const latestDocument = useRef(document)
   const currentDocument = useRef(current)
   useEffect(() => {
-    cardGone.current = onFocusLost
+    focusLost.current = onFocusLost
     latestDocument.current = document
     currentDocument.current = current
   })
 
   useEffect(() => window.api.menu.setPreviewMode(mode === 'preview'), [mode])
 
-  useEffect(() => {
-    if (card && !targetExists(card.target, document)) {
-      setCard(null)
-      cardGone.current?.()
-    }
-  }, [card, document])
-
   const setMode = useCallback(
     (next: EditorMode) => {
       setModeState(next)
       if (next === 'preview') {
-        setCard(null)
         datePopover.close()
         activeField.leave()
       }
@@ -69,28 +52,21 @@ export function useEditSession(
   )
   const togglePreview = useCallback(() => {
     setModeState((current) => (current === 'edit' ? 'preview' : 'edit'))
-    setCard(null)
     datePopover.close()
     activeField.leave()
   }, [activeField, datePopover])
-  const openCard = useCallback(
-    (target: EditTarget, anchor: string) => {
+  // Kursor w części CV na stronie; część, której nie ma na stronach (ukryta sekcja, wyłączona klauzula, nagłówek bez
+  // kontaktów), i zdjęcie (bez pola) – nic.
+  const focusPart = useCallback(
+    (target: EditTarget) => {
       const now = currentDocument.current?.() ?? latestDocument.current
       const key = pageFieldKey(target, now)
-      if (key !== null && onPages(target, now)) {
-        setCard(null)
-        activeField.request({ key, fragment: fragmentKey(target) }, window.document)
-      } else if (target.kind !== 'contacts' && target.kind !== 'consent') {
-        // Kontakty i klauzula nie mają już karty: bez kontaktu albo z wyłączoną klauzulą (nie ma gdzie postawić
-        // kursora) – nic.
-        setCard({ target, anchor })
-      }
+      if (key !== null && onPages(target, now)) activeField.request({ key, fragment: fragmentKey(target) }, window.document)
     },
     [activeField]
   )
-  const closeCard = useCallback(() => setCard(null), [])
 
-  return { mode, setMode, togglePreview, card, openCard, closeCard, activeField, datePopover }
+  return { mode, setMode, togglePreview, focusPart, activeField, datePopover }
 }
 
 // Czy część CV edytowana na stronie może tam dostać kursor: nagłówek (imię i nazwisko, podsumowanie, kontakty) zawsze

@@ -22,9 +22,8 @@ import { entryName } from './entryNames'
 
 // Stanowisko: nazwa, firma, miejscowość, daty z „Obecnie tu pracuję”, punkty (kolejność, Enter dzieli, Backspace łączy),
 // nowa strona przed wpisem i „Usuń stanowisko” (tekstowym przyciskiem, nie z menu wiersza).
-// W CV form – grupa z legendą i uchwytem wiersza (`handle`); w Edit card (bez `handle`) – same pola, bo nazwą jest
-// nazwa karty. Pola mają `data-edit-focus` (fokus karty po kliknięciu pola na stronie). Te same klucze łączenia kroków
-// cofania w obu miejscach.
+// W CV form – grupa z legendą i uchwytem wiersza (`handle`). Te same klucze łączenia kroków cofania co Page fields
+// wpisu na stronie.
 export function ExperienceItemFields({
   editor,
   sectionId,
@@ -34,7 +33,7 @@ export function ExperienceItemFields({
   editor: CvEditor
   sectionId: string
   item: ExperienceItem
-  handle?: ReactNode
+  handle: ReactNode
 }) {
   const t = useDictionary().editor
   const remove = useRemove()
@@ -50,7 +49,6 @@ export function ExperienceItemFields({
     <label className="form-field">
       <span>{label}</span>
       <input
-        data-edit-focus={field}
         value={item[field]}
         onChange={(event) => patchItem({ [field]: event.target.value }, field)}
       />
@@ -76,13 +74,12 @@ export function ExperienceItemFields({
         {textField(t.location, 'location')}
       </div>
       <div className="form-row">
-        <MonthField label={t.from} value={item.start} focusKey="start" onChange={(start) => patchItem({ start }, 'start')} />
+        <MonthField label={t.from} value={item.start} onChange={(start) => patchItem({ start }, 'start')} />
         <MonthField
           label={t.to}
           value={item.end === 'present' ? null : item.end}
           disabled={item.end === 'present'}
           describedBy={reversedDates ? warningId : undefined}
-          focusKey="end"
           onChange={(end) => patchItem({ end }, 'end')}
         />
         <Checkbox label={t.currentlyWorkHere} checked={item.end === 'present'} onChange={togglePresent} />
@@ -106,7 +103,6 @@ export function ExperienceItemFields({
               <textarea
                 rows={2}
                 aria-label={t.bullet(index + 1)}
-                data-edit-focus={bullet.id}
                 value={bullet.text}
                 onChange={(event) =>
                   editor.edit(
@@ -149,7 +145,6 @@ export function ExperienceItemFields({
     </>
   )
 
-  if (handle === undefined) return <div data-entry-id={item.id}>{fields}</div>
   return (
     <fieldset className="form-group" data-entry-id={item.id}>
       <legend>

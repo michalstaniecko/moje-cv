@@ -192,9 +192,7 @@ export const sv: Dictionary = {
       startHint: 'Börja med ditt fullständiga namn',
       add: { position: 'Tjänst', education: 'Utbildning', item: 'Post' }
     },
-    card: {
-      close: 'Stäng',
-      sectionTitle: 'Avsnittsrubrik',
+    part: {
       position: (name) => `Tjänst ”${name}”`,
       education: (name) => `Utbildning ”${name}”`,
       list: (name) => `Lista ”${name}”`

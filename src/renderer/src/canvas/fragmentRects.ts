@@ -17,8 +17,8 @@ export type MeasuredBlock = {
   parts: { part: BlockPart; rect: Rect }[]
 }
 
-// Fragment strony: część CV edytowana jedną Edit card, na jednej stronie (wpis rozdzielony podziałem stron to dwa
-// fragmenty o tym samym kluczu). `target` – cel bez pola, otwierany klawiaturą.
+// Fragment strony: jedna część CV (`fragmentKey`) na jednej stronie (wpis rozdzielony podziałem stron to dwa
+// fragmenty o tym samym kluczu). `target` – cel bez pola.
 export type Fragment = { key: string; target: EditTarget; page: number; rect: Rect }
 
 const isHeaderPart = (part: BlockPart): part is (typeof headerParts)[number] =>

@@ -17,9 +17,9 @@ import type { MoveOffset } from '../editor/moveShortcut'
 import type { RemoveWithUndo } from '../editor/removalUndo'
 import { RowMenu, type RowMenuAction } from '../editor/RowMenu'
 import { useDictionary } from '../i18n'
-import { addSectionElement, type AddedAnchor } from './AddControls'
+import { addSectionElement } from './AddControls'
 import { handleFragments, moveAmongShown, neighbourAfterHiding, sectionFragmentKeys } from './blockMoves'
-import { fragmentKey, sectionOf } from './editTargets'
+import { sectionOf } from './editTargets'
 import type { Fragment } from './fragmentRects'
 import type { EditSession } from './useEditSession'
 
@@ -35,12 +35,11 @@ const FIRST_LINE_OFFSET = 4
 // - Przeniesienie przeskakuje to, czego na stronach nie ma (ukryte i puste sekcje, puste wpisy), ogłasza nową pozycję
 //   czytnikowi ekranu (jak `SortableList`) i zostawia fokus na uchwycie fragmentu w nowym miejscu – także na innej
 //   stronie (uchwyt szukany po kluczu fragmentu po nowym pomiarze stron).
-// - „Ukryj sekcję” przenosi fokus na fragment za sekcją (albo przed nią); karta otwarta w tej sekcji się zamyka.
-// - „Dodaj …” dodaje element na końcu sekcji i otwiera jego kartę z fokusem na pierwszym polu; dopóki nowy wpis nie ma
-//   treści (nie ma go na stronie), karta stoi przy uchwycie, z którego go dodano (`added`).
-// - „Usuń stanowisko” / „Usuń wykształcenie” (docs/specs/wysiwyg-editing.md, W21 – wpisów nie usuwa już przycisk
-//   w karcie): oddzielone kreską, z „Usunięto. Cofnij”; fokus przechodzi na fragment za wpisem (albo przed nim),
-//   a „Cofnij” stawia kursor w pierwszym polu przywróconego wpisu.
+// - „Ukryj sekcję” przenosi fokus na fragment za sekcją (albo przed nią).
+// - „Dodaj …” dodaje element na końcu sekcji i stawia kursor w jego pierwszym polu na stronie (pusty jest odsłaniany).
+// - „Usuń stanowisko” / „Usuń wykształcenie” (docs/specs/wysiwyg-editing.md, W21 – nie ma Edit card z tekstowym
+//   przyciskiem usuwania): oddzielone kreską, z „Usunięto. Cofnij”; fokus przechodzi na fragment za wpisem (albo przed
+//   nim), a „Cofnij” stawia kursor w pierwszym polu przywróconego wpisu.
 export function useBlockMenu({
   editor,
   document,
@@ -48,7 +47,6 @@ export function useBlockMenu({
   layout,
   layer,
   session,
-  added,
   onFocusLost,
   onRemove
 }: {
@@ -58,7 +56,6 @@ export function useBlockMenu({
   layout: PaginateResult | null
   layer: RefObject<HTMLElement | null>
   session: EditSession
-  added: AddedAnchor
   onFocusLost: () => void
   onRemove: RemoveWithUndo
 }) {
@@ -124,17 +121,13 @@ export function useBlockMenu({
     const hide = () => {
       const keys = sectionFragmentKeys(section)
       const next = neighbourAfterHiding(fragments, keys)
-      if (session.card && keys.has(session.card.anchor)) session.closeCard()
       editor.edit(updateSection(section.id, { hidden: true }))
       if (next) focusAfterChange(next, 'fragment')
       else onFocusLost()
     }
     const add = () => {
       const target = addSectionElement(editor, section)
-      if (!target) return
-      const key = fragmentKey(target)
-      added.remember(key, () => handleButton(fragment.key))
-      session.openCard(target, key)
+      if (target) session.focusPart(target)
     }
     const addLabel = { experience: t.addPosition, education: t.addEducation, list: t.addListItem }[section.type]
     return {
@@ -232,7 +225,6 @@ export function useBlockMenu({
           danger: true,
           run: () => {
             const next = neighbourAfterHiding(fragments, new Set([fragment.key]))
-            if (session.card?.anchor === fragment.key) session.closeCard()
             session.datePopover.close()
             onRemove(entry.remove, {
               entryId: itemId,
