@@ -61,7 +61,9 @@ const joinFilled = (parts: string[], separator: string): string => parts.filter(
 
 // Części CV odsłonięte w Edit mode (docs/specs/wysiwyg-editing.md, W4, W10): mają blok mimo pustych pól, żeby było
 // gdzie postawić kursor. Klucze to klucze fragmentów strony warstwy edycji (`fragmentKey` w canvas/editTargets.ts):
-// `fullName` i `summary` (części nagłówka), `sectionTitle:<id sekcji>`. PDF, DOCX i Preview mode nigdy ich nie podają.
+// `fullName` i `summary` (części nagłówka), `sectionTitle:<id sekcji>`, `item:<id wpisu>` (stanowisko albo wykształcenie –
+// blok mimo pustych pól, a stanowisko ze wszystkimi punktami, także pustymi) i `list:<id sekcji>` (wiersze ze wszystkimi
+// elementami listy, także pustymi). PDF, DOCX i Preview mode nigdy ich nie podają.
 export type Reveal = ReadonlySet<string>
 
 export type GenerateBlocksOptions = { reveal?: Reveal }
@@ -100,14 +102,16 @@ function titleBlocks(section: Section, spacing: BlockSpacingMm, reveal: Reveal):
   ]
 }
 
-// Z czym budowane są bloki wpisów: odstępy z geometrii szablonu i CV language (stały tekst w datach).
-type EntryContext = { spacing: BlockSpacingMm; language: CvLanguage }
+// Z czym budowane są bloki wpisów: odstępy z geometrii szablonu, CV language (stały tekst w datach) i części
+// odsłonięte w Edit mode.
+type EntryContext = { spacing: BlockSpacingMm; language: CvLanguage; reveal: Reveal }
 
-function experienceItemBlocks(item: ExperienceItem, { spacing, language }: EntryContext): DraftBlock[] {
+function experienceItemBlocks(item: ExperienceItem, { spacing, language, reveal }: EntryContext): DraftBlock[] {
+  const revealed = reveal.has(`item:${item.id}`)
   const dates = formatDateRange(item.start, item.end, language)
   const companyLine = joinFilled([item.company, item.location], ' – ')
-  const bullets = item.bullets.filter((bullet) => isFilled(bullet.text))
-  if (!isFilled(item.role) && !companyLine && !dates && bullets.length === 0) return []
+  const bullets = revealed ? item.bullets : item.bullets.filter((bullet) => isFilled(bullet.text))
+  if (!revealed && !isFilled(item.role) && !companyLine && !dates && bullets.length === 0) return []
 
   const [first, ...rest] = bullets
   const entry: DraftBlock = {
@@ -137,11 +141,11 @@ function experienceItemBlocks(item: ExperienceItem, { spacing, language }: Entry
   return blocks
 }
 
-function educationItemBlocks(item: EducationItem, { spacing, language }: EntryContext): DraftBlock[] {
+function educationItemBlocks(item: EducationItem, { spacing, language, reveal }: EntryContext): DraftBlock[] {
   const dates = formatDateRange(item.start, item.end, language)
   const level = isFilled(item.level) ? item.level : ''
   const details = joinFilled([item.field, item.institution], ', ')
-  if (!dates && !level && !details) return []
+  if (!dates && !level && !details && !reveal.has(`item:${item.id}`)) return []
   return [
     {
       kind: 'educationEntry',
@@ -178,7 +182,8 @@ export type BlockGeometry = Pick<TemplateGeometry, 'blockSpacingMm' | 'listSecti
 
 function listSectionBlocks(section: Extract<Section, { type: 'list' }>, geometry: BlockGeometry, reveal: Reveal): DraftBlock[] {
   const { blockSpacingMm: spacing, listSectionLayout: layout } = geometry
-  const items = section.items.filter((item) => isFilled(item.text)).map(({ id, text }) => ({ id, text }))
+  const shown = reveal.has(`list:${section.id}`) ? section.items : section.items.filter((item) => isFilled(item.text))
+  const items = shown.map(({ id, text }) => ({ id, text }))
   if (items.length === 0) return []
 
   const rows: DraftBlock[] = []
@@ -198,7 +203,7 @@ function listSectionBlocks(section: Extract<Section, { type: 'list' }>, geometry
 
 function sectionBlocks(section: Section, geometry: BlockGeometry, language: CvLanguage, reveal: Reveal): DraftBlock[] {
   const spacing = geometry.blockSpacingMm
-  const entry: EntryContext = { spacing, language }
+  const entry: EntryContext = { spacing, language, reveal }
   if (section.hidden) return []
 
   let blocks: DraftBlock[]

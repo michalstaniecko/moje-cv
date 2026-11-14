@@ -210,5 +210,62 @@ describe('generateBlocks', () => {
 
       expect(generateBlocks(document, geometry(), { reveal })).toEqual(generateBlocks(document, geometry()))
     })
+
+    it('gives a revealed position a block with all its fields and bullets, the empty ones too', () => {
+      const position = experience.type === 'experience' ? experience.items[0]! : null
+      const emptied = {
+        ...position!,
+        role: '',
+        company: '',
+        location: '',
+        start: null,
+        end: null,
+        bullets: [
+          { id: 'b1', text: '' },
+          { id: 'b2', text: 'Second' },
+          { id: 'b3', text: ' ' }
+        ]
+      }
+      const document = withSections({ ...experience, items: [emptied] } as Section)
+
+      expect(generateBlocks(document, geometry()).map((block) => block.id)).toEqual(['experience:title', 'e1'])
+      const blocks = generateBlocks(document, geometry(), { reveal: new Set(['item:e1']) })
+      expect(blocks.map((block) => block.id)).toEqual(['experience:title', 'e1', 'e1:b2', 'e1:b3'])
+      expect(blocks[1]).toEqual(expect.objectContaining({ kind: 'experienceEntry', role: '', companyLine: '', dates: '', firstBullet: '' }))
+      expect(blocks[3]!.spaceAfterMm).toBe(0)
+
+      // Bez punktów – sam wpis.
+      const bare = withSections({ ...experience, items: [{ ...emptied, bullets: [] }] } as Section)
+      expect(generateBlocks(bare, geometry()).map((block) => block.id)).toEqual([])
+      expect(generateBlocks(bare, geometry(), { reveal: new Set(['item:e1']) })).toEqual([
+        expect.objectContaining({ id: 'experience:title' }),
+        expect.objectContaining({ id: 'e1', firstBullet: null })
+      ])
+    })
+
+    it('gives a revealed empty education entry a block', () => {
+      const entry = { ...educationSection.items[0]!, level: '', field: '', institution: '', start: null, end: null }
+      const document = withSections({ ...educationSection, items: [entry] })
+
+      expect(generateBlocks(document, geometry())).toEqual([])
+      expect(generateBlocks(document, geometry(), { reveal: new Set([`item:${entry.id}`]) })[1]).toEqual(
+        expect.objectContaining({ kind: 'educationEntry', id: entry.id, level: '', details: '', dates: '' })
+      )
+    })
+
+    it('gives every item of a revealed list a place in the rows, the empty ones too, with the title beside the first row', () => {
+      const items = ['', 'B', ' ', 'D'].map((text, index) => ({ id: `i${index}`, text }))
+      const document = withSections(listSection({ items }))
+      const reveal = new Set(['list:skills'])
+
+      expect(generateBlocks(document, geometry()).map((block) => block.id)).toEqual(['skills:i1', 'skills:i3'])
+      expect(generateBlocks(document, geometry(), { reveal })).toEqual([
+        expect.objectContaining({ id: 'skills:i0', title: 'Skills', items: [{ id: 'i0', text: '' }] }),
+        expect.objectContaining({ id: 'skills:i1', title: '', items: [{ id: 'i1', text: 'B' }] }),
+        expect.objectContaining({ id: 'skills:i2', title: '' }),
+        expect.objectContaining({ id: 'skills:i3', title: '' })
+      ])
+      expect(generateBlocks(document, twoColumns, { reveal }).map((block) => block.id)).toEqual(['skills:title', 'skills:i0', 'skills:i2'])
+    })
   })
 })
