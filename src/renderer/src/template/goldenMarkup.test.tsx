@@ -81,7 +81,14 @@ const edgeCases: CvDocument = {
   consent: { enabled: true, clauseId: null, text: 'I agree.\nSecond line of the clause.' }
 }
 
-const documents = { en, pl: sampleCvs.pl, 'edge-cases': edgeCases }
+// Nagłówek bez imienia i podsumowania (same kontakty) i sekcja listowa bez tytułu obok listy.
+const noNameNoSummary: CvDocument = {
+  ...en,
+  header: { ...en.header, fullName: ' ', summary: '', photo: null },
+  sections: en.sections.map((section) => (section.type === 'list' ? { ...section, title: ' ' } : section))
+}
+
+const documents = { en, pl: sampleCvs.pl, 'edge-cases': edgeCases, 'no-name-no-summary': noNameNoSummary }
 
 function documentMarkup(document: CvDocument, templateId: keyof typeof templates): string {
   const template: TemplateDefinition = templates[templateId]
