@@ -868,6 +868,75 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
   kontaktów to `combobox` (`labelField`); przycisk zdjęcia w warstwie i „Add to CV: Photo” mają tę samą nazwę
   (`photoButton` łączy klasę `.edit-photo` z rolą).
 
+### S5 – puste części i dodawanie bez formularza (zrobione)
+
+- **Nowy wpis bez karty:** `pageFieldKey` zwraca dla wpisu bez wskazanego pola klucz stanowiska / poziomu
+  wykształcenia, a `onPages` (`useEditSession.ts`) przepuszcza każdy wpis w nieukrytej sekcji. „+” pod sekcją, „Add …”
+  w menu uchwytu, „Add to CV” i Outline stawiają więc kursor w nowym, pustym wpisie odsłoniętym na stronie
+  (`activeField.request` → `reveal` `item:<id>`, bo pusty wpis ma puste pola): placeholdery pól, pusty pierwszy punkt
+  i żetony dat „From”/„To”. Wpis zostawiony pusty znika ze strony po wyjściu z niego (zostaje w danych i w Outline,
+  jak dotąd), a strony dzielą się jak w Preview mode. Sekcja, która nie miała treści, pokazuje się z tytułem razem
+  z odsłoniętym wpisem (`items.length > 0` w `blocks.ts`).
+- **Cofnięcie dodania** z kursorem w nowym wpisie: pole znika, a fokus nie ma dokąd wrócić (wpis nie ma pola przed
+  sobą) – `createActiveFieldStore({ onLost })` woła bezpieczne miejsce edytora (`focusSafePlace`, jak dotąd po
+  zamknięciu karty; opcja sesji przemianowana z `onCardGone` na `onFocusLost`).
+- **Outline (W21):** klik w pustą sekcję (bez treści na stronach) odsłania jej pierwszy element (`reuseEmpty`; bez
+  elementów – dodaje go, jeden krok cofania) z kursorem w nim. **Odstępstwo – ukryta sekcja:** Outline nie miał
+  przełącznika „Pokaż” dla sekcji (tylko „Hide section” w menu wiersza), więc wiersz ukrytej sekcji dostał przełącznik
+  „Show on CV” pod nazwą (ten sam wygląd co przy klauzuli; nazwa dla czytnika `Show “<sekcja>” on CV`). Klik w wiersz
+  ukrytej sekcji przenosi na niego fokus, a opis wiersza (`aria-describedby`, obok liczby elementów) to „Show the
+  section on the CV to edit it”. Włączenie przełącznika pokazuje sekcję (jeden krok cofania) i od razu stawia kursor na
+  końcu jej tytułu na stronie (pusta – w pierwszym elemencie). „Add …” w menu ukrytej sekcji dodaje element i przenosi
+  fokus na ten przełącznik. Nowe teksty `editor.outline.showSection`, `editor.outline.showToEdit` w 16 słownikach.
+- **Zdjęcie z „Add to CV” (W13):** od razu systemowy wybór pliku i okno kadrowania (`usePhotoEditing().add` w
+  `PhotoPopover.tsx` – drugi `usePhotoPicker` w warstwie, zawsze zamontowany). Po „Apply” fokus na przycisku nowego
+  zdjęcia na stronie, po „Cancel” – z powrotem na przycisku paska. Plik, którego nie da się wczytać: Field popover przy
+  przycisku paska z komunikatem (`role="alert"`) i „Choose photo” (ponowny wybór); Escape wraca na przycisk paska.
+- **Karty:** po S5 nic nie otwiera Edit card (`session.openCard` dla celu bez Page field – zdjęcie, tytuł ukrytej
+  / pustej sekcji – nie ma już wywołań; gałąź `setCard` i `EditCard.tsx` do usunięcia w S6).
+- **Odstępstwo – „Add contact” w menu uchwytu nagłówka (W14):** nie zrobione – nagłówek nie ma uchwytu (W21 nie daje mu
+  innych pozycji menu). Kontakt dodaje Enter w wartości kontaktu (W11) i „Add to CV: Contact” (gdy żaden kontakt nie ma
+  wartości); jeśli uchwyt nagłówka ma powstać – S6 razem z Shift+F10 w nagłówku.
+- **Tytuł pustej sekcji:** tytuł sekcji, której nic nie ma na stronach, nie jest odsłaniany sam – klik w sekcję
+  w Outline odsłania jej element, a z nim (gdy tytuł jest niepusty) tytuł, który wtedy jest zwykłym Page field. Pusty
+  tytuł sekcji z treścią – klik w Outline odsłania go z placeholderem (jak w S1). Tytuł obok listy w Classic (W9) z pustym
+  tytułem – tak samo jak w S1 (bez zmian).
+- **Testy:** Vitest – `pageFields.test.ts` (klucz pierwszego pola wpisu bez pola). e2e (`canvas.spec.ts`) – nowe:
+  „a full CV is built from a new CV in the Outline without any card and without the CV form” (AC S5: imię z podpowiedzi,
+  zdjęcie z paska, kontakty z nowym kontaktem Enterem, podsumowanie, stanowisko z Outline – pola Enterem, daty
+  z popovera z „I currently work here”, punkty, tytuł sekcji na stronie, drugie stanowisko pigułką, wykształcenie
+  z Outline z datą ukończenia, listy z Outline i paska, klauzula; przez cały czas bez `.edit-card` i `.editor-form`;
+  potem podział stron Edit = Preview i tekst PDF), „“Photo” in the “Add to CV” bar opens the file picker at once”;
+  przepisane z kart na pola: Cmd+Z po dodaniu stanowiska (fokus w bezpieczne miejsce), „Add …” w menu uchwytu (także
+  wykształcenie zostawione puste znika, podział stron bez zmian – AC 8), pigułka „+”, menu z klawiatury, Outline
+  w nowym CV, ukryta sekcja w Outline (przełącznik, pokazanie z kursorem, „Add item” w ukrytej).
+- **Wynik:** `pnpm typecheck`, Vitest 708/708, e2e 167 passed / 16 skipped (pomiar i testy wydania), złote strony
+  (Preview i Edit mode) i złoty markup bez zmian wzorców.
+- **Pomiar** (`e2e/performance.spec.ts`, nowy przebieg „entering an entry on the page”; w długim CV co drugie
+  stanowisko jest bez miejscowości): klik w stanowisko → namalowana
+  klatka z polem miejscowości (od czasu `mousedown`, kończy się zadaniem po malowaniu klatki, więc liczy około dwóch
+  klatek). Build `out/`, M-series, 4 strony: wpis z pustym polem (odsłonięcie, nowy podział stron) mediana 31,6 ms,
+  p95 32,4 ms, max 32,9 ms; wpis wypełniony (tylko rozwinięcie) 31,2 / 32,4 / 32,6 ms (CPU ×1); przy CPU ×4 – 31,9 /
+  33,8 / 37,8 ms i 30,9 / 32,3 / 32,8 ms. Ponowny podział przy wejściu mieści się w tej samej klatce – próg 100 ms ma
+  duży zapas. W tym samym przebiegu pisanie na stronach: mediana 16,4 ms, p95 19,1 ms (×1), 24,6 / 34,0 ms (×4); CV form
+  22,8 / 26,5 ms (×1), 61,6 / 80,4 ms (×4, długie zadania) – pomiar orientacyjny (okno widoczne, inny moment niż w S2);
+  na zbudowanej aplikacji – S7.
+
+#### Przekazanie dla S6–S7
+
+- **S6:** usunąć `EditCard.tsx` (z `cardLabel`, `CardHeading`), stan karty w `useEditSession` (`card`, `closeCard`,
+  gałąź `setCard` w `openCard` – `openCard` zostaje jako „postaw kursor w części CV”, warto przemianować), w
+  `EditLayer.tsx` `onPage` / `anchorElement` / `locate` / `removeInCard` / zamykanie karty kliknięciem, `added`
+  (`useAddedAnchor` – kotwica kart; Outline i `AddControls` wołają już tylko `remember`), sprawdzanie `session.card`
+  w `BlockMenu.tsx` i `Outline.tsx`, `hitTarget` / `ContractHit` w `editTargets.ts`, tekst `editor.card.*` tam, gdzie
+  służy tylko karcie (nazwy pól używają `t.card.position` itd. – zostają). Escape w polu, `aria-live` dla dodania
+  z pigułki / menu („Nowe stanowisko”), uchwyty i pigułki poza Tab. Ewentualny uchwyt nagłówka z „Add contact”.
+- **S7:** pomiar W23 na zbudowanej aplikacji (oba przebiegi stron i nowy „entering an entry”, CPU ×1/×4), VoiceOver:
+  przełącznik „Show on CV” ukrytej sekcji i opis wiersza, popover błędu zdjęcia przy pasku (`role="alert"`).
+- **Pułapki:** przycisk, który znika po kliknięciu (przełącznik ukrytej sekcji, „Photo” w pasku po dodaniu zdjęcia),
+  musi oddać fokus – tu kursor w pokazanej sekcji / przycisk zdjęcia. `addSectionElement` robi `editor.edit`, więc cel
+  rozwiązuje się w bieżącym dokumencie (`current` w `useEditSession`, `editor.store.getState()` w Outline).
+
 ## Ryzyka
 
 - **Styl edytowalnego elementu w Chromium** może zmienić zawijanie (`overflow-wrap`, `line-break` dla edytowalnych
