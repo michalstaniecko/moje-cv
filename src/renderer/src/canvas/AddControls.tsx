@@ -57,8 +57,9 @@ export type AddedAnchor = ReturnType<typeof useAddedAnchor>
 //   fokusie w niej (i przy fokusie na pigułce); przy skali poniżej 50% ich nie ma;
 // - pasek „Add to CV:” pod ostatnią stroną z przyciskami tylko dla tego, czego na stronach nie ma (`addToCvItems`);
 // - w zupełnie pustym CV podpowiedź „Start with your full name” na środku pierwszej strony.
-// Każdy przycisk otwiera kartę nowego elementu z fokusem na pierwszym polu, zakotwiczoną przy sobie, dopóki element nie
-// pojawi się na stronie (`added`).
+// Każdy przycisk dodaje (albo odsłania istniejący pusty) element i stawia kursor w jego pierwszym polu na stronie –
+// pusty element jest odsłonięty z placeholderami (docs/specs/wysiwyg-editing.md, W10, W21); „Photo” od razu otwiera
+// wybór pliku (`addPhoto`).
 export function useAddControls({
   editor,
   document,
@@ -67,7 +68,8 @@ export function useAddControls({
   pages,
   layer,
   added,
-  compact
+  compact,
+  addPhoto
 }: {
   editor: CvEditor
   document: CvDocument
@@ -77,6 +79,7 @@ export function useAddControls({
   layer: RefObject<HTMLElement | null>
   added: AddedAnchor
   compact: boolean
+  addPhoto: (from: () => HTMLElement | null) => void
 }) {
   const t = useDictionary().editor
   const find = (selector: string) => () => layer.current?.querySelector<HTMLElement>(selector) ?? null
@@ -169,9 +172,11 @@ export function useAddControls({
     const from = find(`.add-to-cv [data-add="${CSS.escape(item.key)}"]`)
     switch (item.kind) {
       case 'fullName':
-      case 'photo':
       case 'summary':
         return openAdded({ kind: item.kind }, from)
+      case 'photo':
+        // Od razu wybór pliku i kadrowanie (PhotoPopover.tsx) – zdjęcie nie ma pola na stronie.
+        return addPhoto(from)
       case 'contacts': {
         // Kontakt bez wartości (np. etykiety nowego CV) zamiast kolejnego pustego.
         let contact = document.header.contacts.find((candidate) => candidate.value.trim() === '')

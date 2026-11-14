@@ -15,6 +15,10 @@ import type { Fragment } from './fragmentRects'
 // otworzył. Escape zamyka popover i wraca na przycisk zdjęcia; „Undo” po usunięciu – też na niego, gdy wróci na stronę.
 // `button(fragment)` – przycisk zdjęcia na jego fragmencie (warstwa rysuje go w kolejności fragmentów, czyli czytania
 // strony); `popover` – otwarty Field popover zdjęcia albo nic.
+// `add(from)` – „Photo” w pasku „Add to CV” (W13): od razu systemowy wybór pliku i okno kadrowania, bez karty. Po
+// zatwierdzeniu kadru fokus przechodzi na przycisk nowego zdjęcia na stronie, po anulowaniu wraca na przycisk paska
+// (`from`). Pliku, którego nie da się wczytać, dotyczy Field popover przy przycisku paska: komunikat i „Choose photo”
+// (ponowny wybór); Escape wraca na przycisk paska. `adding` – okno kadrowania i ten popover (warstwa rysuje je zawsze).
 export function usePhotoEditing({
   editor,
   photo,
@@ -60,6 +64,44 @@ export function usePhotoEditing({
     onFocusLost()
   }
 
+  // Dodawanie zdjęcia z paska „Add to CV”.
+  const addFrom = useRef<() => HTMLElement | null>(() => null)
+  const [addError, setAddError] = useState(false)
+  const adding = usePhotoPicker(editor, {
+    onCropEnd: () => {
+      if (!editor.store.getState().document.header.photo) {
+        addFrom.current()?.focus()
+        return
+      }
+      if (button.current) button.current.focus()
+      else focusWhenBack.current = true
+    }
+  })
+  const add = (from: () => HTMLElement | null) => {
+    addFrom.current = from
+    setAddError(true)
+    void adding.pick()
+  }
+  const closeAddError = (returnFocus: boolean) => {
+    setAddError(false)
+    if (returnFocus) addFrom.current()?.focus()
+  }
+  const addingPanels = (
+    <>
+      {addError && adding.error && (
+        <FieldPopover anchor={() => addFrom.current()} label={t.legend} className="field-popover--menu" onClose={closeAddError}>
+          <p className="form-error" role="alert">
+            {t.errors[adding.error]}
+          </p>
+          <button type="button" onClick={() => add(addFrom.current)}>
+            {t.choose}
+          </button>
+        </FieldPopover>
+      )}
+      {adding.cropper}
+    </>
+  )
+
   const photoButton = ({ key, page, rect }: Fragment) => (
     <button
       ref={onButton}
@@ -77,7 +119,7 @@ export function usePhotoEditing({
     </button>
   )
   const popover = shown && <PhotoPanel editor={editor} dataUrl={photo.dataUrl} anchor={() => button.current} onClose={close} onRemove={remove} />
-  return { button: photoButton, popover }
+  return { button: photoButton, popover, add, adding: addingPanels }
 }
 
 function PhotoPanel({

@@ -2058,6 +2058,54 @@ test('a new CV shows the start hint on its empty first page and an “Add to CV�
   await expect(window.locator('.add-to-cv, .edit-pill, .edit-start-hint')).toHaveCount(0)
 })
 
+test('“Photo” in the “Add to CV” bar opens the file picker at once: a file that cannot be loaded is reported in a popover at the button, a cancelled crop returns the focus to the button, and an applied one focuses the photo', async () => {
+  await openNewCv()
+  const barPhoto = addBar().getByRole('button', { name: 'Photo', exact: true })
+  const cropper = window.getByRole('dialog', { name: 'Crop photo' })
+
+  // Wybór pliku anulowany – nic się nie dzieje.
+  await stubOpenDialog(null)
+  await barPhoto.click()
+  await expect(barPhoto).toBeFocused()
+  await expect(window.getByRole('dialog')).toHaveCount(0)
+
+  // Plik, którego nie da się wczytać: Field popover przy przycisku paska z komunikatem; Escape wraca na przycisk.
+  const brokenPath = join(outputDir, 'broken.jpg')
+  await writeFile(brokenPath, 'not an image')
+  await stubOpenDialog(brokenPath)
+  await barPhoto.click()
+  const popover = window.getByRole('dialog', { name: 'Photo', exact: true })
+  await expect(popover.getByRole('alert')).toHaveText('Couldn’t load the photo – the file is damaged, unavailable or in an unsupported format.')
+  await expect(popover.getByRole('button', { name: 'Choose photo' })).toBeFocused()
+  const [popoverBox, buttonBox] = [(await popover.boundingBox())!, (await barPhoto.boundingBox())!]
+  expect(popoverBox.y >= buttonBox.y + buttonBox.height || popoverBox.y + popoverBox.height <= buttonBox.y).toBe(true)
+  await window.keyboard.press('Escape')
+  await expect(popover).toHaveCount(0)
+  await expect(barPhoto).toBeFocused()
+
+  // Ponowny wybór z popovera; anulowane kadrowanie – fokus wraca na przycisk paska, zdjęcia nie ma.
+  await barPhoto.click()
+  await expect(popover.getByRole('alert')).toBeVisible()
+  await stubOpenDialog(await writeRedBluePhoto())
+  await popover.getByRole('button', { name: 'Choose photo' }).click()
+  await expect(popover).toHaveCount(0)
+  await cropper.getByRole('button', { name: 'Cancel' }).click()
+  await expect(cropper).toHaveCount(0)
+  await expect(barPhoto).toBeFocused()
+  await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(0)
+
+  // Zatwierdzony kadr: zdjęcie na stronie, przycisk paska znika, fokus na przycisku zdjęcia; jeden krok cofania.
+  await barPhoto.click()
+  await cropper.getByRole('button', { name: 'Apply' }).click()
+  await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(1)
+  await expect(barPhoto).toHaveCount(0)
+  await expect(photoButton()).toBeFocused()
+  await expect(window.locator('.edit-card')).toHaveCount(0)
+  await window.keyboard.press('Meta+z')
+  await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(0)
+  await expect(barPhoto).toHaveCount(1)
+})
+
 test('the “+” pill under a section adds an entry with the caret in its job title on the page; a list item gets the caret in its text', async () => {
   await openFirstCv()
   await window.setViewportSize({ width: 1600, height: 1000 })
@@ -2126,14 +2174,13 @@ test('a full CV is built from a new CV in the Outline without any card and witho
   await window.keyboard.type('Jane Doe')
   await expect(pageName()).toHaveText('Jane Doe')
 
-  // Zdjęcie: karta z „Choose photo”, wybór i kadrowanie.
+  // Zdjęcie: „Photo” w pasku od razu otwiera wybór pliku i kadrowanie; potem fokus na przycisku zdjęcia na stronie.
   await stubOpenDialog(photoPath)
   await bar('Photo').click()
-  await card('Photo').getByRole('button', { name: 'Choose photo' }).click()
   await window.getByRole('dialog', { name: 'Crop photo' }).getByRole('button', { name: 'Apply' }).click()
   await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(1)
   await expect(bar('Photo')).toHaveCount(0)
-  await window.keyboard.press('Escape')
+  await expect(photoButton()).toBeFocused()
 
   // Kontakty: kursor w wartości pierwszego pustego kontaktu (etykiety nowego CV), z placeholderem; Enter w wartości
   // dodaje kontakt z kursorem w jego etykiecie.

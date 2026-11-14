@@ -58,7 +58,8 @@ export function EditLayer({
 
   const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, added, onFocusLost, onRemove })
   const compact = scale < CONTROLS_MIN_SCALE
-  const addOnPage = useAddControls({ editor, document, session, fragments, pages, layer, added, compact })
+  const photo = usePhotoEditing({ editor, photo: document.header.photo, onRemove, onFocusLost })
+  const addOnPage = useAddControls({ editor, document, session, fragments, pages, layer, added, compact, addPhoto: photo.add })
   // Element, przy którym stoi karta: pierwsze pole tekstu fragmentu na stronie (nie żeton daty; nowy wpis, do S5), a dla
   // nowego, jeszcze pustego elementu – przycisk, którym go dodano (uchwyt menu, pigułka „+”, pasek „Add to CV”,
   // podpowiedź w pustym CV, wiersz Outline). Najpierw Page field (fokus w nim nie rozwija wpisu), dopiero potem linia
@@ -155,8 +156,6 @@ export function EditLayer({
     return () => window.document.removeEventListener('pointerdown', onPointerDown)
   }, [open, closeCard])
 
-  const photo = usePhotoEditing({ editor, photo: document.header.photo, onRemove, onFocusLost })
-
   useHandlesOfPageFields(panel, layer)
   usePointerOnPages(panel, session.activeField, session.datePopover)
   useSectionHoverOnPages(panel, latestDocument, addOnPage.hoverOnPage)
@@ -178,6 +177,7 @@ export function EditLayer({
       {blockMenu.liveRegion}
       <DateWarnings document={document} panel={panel} layer={layer} fragments={fragments} hidden={compact} />
       {photo.popover}
+      {photo.adding}
       <DatePopover editor={editor} document={document} dates={session.datePopover} active={session.activeField} />
       <ContactLabelSuggestions editor={editor} document={document} active={session.activeField} />
       <ConsentToolbar editor={editor} document={document} active={session.activeField} library={library} onFocusLost={onFocusLost} />
