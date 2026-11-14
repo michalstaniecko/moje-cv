@@ -13,7 +13,8 @@ const EDGE = 4
 // (prawa krawędź panelu stron), na wysokości kotwicy; inaczej – i zawsze bez `beside` – pod kotwicą, a gdy pod nią
 // brakuje miejsca (i jest nad nią) – nad kotwicą, wyrównany do jej lewej krawędzi. W poziomie zawsze w granicach okna.
 // `contain` (Edit card przy wysokim fragmencie): gdy panel nie mieści się ani pod, ani nad kotwicą, staje po stronie
-// z większą ilością miejsca, przesunięty tak, żeby był cały w oknie (zasłania wtedy część kotwicy, ale nie ucieka z ekranu).
+// z większą ilością miejsca, przesunięty tak, żeby był cały w oknie (zasłania wtedy część kotwicy, ale nie ucieka z ekranu);
+// tak samo przy kotwicy przewiniętej poza okno – panel stoi wtedy przy jego krawędzi.
 export function anchoredPosition({
   anchor,
   panel,
@@ -43,6 +44,8 @@ export function anchoredPosition({
       ? { top: top(below), left: left(anchor.left), placement: 'below' }
       : { top: top(above), left: left(anchor.left), placement: 'above' }
   }
-  if (below + panel.height <= viewport.height || above < 0) return { top: below, left: left(anchor.left), placement: 'below' }
-  return { top: above, left: left(anchor.left), placement: 'above' }
+  // `contain`: kotwica przewinięta poza okno nie wyprowadza panelu z ekranu – panel zostaje przy krawędzi okna.
+  const inWindow = (top: number) => (contain ? Math.max(EDGE, Math.min(top, viewport.height - panel.height - EDGE)) : top)
+  if (below + panel.height <= viewport.height || above < 0) return { top: inWindow(below), left: left(anchor.left), placement: 'below' }
+  return { top: inWindow(above), left: left(anchor.left), placement: 'above' }
 }

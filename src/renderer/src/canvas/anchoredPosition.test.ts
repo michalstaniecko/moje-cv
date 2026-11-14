@@ -50,6 +50,18 @@ describe('anchoredPosition', () => {
     expect(anchoredPosition({ anchor, panel, viewport, contain: true })).toEqual(anchoredPosition({ anchor, panel, viewport }))
   })
 
+  it('with `contain`, keeps the panel in the window when its anchor has scrolled out of it', () => {
+    // Fragment przewinięty nad okno (np. wyższe strony obok wąskiego Outline): karta z fokusem nie ucieka z ekranu.
+    const scrolledAbove = { top: -400, left: 400, right: 700, bottom: -360 }
+    expect(anchoredPosition({ anchor: scrolledAbove, panel, viewport, contain: true })).toEqual({ top: 4, left: 400, placement: 'below' })
+    const scrolledBelow = { top: 900, left: 400, right: 700, bottom: 940 }
+    expect(anchoredPosition({ anchor: scrolledBelow, panel, viewport, contain: true })).toEqual({
+      top: 800 - 200 - 4,
+      left: 400,
+      placement: 'above'
+    })
+  })
+
   it('keeps the panel inside the window horizontally', () => {
     expect(anchoredPosition({ anchor: { ...anchor, left: 1000 }, panel, viewport }).left).toBe(876)
     expect(anchoredPosition({ anchor: { ...anchor, left: -20 }, panel, viewport }).left).toBe(4)
