@@ -69,8 +69,16 @@ export function CvScreen({
     oversizedCount.current = layout.oversizedIds.length
   }, [])
   useEditorLifecycle(editor)
-  const session = useEditSession()
   const modeToggle = useRef<ModeToggleHandle>(null)
+  // Fokus, który nie ma dokąd wrócić (zamknięta karta części CV, której już nie ma – np. po cofnięciu), trafia na
+  // przełącznik trybu. Docelowo (T7) – na Outline.
+  const focusSafePlace = useCallback(() => {
+    requestAnimationFrame(() => {
+      const active = window.document.activeElement
+      if (!active || active === window.document.body) modeToggle.current?.focus('edit')
+    })
+  }, [])
+  const session = useEditSession(document, { onCardGone: focusSafePlace })
   // Przejście do Preview mode przenosi fokus na przełącznik (pole formularza z fokusem znika); przewinięcie i skala
   // stron zostają, bo panel stron jest ten sam w obu trybach.
   const previousMode = useRef(session.mode)
@@ -263,6 +271,7 @@ export function CvScreen({
           document={document}
           onLayout={onLayout}
           mode={session.mode}
+          editing={{ editor, session, onFocusLost: focusSafePlace }}
           onShowOversized={() => {
             session.setMode('edit')
             modeToggle.current?.focus('edit')

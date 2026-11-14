@@ -1,7 +1,9 @@
-import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { EditLayer } from '../canvas/EditLayer'
+import type { EditorMode, EditSession } from '../canvas/useEditSession'
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
-import type { EditorMode } from '../canvas/useEditSession'
+import type { CvEditor } from '../editor/cvEditor'
 import { useDictionary, useInterfaceLanguage } from '../i18n'
 import { CvPages } from '../template/CvPages'
 import { afterNextPaint, markPreviewPainted } from './keystrokeTiming'
@@ -14,16 +16,19 @@ import { fitScale, PREVIEW_MARGIN_PX, zoomIn, zoomOut } from './zoom'
 // `onLayout` dostaje każdy nowy podział stron (np. edytor sprawdza przed eksportem, czy są za długie bloki).
 // Bloki wyższe niż strona są wyróżnione na kartkach w Edit mode; w Preview mode kartki są jak w PDF, a w pasku
 // podglądu jest ostrzeżenie z „Pokaż” (`onShowOversized` – przejście do Edit mode).
+// `editing` – w Edit mode nad stronami leży warstwa edycji z Edit card (canvas/EditLayer.tsx); w Preview mode jej nie ma.
 export function PreviewPane({
   document,
   onLayout: onLayoutChange,
   mode = 'edit',
-  onShowOversized
+  onShowOversized,
+  editing
 }: {
   document: CvDocument
   onLayout?: (layout: PaginateResult) => void
   mode?: EditorMode
   onShowOversized?: () => void
+  editing?: { editor: CvEditor; session: EditSession; onFocusLost: () => void }
 }) {
   const panel = useRef<HTMLElement>(null)
   const panelWidth = usePanelWidth(panel)
@@ -31,8 +36,10 @@ export function PreviewPane({
   const scale = chosenScale ?? fitScale(panelWidth)
   const [pageCount, setPageCount] = useState<number | null>(null)
   const [oversizedCount, setOversizedCount] = useState(0)
+  const [layout, setLayout] = useState<PaginateResult | null>(null)
   const onLayout = useCallback(
     (layout: PaginateResult) => {
+      setLayout(layout)
       setPageCount(layout.pages.length)
       setOversizedCount(layout.oversizedIds.length)
       onLayoutChange?.(layout)
@@ -42,6 +49,13 @@ export function PreviewPane({
   )
   const t = useDictionary().preview
   const language = useInterfaceLanguage()
+  const oversizedMessage = mode === 'edit' ? t.oversized : undefined
+  // Element stron zapamiętany: przerysowanie panelu (np. nowy podział stron dla warstwy edycji) nie renderuje stron
+  // ponownie, dopóki nie zmieni się dokument.
+  const pages = useMemo(
+    () => <CvPages document={document} onLayout={onLayout} oversizedMessage={oversizedMessage} />,
+    [document, onLayout, oversizedMessage]
+  )
 
   return (
     <main ref={panel} className="preview" style={{ '--scale': scale, '--page-gap': `${PREVIEW_MARGIN_PX}px` } as CSSProperties}>
@@ -83,10 +97,22 @@ export function PreviewPane({
         </div>
       </div>
       {/* Strony są dla czytnika ekranu ukryte: to druga kopia CV, którego źródłem i miejscem edycji jest formularz.
-          Pasek podglądu (licznik stron, ostrzeżenie o długości, powiększenie) zostaje dostępny. */}
+          Pasek podglądu (licznik stron, ostrzeżenie o długości, powiększenie) zostaje dostępny, a w Edit mode także
+          warstwa edycji obok stron (przycisk „Edit: …” dla każdego fragmentu). */}
       <div className="preview-pages" aria-hidden>
-        <CvPages document={document} onLayout={onLayout} oversizedMessage={mode === 'edit' ? t.oversized : undefined} />
+        {pages}
       </div>
+      {mode === 'edit' && editing && (
+        <EditLayer
+          document={document}
+          editor={editing.editor}
+          session={editing.session}
+          panel={panel}
+          layout={layout}
+          scale={scale}
+          onFocusLost={editing.onFocusLost}
+        />
+      )}
     </main>
   )
 }

@@ -19,6 +19,10 @@
   --ui-focus-ring: #1f6fcf;
   --ui-shadow: rgb(28 39 51 / 0.22);
   --ui-backdrop: rgb(28 39 51 / 0.4);
+  /* Obrys i wypełnienie fragmentów strony CV w warstwie edycji. Leżą na kartce, która jest biała w obu wyglądach
+     (ADR-0004), więc nie mają wartości ciemnych – akcent jasnego wyglądu ma na bieli kontrast 4.9:1. */
+  --ui-fragment-outline: #1f6fcf;
+  --ui-fragment-fill: rgb(31 111 207 / 0.07);
 }
 
 /* Ciemna paleta: te same tokeny z innymi wartościami. Proces główny ustawia `nativeTheme.themeSource`, a Electron
@@ -64,6 +68,7 @@ body {
 .library,
 .editor-form,
 .row-menu,
+.edit-card,
 .preview-bar,
 .photo-cropper,
 .sponsor-bar,
@@ -243,6 +248,82 @@ textarea:focus-visible {
   min-width: 3.5em;
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Warstwa edycji na stronach (Edit mode) ----------
+   Warstwa leży w przewijanym panelu stron obok .preview-pages, poza .cv (ADR-0009), i przewija się razem ze stronami.
+   Fragment to przezroczysty przycisk nad częścią strony: obrys tylko przy najechaniu, fokusie i otwartej karcie.
+   Pasek podglądu (z-index 1) zostaje nad fragmentami przy przewijaniu. */
+.edit-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+}
+
+.edit-layer .edit-fragment {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.edit-layer .edit-fragment:hover:not(:disabled) {
+  background: var(--ui-fragment-fill);
+  outline: 1px solid var(--ui-fragment-outline);
+  outline-offset: 2px;
+}
+
+.edit-layer .edit-fragment:focus-visible,
+.edit-layer .edit-fragment[aria-expanded='true'] {
+  background: var(--ui-fragment-fill);
+  outline: 2px solid var(--ui-fragment-outline);
+  outline-offset: 2px;
+}
+
+/* Edit card: w warstwie górnej (popover), pozycję od fragmentu ustawia EditCard; skala zawsze 1:1. Bez nagłówka –
+   etykiety pól są tytułem karty, a „×” stoi w rogu nad pierwszą etykietą. */
+.edit-card {
+  position: fixed;
+  inset: auto;
+  box-sizing: border-box;
+  width: 340px;
+  max-width: calc(100vw - 8px);
+  max-height: calc(100vh - 8px);
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px var(--ui-shadow);
+}
+
+.edit-card .form {
+  padding: 12px 14px 4px;
+}
+
+.edit-card .form-field:first-child > span {
+  padding-right: 28px;
+}
+
+.edit-card-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ui-text-muted);
+  background: transparent;
+  border-color: transparent;
 }
 
 /* ---------- Pasek narzędzi ---------- */
