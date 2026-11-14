@@ -1,19 +1,46 @@
 import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type Ref } from 'react'
 import type { Dictionary } from '../../../shared/i18n/en'
-import type { CvDocument } from '../domain/schema'
+import type { Clause, ClauseContent, CvDocument, EducationItem, ExperienceItem } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
+import { ConsentFields } from '../editor/fields/ConsentFields'
+import { EducationItemFields } from '../editor/fields/EducationItemFields'
+import { educationName, entryName } from '../editor/fields/entryNames'
+import { ExperienceItemFields } from '../editor/fields/ExperienceItemFields'
 import { FullNameField } from '../editor/fields/FullNameField'
+import { ListItemsFields } from '../editor/fields/ListItemsFields'
 import { SectionTitleField, sectionName } from '../editor/fields/SectionTitleField'
 import { SummaryField } from '../editor/fields/SummaryField'
+import { RemoveProvider, type RemoveWithUndo } from '../editor/removalUndo'
 import { useDictionary } from '../i18n'
 import { markInput } from '../preview/keystrokeTiming'
 import { anchoredPosition, type Box } from './anchoredPosition'
 import type { EditTarget } from './editTargets'
 
-// Części CV, które mają już swoją Edit card. Warstwa edycji pokazuje przyciski tylko ich fragmentów; karty wpisów,
-// list i klauzuli (T3) oraz zdjęcia i kontaktów (T4) dopisują się tutaj i w `CardFields`.
-const cardKinds: ReadonlySet<EditTarget['kind']> = new Set(['fullName', 'summary', 'sectionTitle'])
+// Części CV, które mają już swoją Edit card. Warstwa edycji pokazuje przyciski tylko ich fragmentów; karty zdjęcia
+// i kontaktów (T4) dopisują się tutaj, w `cardLabel` i w `CardFields`.
+const cardKinds: ReadonlySet<EditTarget['kind']> = new Set([
+  'fullName',
+  'summary',
+  'sectionTitle',
+  'experienceItem',
+  'educationItem',
+  'listSection',
+  'consent'
+])
 export const hasCard = (target: EditTarget) => cardKinds.has(target.kind)
+
+const findSection = (document: CvDocument, sectionId: string) =>
+  document.sections.find((candidate) => candidate.id === sectionId)
+
+const findExperience = (document: CvDocument, sectionId: string, itemId: string): ExperienceItem | undefined => {
+  const section = findSection(document, sectionId)
+  return section?.type === 'experience' ? section.items.find((item) => item.id === itemId) : undefined
+}
+
+const findEducation = (document: CvDocument, sectionId: string, itemId: string): EducationItem | undefined => {
+  const section = findSection(document, sectionId)
+  return section?.type === 'education' ? section.items.find((item) => item.id === itemId) : undefined
+}
 
 // Nazwa części CV: w przycisku fragmentu („Edit: <nazwa>”) i jako nazwa karty (`aria-label`).
 export function cardLabel(target: EditTarget, document: CvDocument, t: Dictionary['editor']): string {
@@ -23,28 +50,96 @@ export function cardLabel(target: EditTarget, document: CvDocument, t: Dictionar
     case 'summary':
       return t.summary
     case 'sectionTitle': {
-      const section = document.sections.find((candidate) => candidate.id === target.sectionId)
+      const section = findSection(document, target.sectionId)
       return t.sectionTitle(section ? sectionName(section, t) : '')
     }
+    case 'experienceItem':
+      return t.card.position(entryName(findExperience(document, target.sectionId, target.itemId)?.role ?? '', t.newPosition))
+    case 'educationItem': {
+      const item = findEducation(document, target.sectionId, target.itemId)
+      return t.card.education(item ? educationName(item, t) : t.newEducation)
+    }
+    case 'listSection': {
+      const section = findSection(document, target.sectionId)
+      return t.card.list(section ? sectionName(section, t) : '')
+    }
+    case 'consent':
+      return t.consent.title
     default:
       return ''
   }
 }
 
-// Pola karty – te same komponenty co w CV form (te same klucze łączenia kroków cofania).
-function CardFields({ target, editor, document }: { target: EditTarget; editor: CvEditor; document: CvDocument }) {
+// Biblioteka klauzul dla karty klauzuli zgody (jak w CV form).
+export type ClauseLibrary = { clauses: Clause[]; onSaveClause: (content: ClauseContent) => Promise<Clause> }
+
+// Pola karty – te same komponenty co w CV form (te same klucze łączenia kroków cofania). Część CV, której już nie ma
+// (chwilę przed zamknięciem karty po cofnięciu albo usunięciu), nie ma pól.
+function CardFields({
+  target,
+  editor,
+  document,
+  library
+}: {
+  target: EditTarget
+  editor: CvEditor
+  document: CvDocument
+  library: ClauseLibrary
+}) {
+  const t = useDictionary().editor
   switch (target.kind) {
     case 'fullName':
       return <FullNameField editor={editor} header={document.header} />
     case 'summary':
       return <SummaryField editor={editor} header={document.header} />
     case 'sectionTitle': {
-      const section = document.sections.find((candidate) => candidate.id === target.sectionId)
+      const section = findSection(document, target.sectionId)
       return section ? <SectionTitleField editor={editor} section={section} labelled /> : null
     }
+    case 'experienceItem': {
+      const item = findExperience(document, target.sectionId, target.itemId)
+      return item ? <ExperienceItemFields editor={editor} sectionId={target.sectionId} item={item} /> : null
+    }
+    case 'educationItem': {
+      const item = findEducation(document, target.sectionId, target.itemId)
+      return item ? <EducationItemFields editor={editor} sectionId={target.sectionId} item={item} /> : null
+    }
+    case 'listSection': {
+      const section = findSection(document, target.sectionId)
+      if (section?.type !== 'list') return null
+      return (
+        <>
+          <CardHeading>{sectionName(section, t)}</CardHeading>
+          <ListItemsFields editor={editor} sectionId={section.id} items={section.items} />
+        </>
+      )
+    }
+    case 'consent':
+      return (
+        <>
+          <CardHeading>{t.consent.title}</CardHeading>
+          <ConsentFields
+          editor={editor}
+          consent={document.consent}
+          clauses={library.clauses}
+          onSaveClause={library.onSaveClause}
+            inCard
+          />
+        </>
+      )
     default:
       return null
   }
+}
+
+// Nagłówek karty bez etykiety pola na górze (lista, klauzula): mówi, co się edytuje, i robi miejsce na „×”. Dla
+// czytnika ekranu to samo mówi już nazwa karty.
+function CardHeading({ children }: { children: string }) {
+  return (
+    <p className="edit-card-heading" aria-hidden="true">
+      {children}
+    </p>
+  )
 }
 
 // Pole, na które trafia fokus po otwarciu karty: element z `data-edit-focus` równym polu, punktowi, elementowi listy
@@ -59,6 +154,8 @@ function focusKey(target: EditTarget): string | undefined {
       return target.itemId
     case 'contacts':
       return target.contactId
+    case 'consent':
+      return 'text'
     default:
       return undefined
   }
@@ -80,22 +177,28 @@ export type CardAnchor = { anchor: Box; beside: { edge: number; limit: number } 
 // - Escape zamyka kartę (warstwa przenosi fokus na fragment). Karta nie więzi fokusu: Tab z ostatniego pola idzie do
 //   kolejnego fragmentu, Shift+Tab z pierwszego – na fragment karty (`onTabOut`).
 // - `markInput` w `onInput` (jak formularz), żeby `cv:keystroke-to-preview` mierzył też pisanie w karcie.
+// - Usunięcia w karcie (wpis, punkt, element listy) idą przez `onRemove` – „Usunięto. Cofnij” jak w CV form.
+// - `data-entry-root`: Enter/Backspace w punktach i „Cofnij” szukają pól najpierw w karcie (ta sama lista jest w CV form).
 export function EditCard({
   ref,
   target,
   editor,
   document,
+  library,
   locate,
   onClose,
-  onTabOut
+  onTabOut,
+  onRemove
 }: {
   ref?: Ref<HTMLDivElement>
   target: EditTarget
   editor: CvEditor
   document: CvDocument
+  library: ClauseLibrary
   locate: () => CardAnchor
   onClose: () => void
   onTabOut: (direction: 'forward' | 'backward') => boolean
+  onRemove: RemoveWithUndo
 }) {
   const t = useDictionary().editor
   const card = useRef<HTMLDivElement | null>(null)
@@ -114,7 +217,8 @@ export function EditCard({
       ...anchor,
       panel: { width: element.offsetWidth, height: element.offsetHeight },
       viewport: { width: window.innerWidth, height: window.innerHeight },
-      gap: 8
+      gap: 8,
+      contain: true
     })
     element.style.top = `${top}px`
     element.style.left = `${left}px`
@@ -142,11 +246,13 @@ export function EditCard({
       (key !== undefined
         ? [...card.current.querySelectorAll<HTMLElement>('[data-edit-focus]')].find((element) => element.dataset['editFocus'] === key)
         : undefined) ?? card.current.querySelector<HTMLElement>('input, textarea, select')
-    field?.focus({ preventScroll: true })
+    if (!field) return
+    field.focus({ preventScroll: true })
     // Kursor na końcu tekstu: kliknięcie tekstu na stronie zwykle znaczy „dopisz” albo „popraw końcówkę”.
-    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+    if (field instanceof HTMLTextAreaElement || (field instanceof HTMLInputElement && field.type === 'text')) {
       field.setSelectionRange(field.value.length, field.value.length)
     }
+    revealInCard(card.current, field)
   }, [targetSignature])
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -171,6 +277,7 @@ export function EditCard({
       }}
       popover="manual"
       className="edit-card"
+      data-entry-root
       role="dialog"
       aria-label={label}
       onKeyDown={onKeyDown}
@@ -180,8 +287,20 @@ export function EditCard({
         ×
       </button>
       <div className="form">
-        <CardFields target={target} editor={editor} document={document} />
+        <RemoveProvider value={onRemove}>
+          <CardFields target={target} editor={editor} document={document} library={library} />
+        </RemoveProvider>
       </div>
     </div>
   )
+}
+
+// Pole celu w widocznej części karty (długi wpis z wieloma punktami przewija się w karcie). Bez `scrollIntoView`, bo
+// przewinąłby też panel stron pod kartą.
+function revealInCard(card: HTMLElement, field: HTMLElement) {
+  const box = card.getBoundingClientRect()
+  const target = field.getBoundingClientRect()
+  const margin = 12
+  if (target.bottom > box.bottom - margin) card.scrollTop += target.bottom - box.bottom + margin
+  else if (target.top < box.top + margin) card.scrollTop -= box.top + margin - target.top
 }

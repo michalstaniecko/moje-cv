@@ -169,7 +169,13 @@ export const vi: Dictionary = {
     exportCutOffHint: 'Các đoạn quá dài được đánh dấu trong chế độ chỉnh sửa.',
     mode: { label: 'Chế độ', edit: 'Chỉnh sửa', preview: 'Xem trước' },
     canvas: { edit: (what) => `Sửa: ${what}` },
-    card: { close: 'Đóng', sectionTitle: 'Tiêu đề mục' },
+    card: {
+      close: 'Đóng',
+      sectionTitle: 'Tiêu đề mục',
+      position: (name) => `Vị trí “${name}”`,
+      education: (name) => `Học vấn “${name}”`,
+      list: (name) => `Danh sách “${name}”`
+    },
     exportAnyway: 'Vẫn xuất',
     preparingPdf: 'Đang chuẩn bị PDF…',
     exportTimedOut: 'Việc chuẩn bị PDF mất quá nhiều thời gian và đã bị dừng. Hãy thử lại.',

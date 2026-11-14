@@ -174,7 +174,13 @@ export const sv: Dictionary = {
     exportCutOffHint: 'De för långa avsnitten är markerade i redigeringsläget.',
     mode: { label: 'Läge', edit: 'Redigera', preview: 'Förhandsvisning' },
     canvas: { edit: (what) => `Redigera: ${what}` },
-    card: { close: 'Stäng', sectionTitle: 'Avsnittsrubrik' },
+    card: {
+      close: 'Stäng',
+      sectionTitle: 'Avsnittsrubrik',
+      position: (name) => `Tjänst ”${name}”`,
+      education: (name) => `Utbildning ”${name}”`,
+      list: (name) => `Lista ”${name}”`
+    },
     exportAnyway: 'Exportera ändå',
     preparingPdf: 'Förbereder PDF…',
     exportTimedOut: 'Det tog för lång tid att förbereda PDF:en och det avbröts. Försök igen.',

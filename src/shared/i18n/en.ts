@@ -191,7 +191,14 @@ export const en = {
     mode: { label: 'Mode', edit: 'Edit', preview: 'Preview' },
     // Edycja na stronach CV w Edit mode: przycisk fragmentu strony („Edit: <co>”) i Edit card.
     canvas: { edit: (what: string) => `Edit: ${what}` },
-    card: { close: 'Close', sectionTitle: 'Section title' },
+    card: {
+      close: 'Close',
+      sectionTitle: 'Section title',
+      // Nazwy kart (i przycisków fragmentów „Edit: …”) wpisów i sekcji listowych.
+      position: (name: string) => `Position “${name}”`,
+      education: (name: string) => `Education “${name}”`,
+      list: (name: string) => `List “${name}”`
+    },
     exportAnyway: 'Export anyway',
     preparingPdf: 'Preparing the PDF…',
     exportTimedOut: 'Preparing the PDF took too long and was stopped. Try again.',

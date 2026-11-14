@@ -169,7 +169,13 @@ export const fr: Dictionary = {
     exportCutOffHint: 'Les passages trop longs sont mis en évidence en mode édition.',
     mode: { label: 'Mode', edit: 'Édition', preview: 'Aperçu' },
     canvas: { edit: (what) => `Modifier : ${what}` },
-    card: { close: 'Fermer', sectionTitle: 'Titre de la section' },
+    card: {
+      close: 'Fermer',
+      sectionTitle: 'Titre de la section',
+      position: (name) => `Poste « ${name} »`,
+      education: (name) => `Formation « ${name} »`,
+      list: (name) => `Liste « ${name} »`
+    },
     exportAnyway: 'Exporter quand même',
     preparingPdf: 'Préparation du PDF…',
     exportTimedOut: 'La préparation du PDF a pris trop de temps et a été interrompue. Réessayez.',

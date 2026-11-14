@@ -169,7 +169,13 @@ export const uk: Dictionary = {
     exportCutOffHint: 'Задовгі фрагменти виділено в режимі редагування.',
     mode: { label: 'Режим', edit: 'Редагування', preview: 'Перегляд' },
     canvas: { edit: (what) => `Редагувати: ${what}` },
-    card: { close: 'Закрити', sectionTitle: 'Заголовок розділу' },
+    card: {
+      close: 'Закрити',
+      sectionTitle: 'Заголовок розділу',
+      position: (name) => `Посада «${name}»`,
+      education: (name) => `Освіта «${name}»`,
+      list: (name) => `Список «${name}»`
+    },
     exportAnyway: 'Однаково експортувати',
     preparingPdf: 'Підготовка PDF…',
     exportTimedOut: 'Підготовка PDF тривала надто довго й була перервана. Спробуйте ще раз.',

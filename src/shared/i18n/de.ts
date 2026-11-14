@@ -176,7 +176,13 @@ export const de: Dictionary = {
     exportCutOffHint: 'Die zu langen Abschnitte sind im Bearbeitungsmodus hervorgehoben.',
     mode: { label: 'Modus', edit: 'Bearbeiten', preview: 'Vorschau' },
     canvas: { edit: (what) => `Bearbeiten: ${what}` },
-    card: { close: 'Schließen', sectionTitle: 'Abschnittstitel' },
+    card: {
+      close: 'Schließen',
+      sectionTitle: 'Abschnittstitel',
+      position: (name) => `Position „${name}“`,
+      education: (name) => `Ausbildung „${name}“`,
+      list: (name) => `Liste „${name}“`
+    },
     exportAnyway: 'Trotzdem exportieren',
     preparingPdf: 'PDF wird vorbereitet…',
     exportTimedOut: 'Die Vorbereitung des PDFs hat zu lange gedauert und wurde abgebrochen. Versuche es erneut.',

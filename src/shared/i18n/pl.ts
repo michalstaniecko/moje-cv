@@ -169,7 +169,13 @@ export const pl: Dictionary = {
     exportCutOffHint: 'Za długie fragmenty są wyróżnione w trybie edycji.',
     mode: { label: 'Tryb', edit: 'Edycja', preview: 'Podgląd' },
     canvas: { edit: (what) => `Edytuj: ${what}` },
-    card: { close: 'Zamknij', sectionTitle: 'Tytuł sekcji' },
+    card: {
+      close: 'Zamknij',
+      sectionTitle: 'Tytuł sekcji',
+      position: (name) => `Stanowisko „${name}”`,
+      education: (name) => `Wykształcenie „${name}”`,
+      list: (name) => `Lista „${name}”`
+    },
     exportAnyway: 'Eksportuj mimo to',
     preparingPdf: 'Przygotowywanie PDF…',
     exportTimedOut: 'Przygotowanie PDF trwało zbyt długo i zostało przerwane. Spróbuj ponownie.',

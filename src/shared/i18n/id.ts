@@ -169,7 +169,13 @@ export const id: Dictionary = {
     exportCutOffHint: 'Bagian yang terlalu panjang ditandai di mode edit.',
     mode: { label: 'Mode', edit: 'Edit', preview: 'Pratinjau' },
     canvas: { edit: (what) => `Edit: ${what}` },
-    card: { close: 'Tutup', sectionTitle: 'Judul bagian' },
+    card: {
+      close: 'Tutup',
+      sectionTitle: 'Judul bagian',
+      position: (name) => `Posisi “${name}”`,
+      education: (name) => `Pendidikan “${name}”`,
+      list: (name) => `Daftar “${name}”`
+    },
     exportAnyway: 'Tetap ekspor',
     preparingPdf: 'Menyiapkan PDF…',
     exportTimedOut: 'Persiapan PDF terlalu lama dan dihentikan. Coba lagi.',

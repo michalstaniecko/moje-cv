@@ -2,9 +2,18 @@ import { memo, useCallback, useEffect, useRef, type KeyboardEvent, type MouseEve
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
+import type { RemoveWithUndo } from '../editor/removalUndo'
 import { useDictionary } from '../i18n'
-import { cardLabel, EditCard, hasCard, type CardAnchor } from './EditCard'
-import { editMarkupContract, fragmentKey, hitTarget, type ContractHit, type ContractPart, type EditTarget } from './editTargets'
+import { cardLabel, EditCard, hasCard, type CardAnchor, type ClauseLibrary } from './EditCard'
+import {
+  editMarkupContract,
+  fragmentKey,
+  fragmentTarget,
+  hitTarget,
+  type ContractHit,
+  type ContractPart,
+  type EditTarget
+} from './editTargets'
 import type { Fragment } from './fragmentRects'
 import { useFragmentRects } from './useFragmentRects'
 import type { EditSession } from './useEditSession'
@@ -26,15 +35,14 @@ export function EditLayer({
   panel,
   layout,
   scale,
-  onFocusLost
-}: {
+  onFocusLost,
+  onRemove,
+  library
+}: EditingContext & {
   document: CvDocument
-  editor: CvEditor
-  session: EditSession
   panel: RefObject<HTMLElement | null>
   layout: PaginateResult | null
   scale: number
-  onFocusLost: () => void
 }) {
   const layer = useRef<HTMLDivElement>(null)
   const card = useRef<HTMLDivElement>(null)
@@ -94,6 +102,20 @@ export function EditLayer({
     return true
   }
 
+  // Usunięcie w karcie: „Cofnij” wraca do pola przywróconego punktu lub elementu w karcie, a po usunięciu całego wpisu
+  // (karta zamknęła się razem z nim) – otwiera kartę przywróconego wpisu z fokusem na jej pierwszym polu.
+  const removeInCard: RemoveWithUndo = (change, focus) => {
+    if (!open) return
+    const reopen = { target: fragmentTarget(open.target), anchor: open.anchor }
+    const wholeEntry =
+      (open.target.kind === 'experienceItem' || open.target.kind === 'educationItem') && focus.entryId === open.target.itemId
+    onRemove(change, {
+      ...focus,
+      root: () => card.current,
+      restore: wholeEntry ? () => openCard(reopen.target, reopen.anchor) : undefined
+    })
+  }
+
   const locate = (): CardAnchor => {
     const button = anchorKey === undefined ? undefined : fragmentButtons(anchorKey)[0]
     if (!button || !panel.current) return null
@@ -107,12 +129,12 @@ export function EditLayer({
   }
 
   // Klik w tło strony albo poza stronę zamyka kartę. Gdy fokus nie trafił w nic (tło nie przyjmuje fokusu), wraca na
-  // fragment karty, żeby nie zginął.
+  // fragment karty, żeby nie zginął. „Usunięto. Cofnij” nie zamyka karty – „Cofnij” wraca do pola w karcie.
   useEffect(() => {
     if (!open) return
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Element | null
-      if (target?.closest('.edit-card, .edit-fragment, .preview-bar')) return
+      if (target?.closest('.edit-card, .edit-fragment, .preview-bar, .removal-message')) return
       const anchor = fragmentButtons(open.anchor)[0]
       closeCard()
       requestAnimationFrame(() => {
@@ -145,16 +167,28 @@ export function EditLayer({
           target={open.target}
           editor={editor}
           document={document}
+          library={library}
           locate={locate}
           onClose={() => {
             closeCard()
             focusAnchor()
           }}
           onTabOut={onTabOut}
+          onRemove={removeInCard}
         />
       )}
     </div>
   )
+}
+
+// Co edytor daje warstwie edycji (przez PreviewPane): dokument do zmian, sesję (tryb, otwarta karta), bezpieczne miejsce
+// dla fokusu, usuwanie z „Usunięto. Cofnij” i bibliotekę klauzul.
+export type EditingContext = {
+  editor: CvEditor
+  session: EditSession
+  onFocusLost: () => void
+  onRemove: RemoveWithUndo
+  library: ClauseLibrary
 }
 
 type FragmentButtonProps = {

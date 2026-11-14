@@ -169,7 +169,13 @@ export const tr: Dictionary = {
     exportCutOffHint: 'Çok uzun bölümler düzenleme modunda vurgulanır.',
     mode: { label: 'Mod', edit: 'Düzenleme', preview: 'Önizleme' },
     canvas: { edit: (what) => `Düzenle: ${what}` },
-    card: { close: 'Kapat', sectionTitle: 'Bölüm başlığı' },
+    card: {
+      close: 'Kapat',
+      sectionTitle: 'Bölüm başlığı',
+      position: (name) => `“${name}” pozisyonu`,
+      education: (name) => `“${name}” eğitimi`,
+      list: (name) => `“${name}” listesi`
+    },
     exportAnyway: 'Yine de dışa aktar',
     preparingPdf: 'PDF hazırlanıyor…',
     exportTimedOut: 'PDF’nin hazırlanması çok uzun sürdü ve durduruldu. Tekrar deneyin.',

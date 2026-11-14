@@ -176,7 +176,13 @@ export const nl: Dictionary = {
     exportCutOffHint: 'De te lange fragmenten zijn gemarkeerd in de bewerkingsmodus.',
     mode: { label: 'Modus', edit: 'Bewerken', preview: 'Voorbeeld' },
     canvas: { edit: (what) => `Bewerken: ${what}` },
-    card: { close: 'Sluiten', sectionTitle: 'Sectietitel' },
+    card: {
+      close: 'Sluiten',
+      sectionTitle: 'Sectietitel',
+      position: (name) => `Functie “${name}”`,
+      education: (name) => `Opleiding “${name}”`,
+      list: (name) => `Lijst “${name}”`
+    },
     exportAnyway: 'Toch exporteren',
     preparingPdf: 'PDF voorbereiden…',
     exportTimedOut: 'Het voorbereiden van de pdf duurde te lang en is gestopt. Probeer het opnieuw.',

@@ -260,9 +260,8 @@ export function CvScreen({
       >
         {/* Początek pomiaru odpowiedzi podglądu na klawisz (preview/keystrokeTiming.ts). */}
         {session.mode === 'edit' && (
-          <aside className="editor-form" onInput={(event) => markInput(event.timeStamp)}>
+          <aside className="editor-form" data-entry-root onInput={(event) => markInput(event.timeStamp)}>
             <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} onRemove={removal.remove} />
-            <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
           </aside>
         )}
         {session.mode === 'edit' && <PaneSeparator formWidth={formWidth} />}
@@ -271,12 +270,20 @@ export function CvScreen({
           document={document}
           onLayout={onLayout}
           mode={session.mode}
-          editing={{ editor, session, onFocusLost: focusSafePlace }}
+          editing={{
+            editor,
+            session,
+            onFocusLost: focusSafePlace,
+            onRemove: removal.remove,
+            library: { clauses, onSaveClause: saveClause }
+          }}
           onShowOversized={() => {
             session.setMode('edit')
             modeToggle.current?.focus('edit')
           }}
         />
+        {/* „Usunięto. Cofnij” z Edit card i z CV form – w lewym dolnym rogu panelu stron. */}
+        <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
       </div>
     </div>
   )

@@ -169,7 +169,13 @@ export const ro: Dictionary = {
     exportCutOffHint: 'Fragmentele prea lungi sunt evidențiate în modul de editare.',
     mode: { label: 'Mod', edit: 'Editare', preview: 'Previzualizare' },
     canvas: { edit: (what) => `Editează: ${what}` },
-    card: { close: 'Închide', sectionTitle: 'Titlul secțiunii' },
+    card: {
+      close: 'Închide',
+      sectionTitle: 'Titlul secțiunii',
+      position: (name) => `Postul „${name}”`,
+      education: (name) => `Studii „${name}”`,
+      list: (name) => `Lista „${name}”`
+    },
     exportAnyway: 'Exportă totuși',
     preparingPdf: 'Se pregătește PDF-ul…',
     exportTimedOut: 'Pregătirea PDF-ului a durat prea mult și a fost oprită. Încearcă din nou.',

@@ -169,7 +169,13 @@ export const cs: Dictionary = {
     exportCutOffHint: 'Příliš dlouhé části jsou zvýrazněné v režimu úprav.',
     mode: { label: 'Režim', edit: 'Úpravy', preview: 'Náhled' },
     canvas: { edit: (what) => `Upravit: ${what}` },
-    card: { close: 'Zavřít', sectionTitle: 'Název sekce' },
+    card: {
+      close: 'Zavřít',
+      sectionTitle: 'Název sekce',
+      position: (name) => `Pozice „${name}“`,
+      education: (name) => `Vzdělání „${name}“`,
+      list: (name) => `Seznam „${name}“`
+    },
     exportAnyway: 'Přesto exportovat',
     preparingPdf: 'Připravuje se PDF…',
     exportTimedOut: 'Příprava PDF trvala příliš dlouho a byla přerušena. Zkuste to znovu.',

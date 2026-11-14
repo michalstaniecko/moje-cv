@@ -169,7 +169,13 @@ export const pt: Dictionary = {
     exportCutOffHint: 'Os trechos longos demais estão destacados no modo de edição.',
     mode: { label: 'Modo', edit: 'Edição', preview: 'Pré-visualização' },
     canvas: { edit: (what) => `Editar: ${what}` },
-    card: { close: 'Fechar', sectionTitle: 'Título da seção' },
+    card: {
+      close: 'Fechar',
+      sectionTitle: 'Título da seção',
+      position: (name) => `Cargo “${name}”`,
+      education: (name) => `Formação “${name}”`,
+      list: (name) => `Lista “${name}”`
+    },
     exportAnyway: 'Exportar mesmo assim',
     preparingPdf: 'Preparando o PDF…',
     exportTimedOut: 'A preparação do PDF demorou demais e foi interrompida. Tente novamente.',

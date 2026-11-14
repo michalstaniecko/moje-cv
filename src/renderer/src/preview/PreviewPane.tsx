@@ -1,9 +1,8 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
-import { EditLayer } from '../canvas/EditLayer'
-import type { EditorMode, EditSession } from '../canvas/useEditSession'
+import { EditLayer, type EditingContext } from '../canvas/EditLayer'
+import type { EditorMode } from '../canvas/useEditSession'
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
-import type { CvEditor } from '../editor/cvEditor'
 import { useDictionary, useInterfaceLanguage } from '../i18n'
 import { CvPages } from '../template/CvPages'
 import { afterNextPaint, markPreviewPainted } from './keystrokeTiming'
@@ -28,7 +27,7 @@ export function PreviewPane({
   onLayout?: (layout: PaginateResult) => void
   mode?: EditorMode
   onShowOversized?: () => void
-  editing?: { editor: CvEditor; session: EditSession; onFocusLost: () => void }
+  editing?: EditingContext
 }) {
   const panel = useRef<HTMLElement>(null)
   const panelWidth = usePanelWidth(panel)
@@ -103,15 +102,7 @@ export function PreviewPane({
         {pages}
       </div>
       {mode === 'edit' && editing && (
-        <EditLayer
-          document={document}
-          editor={editing.editor}
-          session={editing.session}
-          panel={panel}
-          layout={layout}
-          scale={scale}
-          onFocusLost={editing.onFocusLost}
-        />
+        <EditLayer {...editing} document={document} panel={panel} layout={layout} scale={scale} />
       )}
     </main>
   )

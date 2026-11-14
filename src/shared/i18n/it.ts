@@ -169,7 +169,13 @@ export const it: Dictionary = {
     exportCutOffHint: 'I frammenti troppo lunghi sono evidenziati in modalità modifica.',
     mode: { label: 'Modalità', edit: 'Modifica', preview: 'Anteprima' },
     canvas: { edit: (what) => `Modifica: ${what}` },
-    card: { close: 'Chiudi', sectionTitle: 'Titolo della sezione' },
+    card: {
+      close: 'Chiudi',
+      sectionTitle: 'Titolo della sezione',
+      position: (name) => `Posizione «${name}»`,
+      education: (name) => `Formazione «${name}»`,
+      list: (name) => `Elenco «${name}»`
+    },
     exportAnyway: 'Esporta comunque',
     preparingPdf: 'Preparazione del PDF…',
     exportTimedOut: 'La preparazione del PDF ha richiesto troppo tempo ed è stata interrotta. Riprova.',

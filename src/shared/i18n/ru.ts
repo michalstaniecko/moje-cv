@@ -169,7 +169,13 @@ export const ru: Dictionary = {
     exportCutOffHint: 'Слишком длинные фрагменты выделены в режиме редактирования.',
     mode: { label: 'Режим', edit: 'Правка', preview: 'Просмотр' },
     canvas: { edit: (what) => `Изменить: ${what}` },
-    card: { close: 'Закрыть', sectionTitle: 'Заголовок раздела' },
+    card: {
+      close: 'Закрыть',
+      sectionTitle: 'Заголовок раздела',
+      position: (name) => `Должность «${name}»`,
+      education: (name) => `Образование «${name}»`,
+      list: (name) => `Список «${name}»`
+    },
     exportAnyway: 'Всё равно экспортировать',
     preparingPdf: 'Подготовка PDF…',
     exportTimedOut: 'Подготовка PDF заняла слишком много времени и была прервана. Попробуйте ещё раз.',

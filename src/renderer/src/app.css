@@ -69,6 +69,7 @@ body {
 .editor-form,
 .row-menu,
 .edit-card,
+.removal-message,
 .preview-bar,
 .photo-cropper,
 .sponsor-bar,
@@ -310,6 +311,29 @@ textarea:focus-visible {
 
 .edit-card .form-field:first-child > span {
   padding-right: 28px;
+}
+
+/* Nagłówek karty bez etykiety pola na górze (sekcja listowa, klauzula zgody) – jak etykiety pól. */
+.edit-card-heading {
+  margin: 2px 28px 10px 0;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+}
+
+/* Karta ma 340 px: wiersze pól zawijają się, a pola wyboru („Obecnie tu pracuję”, „Nowa strona przed wpisem”) stoją
+   w osobnej linii, bez odstępu na etykietę pola obok. */
+.edit-card .form-row {
+  flex-wrap: wrap;
+}
+
+.edit-card .form-row > .form-checkbox {
+  flex-basis: 100%;
+  padding-top: 0;
+  white-space: normal;
+}
+
+.edit-card .form-checkbox {
+  margin-bottom: 10px;
 }
 
 .edit-card-close {
@@ -684,7 +708,7 @@ textarea:focus-visible {
 /* `position: relative` jest konieczne: bez niego blokiem zawierającym elementów `position: absolute` w panelu
    (.visually-hidden, .cv-measure, kropki szablonu) jest .editor-panes, a wtedy panel ich nie przycina i wystają
    poza niego, dając ekranowi własny pasek przewijania (panele odjeżdżały spod paska narzędzi). */
-.editor-panes > :not(.pane-separator) {
+.editor-panes > :not(.pane-separator, .removal-message) {
   position: relative;
   overflow: auto;
 }
@@ -1090,20 +1114,25 @@ textarea:focus-visible {
   font-size: 12px;
 }
 
-/* „Usunięto. Cofnij” przyklejone do dołu kolumny formularza (nad Sponsor barem), więc nie zasłania podglądu stron.
-   Pusty kontener `role="status"` zostaje w DOM bez wysokości, żeby czytnik ekranu ogłosił wstawioną treść. */
+/* „Usunięto. Cofnij” pływa w lewym dolnym rogu panelu stron (obok paska bocznego, a w Preview mode przy lewej krawędzi),
+   wspólne dla Edit card i formularza. Pusty kontener `role="status"` zostaje w DOM bez wymiarów, żeby czytnik ekranu
+   ogłosił wstawioną treść. */
 .removal-message {
-  position: sticky;
-  bottom: 0;
-  padding: 0 20px;
+  position: absolute;
+  bottom: 16px;
+  left: calc(var(--form-width, 440px) + 16px);
+  z-index: 2;
+}
+
+.editor-panes--preview > .removal-message {
+  left: 16px;
 }
 
 .removal-message-content {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
-  padding: 8px 12px;
+  padding: 8px 8px 8px 14px;
   background: var(--ui-panel-bg);
   border: 1px solid var(--ui-border);
   border-radius: 8px;
