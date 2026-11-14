@@ -498,6 +498,10 @@ Issue rodzic: #122 (`michalstaniecko/moje-cv`). Tickety są jego sub-issues; zal
 
 ## Stan realizacji i odstępstwa (po T1–T9)
 
+**Uwaga (po S6 z `docs/specs/wysiwyg-editing.md`):** opis poniżej to stan po T1–T9. Edit card, przyciski fragmentów
+i mapowanie kliknięć na pola już nie istnieją – tekst edytuje się w Page fields na stronach, wartości nietekstowe w Field
+popovers (ADR-0010); stan realizacji WYSIWYG – w „Stanie realizacji i odstępstwach” tamtego speca.
+
 Wszystkie tickety T1–T9 (#123–#131) zrealizowane na gałęzi `experiment/inline-editing-redesign`. Złote strony (zrzuty
 `.cv-page` i tekst PDF w trzech szablonach) zielone bez aktualizacji wzorców; w `src/renderer/src/template/` zmieniony
 tylko `data-block-id` w `CvBlockView.tsx` i komentarz o kontrakcie znaczników w `templateDefinition.ts`.

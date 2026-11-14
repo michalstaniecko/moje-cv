@@ -1,6 +1,6 @@
 # CV Drawer
 
-CV Drawer is a free Mac app for writing a CV with a live preview of its A4 pages. You fill in a form, pick a template, colours and fonts, and export the CV to PDF or to an editable DOCX for Word, Pages, LibreOffice or Google Docs. Everything stays on your Mac: no account, no cloud.
+CV Drawer is a free Mac app for writing a CV with a live preview of its A4 pages. You type straight into the CV pages (or fill in a form), pick a template, colours and fonts, and export the CV to PDF or to an editable DOCX for Word, Pages, LibreOffice or Google Docs. Everything stays on your Mac: no account, no cloud.
 
 ![CV Drawer: the CV editor with the live page preview](docs/readme-screenshot.png)
 
