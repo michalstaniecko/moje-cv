@@ -239,15 +239,20 @@ export function EditCard({
     const element = card.current
     const anchor = locateRef.current()
     if (!element || !anchor) return
-    const { top, left } = anchoredPosition({
+    // Pełna wysokość karty (w granicach okna z arkusza), także gdy poprzednia pozycja ją obniżyła (`maxHeight`).
+    const borders = element.offsetHeight - element.clientHeight
+    const height = Math.min(element.scrollHeight + borders, window.innerHeight - 8)
+    const { top, left, maxHeight } = anchoredPosition({
       ...anchor,
-      panel: { width: element.offsetWidth, height: element.offsetHeight },
+      panel: { width: element.offsetWidth, height },
       viewport: { width: window.innerWidth, height: window.innerHeight },
       gap: 8,
       contain: true
     })
     element.style.top = `${top}px`
     element.style.left = `${left}px`
+    // Niższa karta pod albo nad wysokim fragmentem (przewija się w środku), żeby go nie zasłaniała.
+    element.style.maxHeight = maxHeight === undefined ? '' : `${maxHeight}px`
   }
 
   // Najpierw pokazanie (ukryty popover nie ma wymiarów), potem pozycja. `place` czyta wszystko przez refy, więc

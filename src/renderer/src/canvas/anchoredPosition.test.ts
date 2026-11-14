@@ -32,22 +32,59 @@ describe('anchoredPosition', () => {
     expect(anchoredPosition({ anchor: low, panel: tall, viewport })).toEqual({ top: 694, left: 400, placement: 'below' })
   })
 
-  it('with `contain`, keeps a panel that fits neither below nor above inside the window, on the roomier side', () => {
-    // Wysoki fragment (wpis z punktami) i wysoka karta: ani pod, ani nad nim nie ma miejsca.
+  it('with `contain`, puts a panel that fits neither below nor above beside the anchor itself, right or left', () => {
+    // Wysoki fragment (wpis z punktami) i wysoka karta: ani pod, ani nad nim nie ma miejsca, obok strony też nie.
     const tallAnchor = { top: 100, left: 400, right: 700, bottom: 600 }
     const card = { width: 340, height: 500 }
     expect(anchoredPosition({ anchor: tallAnchor, panel: card, viewport, contain: true })).toEqual({
-      top: 296,
-      left: 400,
-      placement: 'below'
+      top: 100,
+      left: 704,
+      placement: 'side'
     })
-    expect(anchoredPosition({ anchor: { ...tallAnchor, top: 500, bottom: 790 }, panel: card, viewport, contain: true })).toEqual({
-      top: 4,
-      left: 400,
-      placement: 'above'
+    // Po prawej brak miejsca – po lewej (nad paskiem bocznym), w pionie w oknie.
+    expect(anchoredPosition({ anchor: { ...tallAnchor, left: 500, right: 1000 }, panel: card, viewport, contain: true })).toEqual({
+      top: 100,
+      left: 156,
+      placement: 'side'
     })
+    expect(
+      anchoredPosition({ anchor: { top: 500, left: 500, right: 1000, bottom: 790 }, panel: card, viewport, contain: true })
+    ).toEqual({ top: 296, left: 156, placement: 'side' })
     // Gdy się mieści, `contain` niczego nie zmienia.
     expect(anchoredPosition({ anchor, panel, viewport, contain: true })).toEqual(anchoredPosition({ anchor, panel, viewport }))
+  })
+
+  it('with `contain` and no room beside the anchor, makes the panel lower below or above it rather than cover it', () => {
+    // Fragment na prawie całą szerokość okna.
+    const wide = { left: 200, right: 1000 }
+    const card = { width: 340, height: 500 }
+    expect(anchoredPosition({ anchor: { ...wide, top: 100, bottom: 500 }, panel: card, viewport, contain: true })).toEqual({
+      top: 504,
+      left: 200,
+      placement: 'below',
+      maxHeight: 292
+    })
+    expect(anchoredPosition({ anchor: { ...wide, top: 400, bottom: 700 }, panel: card, viewport, contain: true })).toEqual({
+      top: 4,
+      left: 200,
+      placement: 'above',
+      maxHeight: 392
+    })
+  })
+
+  it('with `contain`, covers part of an anchor almost as tall as the window, on the roomier side, inside the window', () => {
+    const card = { width: 340, height: 500 }
+    const huge = { left: 200, right: 1000 }
+    expect(anchoredPosition({ anchor: { ...huge, top: 50, bottom: 700 }, panel: card, viewport, contain: true })).toEqual({
+      top: 296,
+      left: 200,
+      placement: 'below'
+    })
+    expect(anchoredPosition({ anchor: { ...huge, top: 150, bottom: 790 }, panel: card, viewport, contain: true })).toEqual({
+      top: 4,
+      left: 200,
+      placement: 'above'
+    })
   })
 
   it('with `contain`, keeps the panel in the window when its anchor has scrolled out of it', () => {
