@@ -187,7 +187,7 @@ export function CvScreen({
 
   return (
     <div className="editor-screen">
-      <header className="toolbar">
+      <header className="toolbar editor-toolbar">
         <button type="button" ref={backButton} onClick={() => back()}>
           {common.back}
         </button>

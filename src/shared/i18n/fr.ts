@@ -65,7 +65,7 @@ export const fr: Dictionary = {
     }
   },
   common: {
-    back: '← Bibliothèque de CV',
+    back: '← Mes CV',
     save: 'Enregistrer',
     cancel: 'Annuler',
     delete: 'Supprimer',
