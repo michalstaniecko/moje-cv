@@ -18,6 +18,7 @@ import type { RemoveWithUndo } from '../editor/removalUndo'
 import { useDictionary } from '../i18n'
 import { useAddControls, type AddedAnchor } from './AddControls'
 import { BlockHandle, useBlockMenu } from './BlockMenu'
+import { ContactLabelSuggestions } from './ContactLabelSuggestions'
 import { DatePopover, openDatesAt, type DatePopoverStore } from './DatePopover'
 import { cardLabel, EditCard, hasCard, type CardAnchor, type ClauseLibrary } from './EditCard'
 import {
@@ -236,6 +237,7 @@ export function EditLayer({
       {blockMenu.liveRegion}
       <DateWarnings document={document} panel={panel} layer={layer} fragments={fragments} hidden={compact} />
       <DatePopover editor={editor} document={document} dates={session.datePopover} active={session.activeField} />
+      <ContactLabelSuggestions editor={editor} document={document} active={session.activeField} />
       {open && (
         <EditCard
           // Inny fragment = nowa karta (nowe pola, fokus); inne pole tego samego fragmentu – ta sama karta.

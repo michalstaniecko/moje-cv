@@ -290,6 +290,8 @@ async function expectCardNextTo(dialog: Locator, button: Locator) {
 // Page field na stronach (Edit mode): pole tekstowe z nazwą pola CV (`.cv-measure` jest ukryty przed czytnikiem).
 const pageField = (name: string) => window.locator('.preview .cv-pages').getByRole('textbox', { name, exact: true })
 const titleField = (title: string) => pageField(`Section title “${title}”`)
+// Etykieta kontaktu na stronie – combobox z podpowiedziami etykiet (S4).
+const labelField = (number: number) => window.locator('.preview .cv-pages').getByRole('combobox', { name: `Contact label ${number}`, exact: true })
 // Pole CV form (etykieta pola tekstowego zawiera też jego tekst – bez `exact`).
 const formField = (label: string) => window.locator('.editor-form').getByLabel(label)
 // Numer strony (od 0), na której leży element.
@@ -793,7 +795,7 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
       await clickAtCharacter(text, ((await text.textContent()) ?? '').indexOf(contact.value) + 2)
       await expect(pageField(`Contact value ${index + 1}`)).toHaveText(contact.value)
       await expect.poll(caret).toEqual({ key: `contact:c${index + 1}:value`, offset: 2, collapsed: true })
-      await expect(pageField(`Contact label ${index + 1}`)).toHaveText(contact.label)
+      await expect(labelField(index + 1)).toHaveText(contact.label)
       await expect(contacts.nth(index)).toHaveText(new RegExp(`^${contact.label}(: )?${contact.value.replace(/[.+]/g, '\\$&')}$`))
     }
     // Zdjęcie: karta zdjęcia z fokusem na „Change photo” (karta nie ma pól tekstowych).
@@ -1448,7 +1450,7 @@ test('contacts are edited on the page: a Classic contact is one “label: value�
   const value2 = pageField('Contact value 2')
   await expect(value2).toBeFocused()
   await expect.poll(caret).toEqual({ key: 'contact:c2:value', offset: 'jane'.length, collapsed: true })
-  await expect(pageField('Contact label 1')).toHaveText('Phone')
+  await expect(labelField(1)).toHaveText('Phone')
   await expect(email).toHaveText('Email: jane.example@example.com')
 
   // Pisanie zmienia stronę i formularz (te same pola).
@@ -1460,7 +1462,7 @@ test('contacts are edited on the page: a Classic contact is one “label: value�
 
   // Enter w wartości: nowy kontakt za nim, kursor w jego pustej etykiecie (placeholdery).
   await window.keyboard.press('Enter')
-  const label3 = pageField('Contact label 3')
+  const label3 = labelField(3)
   await expect(label3).toBeFocused()
   await expect(label3).toHaveText('')
   expect(await placeholderOf(label3)).toBe('"Label"')
@@ -1479,7 +1481,7 @@ test('contacts are edited on the page: a Classic contact is one “label: value�
   await window.keyboard.press('Meta+z')
   await expect(pageField('Contact value 3')).toHaveText('')
   await window.keyboard.press('Meta+z')
-  await expect(pageField('Contact label 3')).toHaveText('')
+  await expect(labelField(3)).toHaveText('')
   await window.keyboard.press('Meta+z')
   await expect(formValues).toHaveCount(4)
   await expect(contacts).toHaveCount(4)
@@ -1490,7 +1492,7 @@ test('contacts are edited on the page: a Classic contact is one “label: value�
   await clickAtCharacter(emailText, ((await emailText.textContent()) ?? '').length - 1)
   await window.keyboard.press('ArrowRight')
   await window.keyboard.press('Enter')
-  await expect(pageField('Contact label 3')).toBeFocused()
+  await expect(labelField(3)).toBeFocused()
   await expect(formValues).toHaveCount(5)
   await window.keyboard.press('Backspace')
   await expect(formValues).toHaveCount(4)
@@ -1503,6 +1505,59 @@ test('contacts are edited on the page: a Classic contact is one “label: value�
   await expect(contacts).toHaveCount(4)
   await expect(email.locator('[data-joined]')).toHaveCount(1)
   await expect(formValues).toHaveCount(5)
+})
+
+test('the label of a contact on the page suggests the usual labels in a list under it: filtered by what is typed, chosen with the arrow keys and Enter or a click; Escape hides the list', async () => {
+  await openFirstCv()
+  const city = window.locator('.preview .cv-page .cv-contact > *').nth(3)
+  await clickAtCharacter(city.locator('[data-joined]'), 'City: Manchester'.length - 1)
+  await window.keyboard.press('ArrowRight')
+  await window.keyboard.press('Enter')
+  const label5 = labelField(5)
+  await expect(label5).toBeFocused()
+
+  // Pusta etykieta: wszystkie podpowiedzi, lista pod polem, pole wskazuje listę.
+  const list = window.getByRole('listbox', { name: 'Contact label 5' })
+  await expect(list.getByRole('option')).toHaveText(['Phone', 'Email', 'LinkedIn', 'City'])
+  await expect(label5).toHaveAttribute('aria-expanded', 'true')
+  await expect(label5).toHaveAttribute('aria-autocomplete', 'list')
+  await expect(label5).toHaveAttribute('aria-controls', (await list.getAttribute('id'))!)
+  const fieldBox = (await label5.boundingBox())!
+  expect((await list.boundingBox())!.y).toBeGreaterThanOrEqual(fieldBox.y + fieldBox.height)
+
+  // Filtr wpisanym tekstem; ↓ wybiera, Enter wstawia (fokus zostaje w polu, lista znika).
+  await window.keyboard.type('l')
+  await expect(list.getByRole('option')).toHaveText(['LinkedIn'])
+  await window.keyboard.press('ArrowDown')
+  const linkedIn = list.getByRole('option', { name: 'LinkedIn' })
+  await expect(linkedIn).toHaveAttribute('aria-selected', 'true')
+  await expect(label5).toHaveAttribute('aria-activedescendant', (await linkedIn.getAttribute('id'))!)
+  await window.keyboard.press('Enter')
+  await expect(label5).toHaveText('LinkedIn')
+  await expect(label5).toBeFocused()
+  await expect(list).toHaveCount(0)
+  await expect(label5).toHaveAttribute('aria-expanded', 'false')
+  await expect(formField('Contact label 5')).toHaveValue('LinkedIn')
+
+  // Wybór to osobny krok cofania.
+  await window.keyboard.press('Meta+z')
+  await expect(label5).toHaveText('l')
+  await expect(list.getByRole('option')).toHaveText(['LinkedIn'])
+
+  // Escape chowa listę do kolejnej zmiany tekstu; klik w podpowiedź wstawia ją bez zabierania fokusu.
+  await window.keyboard.press('Escape')
+  await expect(list).toHaveCount(0)
+  await expect(label5).toBeFocused()
+  await window.keyboard.press('Backspace')
+  await expect(list.getByRole('option')).toHaveCount(4)
+  await list.getByRole('option', { name: 'Email' }).click()
+  await expect(label5).toHaveText('Email')
+  await expect(label5).toBeFocused()
+
+  // Enter bez wybranej podpowiedzi – do wartości kontaktu.
+  await window.keyboard.press('Enter')
+  await expect(pageField('Contact value 5')).toBeFocused()
+  await expect(list).toHaveCount(0)
 })
 
 // ---------- „Projekt CV” w pasku narzędzi ----------

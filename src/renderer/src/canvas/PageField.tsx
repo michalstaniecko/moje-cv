@@ -3,6 +3,7 @@ import type { CvEditor } from '../editor/cvEditor'
 import type { JoinedFieldsProps, PageFieldProps } from '../template/editable'
 import { caretAfterChange, fieldValue, normalizePastedText, pastedLines, replaceSelection, type TextSelection } from './pageFieldInput'
 import { fieldChange, isListField, mergeBackward, mergeForward, moveField, pasteLines, splitField, splitsOnEnter, type FieldEdit } from './pageFields'
+import { isContactLabel, suggestionsId } from './ContactLabelSuggestions'
 import type { DatePopoverStore } from './DatePopover'
 import { offsetOf, readSelection, writeSelection, type ActiveFieldStore } from './useActiveField'
 
@@ -332,13 +333,19 @@ function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
     }
   }, [editor, active])
 
+  // Etykieta kontaktu ma podpowiedzi (ContactLabelSuggestions.tsx): combobox, którego `aria-expanded`
+  // i `aria-activedescendant` ustawia lista podpowiedzi.
+  const suggestions = isContactLabel(field.key)
   return (
     <span
       ref={element}
       className="cv-page-field"
       contentEditable
       suppressContentEditableWarning
-      role="textbox"
+      role={suggestions ? 'combobox' : 'textbox'}
+      aria-autocomplete={suggestions ? 'list' : undefined}
+      aria-controls={suggestions ? suggestionsId(field.key) : undefined}
+      aria-expanded={suggestions ? false : undefined}
       aria-label={field.label}
       aria-placeholder={field.placeholder}
       data-field-key={field.key}
