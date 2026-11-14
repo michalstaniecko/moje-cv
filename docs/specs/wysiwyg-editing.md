@@ -602,6 +602,93 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
 - **Pomiar:** przebieg „Edit card” w `e2e/performance.spec.ts` zastąpiony przebiegiem „pages” (podsumowanie na
   pierwszej stronie i tytuł ostatniej sekcji na ostatniej – ostatnie stanowisko dostanie Page fields w S2).
 
+### S2 – tekst wpisów i list (zrobione)
+
+- **Sloty:** `CompanyLine`, `EducationLine` (wspólny markup Classic) i `EducationDetails` (Modern, Bold) w
+  `template/editable.tsx`; stanowiska, punkty i elementy list przez `CvText` (`SlotName` +`role`, `company`,
+  `location`, `bullet`, `level`, `field`, `institution`, `item`; `fieldOf(block, slot, part)` – `part` to id elementu
+  wiersza listy). `EditableField` ma `value` (wartość pola z dokumentu – blok niesie tylko napisy złączone). Puste pole
+  poza odsłoniętym fragmentem zostaje samym napisem (np. pusta rola w wierszu z datami w Modern) – placeholder tylko w
+  aktywnym fragmencie. Złoty markup bez zmian (te same węzły tekstowe w trybie dokumentu).
+- **Odstępstwo (W2, W9): linia złączona z kilku pól jest jednym napisem poza aktywnym wpisem.** Ryzyko „kształtowanie
+  tekstu na granicy elementów” się zmaterializowało, ale inaczej niż przewidywano: każda granica elementu w środku linii
+  zaokrągla położenie dalszego tekstu do 1/64 px (to samo w nieedytowalnej kopii pomiarowej – nie chodzi o
+  `contenteditable`), więc „Demo Logistics Ltd – Leeds” i „Fictional Academy” różniły się w spoczynku o kilka pikseli od
+  wzorców (złote strony w Edit mode). Dlatego `PageEditing.expanded` (aktywny fragment z liniami złączonymi – wpis,
+  `fragmentHasJoinedFields`; odsłonięty zawsze) decyduje, czy `Joined` rysuje osobne pola z separatorami, czy
+  `PageEditing.Joined` (`canvas/PageField.tsx`, `JoinedFields`): jeden `span` z napisem dokumentu, `tabindex="0"`,
+  `role="textbox"`, `data-joined` (klucze i długości pól). Klik w taki napis (też w puste miejsce bloku obok, W9), Tab
+  i strzałki do niego rozwijają wpis i stawiają kursor w polu pod klikniętym znakiem (`activateJoined` →
+  `active.expect`, fokus po przerysowaniu). Wejście we wpis przerysowuje więc strony (bez ponownego podziału stron),
+  wejście w nagłówek, tytuł czy listę – nie. To samo czeka kontakty w Classic („etykieta: wartość”, S4).
+- **`reveal`:** `item:<id>` (stanowisko albo wykształcenie ma blok mimo pustych pól, stanowisko – wszystkie punkty, także
+  puste) i `list:<id sekcji>` (wiersze ze wszystkimi elementami). Daty nie są jeszcze polami, więc pusta data nie
+  odsłania wpisu (S3).
+- **Mapa pól (`canvas/pageFields.ts`):** klucze = klucze łączenia CV form (`experience:<wpis>:role|company|location`,
+  `experience:<wpis>:bullet:<punkt>`, `education:<wpis>:level|field|institution`, `list:<element>:text`; test czyta
+  źródła pól formularza). `pageFieldTarget(key, document)` i `fieldChange` rozwiązują sekcję w dokumencie (klucze jej
+  nie niosą). Nazwy pól: „<pole> – <część CV>” z istniejących tekstów (np. „Company – Position “Buyer””, „Bullet 3 –
+  Position …”, „Item 2 – List “Languages””) – złączone separatorem „ – ” w kodzie, bez nowych tekstów w słownikach;
+  placeholder – sama nazwa pola („City”, „Bullet 4”). Struktura z klawiatury jako czyste funkcje: `splitField`,
+  `mergeBackward`, `mergeForward`, `pasteLines`, `moveField` (`FieldEdit` = zmiana + kursor po niej).
+- **`documentEdits.ts`:** `mergeBulletIntoPrevious`, `mergeListItemIntoPrevious`, `pasteIntoBullet`, `pasteIntoListItem`
+  (+ `textPaste`). Wklejenie wielu linii: pierwsza w miejsce zaznaczenia, kolejne jako nowe elementy, a tekst za
+  zaznaczeniem – na końcu ostatniego (jak akapity w edytorze tekstu; spec tego nie rozstrzygał).
+- **Klawiatura (W8, W11):** Enter/Backspace/Delete/wklejanie/⌥⇧↑↓ jak w W11; zmiana struktury to osobny krok cofania,
+  a kursor stawia `active.expect` po nowym podziale stron (nowe pole powstaje dopiero z nowymi blokami – działa też, gdy
+  nowy punkt przechodzi na kolejną stronę). Strzałki ←/→ na brzegu pola i ↑/↓ w pierwszej/ostatniej linii przechodzą do
+  poprzedniego/następnego pola w kolejności DOM stron (także do linii złączonej i przez granicę stron); ↑/↓ zachowują
+  położenie kursora w poziomie. ⌥⇧↑/↓ w polu wpisu przenosi cały wpis wśród wpisów na stronach (bez komunikatu
+  `aria-live` – S6). **Shift+F10** / klawisz menu w polu „klika” uchwyt fragmentu (menu uchwytu; listy nie mają
+  uchwytu). **Escape** nadal nic nie robi – S6.
+- **Cofnięcie podziału** z kursorem w nowym punkcie: kursor na końcu poprzedniego pola fragmentu (W19; `previous`
+  w `useActiveField.ts`). Utrata fokusu pola jest słuchana na dokumencie (`focusout` w `usePageEditing.ts`), a obsługi
+  zdarzeń pól są podpinane w `useLayoutEffect`: pole usuwane ze strony traci fokus już po odpięciu swoich obsług,
+  a nowe pole dostaje fokus z przywrócenia w tym samym commicie. `blurred` nie wyłącza aktywnego fragmentu, gdy fokus
+  idzie do innego pola albo linii złączonej (inaczej wpis zwijałby się pod Tab).
+- **Karty (przejściowo, W20):** karta listy nie otwiera się już ze stron (dodanie elementu z pigułki, menu, paska
+  i Outline stawia kursor w odsłoniętym pustym elemencie); zostaje tylko dla sekcji ukrytej. Karta wpisu zostaje dla
+  dat i nowego, pustego wpisu (S3, S5): przycisk fragmentu wpisu jest tylko dla klawiatury (`edit-fragment--keys`,
+  `pointer-events: none`), a klik w `.cv-date` wpisu otwiera kartę (`usePointerOnPages` w `EditLayer.tsx`). Pigułka
+  „+” sekcji pokazuje się przy najechaniu na jej treść na stronie (`useSectionHoverOnPages`).
+- **Testy:** Vitest – `blocks.test.ts` (odsłonięte wpisy i listy), `documentEdits.test.ts`, `editable.test.tsx` (pola,
+  separatory, placeholdery, linia złączona), `pageFields.test.ts` (mapa, klucze = klucze formularza, struktura),
+  `pageFieldInput.test.ts` (`pastedLines`). e2e (`canvas.spec.ts`): pisanie we wpisach i listach (strona, formularz,
+  PDF, ⌘Z jak w formularzu), Enter/Backspace/Delete/⌥⇧↑ w punktach, Enter na dole strony (kursor na kolejnej stronie),
+  listy i wklejanie wielu linii, strzałki (też przez granicę stron i w linię złączoną), ⌥⇧↑ i Shift+F10 w polu wpisu,
+  placeholdery w aktywnym wpisie i podział stron po wyjściu, Tab przez wszystkie pola Sample CV, test pól w trzech
+  szablonach (następca testu kontraktu dla tekstu wpisów i list); testy kart wpisów otwierają je z dat albo klawiaturą,
+  testy kart list zastąpione polami.
+- **Pomiar** (`MOJE_CV_PERF=1`, build `out/`, przebieg „pages” pisze w punkcie 1 ostatniego stanowiska długiego CV):
+  `cv:keystroke-to-preview` mediana 5,6 ms, p95 13,5 ms, max 16,8 ms (CPU ×1); mediana 24,6 ms, p95 32,7 ms, max
+  35,1 ms (CPU ×4); bez długich zadań. CV form w tym samym przebiegu: mediana 12,1 ms, p95 24,7 ms.
+
+#### Przekazanie dla S3–S7
+
+- **S3 (daty):** `DateRange` jako slot z żetonami w miejsce `.cv-date` (w Classic `cv-date--dot` niesie kropkę osi).
+  Po S3 usuń: `usePointerOnPages` – gałąź `.cv-date` (zostaje „najbliższe pole”), `edit-fragment--keys`, `keysOnly`
+  w `FragmentButton`, `experienceItem`/`educationItem` w `cardKinds` (`EditCard.tsx`), kursor `.cv-date` w
+  `pageFields.css`; `fragmentHasEmptyField` dla `item:` musi liczyć puste daty, jeśli żetony mają placeholdery.
+  Napis dat leży poza liniami złączonymi, więc żetony nie potrzebują `expanded`; za to w Bold `.cv-date` jest rysowane
+  tylko z niepustymi datami – w odsłoniętym wpisie trzeba go rysować zawsze. „Usuń stanowisko” w menu uchwytu – menu
+  ma już `fragmentHandle` (Shift+F10) i `focusAfterChange`.
+- **S4 (kontakty):** „etykieta: wartość” w Classic to linia złączona – użyj tego samego `Joined`/`expanded` (dodaj
+  fragment `contacts` do `fragmentHasJoinedFields`); w Modern i Bold etykieta i wartość są w osobnych elementach, więc
+  mogą być zwykłymi `CvText`. Klauzula (`.cv-consent`, rysuje `CvPages`) potrzebuje slotu poza `CvBlockView`.
+- **S5 (dodawanie):** dodanie elementu listy już działa przez `reveal` (`openCard` → `pageFieldKey(listSection)` →
+  `activeField.request`). Dla wpisów wystarczy, żeby `pageFieldKey` zwracał klucz roli/poziomu dla wpisu bez pola
+  (dziś `null`, żeby karta zbierała daty) i żeby `onPages` (`useEditSession.ts`) przepuszczał nową pozycję.
+  Odsłonięcie pustej sekcji bez elementów i tytuł obok pustej listy – nadal do zrobienia. Pomiar „wejście we wpis z
+  pustym polem” – dodatkowo wejście we wpis przerysowuje strony (`expanded`).
+- **S6:** Escape (wyjście na panel stron), komunikaty `aria-live` dla podziału/złączenia/przeniesienia z pola,
+  uchwyty i pigułki poza Tab. Linia złączona jest w Tab jako `role="textbox"` z nazwą pól („Company – …, City – …”) –
+  sprawdzić z VoiceOver. `targetAt`/`contractHit`/`hitTarget` są już używane tylko przez przyciski kontaktów, zdjęcia
+  i klauzuli.
+- **Pułapki:** `blurred` dostaje `relatedTarget` – nowe sposoby przenoszenia fokusu między polami (np. popover daty)
+  muszą albo trafiać w pole, albo przez `active.expect`/`request`; zmiana aktywnego fragmentu potrafi przemontować pola
+  linii złączonej pod kursorem. Nowe pola w szablonach: `fieldOf` musi znać slot, a test „Tab przez wszystkie pola”
+  (`canvas.spec.ts`) pilnuje kolejności.
+
 ## Ryzyka
 
 - **Styl edytowalnego elementu w Chromium** może zmienić zawijanie (`overflow-wrap`, `line-break` dla edytowalnych
