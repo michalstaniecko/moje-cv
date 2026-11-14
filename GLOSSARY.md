@@ -45,7 +45,7 @@ The light or dark look of the app's own interface (panels, forms, toolbars), cho
 _Avoid_: Theme, dark mode (as the name of the setting), skin, color scheme (as the name of the setting); for the settings of a single CV's document, say CV design
 
 **Edit mode**:
-The state of the CV editor in which the text on the CV pages is edited in place (Page fields), with Field popovers for values that are not text, editing controls around the content (outlines, handles, "+" buttons) and the Outline or CV form beside the pages. Every opened CV starts in it. When no field is being edited its pages look and split exactly like the PDF; only the part of the CV holding the focus may show placeholders for its empty fields.
+The state of the CV editor in which the text on the CV pages is edited in place (Page fields), with Field popovers for values that are not text, editing controls around the content (handles with menus, "+" buttons, the "Add to CV" bar) and the Outline or CV form beside the pages. Everything works from the keyboard: Tab goes through the Page fields, Shift+F10 opens the menu of a field's handle and Escape leaves a field for the pages. Every opened CV starts in it. When no field is being edited its pages look and split exactly like the PDF; only the part of the CV holding the focus may show placeholders for its empty fields.
 _Avoid_: Design mode, edit view, inline mode
 
 **Preview mode**:
@@ -53,7 +53,7 @@ The state of the CV editor in which the CV pages are shown exactly as they will 
 _Avoid_: Print preview, read-only mode, live preview (that is the pages shown in either mode)
 
 **Edit card**:
-Being retired (ADR-0010). The floating panel with the form fields of one part of a CV page, opened next to it in Edit mode before text was edited in place; replaced by Page fields and Field popovers.
+Retired (ADR-0010); the app no longer has one. The floating panel with the form fields of one part of a CV page, once opened next to it in Edit mode; replaced by Page fields, Field popovers and the menus of the handles on the pages. Use the term only about that history.
 _Avoid_: Popup, modal, inline form, tooltip, inspector
 
 **Page field**:
