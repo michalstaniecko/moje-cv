@@ -175,6 +175,8 @@ export const de: Dictionary = {
     exportCutOff: 'Ein Teil des Inhalts passt nicht auf eine Seite und wird abgeschnitten. Trotzdem exportieren?',
     exportCutOffHint: 'Die zu langen Abschnitte sind im Bearbeitungsmodus hervorgehoben.',
     mode: { label: 'Modus', edit: 'Bearbeiten', preview: 'Vorschau' },
+    canvas: { edit: (what) => `Bearbeiten: ${what}` },
+    card: { close: 'Schließen', sectionTitle: 'Abschnittstitel' },
     exportAnyway: 'Trotzdem exportieren',
     preparingPdf: 'PDF wird vorbereitet…',
     exportTimedOut: 'Die Vorbereitung des PDFs hat zu lange gedauert und wurde abgebrochen. Versuche es erneut.',

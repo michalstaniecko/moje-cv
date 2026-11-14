@@ -168,6 +168,8 @@ export const es: Dictionary = {
     exportCutOff: 'Parte del contenido no cabe en una página y quedará cortado. ¿Exportar de todos modos?',
     exportCutOffHint: 'Los fragmentos demasiado largos están resaltados en el modo de edición.',
     mode: { label: 'Modo', edit: 'Edición', preview: 'Vista previa' },
+    canvas: { edit: (what) => `Editar: ${what}` },
+    card: { close: 'Cerrar', sectionTitle: 'Título de la sección' },
     exportAnyway: 'Exportar de todos modos',
     preparingPdf: 'Preparando el PDF…',
     exportTimedOut: 'La preparación del PDF ha tardado demasiado y se ha detenido. Inténtalo de nuevo.',

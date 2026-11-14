@@ -168,6 +168,8 @@ export const pl: Dictionary = {
     exportCutOff: 'Część treści nie zmieści się na stronie i zostanie ucięta. Eksportować mimo to?',
     exportCutOffHint: 'Za długie fragmenty są wyróżnione w trybie edycji.',
     mode: { label: 'Tryb', edit: 'Edycja', preview: 'Podgląd' },
+    canvas: { edit: (what) => `Edytuj: ${what}` },
+    card: { close: 'Zamknij', sectionTitle: 'Tytuł sekcji' },
     exportAnyway: 'Eksportuj mimo to',
     preparingPdf: 'Przygotowywanie PDF…',
     exportTimedOut: 'Przygotowanie PDF trwało zbyt długo i zostało przerwane. Spróbuj ponownie.',

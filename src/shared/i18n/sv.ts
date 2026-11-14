@@ -173,6 +173,8 @@ export const sv: Dictionary = {
     exportCutOff: 'En del av innehållet får inte plats på en sida och kommer att klippas av. Exportera ändå?',
     exportCutOffHint: 'De för långa avsnitten är markerade i redigeringsläget.',
     mode: { label: 'Läge', edit: 'Redigera', preview: 'Förhandsvisning' },
+    canvas: { edit: (what) => `Redigera: ${what}` },
+    card: { close: 'Stäng', sectionTitle: 'Avsnittsrubrik' },
     exportAnyway: 'Exportera ändå',
     preparingPdf: 'Förbereder PDF…',
     exportTimedOut: 'Det tog för lång tid att förbereda PDF:en och det avbröts. Försök igen.',

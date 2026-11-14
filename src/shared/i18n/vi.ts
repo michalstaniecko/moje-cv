@@ -168,6 +168,8 @@ export const vi: Dictionary = {
     exportCutOff: 'Một phần nội dung không vừa trên một trang và sẽ bị cắt. Vẫn xuất?',
     exportCutOffHint: 'Các đoạn quá dài được đánh dấu trong chế độ chỉnh sửa.',
     mode: { label: 'Chế độ', edit: 'Chỉnh sửa', preview: 'Xem trước' },
+    canvas: { edit: (what) => `Sửa: ${what}` },
+    card: { close: 'Đóng', sectionTitle: 'Tiêu đề mục' },
     exportAnyway: 'Vẫn xuất',
     preparingPdf: 'Đang chuẩn bị PDF…',
     exportTimedOut: 'Việc chuẩn bị PDF mất quá nhiều thời gian và đã bị dừng. Hãy thử lại.',

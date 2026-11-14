@@ -189,6 +189,9 @@ export const en = {
     exportCutOffHint: 'The fragments that are too long are highlighted in edit mode.',
     // Przełącznik Edit mode / Preview mode w pasku narzędzi edytora.
     mode: { label: 'Mode', edit: 'Edit', preview: 'Preview' },
+    // Edycja na stronach CV w Edit mode: przycisk fragmentu strony („Edit: <co>”) i Edit card.
+    canvas: { edit: (what: string) => `Edit: ${what}` },
+    card: { close: 'Close', sectionTitle: 'Section title' },
     exportAnyway: 'Export anyway',
     preparingPdf: 'Preparing the PDF…',
     exportTimedOut: 'Preparing the PDF took too long and was stopped. Try again.',

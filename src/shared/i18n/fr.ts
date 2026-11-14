@@ -168,6 +168,8 @@ export const fr: Dictionary = {
     exportCutOff: 'Une partie du contenu ne tient pas sur une page et sera coupée. Exporter quand même ?',
     exportCutOffHint: 'Les passages trop longs sont mis en évidence en mode édition.',
     mode: { label: 'Mode', edit: 'Édition', preview: 'Aperçu' },
+    canvas: { edit: (what) => `Modifier : ${what}` },
+    card: { close: 'Fermer', sectionTitle: 'Titre de la section' },
     exportAnyway: 'Exporter quand même',
     preparingPdf: 'Préparation du PDF…',
     exportTimedOut: 'La préparation du PDF a pris trop de temps et a été interrompue. Réessayez.',

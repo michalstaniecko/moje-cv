@@ -168,6 +168,8 @@ export const tr: Dictionary = {
     exportCutOff: 'İçeriğin bir kısmı sayfaya sığmıyor ve kesilecek. Yine de dışa aktarılsın mı?',
     exportCutOffHint: 'Çok uzun bölümler düzenleme modunda vurgulanır.',
     mode: { label: 'Mod', edit: 'Düzenleme', preview: 'Önizleme' },
+    canvas: { edit: (what) => `Düzenle: ${what}` },
+    card: { close: 'Kapat', sectionTitle: 'Bölüm başlığı' },
     exportAnyway: 'Yine de dışa aktar',
     preparingPdf: 'PDF hazırlanıyor…',
     exportTimedOut: 'PDF’nin hazırlanması çok uzun sürdü ve durduruldu. Tekrar deneyin.',
