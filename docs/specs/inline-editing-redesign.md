@@ -476,6 +476,22 @@ Kryteria: AC 7 i 9; wyniki pomiaru dopisane do opisu PR.
 
 Kolejność realizacji: T1 → T2 → (T3 ∥ T4 ∥ T8) → T6 → T5 → T7 → T9.
 
+## Tickety
+
+Issue rodzic: #122 (`michalstaniecko/moje-cv`). Tickety są jego sub-issues; zależności ustawione jako natywne „blocked by”.
+
+| Ticket | Issue | Blokowany przez |
+| --- | --- | --- |
+| T1 | #123 | – |
+| T2 | #124 | #123 |
+| T3 | #125 | #124 |
+| T4 | #126 | #124 |
+| T5 | #129 | #125, #126 |
+| T6 | #128 | #125 |
+| T7 | #130 | #125, #127 |
+| T8 | #127 | #123 |
+| T9 | #131 | #124–#130 |
+
 ## Otwarte pytania (do właściciela)
 
 1. **[do potwierdzenia]** Czy CV form ma zostać na stałe jako widok zapasowy, czy po eksperymencie go usuwamy (wtedy
