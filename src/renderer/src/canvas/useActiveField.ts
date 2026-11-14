@@ -26,9 +26,7 @@ type Pending = { key: string; caret: 'start' | 'end' | TextSelection; scroll: 'c
 
 export type ActiveFieldStore = ReturnType<typeof createActiveFieldStore>
 
-// Page fields na stronach (nigdy w kontenerze pomiarowym).
-export const PAGE_FIELD_SELECTOR = '.cv-pages [data-field-key]'
-
+// Page field na stronach (nigdy w kontenerze pomiarowym).
 export const pageFieldElement = (root: ParentNode, key: string) =>
   root.querySelector<HTMLElement>(`.cv-pages [data-field-key="${CSS.escape(key)}"]`)
 

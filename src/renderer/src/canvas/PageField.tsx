@@ -433,7 +433,7 @@ function focusAt(target: HTMLElement, caret: number, active: ActiveFieldStore) {
 }
 
 // Enter w polu jednowierszowym: następne Page field w kolejności dokumentu (też na kolejnej stronie), kursor na początku.
-export function focusNextField(span: HTMLElement, active: ActiveFieldStore) {
+function focusNextField(span: HTMLElement, active: ActiveFieldStore) {
   const fields = pageFields(span)
   const next = fields[fields.indexOf(span) + 1]
   if (next) focusAt(next, 0, active)

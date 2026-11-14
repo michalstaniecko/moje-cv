@@ -49,7 +49,7 @@ describe('blockTarget', () => {
     expect(blockTarget('skills:s3', sample)).toEqual({ kind: 'listSection', sectionId: 'skills' })
   })
 
-  it('maps the consent clause on the last page (not a block of the document) to the consent card', () => {
+  it('maps the consent clause on the last page (not a block of the document) to the consent clause', () => {
     expect(blockTarget(CONSENT_BLOCK_ID, sample)).toEqual({ kind: 'consent' })
     expect(fragmentKey({ kind: 'consent' })).toBe('consent')
   })

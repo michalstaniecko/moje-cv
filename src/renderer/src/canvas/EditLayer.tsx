@@ -22,7 +22,7 @@ import type { EditSession } from './useEditSession'
 
 // Poniżej tej skali stron uchwyty i pigułki „+” warstwy (T5, T6) chowają się – zasłaniałyby treść; zostaje klik we
 // fragment (docs/specs/inline-editing-redesign.md, Q26).
-export const CONTROLS_MIN_SCALE = 0.5
+const CONTROLS_MIN_SCALE = 0.5
 
 // Warstwa edycji (ADR-0009, ADR-0010): leży w przewijanym panelu stron obok `.preview-pages`, poza korzeniem `.cv`, więc
 // nie zmienia ani piksela stron. Tekst CV edytuje się na stronach (Page fields); w warstwie jest to, co nie jest

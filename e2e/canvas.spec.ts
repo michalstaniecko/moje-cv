@@ -37,7 +37,7 @@ test.afterEach(async () => {
   await rm(outputDir, { recursive: true, force: true })
 })
 
-// Otwiera pierwsze CV z biblioteki i przełącza pasek boczny na CV form: testy warstwy edycji sprawdzają w nim, że karta
+// Otwiera pierwsze CV z biblioteki i przełącza pasek boczny na CV form: testy warstwy edycji sprawdzają w nim, że strony
 // i formularz zmieniają to samo. Outline (domyślny pasek) ma własne testy z `openFirstCvWithOutline`.
 async function openFirstCv() {
   await openFirstCvWithOutline()
@@ -790,7 +790,7 @@ async function enableConsent(text: string) {
   await expect(window.locator('.preview .cv-page .cv-consent')).toHaveText(text)
 }
 
-// ---------- Karty wpisów, list i klauzuli zgody ----------
+// ---------- Pomocniki: przeciąganie ----------
 
 // Przeciąga element za uchwyt myszą krok po kroku, jak w export.spec.ts (dnd-kit reaguje na zdarzenia wskaźnika).
 async function dragOnto(handle: Locator, target: Locator) {
@@ -1324,7 +1324,7 @@ test('Cmd+Z after adding a position undoes the typing and then the adding; the f
   await expect(window.getByRole('dialog')).toHaveCount(0)
 })
 
-// ---------- Karta zdjęcia i kontakty na stronie ----------
+// ---------- Zdjęcie, kontakty i klauzula na stronie (docs/specs/wysiwyg-editing.md, S4) ----------
 
 // Systemowe okno wyboru pliku podmienione w procesie głównym, jak w export.spec.ts.
 async function stubOpenDialog(filePath: string | null) {
