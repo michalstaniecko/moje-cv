@@ -4,8 +4,11 @@ import { anchoredPosition } from '../canvas/anchoredPosition'
 import { moveShortcutOffset, type MoveOffset } from './moveShortcut'
 
 // Pozycja menu wiersza. `run` wykonuje się po zamknięciu menu i sam decyduje o fokusie (np. przeniesienie wraca na
-// uchwyt przeniesionego wiersza); wyłączona pozycja jest widoczna, ale pomijana przez strzałki.
-export type RowMenuAction = { label: string; disabled?: boolean; run: () => void }
+// uchwyt przeniesionego wiersza); wyłączona pozycja jest widoczna, ale pomijana przez strzałki. `checked` robi z pozycji
+// przełącznik (`menuitemcheckbox` z zaznaczeniem, np. „Nowa strona przed”).
+export type RowMenuAction = { label: string; disabled?: boolean; checked?: boolean; run: () => void }
+
+const ITEMS = '[role="menuitem"]:not(:disabled), [role="menuitemcheckbox"]:not(:disabled)'
 
 // Atrybuty i obsługa zdarzeń dnd-kit dla uchwytu. Z atrybutów dnd-kit zostaje tylko opis (instrukcja przeciągania):
 // uchwyt jest przyciskiem menu, nie „sortowalnym” przyciskiem przełączanym (`aria-roledescription`, `aria-pressed`).
@@ -22,6 +25,7 @@ export type DragHandleProps = {
 // - Escape i kliknięcie poza menu zamykają je i wracają na uchwyt (kliknięte pole i tak przejmie fokus),
 //   przejście fokusu poza menu (Tab) zamyka je bez przenoszenia fokusu,
 // - ⌥⇧↑/↓ na uchwycie przenosi wiersz od razu (`onMoveShortcut`), bez otwierania menu.
+// Bez `handleProps` (uchwyt fragmentu na stronie, poza `SortableList`) uchwyt jest samym przyciskiem menu, bez przeciągania.
 // Menu jest w warstwie górnej (`popover`) i ma pozycję liczoną od uchwytu, więc przewijany panel formularza go nie
 // ucina; przy braku miejsca pod uchwytem otwiera się nad nim.
 export function RowMenu({
@@ -33,8 +37,8 @@ export function RowMenu({
 }: {
   label: string
   actions: RowMenuAction[]
-  handleRef: (element: HTMLButtonElement | null) => void
-  handleProps: DragHandleProps
+  handleRef?: (element: HTMLButtonElement | null) => void
+  handleProps?: DragHandleProps
   onMoveShortcut: (offset: MoveOffset) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -60,7 +64,7 @@ export function RowMenu({
       element.style.left = `${left}px`
     }
     place()
-    element.querySelector<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')?.focus()
+    element.querySelector<HTMLButtonElement>(ITEMS)?.focus()
     window.addEventListener('scroll', place, true)
     window.addEventListener('resize', place)
     return () => {
@@ -80,7 +84,7 @@ export function RowMenu({
   }, [open])
 
   const onMenuKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
-    const items = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')]
+    const items = [...event.currentTarget.querySelectorAll<HTMLButtonElement>(ITEMS)]
     const current = items.indexOf(document.activeElement as HTMLButtonElement)
     const focus = (index: number) => items[(index + items.length) % items.length]?.focus()
     if (event.key === 'Escape') close(true)
@@ -98,17 +102,17 @@ export function RowMenu({
       <button
         ref={(element) => {
           handle.current = element
-          handleProps.setActivatorNodeRef(element)
-          handleRef(element)
+          handleProps?.setActivatorNodeRef(element)
+          handleRef?.(element)
         }}
         type="button"
         className="row-handle"
         aria-label={label}
         title={label}
-        aria-describedby={handleProps.describedBy}
+        aria-describedby={handleProps?.describedBy}
         aria-haspopup="menu"
         aria-expanded={open}
-        {...handleProps.listeners}
+        {...handleProps?.listeners}
         onClick={() => setOpen((wasOpen) => !wasOpen)}
         onKeyDown={(event) => {
           const offset = moveShortcutOffset(event)
@@ -142,7 +146,8 @@ export function RowMenu({
             <li key={action.label} role="none">
               <button
                 type="button"
-                role="menuitem"
+                role={action.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+                aria-checked={action.checked}
                 // Pozycje menu nie są w kolejności Tab (przechodzi się po nich strzałkami), więc Tab wychodzi z menu.
                 tabIndex={-1}
                 disabled={action.disabled}

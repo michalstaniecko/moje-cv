@@ -590,12 +590,25 @@ textarea:focus-visible {
 }
 
 .split-button-menu [role='menuitem'],
-.row-menu [role='menuitem'] {
+.row-menu [role='menuitem'],
+.row-menu [role='menuitemcheckbox'] {
   display: block;
   width: 100%;
   text-align: left;
   white-space: nowrap;
   border-color: transparent;
+}
+
+/* Menu z przełącznikami (np. „Nowa strona przed” w menu fragmentu na stronie): kolumna na znacznik przed każdą
+   pozycją, żeby teksty stały w jednej linii; zaznaczony przełącznik ma w niej ✓. */
+.row-menu:has([role='menuitemcheckbox']) [role^='menuitem']::before {
+  content: '';
+  display: inline-block;
+  width: 1.25em;
+}
+
+.row-menu [role='menuitemcheckbox'][aria-checked='true']::before {
+  content: '✓';
 }
 
 /* ---------- Biblioteka CV ---------- */
@@ -1081,7 +1094,8 @@ textarea:focus-visible {
 }
 
 /* Pozycja z fokusem jest podświetlona także po otwarciu menu myszą (fokus ustawiany skryptem). */
-.row-menu [role='menuitem']:focus:not(:disabled) {
+.row-menu [role='menuitem']:focus:not(:disabled),
+.row-menu [role='menuitemcheckbox']:focus:not(:disabled) {
   background: var(--ui-accent-glow);
 }
 
