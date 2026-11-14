@@ -44,6 +44,26 @@ _Avoid_: Appearance (that is the app's light/dark look), look, style
 The light or dark look of the app's own interface (panels, forms, toolbars), chosen app-wide as Light, Dark or System, where System follows the operating system. Concerns only the interface: CV pages, template thumbnails and the exported PDF always keep their own look.
 _Avoid_: Theme, dark mode (as the name of the setting), skin, color scheme (as the name of the setting); for the settings of a single CV's document, say CV design
 
+**Edit mode**:
+The state of the CV editor in which the CV pages carry editing controls (outlines, handles, "+" buttons, Edit cards) and the Outline or CV form is shown beside them. Every opened CV starts in it. Its pages are split exactly like the PDF: editing controls never take space in the document.
+_Avoid_: Design mode, edit view, inline mode
+
+**Preview mode**:
+The state of the CV editor in which the CV pages are shown exactly as they will be exported to PDF, with no editing controls and no side panel; CV design, export and undo still work. Switched with Edit mode by a toggle in the toolbar or View → Preview.
+_Avoid_: Print preview, read-only mode, live preview (that is the pages shown in either mode)
+
+**Edit card**:
+The floating panel opened next to one part of a CV page in Edit mode (the name, the photo, the contacts, the summary, a section title, one entry with its bullets, one list section or the consent clause), holding the fields of only that part. Changes apply at once, like everywhere in the editor; it has no Save button.
+_Avoid_: Popup, modal, inline form, tooltip, inspector
+
+**Outline**:
+The narrow side panel of the CV editor listing the header, every section in CV order (also the hidden and empty ones) and the consent clause, for jumping to a part of the CV, reordering sections and hiding them. Never shows CV content beyond names.
+_Avoid_: Navigator, table of contents, sidebar (as the name of the panel)
+
+**CV form**:
+The complete form with every field of the CV, one under another, kept in the CV editor as an alternative to the Edit cards and as the way screen readers edit a CV.
+_Avoid_: Editor (that is the whole screen), sidebar
+
 **Sponsor bar**:
 The single-line strip at the bottom of the app window, shown on every screen, telling the user that the app is free and that they may thank the author. It never covers CV pages or forms, cannot be closed and holds only a short message, the Sponsor link and a "more" button opening a longer explanation.
 _Avoid_: Banner, ad, toast (toasts are the disappearing status messages), donation bar
