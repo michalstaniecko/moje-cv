@@ -1056,8 +1056,8 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
   Sprawdzone grepem: `EditCard` w `src` – brak; nowe teksty gałęzi w `en.ts` – każdy używany; brak TODO/FIXME; każdy
   plik `src` jest importowany. Pozostałe eksporty używane tylko w swoim pliku to typy publicznych interfejsów modułów –
   zostają.
-- **Wynik:** `pnpm typecheck`, Vitest i e2e – zob. raport końcowy S7 w opisie PR; złote strony (Preview i Edit mode)
-  i złoty markup bez zmian wzorców.
+- **Wynik:** `pnpm typecheck`, Vitest 704/704, e2e 169 passed / 16 skipped (pomiar i testy wydania); złote strony
+  (Preview i Edit mode) i złoty markup bez zmian wzorców.
 
 ### Podsumowanie całości (po S1–S7)
 
