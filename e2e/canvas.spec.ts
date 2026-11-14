@@ -668,7 +668,7 @@ test('Preview mode has no editing layer and no page fields: switching closes the
 // uczelnia, w Classic „etykieta: wartość”) są polami po wejściu we wpis albo kontakty; daty każdego wpisu to przycisk
 // w jego `.cv-date` (żetony dat po wejściu we wpis), a zdjęcie ma przycisk w warstwie edycji. Tytuły list w Classic stoją obok listy (wewnątrz wiersza listy), w Modern i Bold nad nią.
 for (const template of ['Classic', 'Modern', 'Bold'] as const) {
-  test(`markup contract: every text field of the Sample CV in the ${template} template is a page field, and the photo has its button in the editing layer`, async () => {
+  test(`page fields: every field of the Sample CV in the ${template} template is edited on the page (Page fields, date and photo popovers), and the contacts, section titles and entries have their handles`, async () => {
     await openFirstCv()
     const preview = window.locator('.preview')
     const picker = window.getByRole('radiogroup', { name: 'Template' })
@@ -716,6 +716,20 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     const [x, y] = [photoBox.x + photoBox.width / 2, photoBox.y + photoBox.height / 2]
     expect(x >= buttonBox.x && x <= buttonBox.x + buttonBox.width && y >= buttonBox.y && y <= buttonBox.y + buttonBox.height).toBe(true)
     await expect(page('.cv-consent').getByRole('textbox', { name: 'Consent clause', exact: true })).toHaveText('I agree to the processing of my personal data.')
+    // Uchwyty menu: kontakty, tytuły sekcji i wpisy (z klasami kontraktu znaczników edycji), w marginesie przed nimi.
+    const handleNames = await window
+      .locator('.edit-layer .edit-handle .row-handle')
+      .evaluateAll((handles) => handles.map((handle) => handle.getAttribute('aria-label')))
+    expect(new Set(handleNames)).toEqual(
+      new Set([
+        'Actions for contacts',
+        ...titles.map((title) => `Actions for section “${title}”`),
+        ...positions.map((role) => `Actions for position “${role}”`),
+        ...educations.map((name) => `Actions for entry “${name}”`)
+      ])
+    )
+    const contactsBox = (await preview.locator('.cv-page .cv-contact').boundingBox())!
+    expect((await handle('contacts').boundingBox())!.x + 24).toBeLessThanOrEqual(contactsBox.x)
 
     // Klik w tekst stawia kursor w klikniętym polu w każdym szablonie – także w linii złączonej z kilku pól.
     const company = page('[data-block-id="e2"] .cv-company')

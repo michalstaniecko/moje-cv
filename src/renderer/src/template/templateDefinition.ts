@@ -8,12 +8,12 @@ type BlockKind = CvBlock['kind']
 export type BlockContentView<K extends BlockKind> = ComponentType<{ block: Extract<CvBlock, { kind: K }> }>
 
 // Nadpisania wspólnych komponentów bloków – rodzaj bloku bez wpisu rysuje komponent wspólny.
-// Tekst pól, które są już Page fields (imię i nazwisko, podsumowanie, tytuł sekcji), nadpisanie rysuje przez sloty
-// edycji (`CvText`, `useShown` z editable.tsx, ADR-0010) – w dokumencie dają ten sam markup co sam tekst.
-// Nadpisanie trzyma się kontraktu znaczników edycji (ADR-0009, `editMarkupContract` w canvas/editTargets.ts): klasy
-// .cv-name, .cv-photo, .cv-contact, .cv-summary, .cv-section-title, .cv-role, .cv-company, .cv-date i `li` w punktach
-// i wierszach list; opcjonalnie .cv-education-level (wspólny markup – Classic – ma poziom i kierunek w jednym tekście bez
-// tej klasy). Bez nich edycja na stronie działa, ale mniej wygodnie.
+// Tekst każdego pola CV nadpisanie rysuje przez sloty edycji z editable.tsx (ADR-0010: `CvText`, `useShown`,
+// `ContactLine`, `CompanyLine`, `EducationLine` / `EducationDetails`, `DateRange`) – w Edit mode to Page fields
+// i żetony dat, w dokumencie ten sam markup co sam tekst. Nadpisanie trzyma się też kontraktu znaczników edycji
+// (`editMarkupContract` w canvas/editTargets.ts): klasy .cv-name, .cv-photo, .cv-contact, .cv-summary,
+// .cv-section-title, .cv-date i `li` w wierszach list – z nich warstwa edycji dzieli nagłówek na fragmenty, stawia
+// uchwyty i ⚠ dat (domain/schema.ts, krok 5 „Nowy szablon”).
 export type BlockViewOverrides = { [K in BlockKind]?: BlockContentView<K> }
 
 // Stopka strony rysowana w dolnym marginesie, poza obszarem treści (nie wpływa na pomiar ani podział stron).

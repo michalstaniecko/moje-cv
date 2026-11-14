@@ -59,13 +59,14 @@ export type Section = z.infer<typeof sectionSchema>
 //    zmiennych ustawianych przez CvPages: --accent, --on-accent (tekst na akcencie) i marginesów --cv-margin-*,
 // 3. nazwa w `editor.templateNames` w słownikach interfejsu (shared/i18n),
 // 4. podbicie CV_SCHEMA_VERSION z pustą migracją w migrations.ts (ADR 0002),
-// 5. kontrakt znaczników edycji (ADR-0009, `editMarkupContract` w canvas/editTargets.ts): nadpisania bloków używają
-//    klas .cv-name, .cv-photo, .cv-contact (dzieci = kolejne kontakty), .cv-summary, .cv-section-title, .cv-role,
-//    .cv-company, .cv-date i `li` w punktach i wierszach list – po nich warstwa edycji dzieli nagłówek na fragmenty
-//    i rozpoznaje kliknięte pole; opcjonalnie .cv-education-level (wspólny markup bloku wykształcenia, którego używa
-//    Classic, jej nie ma – klik w tę linię daje fokus na pierwszym polu karty); nowy szablon dopisać do testu
-//    kontraktu w e2e/canvas.spec.ts; tekst imienia, podsumowania i tytułów sekcji przez sloty z template/editable.tsx
-//    (`CvText`, `useShown` – ADR-0010, Page fields), sprawdzane tym samym testem i goldenMarkup.test.tsx.
+// 5. edycja na stronach (ADR-0010): tekst każdego pola CV w nadpisaniach bloków przez sloty z template/editable.tsx
+//    (`CvText`, `useShown`, `ContactLine`, `CompanyLine`, `EducationLine` / `EducationDetails`, `DateRange`) – w Edit
+//    mode stają się Page fields i żetonami dat, w dokumencie dają ten sam markup co sam tekst (goldenMarkup.test.tsx);
+//    klasy kontraktu znaczników edycji (`editMarkupContract` w canvas/editTargets.ts): .cv-name, .cv-photo,
+//    .cv-contact (dzieci = kolejne kontakty), .cv-summary, .cv-section-title, .cv-date i `li` w wierszach list – po
+//    nich warstwa edycji dzieli nagłówek na fragmenty (uchwyt kontaktów, przycisk zdjęcia), stawia ⚠ dat i przy
+//    kliknięciu obok pola szuka najbliższego; nowy szablon dopisać do testu pól w e2e/canvas.spec.ts („every field of
+//    the Sample CV … is on the page”) i do goldenMarkup.test.tsx.
 // DOCX export celowo nie zależy od szablonu (jeden wspólny układ, ADR-0008) – nowy szablon nie wymaga pracy przy DOCX.
 export const cvTemplateIds = ['classic', 'modern', 'bold'] as const
 export type CvTemplateId = (typeof cvTemplateIds)[number]

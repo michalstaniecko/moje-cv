@@ -11,7 +11,7 @@ import { BlockHandle, useBlockMenu } from './BlockMenu'
 import { ContactLabelSuggestions } from './ContactLabelSuggestions'
 import { DatePopover, openDatesAt, type DatePopoverStore } from './DatePopover'
 import { ConsentToolbar, type ClauseLibrary } from './ConsentToolbar'
-import { blockTarget, sectionOf } from './editTargets'
+import { blockTarget, editMarkupContract, sectionOf } from './editTargets'
 import type { Fragment, Rect } from './fragmentRects'
 import { dateWarningId } from './pageFields'
 import { activateJoined } from './PageField'
@@ -175,7 +175,7 @@ function usePointerOnPages(panel: RefObject<HTMLElement | null>, active: ActiveF
       if (!target.closest('.cv-pages') || target.closest('[data-field-key], [data-joined]')) return
       const block = target.closest<HTMLElement>('[data-block-id]')
       if (!block) return
-      const date = target.closest('.cv-date')
+      const date = target.closest(editMarkupContract.date)
       const token = date ? nearestField(date, dateTokens, event.clientX, event.clientY) : null
       if (token) {
         event.preventDefault()
@@ -259,7 +259,7 @@ function DateWarnings({
     if (!origin || !panel.current) return
     const next = reversed.flatMap((id) =>
       [...panel.current!.querySelectorAll<HTMLElement>(`.cv-pages [data-block-id="${CSS.escape(id)}"]`)].flatMap((block) => {
-        const date = block.querySelector('.cv-date')
+        const date = block.querySelector(editMarkupContract.date)
         if (!date) return []
         const range = window.document.createRange()
         range.selectNodeContents(date)

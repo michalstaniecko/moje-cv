@@ -19,23 +19,20 @@ export type EditTarget =
   | { kind: 'listSection'; sectionId: string; itemId?: string }
   | { kind: 'consent' }
 
-// Kontrakt znaczników edycji: klasy, których używają szablony (wspólny markup w CvBlockView i nadpisania bloków). Z nich
-// warstwa edycji dzieli nagłówek na fragmenty i rozpoznaje kliknięte pole. Wszystkie trzy szablony mają każdą klasę poza
-// `educationLevel`: wspólny markup wpisu wykształcenia (Classic) łączy poziom i szczegóły w jednym tekście bez klasy –
-// klik w tę linię daje fokus na pierwszym polu karty (wzorców stron nie zmieniamy, ADR-0009). Brak klasy w nowym
-// szablonie kosztuje tylko wygodę (fokus na pierwszym polu karty, nagłówek jako jeden fragment), nigdy treść.
-// `contact` – dzieci elementu to kolejne kontakty; `item` – punkt stanowiska albo element wiersza listy; `consent` –
-// klauzula zgody na dole ostatniej strony (rysuje ją wspólny `CvPages`, nie szablon i nie jako blok).
+// Kontrakt znaczników edycji: klasy, których używają szablony (wspólny markup w CvBlockView i nadpisania bloków) poza
+// slotami tekstu pól (template/editable.tsx, ADR-0010). Z nich warstwa edycji dzieli nagłówek na fragmenty (uchwyt
+// kontaktów, przycisk zdjęcia), dzieli wiersz listy na tytuł obok i elementy, znajduje datę wpisu (⚠ odwróconych dat,
+// klik obok żetonu) i klauzulę zgody. Wszystkie trzy szablony mają każdą klasę; brak klasy w nowym szablonie kosztuje
+// tylko wygodę (np. nagłówek jako jeden fragment bez uchwytu kontaktów), nigdy treść – tekst edytują sloty.
+// `contact` – dzieci elementu to kolejne kontakty; `item` – element wiersza listy; `consent` – klauzula zgody na dole
+// ostatniej strony (rysuje ją wspólny `CvPages`, nie szablon i nie jako blok).
 export const editMarkupContract = {
   name: '.cv-name',
   photo: '.cv-photo',
   contact: '.cv-contact',
   summary: '.cv-summary',
   sectionTitle: '.cv-section-title',
-  role: '.cv-role',
-  company: '.cv-company',
   date: '.cv-date',
-  educationLevel: '.cv-education-level',
   item: 'li',
   consent: '.cv-consent'
 } as const
