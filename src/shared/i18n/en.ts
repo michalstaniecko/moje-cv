@@ -201,6 +201,9 @@ export const en = {
       collapse: 'Collapse',
       expand: 'Expand',
       showOnCv: 'Show on CV',
+      // Przełącznik w wierszu ukrytej sekcji (pokazuje ją na stronach) i opis wiersza: ukrytej sekcji nie ma na stronie.
+      showSection: (name: string) => `Show “${name}” on CV`,
+      showToEdit: 'Show the section on the CV to edit it',
       // Liczba wpisów sekcji w Outline – dla czytnika ekranu (na ekranie sama liczba).
       items: outlineItems,
       // Nazwa zwiniętego paska bocznego (szyny) dla czytnika ekranu.

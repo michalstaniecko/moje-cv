@@ -177,6 +177,8 @@ export const vi: Dictionary = {
       collapse: 'Thu gọn',
       expand: 'Mở rộng',
       showOnCv: 'Hiện trên CV',
+      showSection: (name) => `Hiện “${name}” trên CV`,
+      showToEdit: 'Hiện mục trên CV để chỉnh sửa',
       items: { other: (count) => `${count} mục` },
       sidebar: 'Thanh bên'
     },

@@ -177,6 +177,8 @@ export const ro: Dictionary = {
       collapse: 'Restrânge',
       expand: 'Extinde',
       showOnCv: 'Arată în CV',
+      showSection: (name) => `Arată „${name}” în CV`,
+      showToEdit: 'Arată secțiunea în CV pentru a o edita',
       items: {
         one: (count) => `${count} element`,
         few: (count) => `${count} elemente`,

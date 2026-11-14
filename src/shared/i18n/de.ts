@@ -184,6 +184,8 @@ export const de: Dictionary = {
       collapse: 'Einklappen',
       expand: 'Ausklappen',
       showOnCv: 'Im Lebenslauf zeigen',
+      showSection: (name) => `„${name}“ im Lebenslauf zeigen`,
+      showToEdit: 'Zeige den Abschnitt im Lebenslauf, um ihn zu bearbeiten',
       items: { one: (count) => `${count} Eintrag`, other: (count) => `${count} Einträge` },
       sidebar: 'Seitenleiste'
     },

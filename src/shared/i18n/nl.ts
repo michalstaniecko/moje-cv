@@ -184,6 +184,8 @@ export const nl: Dictionary = {
       collapse: 'Inklappen',
       expand: 'Uitklappen',
       showOnCv: 'Tonen op cv',
+      showSection: (name) => `“${name}” tonen op cv`,
+      showToEdit: 'Toon de sectie op het cv om hem te bewerken',
       items: { one: (count) => `${count} item`, other: (count) => `${count} items` },
       sidebar: 'Zijbalk'
     },

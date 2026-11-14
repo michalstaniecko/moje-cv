@@ -177,6 +177,8 @@ export const cs: Dictionary = {
       collapse: 'Sbalit',
       expand: 'Rozbalit',
       showOnCv: 'Zobrazit v CV',
+      showSection: (name) => `Zobrazit „${name}“ v CV`,
+      showToEdit: 'Zobrazte sekci v CV, abyste ji mohli upravit',
       items: {
         one: (count) => `${count} položka`,
         few: (count) => `${count} položky`,

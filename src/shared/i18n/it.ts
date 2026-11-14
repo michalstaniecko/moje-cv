@@ -177,6 +177,8 @@ export const it: Dictionary = {
       collapse: 'Comprimi',
       expand: 'Espandi',
       showOnCv: 'Mostra nel CV',
+      showSection: (name) => `Mostra «${name}» nel CV`,
+      showToEdit: 'Mostra la sezione nel CV per modificarla',
       items: {
         one: (count) => `${count} elemento`,
         many: (count) => `${count} di elementi`,

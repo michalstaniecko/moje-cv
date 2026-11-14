@@ -177,6 +177,8 @@ export const tr: Dictionary = {
       collapse: 'Daralt',
       expand: 'Genişlet',
       showOnCv: 'CV’de göster',
+      showSection: (name) => `“${name}” bölümünü CV’de göster`,
+      showToEdit: 'Düzenlemek için bölümü CV’de gösterin',
       items: { one: (count) => `${count} öğe`, other: (count) => `${count} öğe` },
       sidebar: 'Kenar çubuğu'
     },

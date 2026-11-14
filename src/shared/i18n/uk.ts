@@ -177,6 +177,8 @@ export const uk: Dictionary = {
       collapse: 'Згорнути',
       expand: 'Розгорнути',
       showOnCv: 'Показати в резюме',
+      showSection: (name) => `Показати «${name}» в резюме`,
+      showToEdit: 'Покажіть розділ у резюме, щоб його редагувати',
       items: {
         one: (count) => `${count} елемент`,
         few: (count) => `${count} елементи`,

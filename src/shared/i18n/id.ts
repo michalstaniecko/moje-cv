@@ -177,6 +177,8 @@ export const id: Dictionary = {
       collapse: 'Ciutkan',
       expand: 'Bentangkan',
       showOnCv: 'Tampilkan di CV',
+      showSection: (name) => `Tampilkan “${name}” di CV`,
+      showToEdit: 'Tampilkan bagian di CV untuk mengeditnya',
       items: { other: (count) => `${count} item` },
       sidebar: 'Bilah samping'
     },

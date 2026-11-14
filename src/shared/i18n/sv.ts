@@ -182,6 +182,8 @@ export const sv: Dictionary = {
       collapse: 'Fäll ihop',
       expand: 'Fäll ut',
       showOnCv: 'Visa i cv:t',
+      showSection: (name) => `Visa ”${name}” i cv:t`,
+      showToEdit: 'Visa avsnittet i cv:t för att redigera det',
       items: { one: (count) => `${count} post`, other: (count) => `${count} poster` },
       sidebar: 'Sidofält'
     },
