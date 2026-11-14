@@ -93,16 +93,32 @@ Build i dane uwierzytelniające: `docs/instalacja.md`. Kolejność:
 | Cmd+W i Cmd+Q tuż po wpisaniu zmiany: zmiana jest po ponownym otwarciu CV (#67) | [ ] | [ ] |
 | Cmd+W i Cmd+Q przy błędzie zapisu: natywne pytanie „Zamknij / Zakończ mimo to” / „Wróć do edytora” w Interface language; „Wróć do edytora” zostawia okno i aplikację (#67) | [ ] | [ ] |
 | „← Biblioteka CV” w edytorze i w bibliotece klauzul wraca do biblioteki CV (#69) | [ ] | [ ] |
-| Sekcja „Projekt CV” (kolor, font, Template, CV language), a nie „Wygląd” (#69) | [ ] | [ ] |
+| Sekcja „Projekt CV” (kolor, font, Template, CV language), a nie „Wygląd” – w CV form i jako panel „Projekt CV” w pasku narzędzi (#69, #127) | [ ] | [ ] |
 | Zmiana nazwy CV w nagłówku edytora: kliknięcie nazwy, Enter albo kliknięcie obok zapisuje, Escape anuluje, pusta nazwa wraca do poprzedniej, ⌘Z cofa; nowa nazwa w bibliotece CV (#69) | [ ] | [ ] |
 | „Nadal tu pracuję” ustawia na dokumencie i w PDF „obecnie” w CV language (#69) | [ ] | [ ] |
 | Data „do” wcześniejsza niż „od” (doświadczenie i wykształcenie): ostrzeżenie pod datami, czytelne w jasnym i ciemnym wyglądzie; eksport nadal działa (#69) | [ ] | [ ] |
-| Usunięcie stanowiska: „Usunięto.” z „Cofnij” na dole kolumny formularza (nie na podglądzie); „Cofnij” przywraca stanowisko z punktami; komunikat znika sam po ok. 8 s, ale nie pod kursorem ani z fokusem; VoiceOver ogłasza „Usunięto” (#69) | [ ] | [ ] |
+| Usunięcie stanowiska (z CV form i z Edit card): „Usunięto.” z „Cofnij” w lewym dolnym rogu panelu stron (przy otwartej karcie – nad nią); „Cofnij” przywraca stanowisko z punktami; komunikat znika sam po ok. 8 s, ale nie pod kursorem ani z fokusem; VoiceOver ogłasza „Usunięto” (#69) | [ ] | [ ] |
 | VoiceOver na uchwycie ⠿ sekcji „Języki”: instrukcja przeciągania w Interface language; Spacja „Podniesiono sekcję „Języki””, strzałka „Przesuwasz…: pozycja 3 z 5”, Spacja „Upuszczono…”, Escape „Odłożono…”; nigdzie identyfikatora (#71) | [ ] | [ ] |
 | VoiceOver w edytorze nie czyta treści stron podglądu (imię, sekcje); licznik stron, ostrzeżenie o długości i przyciski powiększenia są dostępne (#71) | [ ] | [ ] |
 | CV dłuższe niż 2 strony: ostrzeżenie w pasku podglądu z ikoną ⚠ w kolorze ostrzeżenia (bursztynowy), czytelne w jasnym i ciemnym wyglądzie (#71) | [ ] | [ ] |
 | Duży CV (4+ strony, zdjęcie): podgląd nadąża za pisaniem, pisanie nie przycina się przy autozapisie (#72) | [ ] | [ ] |
 | Pomiar wydajności na M1 (#72): `MOJE_CV_PERF=1 pnpm test:e2e:packaged e2e/performance.spec.ts`; mediana i p95 „keystroke → preview painted” < 100 ms, „cv:update total” < 100 ms, brak długich zadań ≥ 100 ms | — | [ ] |
+
+## Edycja na stronach (Edit mode / Preview mode, #122)
+
+Eksperyment `experiment/inline-editing-redesign` (docs/specs/inline-editing-redesign.md). Wymagają człowieka – e2e tego
+nie sprawdzą. Zrzuty do przeglądu (oba Appearance × 16 języków: Outline z obrysem fragmentu, karta stanowiska, panel
+„Projekt CV”, pasek „Dodaj do CV”) można wygenerować skryptem jak w T9 (#131) do `dist/`.
+
+| Sprawdź | MAS | DMG |
+| --- | --- | --- |
+| Jasny i Ciemny Appearance: obrysy i uchwyty fragmentów, pigułki „+”, pasek „Dodaj do CV”, podpowiedź pustego CV, Edit card, Outline i szyna czytelne; kartki zostają białe, bez koloru interfejsu (ADR-0004) | [ ] | [ ] |
+| Trzy szablony (Classic, Modern, Bold): obrys każdego fragmentu dokładnie wokół jego treści; pigułki „+” w Classic pod ostatnim blokiem sekcji, nie na tekście kolejnej sekcji; w Modern uchwyty fragmentów prawej kolumny w odstępie między kolumnami, nie na tekście lewej | [ ] | [ ] |
+| 16 języków: etykiety w kartach (stanowisko, daty, „Obecnie tu pracuję”, „Nowa strona przed”), w Outline (nazwy sekcji, „ukryta”/„pusta”, „Pokaż na CV”), w przełączniku „Outline \| Formularz” i w pasku narzędzi się mieszczą; przegląd tłumaczeń nowych tekstów przez native speakerów (zwłaszcza skrócone etykiety przełącznika trybu po rosyjsku i „← Mes CV” po francusku) | [ ] | [ ] |
+| VoiceOver: Tab po fragmentach stron w kolejności dokumentu („Edytuj: …”), Enter otwiera kartę z fokusem na polu, Escape zamyka i wraca na fragment; karta ogłaszana jako okno dialogowe z nazwą części CV; wiersze Outline z liczbą wpisów („4 elementy”) jako opisem; szyna jako „Pasek boczny” w rotorze punktów orientacyjnych | [ ] | [ ] |
+| Panel „Projekt CV”: wybór koloru w systemowym próbniku kolorów nie zamyka panelu; Escape i klik obok zamykają, fokus wraca na przycisk | [ ] | [ ] |
+| Minimalny rozmiar okna (960 × 640): Edit card przy wysokim wpisie nie zasłania wpisu (stoi obok niego albo jest niższa i przewija się w środku); panel „Projekt CV” i menu uchwytów mieszczą się w oknie; pasek narzędzi w jednej linii także z „Zmiany zapisane” (nazwa CV może się uciąć wielokropkiem) | [ ] | [ ] |
+| Pisanie w Edit card w dużym CV (4+ strony, zdjęcie) nadąża jak w CV form; pomiar: `MOJE_CV_PERF=1 pnpm test:e2e:packaged e2e/performance.spec.ts` – drugi przebieg „typing in the Edit card”, mediana i p95 < 100 ms (#131) | — | [ ] |
 
 ## Eksport do PDF
 
@@ -191,7 +207,8 @@ Build i dane uwierzytelniające: `docs/instalacja.md`. Kolejność:
 | Plik: Nowe CV ⌘N, Dodaj przykładowe CV, Importuj… ⌘O w bibliotece CV i z edytora (powrót do biblioteki) (#63) | [ ] | [ ] |
 | Plik: Eksportuj JSON… i Eksportuj do PDF… ⌘E w edytorze; w bibliotece CV wyszarzone (#63) | [ ] | [ ] |
 | Plik: w bibliotece klauzul tworzenie i import wyszarzone; Zamknij okno ⌘W (#63) | [ ] | [ ] |
-| Widok: pełny ekran ⌃⌘F; w menu Widok tylko jedna pozycja pełnego ekranu (bez systemowego duplikatu) (#63) | [ ] | [ ] |
+| Widok: „Podgląd” ⇧⌘P (z zaznaczeniem w Preview mode), aktywna tylko w edytorze CV; pełny ekran ⌃⌘F; w menu Widok tylko jedna pozycja pełnego ekranu (bez systemowego duplikatu) (#63, #123) | [ ] | [ ] |
+| ⇧⌘P przełącza tryb dokładnie raz – w polu tekstowym karty, w CV form i bez fokusu w polu (skrót obsługuje edytor, a pozycja menu dostaje tylko nieobsłużony klawisz); przytrzymanie nie przełącza w kółko; Widok → „Podgląd” myszą też przełącza (#123, #131) | [ ] | [ ] |
 | CV Drawer → Usługi działa na zaznaczonym tekście; Okno → „Przenieś wszystko na wierzch” i lista okien (#63) | [ ] | [ ] |
 | Pomoc: „Sprawdź aktualizacje…” (#78) i „Wesprzyj CV Drawer…” (#64) | — (brak obu pozycji) | [ ] |
 | Pomoc: strona pomocy, polityka prywatności, zgłaszanie problemu otwierają przeglądarkę (#64) | [ ] | [ ] |

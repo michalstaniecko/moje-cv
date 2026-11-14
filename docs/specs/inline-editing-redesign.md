@@ -492,6 +492,56 @@ Issue rodzic: #122 (`michalstaniecko/moje-cv`). Tickety są jego sub-issues; zal
 | T8 | #127 | #123 |
 | T9 | #131 | #124–#130 |
 
+## Stan realizacji i odstępstwa (po T1–T9)
+
+Wszystkie tickety T1–T9 (#123–#131) zrealizowane na gałęzi `experiment/inline-editing-redesign`. Złote strony (zrzuty
+`.cv-page` i tekst PDF w trzech szablonach) zielone bez aktualizacji wzorców; w `src/renderer/src/template/` zmieniony
+tylko `data-block-id` w `CvBlockView.tsx` i komentarz o kontrakcie znaczników w `templateDefinition.ts`.
+
+Odstępstwa od decyzji powyżej (wszystkie w ramach istniejących celów; żadne nie zmienia dokumentu ani schematu CV):
+
+- **Q13 – dół paska bocznego:** zamiast przycisków „Formularz” i „Zwiń” jest segmentowy przełącznik „Outline | Formularz”
+  (`aria-pressed`) i „Zwiń” (ikona); ten sam dół ma CV form. Szyna (44 px) ma ikony Outline i Formularz oraz „Rozwiń”,
+  które wraca do widoku, z którego ją zwinięto. Szyna jest punktem orientacyjnym „Pasek boczny” (`aside`).
+- **Q13 – liczba wpisów w Outline:** na ekranie sama liczba, dla czytnika ekranu opis wiersza („4 elementy”).
+- **Q19 – „Usunięto. Cofnij”:** pływający komunikat w lewym dolnym rogu panelu stron (wspólny dla kart i CV form), a przy
+  otwartej Edit card w warstwie górnej nad nią (`popover`), żeby karta go nie zasłaniała.
+- **Q11 – „Nowa strona przed”:** jest w menu uchwytów (strona, Outline), ale pole wyboru „Nowa strona przed wpisem”
+  zostało też w kartach stanowiska i wykształcenia – karty składają się z tych samych komponentów pól co CV form (Q20).
+- **Q8 – pasek „Dodaj do CV”:** „Klauzula zgody” jest w pasku, gdy klauzuli nie ma na stronie (wyłączona albo bez
+  tekstu); przycisk włącza ją z dotychczasowym tekstem i otwiera jej kartę. Sekcja bez treści dostaje w pasku (i w „Dodaj”
+  z Outline) swój istniejący, pusty element zamiast kolejnego pustego.
+- **Q5 – położenie karty:** gdy karta nie mieści się obok kartki, pod ani nad wysokim fragmentem, staje obok samego
+  fragmentu (po prawej albo po lewej, np. nad paskiem bocznym), a gdy i tam brak miejsca – pod albo nad nim, niższa
+  (przewija się w środku, min. 180 px). Zasłania fragment tylko wtedy, gdy ten ma prawie całą wysokość okna. Fragment
+  przewinięty poza okno: karta stoi przy krawędzi okna. Karta pod/nad może przykryć pasek narzędzi (warstwa górna).
+- **Q6 – kontrakt znaczników:** `.cv-education-level` jest opcjonalna – wspólny markup wpisu wykształcenia (Classic) ma
+  poziom i kierunek w jednym tekście bez tej klasy (klik daje fokus na pierwszym polu karty). Klauzula zgody (rysowana
+  przez `CvPages`, nie jako blok) jest w kontrakcie jako `.cv-consent`.
+- **Q16 – ⌘⇧P:** obsługuje go edytor (`keydown` z `preventDefault`, jak ⌘Z) i akcelerator pozycji Widok → „Podgląd”.
+  Jedno naciśnięcie przełącza raz: na macOS Electron oddaje klawisz menu tylko wtedy, gdy strona go nie obsłużyła.
+  Do potwierdzenia ręcznie (checklista wydania) – e2e wysyła klawisze prosto do strony, z pominięciem menu.
+- **Pasek narzędzi przy minimalnym oknie:** przyciski i status się nie zawijają; przy braku miejsca ucina się tylko nazwa
+  CV. Skrócone etykiety: „← Currículos” / „← Резюме” (pt, ru, uk, T8) i „← Mes CV” (fr, T9); po rosyjsku krótsze
+  „Правка | Просмотр” i „Дизайн”. Do przeglądu przez native speakerów.
+
+Pomiar (Q23, AC 7) – `MOJE_CV_PERF=1`, kod z `out/`, CV 4 strony ze zdjęciem, 70 znaków co 150/800 ms,
+`cv:keystroke-to-preview` w ms (mediana / p95 / max), bez długich zadań w obu przebiegach:
+
+| Przebieg | CPU ×1 | CPU ×4 (emulacja) |
+| --- | --- | --- |
+| Pisanie w CV form | 19,8 / 22,8 / 24,3 | 25,4 / 31,6 / 37,2 |
+| Pisanie w Edit card (Outline) | 12,2 / 14,3 / 14,8 | 12,7 / 15,7 / 20,7 |
+
+Próg 100 ms spełniony z dużym zapasem; pomiar na zbudowanej aplikacji `.dmg` (checklista wydania) zostaje do zrobienia
+przed wydaniem.
+
+Do zrobienia przez człowieka przed merge (macierz z Q27 – nie da się jej rzetelnie sprawdzić automatycznie):
+VoiceOver (Tab po fragmentach, karty, Escape, Outline, szyna), czytelność w jasnym i ciemnym Appearance, przegląd
+tłumaczeń nowych tekstów w 15 językach przez native speakerów, ⌘⇧P z prawdziwej klawiatury, próbnik kolorów w panelu
+„Projekt CV”, położenie paneli przy minimalnym oknie, pigułki w Classic i uchwyty w odstępie kolumn Modern – kroki w
+`docs/release-checklist.md`, sekcja „Edycja na stronach”.
+
 ## Otwarte pytania (do właściciela)
 
 1. **[do potwierdzenia]** Czy CV form ma zostać na stałe jako widok zapasowy, czy po eksperymencie go usuwamy (wtedy
