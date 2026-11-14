@@ -68,6 +68,10 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     await expect(preview.locator(`.cv.cv-template-${slug}`)).toHaveCount(1)
     await expect(window.getByRole('status').filter({ hasText: 'Saving…' })).toHaveCount(0)
 
+    // Strony w Preview mode – tak jak trafią do PDF.
+    await window.getByRole('group', { name: 'Mode' }).getByRole('button', { name: 'Preview' }).click()
+    await expect(window.locator('.editor-form')).toHaveCount(0)
+
     // Skala 1:1, niezależna od szerokości panelu stron, i obszar okna, w którym cała strona mieści się w panelu stron
     // (bez przykrycia paskiem podglądu); okno w tle ma rozmiar zależny od ekranu, więc obszar jest emulowany.
     await window.setViewportSize({ width: 1600, height: 1500 })

@@ -40,8 +40,8 @@ export type SetCvTagsResult = { status: 'saved'; document: CvDocument } | { stat
 // Polecenie historii CV wysyłane z menu Edycja do otwartego edytora.
 export type HistoryCommand = 'undo' | 'redo'
 
-// Polecenie z menu Plik wysyłane do okna; wykonuje je zamontowany ekran (biblioteka CV albo edytor).
-export type MenuCommand = 'new-cv' | 'add-sample' | 'import' | 'export-json' | 'export-pdf' | 'export-docx'
+// Polecenie z menu Plik (i Widok → Podgląd) wysyłane do okna; wykonuje je zamontowany ekran (biblioteka CV albo edytor).
+export type MenuCommand = 'new-cv' | 'add-sample' | 'import' | 'export-json' | 'export-pdf' | 'export-docx' | 'toggle-preview'
 
 // Bieżący ekran okna zgłaszany procesowi głównemu: od niego zależy aktywność pozycji menu Plik i Cofnij / Ponów.
 // Jedna lista: z niej typ i weryfikacja argumentu IPC (`requireAppScreen`).
@@ -120,10 +120,11 @@ export type Api = {
     // zmiany i zwraca, czy się zapisały (odrzucona obietnica to nieudany zapis). Zwraca funkcję wypisania.
     onFlushRequest: (listener: () => Promise<boolean>) => () => void
   }
-  // Renderer zgłasza bieżący ekran okna (od niego zależy aktywność menu Plik i Cofnij / Ponów) i dostaje
-  // komendy menu Plik. Poza zgłoszeniem ekranu nic nie wraca do procesu głównego.
+  // Renderer zgłasza bieżący ekran okna (od niego zależy aktywność menu Plik i Cofnij / Ponów) i tryb edytora CV
+  // (zaznaczenie Widok → Podgląd) i dostaje komendy menu. Poza tymi zgłoszeniami nic nie wraca do procesu głównego.
   menu: {
     setScreen: (screen: AppScreen) => void
+    setPreviewMode: (preview: boolean) => void
     // Zwraca funkcję wypisania.
     onCommand: (listener: (command: MenuCommand) => void) => () => void
   }

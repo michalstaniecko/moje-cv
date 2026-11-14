@@ -8,12 +8,12 @@ import { isMacAppStore } from './channel'
 import { openExternal } from './openExternal'
 import { helpMenuItems } from './helpMenu'
 import type { InterfaceLanguageState } from './interfaceLanguage'
-import { requireAppScreen } from './ipcArgs'
+import { requireAppScreen, requireBoolean } from './ipcArgs'
 import { enabledMenuCommands } from './menuCommands'
-import { isEditorActive, menuScreen, screenOf, trackScreen } from './screens'
+import { isEditorActive, menuPreviewMode, menuScreen, screenOf, setPreviewMode, trackScreen } from './screens'
 
-// Menu aplikacji w języku interfejsu, przebudowywane przy zmianie języka, wyglądu (zaznaczenie radio), ekranu i okna
-// z fokusem (aktywność pozycji menu Plik według ekranu tego okna). Cofnij / Ponów w edytorze CV działają na historii CV (jak Cmd+Z w edytorze),
+// Menu aplikacji w języku interfejsu, przebudowywane przy zmianie języka, wyglądu (zaznaczenie radio), ekranu, trybu
+// edytora CV (zaznaczenie Widok → Podgląd) i okna z fokusem (aktywność pozycji menu Plik według ekranu tego okna). Cofnij / Ponów w edytorze CV działają na historii CV (jak Cmd+Z w edytorze),
 // a poza edytorem jak zwykłe cofanie pola tekstowego.
 // `checkForUpdates` to „Check for Updates…” z menu Pomoc (ADR-0006, tylko poza Mac App Store).
 export function registerAppMenu(
@@ -27,6 +27,10 @@ export function registerAppMenu(
   }
   ipcMain.on('menu:screen', (event, screen: unknown) => {
     trackScreen(event.sender, requireAppScreen(screen), build)
+    build()
+  })
+  ipcMain.on('menu:preview-mode', (event, preview: unknown) => {
+    setPreviewMode(event.sender, requireBoolean(preview))
     build()
   })
   app.on('browser-window-focus', build)
@@ -125,9 +129,21 @@ function menuTemplate(
   // Pełny ekran. Jeśli macOS dopisze do menu Widok własną pozycję pełnego ekranu (duplikat), zostaje systemowa,
   // a tę usuwamy. Systemowych pozycji nie widać w `Menu.getApplicationMenu()`, więc e2e tego nie sprawdzi – sprawdza
   // to ręcznie checklista wydania (docs/release-checklist.md, „Menu aplikacji”).
+  // Podgląd przełącza edytor CV między Edit mode a Preview mode (zaznaczona w Preview mode); aktywna tylko w edytorze.
+  // Skrót obsługuje też sam edytor (jak Cmd+Z), więc działa i w polach tekstowych, i w testach e2e bez fokusu okna.
   const viewMenu: MenuItemConstructorOptions = {
     label: menu.view,
-    submenu: [{ role: 'togglefullscreen', label: menu.toggleFullScreen }]
+    submenu: [
+      {
+        label: menu.previewMode,
+        type: 'checkbox',
+        checked: menuPreviewMode(BrowserWindow.getFocusedWindow()?.webContents),
+        accelerator: 'CmdOrCtrl+Shift+P',
+        ...menuCommand('toggle-preview', enabled)
+      },
+      { type: 'separator' },
+      { role: 'togglefullscreen', label: menu.toggleFullScreen }
+    ]
   }
   // Rola `windowMenu` czyni z niego systemowe menu okien: macOS dopisuje listę otwartych okien.
   const windowMenu: MenuItemConstructorOptions = {

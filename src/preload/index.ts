@@ -80,6 +80,7 @@ const api: Api = {
   },
   menu: {
     setScreen: (screen) => ipcRenderer.send('menu:screen', screen),
+    setPreviewMode: (preview) => ipcRenderer.send('menu:preview-mode', preview),
     onCommand: (listener) => {
       const command = (_event: Electron.IpcRendererEvent, value: MenuCommand) => listener(value)
       ipcRenderer.on('menu:command', command)

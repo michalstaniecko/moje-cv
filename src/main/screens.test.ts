@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events'
 import type { WebContents } from 'electron'
 import { describe, expect, test } from 'vitest'
-import { menuScreen, trackScreen } from './screens'
+import { menuPreviewMode, menuScreen, setPreviewMode, trackScreen } from './screens'
 
 // Okno renderera w zakresie, którego używa śledzenie ekranów: id, zdarzenia nawigacji i zamknięcia.
 function fakeWindow(id: number) {
@@ -52,5 +52,44 @@ describe('the screen the File menu follows', () => {
     expect(menuScreen(fakeWindow(6).contents)).toBeUndefined()
 
     app.close()
+  })
+})
+
+describe('the checkmark of View → Preview', () => {
+  test('follows the mode reported by the CV editor of the menu window', () => {
+    const window = fakeWindow(7)
+    trackScreen(window.contents, 'editor', () => {})
+    expect(menuPreviewMode(window.contents)).toBe(false)
+
+    setPreviewMode(window.contents, true)
+    expect(menuPreviewMode(window.contents)).toBe(true)
+    expect(menuPreviewMode(undefined)).toBe(true)
+    setPreviewMode(window.contents, false)
+    expect(menuPreviewMode(window.contents)).toBe(false)
+
+    window.close()
+  })
+
+  test('is cleared when the window leaves the editor, and ignored outside the editor', () => {
+    const window = fakeWindow(8)
+    trackScreen(window.contents, 'editor', () => {})
+    setPreviewMode(window.contents, true)
+
+    trackScreen(window.contents, 'library', () => {})
+    expect(menuPreviewMode(window.contents)).toBe(false)
+    setPreviewMode(window.contents, true)
+    expect(menuPreviewMode(window.contents)).toBe(false)
+
+    // Każde otwarcie CV startuje w Edit mode.
+    trackScreen(window.contents, 'editor', () => {})
+    expect(menuPreviewMode(window.contents)).toBe(false)
+
+    window.close()
+  })
+
+  test('a window that reported no screen is not in Preview mode', () => {
+    const window = fakeWindow(9)
+    setPreviewMode(window.contents, true)
+    expect(menuPreviewMode(window.contents)).toBe(false)
   })
 })

@@ -217,6 +217,17 @@ textarea:focus-visible {
   color: var(--ui-warning);
 }
 
+/* Ostrzeżenie Preview mode o blokach za długich na stronę (na kartkach wyróżnione tylko w Edit mode). */
+.preview-oversized-notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preview-oversized-notice button {
+  padding: 2px 8px;
+}
+
 .preview-zoom {
   display: flex;
   align-items: center;
@@ -340,6 +351,45 @@ textarea:focus-visible {
 
 .toolbar-title-field:focus-visible {
   outline-offset: -2px;
+}
+
+/* ---------- Przełącznik Edit mode / Preview mode ----------
+   Dwa przyciski sklejone w jeden segment; wybrany tryb (aria-pressed) ma wypełnienie akcentu interfejsu. Wolne miejsce
+   paska narzędzi dzieli się po obu stronach przełącznika (margin-left: auto tu i w .toolbar-status). */
+.mode-toggle {
+  display: flex;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.mode-toggle button {
+  white-space: nowrap;
+}
+
+.mode-toggle button:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.mode-toggle button:last-child {
+  margin-left: -1px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.mode-toggle button:focus-visible {
+  position: relative;
+}
+
+.mode-toggle button[aria-pressed='true'] {
+  color: var(--ui-text-on-accent);
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+}
+
+.mode-toggle button[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--ui-accent-dark);
+  border-color: var(--ui-accent-dark);
 }
 
 /* ---------- Split button „Nowe CV” z menu pod strzałką ---------- */
@@ -579,6 +629,11 @@ textarea:focus-visible {
 .toolbar-status {
   margin-left: auto;
   color: var(--ui-text-muted);
+}
+
+/* W Preview mode nie ma formularza ani separatora: strony na całą szerokość. */
+.editor-panes--preview {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* ---------- Formularz edytora ---------- */

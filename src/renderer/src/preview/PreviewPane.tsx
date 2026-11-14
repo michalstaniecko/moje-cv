@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
+import type { EditorMode } from '../canvas/useEditSession'
 import { useDictionary, useInterfaceLanguage } from '../i18n'
 import { CvPages } from '../template/CvPages'
 import { afterNextPaint, markPreviewPainted } from './keystrokeTiming'
@@ -11,21 +12,29 @@ import { fitScale, PREVIEW_MARGIN_PX, zoomIn, zoomOut } from './zoom'
 // Domyślnie strony dopasowane są do szerokości panelu; po użyciu +, − lub 100% obowiązuje wybrana skala,
 // a „Dopasuj” wraca do dopasowania.
 // `onLayout` dostaje każdy nowy podział stron (np. edytor sprawdza przed eksportem, czy są za długie bloki).
+// Bloki wyższe niż strona są wyróżnione na kartkach w Edit mode; w Preview mode kartki są jak w PDF, a w pasku
+// podglądu jest ostrzeżenie z „Pokaż” (`onShowOversized` – przejście do Edit mode).
 export function PreviewPane({
   document,
-  onLayout: onLayoutChange
+  onLayout: onLayoutChange,
+  mode = 'edit',
+  onShowOversized
 }: {
   document: CvDocument
   onLayout?: (layout: PaginateResult) => void
+  mode?: EditorMode
+  onShowOversized?: () => void
 }) {
   const panel = useRef<HTMLElement>(null)
   const panelWidth = usePanelWidth(panel)
   const [chosenScale, setChosenScale] = useState<number | null>(null)
   const scale = chosenScale ?? fitScale(panelWidth)
   const [pageCount, setPageCount] = useState<number | null>(null)
+  const [oversizedCount, setOversizedCount] = useState(0)
   const onLayout = useCallback(
     (layout: PaginateResult) => {
       setPageCount(layout.pages.length)
+      setOversizedCount(layout.oversizedIds.length)
       onLayoutChange?.(layout)
       afterNextPaint(markPreviewPainted)
     },
@@ -47,6 +56,16 @@ export function PreviewPane({
             <span aria-hidden="true">⚠</span> {t.lengthNotice(pageCountLabel(RECOMMENDED_MAX_PAGES, language))}
           </span>
         )}
+        {mode === 'preview' && oversizedCount > 0 && (
+          <span className="preview-length-notice preview-oversized-notice">
+            <span aria-hidden="true">⚠</span> {t.oversizedInPreview}
+            {onShowOversized && (
+              <button type="button" onClick={onShowOversized}>
+                {t.showInEditMode}
+              </button>
+            )}
+          </span>
+        )}
         <div className="preview-zoom">
           <button type="button" aria-label={t.zoomOut} onClick={() => setChosenScale(zoomOut(scale))}>
             −
@@ -66,7 +85,7 @@ export function PreviewPane({
       {/* Strony są dla czytnika ekranu ukryte: to druga kopia CV, którego źródłem i miejscem edycji jest formularz.
           Pasek podglądu (licznik stron, ostrzeżenie o długości, powiększenie) zostaje dostępny. */}
       <div className="preview-pages" aria-hidden>
-        <CvPages document={document} onLayout={onLayout} oversizedMessage={t.oversized} />
+        <CvPages document={document} onLayout={onLayout} oversizedMessage={mode === 'edit' ? t.oversized : undefined} />
       </div>
     </main>
   )

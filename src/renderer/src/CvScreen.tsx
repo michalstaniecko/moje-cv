@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { useStore } from 'zustand'
 import type { MenuCommand } from '../../shared/api'
+import { useEditSession, type EditorMode } from './canvas/useEditSession'
 import type { PaginateResult } from './domain/paginate'
 import { cvDisplayName, type Clause, type ClauseContent, type CvDocument } from './domain/schema'
 import { createCvEditor, type CvEditor } from './editor/cvEditor'
@@ -38,7 +39,8 @@ type DocxExportState =
 const idleUnlessExporting = <State extends { status: string }>(state: State): State | { status: 'idle' } =>
   state.status === 'exporting' ? state : { status: 'idle' }
 
-// Otwarte CV: formularz edycji (lewo), podgląd stron (prawo) i eksport do PDF.
+// Otwarte CV: formularz edycji (lewo), podgląd stron (prawo) i eksport do PDF. W Preview mode tylko strony – bez
+// formularza i bez wyróżnień na kartkach; pasek narzędzi, cofanie i powiększenie działają w obu trybach.
 // `onBack` dostaje komendę menu Plik (Nowe CV, Dodaj przykładowe CV, Importuj…), gdy edytor wychodzi, żeby wykonała
 // ją biblioteka CV.
 export function CvScreen({
@@ -67,6 +69,16 @@ export function CvScreen({
     oversizedCount.current = layout.oversizedIds.length
   }, [])
   useEditorLifecycle(editor)
+  const session = useEditSession()
+  const modeToggle = useRef<ModeToggleHandle>(null)
+  // Przejście do Preview mode przenosi fokus na przełącznik (pole formularza z fokusem znika); przewinięcie i skala
+  // stron zostają, bo panel stron jest ten sam w obu trybach.
+  const previousMode = useRef(session.mode)
+  useEffect(() => {
+    if (session.mode === 'preview' && previousMode.current === 'edit') modeToggle.current?.focus('preview')
+    previousMode.current = session.mode
+  }, [session.mode])
+  usePreviewShortcut(session.togglePreview)
   const panes = useRef<HTMLDivElement>(null)
   const formWidth = useFormWidth(panes)
 
@@ -152,6 +164,7 @@ export function CvScreen({
     } else if (command === 'export-docx') {
       if (docxExport.status !== 'exporting') void exportDocx()
     } else if (command === 'export-json') void exportJson()
+    else if (command === 'toggle-preview') session.togglePreview()
     else void back(command)
   })
 
@@ -162,6 +175,7 @@ export function CvScreen({
           {common.back}
         </button>
         <CvNameHeading name={document.name} onRename={(name) => editor.edit(updateName(name))} />
+        <ModeToggle ref={modeToggle} mode={session.mode} onChange={session.setMode} />
         {/* Przy nieudanym zapisie status jest pusty – błąd ogłasza pasek komunikatu pod paskiem narzędzi. */}
         <span className="toolbar-status" role="status">
           {saveStatus === 'failed' ? '' : t.saveStatus[saveStatus]}
@@ -231,17 +245,82 @@ export function CvScreen({
       {exportState.status === 'confirming' && (
         <ExportCutOffDialog onExport={() => void exportPdf({ confirmed: true })} onCancel={cancelExport} />
       )}
-      <div ref={panes} className="editor-panes" style={{ '--form-width': `${formWidth.width}px` } as CSSProperties}>
+      <div
+        ref={panes}
+        className={session.mode === 'preview' ? 'editor-panes editor-panes--preview' : 'editor-panes'}
+        style={{ '--form-width': `${formWidth.width}px` } as CSSProperties}
+      >
         {/* Początek pomiaru odpowiedzi podglądu na klawisz (preview/keystrokeTiming.ts). */}
-        <aside className="editor-form" onInput={(event) => markInput(event.timeStamp)}>
-          <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} onRemove={removal.remove} />
-          <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
-        </aside>
-        <PaneSeparator formWidth={formWidth} />
-        <PreviewPane document={document} onLayout={onLayout} />
+        {session.mode === 'edit' && (
+          <aside className="editor-form" onInput={(event) => markInput(event.timeStamp)}>
+            <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} onRemove={removal.remove} />
+            <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
+          </aside>
+        )}
+        {session.mode === 'edit' && <PaneSeparator formWidth={formWidth} />}
+        {/* Ten sam element w obu trybach (pozycja w drzewie stała), więc przewinięcie i skala zostają. */}
+        <PreviewPane
+          document={document}
+          onLayout={onLayout}
+          mode={session.mode}
+          onShowOversized={() => {
+            session.setMode('edit')
+            modeToggle.current?.focus('edit')
+          }}
+        />
       </div>
     </div>
   )
+}
+
+type ModeToggleHandle = { focus: (mode: EditorMode) => void }
+
+// Segmentowy przełącznik „Edycja | Podgląd” na środku paska narzędzi: dwa przyciski `aria-pressed` w grupie „Tryb”.
+function ModeToggle({
+  ref,
+  mode,
+  onChange
+}: {
+  ref: Ref<ModeToggleHandle>
+  mode: EditorMode
+  onChange: (mode: EditorMode) => void
+}) {
+  const { editor: t } = useDictionary()
+  const buttons = useRef<Record<EditorMode, HTMLButtonElement | null>>({ edit: null, preview: null })
+  useImperativeHandle(ref, () => ({ focus: (target) => buttons.current[target]?.focus() }), [])
+
+  return (
+    <div className="mode-toggle" role="group" aria-label={t.mode.label}>
+      {(['edit', 'preview'] as const).map((value) => (
+        <button
+          key={value}
+          type="button"
+          ref={(button) => {
+            buttons.current[value] = button
+          }}
+          aria-pressed={mode === value}
+          onClick={() => onChange(value)}
+        >
+          {t.mode[value]}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// Cmd+Shift+P (Ctrl na innych systemach) przełącza Edit mode / Preview mode, także w polu tekstowym – jak Widok →
+// Podgląd w menu. Skrót obsłużony tutaj (preventDefault) nie uruchamia już pozycji menu (jak Cmd+Z w `useEditorLifecycle`).
+function usePreviewShortcut(toggle: () => void) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const modifier = navigator.platform.startsWith('Mac') ? event.metaKey : event.ctrlKey
+      if (!modifier || !event.shiftKey || event.altKey || event.key.toLowerCase() !== 'p') return
+      event.preventDefault()
+      if (!event.repeat) toggle()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [toggle])
 }
 
 // Nazwa CV w nagłówku edytora: przycisk z nazwą, który zamienia się w pole z zaznaczonym tekstem. Enter i kliknięcie obok

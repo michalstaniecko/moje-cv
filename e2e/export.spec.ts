@@ -221,7 +221,7 @@ test('the whole menu and the document follow the interface language forced for t
     'Close Window'
   ])
   expect((await menuLabels('Edit')).items).toEqual(['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All'])
-  expect((await menuLabels('View')).items).toEqual(['Toggle Full Screen'])
+  expect((await menuLabels('View')).items).toEqual(['Preview', 'Toggle Full Screen'])
   expect((await menuLabels('Window')).items).toEqual(['Minimize', 'Zoom', 'Bring All to Front'])
   expect((await menuLabels('Language')).items).toEqual(languageItems('System'))
   expect((await menuLabels('Help')).items).toEqual([
@@ -253,7 +253,7 @@ test('the whole menu and the document follow the interface language forced for t
     'Eksportuj do DOCX…',
     'Zamknij okno'
   ])
-  expect((await menuLabels('Widok')).items).toEqual(['Przełącz pełny ekran'])
+  expect((await menuLabels('Widok')).items).toEqual(['Podgląd', 'Przełącz pełny ekran'])
   expect((await menuLabels('Okno')).items).toEqual(['Minimalizuj', 'Zoom', 'Przenieś wszystko na wierzch'])
   expect((await menuLabels('Pomoc')).items).toEqual([
     'Pomoc CV Drawer',

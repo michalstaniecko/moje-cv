@@ -7,3 +7,10 @@ test('Export to DOCX… is enabled only in the CV editor, like the other exports
     expect(enabledMenuCommands(screen).has('export-docx')).toBe(false)
   }
 })
+
+test('View → Preview is enabled only in the CV editor', () => {
+  expect(enabledMenuCommands('editor').has('toggle-preview')).toBe(true)
+  for (const screen of ['library', 'clauses', undefined] as const) {
+    expect(enabledMenuCommands(screen).has('toggle-preview')).toBe(false)
+  }
+})
