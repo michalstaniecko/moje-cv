@@ -276,7 +276,8 @@ export const nl: Dictionary = {
         position: (name) => `Acties voor functie “${name}”`,
         education: (name) => `Acties voor item “${name}”`,
         bullet: (number) => `Acties voor punt ${number}`,
-        listItem: (number) => `Acties voor item ${number}`
+        listItem: (number) => `Acties voor item ${number}`,
+        contacts: 'Acties voor contactgegevens'
       },
       moveUp: 'Omhoog verplaatsen',
       moveDown: 'Omlaag verplaatsen',

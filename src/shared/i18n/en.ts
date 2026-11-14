@@ -306,7 +306,9 @@ export const en = {
         position: (name: string) => `Actions for position “${name}”`,
         education: (name: string) => `Actions for entry “${name}”`,
         bullet: (number: number) => `Actions for bullet ${number}`,
-        listItem: (number: number) => `Actions for item ${number}`
+        listItem: (number: number) => `Actions for item ${number}`,
+        // Uchwyt kontaktów w nagłówku na stronie (menu z „Add contact”).
+        contacts: 'Actions for contacts'
       },
       moveUp: 'Move up',
       moveDown: 'Move down',

@@ -273,7 +273,8 @@ export const fr: Dictionary = {
         position: (name) => `Actions pour le poste « ${name} »`,
         education: (name) => `Actions pour l’entrée « ${name} »`,
         bullet: (number) => `Actions pour la puce ${number}`,
-        listItem: (number) => `Actions pour l’élément ${number}`
+        listItem: (number) => `Actions pour l’élément ${number}`,
+        contacts: 'Actions pour les contacts'
       },
       moveUp: 'Monter',
       moveDown: 'Descendre',

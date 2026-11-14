@@ -34,9 +34,17 @@ const position = (itemId: string, page = 0) =>
 const list = (sectionId: string) => at(`list:${sectionId}`, { kind: 'listSection', sectionId })
 
 describe('handleFragments', () => {
-  it('gives a handle to section titles and entries, once – on the first page an entry is on', () => {
-    const fragments = [at('summary', { kind: 'summary' }), title('experience'), position('e1'), position('e1', 1), list('skills')]
-    expect([...handleFragments(fragments)]).toEqual([fragments[1], fragments[2]])
+  it('gives a handle to the contacts, section titles and entries, once – on the first page an entry is on', () => {
+    const fragments = [
+      at('fullName', { kind: 'fullName' }),
+      at('contacts', { kind: 'contacts' }),
+      at('summary', { kind: 'summary' }),
+      title('experience'),
+      position('e1'),
+      position('e1', 1),
+      list('skills')
+    ]
+    expect([...handleFragments(fragments)]).toEqual([fragments[1], fragments[3], fragments[4]])
   })
 })
 

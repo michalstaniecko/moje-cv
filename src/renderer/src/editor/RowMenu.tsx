@@ -4,10 +4,17 @@ import { anchoredPosition } from '../canvas/anchoredPosition'
 import { moveShortcutOffset, type MoveOffset } from './moveShortcut'
 
 // Pozycja menu wiersza. `run` wykonuje się po zamknięciu menu i sam decyduje o fokusie (np. przeniesienie wraca na
-// uchwyt przeniesionego wiersza); wyłączona pozycja jest widoczna, ale pomijana przez strzałki. `checked` robi z pozycji
+// uchwyt przeniesionego wiersza); `opener` – element z fokusem, z którego otwarto menu bez fokusu na uchwycie (Page field
+// ze Shift+F10), null – uchwyt. Wyłączona pozycja jest widoczna, ale pomijana przez strzałki. `checked` robi z pozycji
 // przełącznik (`menuitemcheckbox` z zaznaczeniem, np. „Nowa strona przed”); `danger` – pozycja destrukcyjna (np. „Usuń
 // stanowisko”), oddzielona od pozostałych kreską i w kolorze błędu.
-export type RowMenuAction = { label: string; disabled?: boolean; checked?: boolean; danger?: boolean; run: () => void }
+export type RowMenuAction = {
+  label: string
+  disabled?: boolean
+  checked?: boolean
+  danger?: boolean
+  run: (context: { opener: HTMLElement | null }) => void
+}
 
 const ITEMS = '[role="menuitem"]:not(:disabled), [role="menuitemcheckbox"]:not(:disabled)'
 
@@ -27,6 +34,8 @@ export type DragHandleProps = {
 //   przejście fokusu poza menu (Tab) zamyka je bez przenoszenia fokusu,
 // - ⌥⇧↑/↓ na uchwycie przenosi wiersz od razu (`onMoveShortcut`), bez otwierania menu.
 // Bez `handleProps` (uchwyt fragmentu na stronie, poza `SortableList`) uchwyt jest samym przyciskiem menu, bez przeciągania.
+// `tabbable={false}` (uchwyt na stronie, docs/specs/wysiwyg-editing.md, W22): uchwyt poza kolejnością Tab, klikalny;
+// z klawiatury menu otwiera Shift+F10 w polu (`handle.click()`), a Escape wraca wtedy do tego pola (`opener`).
 // Menu jest w warstwie górnej (`popover`) i ma pozycję liczoną od uchwytu, więc przewijany panel formularza go nie
 // ucina; przy braku miejsca pod uchwytem otwiera się nad nim.
 export function RowMenu({
@@ -34,21 +43,35 @@ export function RowMenu({
   actions,
   handleRef,
   handleProps,
-  onMoveShortcut
+  onMoveShortcut,
+  tabbable = true
 }: {
   label: string
   actions: RowMenuAction[]
   handleRef?: (element: HTMLButtonElement | null) => void
   handleProps?: DragHandleProps
   onMoveShortcut: (offset: MoveOffset) => void
+  tabbable?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const handle = useRef<HTMLButtonElement | null>(null)
   const menu = useRef<HTMLUListElement>(null)
+  const opener = useRef<HTMLElement | null>(null)
 
+  // Zamknięcie z powrotem fokusu: do elementu, z którego otwarto menu (jeśli nadal jest), inaczej na uchwyt.
   const close = (focusHandle: boolean) => {
     setOpen(false)
-    if (focusHandle) handle.current?.focus()
+    if (!focusHandle) return
+    const from = opener.current
+    if (from?.isConnected) from.focus({ preventScroll: true })
+    else handle.current?.focus()
+  }
+  const toggle = () => {
+    if (!open) {
+      const active = document.activeElement
+      opener.current = active instanceof HTMLElement && active !== handle.current && active !== document.body ? active : null
+    }
+    setOpen(!open)
   }
 
   useLayoutEffect(() => {
@@ -113,8 +136,9 @@ export function RowMenu({
         aria-describedby={handleProps?.describedBy}
         aria-haspopup="menu"
         aria-expanded={open}
+        tabIndex={tabbable ? undefined : -1}
         {...handleProps?.listeners}
-        onClick={() => setOpen((wasOpen) => !wasOpen)}
+        onClick={toggle}
         onKeyDown={(event) => {
           const offset = moveShortcutOffset(event)
           if (!offset) return
@@ -156,7 +180,7 @@ export function RowMenu({
                 disabled={action.disabled}
                 onClick={() => {
                   close(false)
-                  action.run()
+                  action.run({ opener: opener.current?.isConnected ? opener.current : null })
                 }}
               >
                 {action.label}

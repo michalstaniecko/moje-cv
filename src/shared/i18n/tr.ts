@@ -269,7 +269,8 @@ export const tr: Dictionary = {
         position: (name) => `“${name}” pozisyonu: işlemler`,
         education: (name) => `“${name}” kaydı: işlemler`,
         bullet: (number) => `${number}. madde: işlemler`,
-        listItem: (number) => `${number}. öğe: işlemler`
+        listItem: (number) => `${number}. öğe: işlemler`,
+        contacts: 'İletişim bilgileri: işlemler'
       },
       moveUp: 'Yukarı taşı',
       moveDown: 'Aşağı taşı',

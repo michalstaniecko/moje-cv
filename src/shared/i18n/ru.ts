@@ -274,7 +274,8 @@ export const ru: Dictionary = {
         position: (name) => `Действия: должность «${name}»`,
         education: (name) => `Действия: запись «${name}»`,
         bullet: (number) => `Действия: пункт ${number}`,
-        listItem: (number) => `Действия: элемент ${number}`
+        listItem: (number) => `Действия: элемент ${number}`,
+        contacts: 'Действия: контакты'
       },
       moveUp: 'Переместить вверх',
       moveDown: 'Переместить вниз',

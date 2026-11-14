@@ -516,7 +516,7 @@ test('composing text with an input method changes the document only when the com
   await expect.poll(caret).toEqual({ key: 'header:fullName', offset: 6, collapsed: true })
 })
 
-test('the pages work from the keyboard alone: Tab goes through every page field and date in document order, also into the joined lines of entries and contacts, then through the editing layer; Enter opens the photo popover, Tab leaves it', async () => {
+test('the pages work from the keyboard alone: Tab goes through every page field and date in document order, also into the joined lines of entries and contacts, then to the photo and the “Add to CV” bar, past the handles and pills; Enter opens the photo popover, Tab leaves it', async () => {
   await openFirstCv()
   // Pola i żetony dat stron w kolejności czytania (Classic: daty przed stanowiskiem, tytuł listy obok niej); linia
   // złączona z kilku pól wpisu bez fokusu (np. „firma – miejscowość”, daty) to jeden napis, którego pola Tab odwiedza po
@@ -548,14 +548,17 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
     await expect.poll(focusedKey).toBe(key)
   }
 
-  // Warstwa edycji: przycisk zdjęcia, uchwyty, pigułki „+” i pasek.
+  // Warstwa edycji: w kolejności Tab tylko przycisk zdjęcia i pasek „Add to CV”. Uchwyty i pigułki „+” są poza nią
+  // (W22) – ich akcje daje z klawiatury Shift+F10 w polu.
   await expect(photoButton()).toBeVisible()
-  const stops = window.locator('.edit-layer .edit-photo, .edit-layer .edit-handle .row-handle, .edit-layer .edit-pill, .edit-layer .add-to-cv button')
+  const outOfTabOrder = window.locator('.edit-layer .edit-handle .row-handle, .edit-layer .edit-pill')
+  expect(await outOfTabOrder.count()).toBeGreaterThan(10)
+  expect(new Set(await outOfTabOrder.evaluateAll((elements) => elements.map((element) => element.getAttribute('tabindex'))))).toEqual(
+    new Set(['-1'])
+  )
+  const stops = window.locator('.edit-layer .edit-photo, .edit-layer .add-to-cv button')
   const stopNames = await stops.evaluateAll((elements) => elements.map((element) => element.textContent || element.getAttribute('aria-label')))
-  expect(stopNames.slice(1, 3)).toEqual(['Actions for section “Work experience”', 'Actions for position “Senior Procurement Specialist”'])
-  expect(stopNames.slice(-3)).toEqual(['Actions for section “Languages”', '+ Item', 'Consent clause'])
-  const educationHandle = stopNames.indexOf('Actions for section “Education”')
-  expect(stopNames.slice(educationHandle - 2, educationHandle)).toEqual([`Actions for position “${positions[3]}”`, '+ Position'])
+  expect(stopNames).toEqual(['Photo', 'Consent clause'])
   const count = await stops.count()
   await window.keyboard.press('Tab')
   await expect(stops.first()).toBeFocused()
@@ -1069,8 +1072,10 @@ test('arrow keys go on to the previous or next field at the edges of a field, al
   await clickAtCharacter(roleField(positions[1]), 3)
   await window.keyboard.press('Shift+F10')
   await expect(blockMenu(`position “${positions[1]}”`).getByRole('menuitem', { name: 'Move up' })).toBeFocused()
+  // Escape wraca do pola, z którego otwarto menu, w to samo miejsce.
   await window.keyboard.press('Escape')
-  await expect(handle(`position “${positions[1]}”`)).toBeFocused()
+  await expect(roleField(positions[1])).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'experience:e2:role', offset: 3, collapsed: true })
 })
 
 test('a cleared field of an entry keeps its place with a placeholder, and the empty fields of the entry show theirs, while the entry has the focus; after it the pages split as in Preview mode', async () => {
@@ -1908,7 +1913,7 @@ test('“New page before” and “Hide section” in the menu on the page work 
   await expect.poll(() => pageIndexOf(skillsTitle)).toBe(page)
   await expect(form.getByRole('region', { name: 'Skills' }).getByLabel('New page before this section')).not.toBeChecked()
 
-  // Wpis: nowa strona przed stanowiskiem, jak pole w jego karcie.
+  // Wpis: nowa strona przed stanowiskiem, jak pole wyboru w CV form.
   const second = () => pageIndexOf(roleField(positions[1]))
   await expect.poll(second).toBe(0)
   await handle(`position “${positions[1]}”`).click()
@@ -1976,12 +1981,12 @@ test('“Add …” in the menu of a section title adds an element with the care
   await expect.poll(pageSplit).toEqual(split)
 })
 
-test('the menu works from the keyboard alone, and there are no handles below 50% zoom', async () => {
+test('the menu works from the keyboard alone: Shift+F10 in a field opens the menu of its handle, Escape and every change come back to the field; the contacts have “Add contact”; there are no handles below 50% zoom', async () => {
   await openFirstCv()
-  const education = handle('section “Education”')
-  await education.focus()
+  const title = titleField('Education')
+  await clickAtCharacter(title, 3)
   await expect(handleBox('section “Education”')).toHaveCSS('opacity', '1')
-  await window.keyboard.press('Space')
+  await window.keyboard.press('Shift+F10')
   const menu = blockMenu('section “Education”')
   await expect(menu.getByRole('menuitem', { name: 'Move up' })).toBeFocused()
   await window.keyboard.press('ArrowDown')
@@ -1992,11 +1997,36 @@ test('the menu works from the keyboard alone, and there are no handles below 50%
   await expect(menu.getByRole('menuitem', { name: 'Add education' })).toBeFocused()
   await window.keyboard.press('Escape')
   await expect(menu).toHaveCount(0)
-  await expect(education).toBeFocused()
+  await expect(title).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'section:education:title', offset: 3, collapsed: true })
+
+  // Przeniesienie z menu otwartego z pola: kursor zostaje w polu, w tym samym miejscu; komunikat jak z uchwytu.
+  await window.keyboard.press('Shift+F10')
   await window.keyboard.press('Enter')
-  await window.keyboard.press('ArrowUp')
+  await expect.poll(sectionTitles).toEqual(['Education', 'Work experience', 'Skills', 'Languages'])
+  await expect(title).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'section:education:title', offset: 3, collapsed: true })
+  await expect(announcement()).toHaveText('Moved section “Education” to position 1 of 4.')
+  await window.keyboard.press('Meta+z')
+
+  // „Add education” – kursor w nowym wpisie.
+  await clickAtCharacter(title, 3)
+  await window.keyboard.press('ContextMenu')
+  await window.keyboard.press('End')
   await window.keyboard.press('Enter')
   await expect(pageField('Level – Education “New education”')).toBeFocused()
+
+  // Kontakty w nagłówku: Shift+F10 w kontakcie – menu z „Add contact”; nowy kontakt z kursorem w jego etykiecie.
+  await clickAtCharacter(window.locator('.preview .cv-pages [data-joined*="contact:c2:value"]'), 'Email: jane'.length)
+  await window.keyboard.press('Shift+F10')
+  const contactsMenu = blockMenu('contacts')
+  await expect(contactsMenu.getByRole('menuitem')).toHaveText(['Add contact'])
+  await expect(contactsMenu.getByRole('menuitem', { name: 'Add contact' })).toBeFocused()
+  await window.keyboard.press('Enter')
+  await expect(labelField(5)).toBeFocused()
+  await expect(window.locator('.editor-form').getByLabel(/^Contact value \d$/)).toHaveCount(5)
+  await window.keyboard.press('Meta+z')
+  await expect(window.locator('.editor-form').getByLabel(/^Contact value \d$/)).toHaveCount(4)
 
   const preview = window.locator('.preview')
   await preview.getByRole('button', { name: '100%' }).click()
@@ -2179,13 +2209,12 @@ test('the “+” pill under a section adds an entry with the caret in its job t
   await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^Buyer$/ })).toHaveCount(1)
   await expect(roleField('Buyer')).toBeFocused()
 
-  // Pigułki listy i wykształcenia; z klawiatury – pigułka jest w kolejności Tab za ostatnim fragmentem sekcji.
-  await handle('section “Skills”').focus()
-  await window.keyboard.press('Tab')
+  // Pigułki listy i wykształcenia – poza kolejnością Tab (W22; z klawiatury „Add item” w menu tytułu sekcji).
   const item = pill('Item').first()
-  await expect(item).toBeFocused()
+  await expect(item).toHaveAttribute('tabindex', '-1')
+  await itemField(1, 'Skills').hover()
   await expect(item).toHaveCSS('opacity', '1')
-  await window.keyboard.press('Enter')
+  await item.click()
   // Nowy element listy – na stronie, z kursorem (bez karty).
   await expect(itemField(6, 'Skills')).toBeFocused()
   await expect(itemField(6, 'Skills')).toHaveText('')

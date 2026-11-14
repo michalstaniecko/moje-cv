@@ -274,7 +274,8 @@ export const uk: Dictionary = {
         position: (name) => `Дії: посада «${name}»`,
         education: (name) => `Дії: запис «${name}»`,
         bullet: (number) => `Дії: пункт ${number}`,
-        listItem: (number) => `Дії: елемент ${number}`
+        listItem: (number) => `Дії: елемент ${number}`,
+        contacts: 'Дії: контакти'
       },
       moveUp: 'Перемістити вгору',
       moveDown: 'Перемістити вниз',

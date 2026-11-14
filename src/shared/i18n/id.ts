@@ -269,7 +269,8 @@ export const id: Dictionary = {
         position: (name) => `Tindakan untuk posisi “${name}”`,
         education: (name) => `Tindakan untuk entri “${name}”`,
         bullet: (number) => `Tindakan untuk poin ${number}`,
-        listItem: (number) => `Tindakan untuk item ${number}`
+        listItem: (number) => `Tindakan untuk item ${number}`,
+        contacts: 'Tindakan untuk kontak'
       },
       moveUp: 'Pindahkan ke atas',
       moveDown: 'Pindahkan ke bawah',

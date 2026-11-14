@@ -16,8 +16,10 @@ import { anchoredPosition } from './anchoredPosition'
 
 export const FIELD_POPOVER_CONTROLS = 'input:not(:disabled), select:not(:disabled), button:not(:disabled)'
 
-const TABBABLE =
-  'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [contenteditable="true"], [tabindex]:not([tabindex="-1"])'
+// Elementy w kolejności Tab (bez `tabindex="-1"`, np. uchwytów i pigułek „+” na stronach).
+const TABBABLE = ['button:not(:disabled)', 'input:not(:disabled)', 'select:not(:disabled)', 'textarea:not(:disabled)', 'a[href]', '[contenteditable="true"]', '[tabindex]']
+  .map((selector) => `${selector}:not([tabindex="-1"])`)
+  .join(', ')
 
 // Tab z ostatniej kontrolki popovera: fokus na następnym w kolejności Tab elemencie za kotwicą `element` (pomija
 // Field popovers i to, czego nie widać), jakby popover stał tuż za kotwicą.

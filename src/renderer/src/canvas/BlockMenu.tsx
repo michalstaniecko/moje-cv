@@ -3,6 +3,7 @@ import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument, Section } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
 import {
+  addContact,
   moveItem,
   moveSection,
   removeEducationItem,
@@ -21,6 +22,7 @@ import { addSectionElement } from './AddControls'
 import { handleFragments, moveAmongShown, neighbourAfterHiding, sectionFragmentKeys } from './blockMoves'
 import { sectionOf } from './editTargets'
 import type { Fragment } from './fragmentRects'
+import { readSelection } from './useActiveField'
 import type { EditSession } from './useEditSession'
 
 // Uchwyt 24×24 px stoi w marginesie kartki przed lewą krawędzią fragmentu, środkiem mniej więcej na wysokości
@@ -31,10 +33,14 @@ const FIRST_LINE_OFFSET = 4
 
 // Menu fragmentu strony (docs/specs/inline-editing-redesign.md, Q11, Q25): uchwyt `RowMenu` (bez przeciągania) przy
 // tytułach sekcji i wpisach w Edit mode – „Przenieś wyżej/niżej” (także ⌥⇧↑/↓ na uchwycie), „Nowa strona przed”, a przy
-// tytule sekcji też „Ukryj sekcję” i „Dodaj …”. Każda zmiana to jeden krok cofania.
+// tytule sekcji też „Ukryj sekcję” i „Dodaj …”; przy kontaktach w nagłówku – „Dodaj kontakt”. Każda zmiana to jeden
+// krok cofania.
+// - Uchwyty są poza kolejnością Tab (docs/specs/wysiwyg-editing.md, W22): mysz klika uchwyt, klawiatura otwiera menu
+//   Shift+F10 / klawiszem menu w polu fragmentu (PageField.tsx); Escape wraca wtedy do pola.
 // - Przeniesienie przeskakuje to, czego na stronach nie ma (ukryte i puste sekcje, puste wpisy), ogłasza nową pozycję
 //   czytnikowi ekranu (jak `SortableList`) i zostawia fokus na uchwycie fragmentu w nowym miejscu – także na innej
-//   stronie (uchwyt szukany po kluczu fragmentu po nowym pomiarze stron).
+//   stronie (uchwyt szukany po kluczu fragmentu po nowym pomiarze stron); menu otwarte z pola zostawia kursor w tym
+//   polu, w tym samym miejscu (też „Nowa strona przed”).
 // - „Ukryj sekcję” przenosi fokus na fragment za sekcją (albo przed nią).
 // - „Dodaj …” dodaje element na końcu sekcji i stawia kursor w jego pierwszym polu na stronie (pusty jest odsłaniany).
 // - „Usuń stanowisko” / „Usuń wykształcenie” (docs/specs/wysiwyg-editing.md, W21 – nie ma Edit card z tekstowym
@@ -100,22 +106,36 @@ export function useBlockMenu({
     if (fragment.target.kind === 'experienceItem' || fragment.target.kind === 'educationItem') shownItems.add(fragment.target.itemId)
   }
   const current = () => editor.store.getState().document
+  // Menu otwarte z pola na stronie (`opener`, Shift+F10): po zmianie kursor wraca do tego pola w tym samym miejscu –
+  // także gdy fragment przeszedł na inną stronę (pole przemontowane). Zwraca, czy tak będzie (inaczej fokus na uchwyt).
+  const backToField = (opener: HTMLElement | null) => {
+    const key = opener?.dataset['fieldKey']
+    const fragment = opener?.dataset['fragment']
+    if (!opener || key === undefined || fragment === undefined || !opener.closest('.cv-pages')) return false
+    const end = (opener.textContent ?? '').length
+    session.activeField.expect({ key, fragment }, readSelection(opener) ?? { start: end, end })
+    return true
+  }
 
-  const moveActions = (plan: (offset: MoveOffset) => unknown, moveBy: (offset: MoveOffset) => void): RowMenuAction[] => [
-    { label: t.order.moveUp, disabled: !plan(-1), run: () => moveBy(-1) },
-    { label: t.order.moveDown, disabled: !plan(1), run: () => moveBy(1) }
+  const moveActions = (
+    plan: (offset: MoveOffset) => unknown,
+    moveBy: (offset: MoveOffset, opener?: HTMLElement | null) => void
+  ): RowMenuAction[] => [
+    { label: t.order.moveUp, disabled: !plan(-1), run: ({ opener }) => moveBy(-1, opener) },
+    { label: t.order.moveDown, disabled: !plan(1), run: ({ opener }) => moveBy(1, opener) }
   ]
 
   const sectionMenu = (fragment: Fragment, section: Section): BlockMenu => {
     const name = sectionName(section, t)
     const plan = (offset: MoveOffset) =>
       moveAmongShown(current().sections.map((candidate) => candidate.id), shownSections, section.id, offset)
-    const moveBy = (offset: MoveOffset) => {
+    const moveBy = (offset: MoveOffset, opener: HTMLElement | null = null) => {
       const move = plan(offset)
       if (!move) return
+      const kept = backToField(opener)
       editor.edit(moveSection(section.id, move.toIndex))
       announce(t.order.moved(t.order.section(name), move.position, move.total))
-      focusAfterChange(fragment.key, 'handle')
+      if (!kept) focusAfterChange(fragment.key, 'handle')
     }
     const hide = () => {
       const keys = sectionFragmentKeys(section)
@@ -137,9 +157,10 @@ export function useBlockMenu({
         {
           label: t.pageBreakBeforeSection,
           checked: section.pageBreakBefore,
-          run: () => {
+          run: ({ opener }) => {
+            const kept = backToField(opener)
             editor.edit(updateSection(section.id, { pageBreakBefore: !section.pageBreakBefore }))
-            focusAfterChange(fragment.key, 'handle')
+            if (!kept) focusAfterChange(fragment.key, 'handle')
           }
         },
         { label: t.hideSection, run: hide },
@@ -199,12 +220,13 @@ export function useBlockMenu({
       const latest = current().sections.find((candidate) => candidate.id === sectionId)
       return latest ? moveAmongShown(latest.items.map((candidate) => candidate.id), shownItems, itemId, offset) : null
     }
-    const moveBy = (offset: MoveOffset) => {
+    const moveBy = (offset: MoveOffset, opener: HTMLElement | null = null) => {
       const move = plan(offset)
       if (!move) return
+      const kept = backToField(opener)
       editor.edit(moveItem(sectionId, itemId, move.toIndex))
       announce(t.order.moved(entry.movedName, move.position, move.total))
-      focusAfterChange(fragment.key, 'handle')
+      if (!kept) focusAfterChange(fragment.key, 'handle')
     }
     return {
       label: entry.handleName,
@@ -214,9 +236,10 @@ export function useBlockMenu({
         {
           label: t.pageBreakBeforeEntry,
           checked: entry.pageBreakBefore,
-          run: () => {
+          run: ({ opener }) => {
+            const kept = backToField(opener)
             editor.edit(entry.setPageBreakBefore(!entry.pageBreakBefore))
-            focusAfterChange(fragment.key, 'handle')
+            if (!kept) focusAfterChange(fragment.key, 'handle')
           }
         },
         {
@@ -238,8 +261,26 @@ export function useBlockMenu({
     }
   }
 
+  // Kontakty w nagłówku (W14): tylko „Dodaj kontakt” – nowy kontakt na końcu, kursor w jego etykiecie na stronie.
+  // Kolejność kontaktów zmienia się tylko w CV form.
+  const contactsMenu = (): BlockMenu => ({
+    label: t.order.handle.contacts,
+    onMoveShortcut: () => {},
+    actions: [
+      {
+        label: t.addContact,
+        run: () => {
+          editor.edit(addContact())
+          const added = current().header.contacts.at(-1)
+          if (added) session.focusPart({ kind: 'contacts', contactId: added.id })
+        }
+      }
+    ]
+  })
+
   const menuFor = (fragment: Fragment): BlockMenu | null => {
     const { target } = fragment
+    if (target.kind === 'contacts') return contactsMenu()
     if (target.kind !== 'sectionTitle' && target.kind !== 'experienceItem' && target.kind !== 'educationItem') return null
     const section = document.sections.find((candidate) => candidate.id === target.sectionId)
     if (!section) return null
@@ -256,9 +297,8 @@ export function useBlockMenu({
 
 type BlockMenu = { label: string; actions: RowMenuAction[]; onMoveShortcut: (offset: MoveOffset) => void }
 
-// Uchwyt menu fragmentu w marginesie kartki. Widać go przy najechaniu na fragment albo na uchwyt, przy fokusie i przy
-// otwartym menu (app.css). Stoi w DOM tuż przed przyciskiem swojego fragmentu: w kolejności Tab jest przed nim, jak
-// uchwyt przed polami wiersza w CV form.
+// Uchwyt menu fragmentu w marginesie kartki. Widać go przy najechaniu na fragment albo na uchwyt, przy fokusie w polu
+// fragmentu i przy otwartym menu (app.css). Poza kolejnością Tab (W22) – z klawiatury Shift+F10 w polu fragmentu.
 export function BlockHandle({ fragment, menu }: { fragment: Fragment; menu: BlockMenu }) {
   const { rect } = fragment
   return (
@@ -269,7 +309,7 @@ export function BlockHandle({ fragment, menu }: { fragment: Fragment; menu: Bloc
       data-page={fragment.page}
       style={{ top: rect.top - FIRST_LINE_OFFSET, left: rect.left - HANDLE_SIZE - HANDLE_GAP }}
     >
-      <RowMenu label={menu.label} actions={menu.actions} onMoveShortcut={menu.onMoveShortcut} />
+      <RowMenu label={menu.label} actions={menu.actions} onMoveShortcut={menu.onMoveShortcut} tabbable={false} />
     </div>
   )
 }

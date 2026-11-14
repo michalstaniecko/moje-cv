@@ -39,7 +39,7 @@ export function addSectionElement(editor: CvEditor, section: Section, { reuseEmp
 // Dodawanie na stronach w Edit mode (docs/specs/inline-editing-redesign.md, Q8, Q10) – wszystko w warstwie edycji,
 // nic na kartkach (podział stron jak w Preview mode i PDF):
 // - pigułki „+ Position / Education / Item” pod ostatnim fragmentem sekcji, widoczne przy najechaniu na sekcję albo
-//   fokusie w niej (i przy fokusie na pigułce); przy skali poniżej 50% ich nie ma;
+//   fokusie na uchwycie w niej; poza kolejnością Tab (W22); przy skali poniżej 50% ich nie ma;
 // - pasek „Add to CV:” pod ostatnią stroną z przyciskami tylko dla tego, czego na stronach nie ma (`addToCvItems`);
 // - w zupełnie pustym CV podpowiedź „Start with your full name” na środku pierwszej strony.
 // Każdy przycisk dodaje (albo odsłania istniejący pusty) element i stawia kursor w jego pierwszym polu na stronie –
@@ -121,6 +121,9 @@ export function useAddControls({
         // (docs/specs/wysiwyg-editing.md, W10), strony przesuwają się, a z nimi pigułka spod kursora – klik by nie
         // trafił. Fokus przenosi dopiero dodanie (kursor w nowym polu).
         onMouseDown={(event) => event.preventDefault()}
+        // Poza kolejnością Tab (docs/specs/wysiwyg-editing.md, W22): z klawiatury „Dodaj …” w menu uchwytu tytułu sekcji
+        // (Shift+F10 w tytule) albo Enter w ostatnim punkcie / elemencie.
+        tabIndex={-1}
         onClick={() => openAdded(addSectionElement(editor, section))}
       >
         + {pillLabel[section.type]}

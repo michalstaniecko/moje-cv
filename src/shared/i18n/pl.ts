@@ -274,7 +274,8 @@ export const pl: Dictionary = {
         position: (name) => `Działania: stanowisko „${name}”`,
         education: (name) => `Działania: wpis „${name}”`,
         bullet: (number) => `Działania: punkt ${number}`,
-        listItem: (number) => `Działania: element ${number}`
+        listItem: (number) => `Działania: element ${number}`,
+        contacts: 'Działania: kontakty'
       },
       moveUp: 'Przenieś wyżej',
       moveDown: 'Przenieś niżej',

@@ -274,7 +274,8 @@ export const sv: Dictionary = {
         position: (name) => `Åtgärder för tjänsten ”${name}”`,
         education: (name) => `Åtgärder för posten ”${name}”`,
         bullet: (number) => `Åtgärder för punkt ${number}`,
-        listItem: (number) => `Åtgärder för post ${number}`
+        listItem: (number) => `Åtgärder för post ${number}`,
+        contacts: 'Åtgärder för kontakter'
       },
       moveUp: 'Flytta uppåt',
       moveDown: 'Flytta nedåt',

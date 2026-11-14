@@ -20,13 +20,14 @@ export function moveAmongShown(ids: string[], shown: ReadonlySet<string>, id: st
   return { toIndex: ids.indexOf(visible[to]!), position: to + 1, total: visible.length }
 }
 
-// Fragmenty z uchwytem menu: tytuły sekcji i wpisy (stanowiska, wykształcenie), każdy raz – na pierwszej stronie, na
-// której jest (wpis rozdzielony podziałem stron ma uchwyt tylko przy swoim początku).
+// Fragmenty z uchwytem menu: kontakty w nagłówku („Dodaj kontakt”, docs/specs/wysiwyg-editing.md, W14), tytuły sekcji
+// i wpisy (stanowiska, wykształcenie), każdy raz – na pierwszej stronie, na której jest (wpis rozdzielony podziałem
+// stron ma uchwyt tylko przy swoim początku).
 export function* handleFragments(fragments: Fragment[]): Generator<Fragment> {
   const seen = new Set<string>()
   for (const fragment of fragments) {
     const { kind } = fragment.target
-    if (kind !== 'sectionTitle' && kind !== 'experienceItem' && kind !== 'educationItem') continue
+    if (kind !== 'contacts' && kind !== 'sectionTitle' && kind !== 'experienceItem' && kind !== 'educationItem') continue
     if (seen.has(fragment.key)) continue
     seen.add(fragment.key)
     yield fragment
