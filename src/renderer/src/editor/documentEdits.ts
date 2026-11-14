@@ -33,6 +33,39 @@ export type TextSplit = { from: number; to: number; newItemId: string }
 
 export const textSplit = (from: number, to: number = from, newItemId: string = newId()): TextSplit => ({ from, to, newItemId })
 
+// Łączy element z poprzednim jak edytor tekstu (Backspace na początku, Delete na końcu poprzedniego): tekst elementu
+// `id` trafia na koniec poprzedniego, a element znika. Pierwszy element (albo nieznany) – bez zmian.
+const mergeIntoPrevious = <T extends { id: string; text: string }>(items: T[], id: string): T[] => {
+  const index = items.findIndex((item) => item.id === id)
+  if (index <= 0) return items
+  const previous = items[index - 1]!
+  return items.flatMap((item, at) => (at === index ? [] : at === index - 1 ? [{ ...previous, text: previous.text + items[index]!.text }] : [item]))
+}
+
+// Wklejenie wielu linii w element listy (docs/specs/wysiwyg-editing.md, W6): pierwsza linia zastępuje zaznaczenie od
+// `from` do `to`, każda kolejna to nowy element za bieżącym (`newItemIds`, po jednym na linię poza pierwszą), a tekst
+// za zaznaczeniem trafia na koniec ostatniego – jak wklejenie akapitów w edytorze tekstu.
+export type TextPaste = { from: number; to: number; lines: string[]; newItemIds: string[] }
+
+export const textPaste = (
+  from: number,
+  to: number,
+  lines: string[],
+  newItemIds: string[] = lines.slice(1).map(() => newId())
+): TextPaste => ({ from, to, lines, newItemIds })
+
+const pasteById = <T extends { id: string; text: string }>(items: T[], id: string, { from, to, lines, newItemIds }: TextPaste): T[] =>
+  items.flatMap((item) => {
+    if (item.id !== id) return [item]
+    const [first = '', ...rest] = lines
+    const after = item.text.slice(to)
+    if (rest.length === 0) return [{ ...item, text: item.text.slice(0, from) + first + after }]
+    return [
+      { ...item, text: item.text.slice(0, from) + first },
+      ...rest.map((line, index) => ({ id: newItemIds[index]!, text: index === rest.length - 1 ? line + after : line }) as T)
+    ]
+  })
+
 // Nazwa CV z nagłówka edytora. Ta sama reguła co zmiana nazwy w bibliotece CV: nazwa przycięta, a pusta (lub z samych
 // spacji) niczego nie zmienia – CV zostaje przy poprzedniej nazwie.
 export const updateName =
@@ -126,6 +159,14 @@ export const updateBullet = (sectionId: string, itemId: string, bulletId: string
 export const splitBullet = (sectionId: string, itemId: string, bulletId: string, split: TextSplit): Change<CvDocument> =>
   updateBullets(sectionId, itemId, (bullets) => splitById(bullets, bulletId, split))
 
+// Backspace na początku punktu (i Delete na końcu poprzedniego): punkt dołączony do poprzedniego.
+export const mergeBulletIntoPrevious = (sectionId: string, itemId: string, bulletId: string): Change<CvDocument> =>
+  updateBullets(sectionId, itemId, (bullets) => mergeIntoPrevious(bullets, bulletId))
+
+// Wklejenie wielu linii w punkt: kolejne punkty za nim (`TextPaste`).
+export const pasteIntoBullet = (sectionId: string, itemId: string, bulletId: string, paste: TextPaste): Change<CvDocument> =>
+  updateBullets(sectionId, itemId, (bullets) => pasteById(bullets, bulletId, paste))
+
 export const removeBullet = (sectionId: string, itemId: string, bulletId: string): Change<CvDocument> =>
   updateBullets(sectionId, itemId, (bullets) => bullets.filter((bullet) => bullet.id !== bulletId))
 
@@ -172,6 +213,14 @@ export const updateListItem = (sectionId: string, itemId: string, text: string):
 // Enter w elemencie sekcji-listy: podział jak w `splitBullet`.
 export const splitListItem = (sectionId: string, itemId: string, split: TextSplit): Change<CvDocument> =>
   updateListItems(sectionId, (items) => splitById(items, itemId, split))
+
+// Backspace na początku elementu sekcji-listy: element dołączony do poprzedniego (jak `mergeBulletIntoPrevious`).
+export const mergeListItemIntoPrevious = (sectionId: string, itemId: string): Change<CvDocument> =>
+  updateListItems(sectionId, (items) => mergeIntoPrevious(items, itemId))
+
+// Wklejenie wielu linii w element sekcji-listy: kolejne elementy za nim (`TextPaste`).
+export const pasteIntoListItem = (sectionId: string, itemId: string, paste: TextPaste): Change<CvDocument> =>
+  updateListItems(sectionId, (items) => pasteById(items, itemId, paste))
 
 export const removeListItem = (sectionId: string, itemId: string): Change<CvDocument> =>
   updateListItems(sectionId, (items) => items.filter((item) => item.id !== itemId))

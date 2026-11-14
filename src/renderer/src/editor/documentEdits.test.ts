@@ -9,8 +9,13 @@ import {
   moveSection,
   removeEducationItem,
   removeListItem,
+  mergeBulletIntoPrevious,
+  mergeListItemIntoPrevious,
+  pasteIntoBullet,
+  pasteIntoListItem,
   splitBullet,
   splitListItem,
+  textPaste,
   textSplit,
   updateEducationItem,
   updateConsent,
@@ -179,6 +184,47 @@ describe('splitListItem', () => {
       '',
       'Niemiecki – A2'
     ])
+  })
+})
+
+describe('mergeBulletIntoPrevious', () => {
+  it('joins a bullet onto the end of the one before it, the inverse of a split', () => {
+    const split = splitBullet('experience', 'e2', 'e2-b3', textSplit(27, 27, 'e2-new'))(sampleCv)
+    expect(mergeBulletIntoPrevious('experience', 'e2', 'e2-new')(split)).toEqual(sampleCv)
+  })
+
+  it('changes nothing for the first bullet or a bullet that is not there', () => {
+    expect(mergeBulletIntoPrevious('experience', 'e2', 'e2-b1')(sampleCv)).toEqual(sampleCv)
+    expect(mergeBulletIntoPrevious('experience', 'e2', 'gone')(sampleCv)).toEqual(sampleCv)
+  })
+})
+
+describe('mergeListItemIntoPrevious', () => {
+  it('joins a list item onto the end of the one before it', () => {
+    expect(listTexts(mergeListItemIntoPrevious('languages', 'l2')(sampleCv), 'languages')).toEqual(['Angielski – C1Niemiecki – A2'])
+    expect(mergeListItemIntoPrevious('languages', 'l1')(sampleCv)).toEqual(sampleCv)
+  })
+})
+
+describe('pasting lines into a bullet or a list item', () => {
+  it('puts the first line at the cursor and each further line in a new element after it, with the rest of the text at the end of the last one', () => {
+    const paste = textPaste(10, 12, ['one', 'two', 'three'], ['n1', 'n2'])
+    const pasted = pasteIntoListItem('languages', 'l1', paste)(sampleCv)
+    expect(listTexts(pasted, 'languages')).toEqual(['Angielski one', 'two', 'threeC1', 'Niemiecki – A2'])
+    expect(itemIds(pasted, 'languages')).toEqual(['l1', 'n1', 'n2', 'l2'])
+
+    const intoBullet = pasteIntoBullet('experience', 'e2', 'e2-b1', textPaste(0, 0, ['A', 'B'], ['nb']))(sampleCv)
+    expect(bullets(intoBullet, 'e2').slice(0, 3).map((bullet) => [bullet.id, bullet.text])).toEqual([
+      ['e2-b1', 'A'],
+      ['nb', 'B' + bullets(sampleCv, 'e2')[0]!.text],
+      ['e2-b2', bullets(sampleCv, 'e2')[1]!.text]
+    ])
+  })
+
+  it('gives the new elements fresh ids unless they are given', () => {
+    const paste = textPaste(0, 0, ['a', 'b', 'c'])
+    expect(paste.newItemIds).toHaveLength(2)
+    expect(new Set(paste.newItemIds).size).toBe(2)
   })
 })
 
