@@ -69,6 +69,9 @@ body {
 .editor-form,
 .row-menu,
 .edit-card,
+.edit-pill,
+.edit-start-hint,
+.add-to-cv,
 .cv-design-panel,
 .removal-message,
 .preview-bar,
@@ -325,8 +328,77 @@ textarea:focus-visible {
   outline-offset: 0;
 }
 
+/* Pigułka „+ Position / Education / Item” pod ostatnim fragmentem sekcji, w odstępie między blokami. Widoczna (i klikalna)
+   tylko przy najechaniu na sekcję albo fokusie w niej (`data-active`, EditLayer) i przy własnym fokusie; niewidoczna
+   nie zasłania klików w fragment pod nią. Jak uchwyt: tło panelu z cieniem, czytelne na białej kartce w obu wyglądach. */
+.edit-layer .edit-pill {
+  position: absolute;
+  z-index: 1;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+  color: var(--ui-text);
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  box-shadow: 0 1px 3px var(--ui-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease-out;
+}
+
+.edit-layer .edit-pill[data-active],
+.edit-layer .edit-pill:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.edit-layer .edit-pill:hover,
+.edit-layer .edit-pill:focus-visible {
+  background: var(--ui-panel-bg);
+  border-color: var(--ui-fragment-outline);
+  outline: 1px solid var(--ui-fragment-outline);
+  outline-offset: 0;
+}
+
+/* Podpowiedź na środku pierwszej strony zupełnie pustego CV. */
+.edit-layer .edit-start-hint {
+  position: absolute;
+  z-index: 1;
+  padding: 8px 18px;
+  white-space: nowrap;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px var(--ui-shadow);
+  transform: translate(-50%, -50%);
+}
+
+/* Pasek „Add to CV:” pod ostatnią stroną (poza kartką, na tle panelu stron): przyciski tylko dla tego, czego w CV brak. */
+.edit-layer .add-to-cv {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-bottom: 24px;
+}
+
+.add-to-cv-label {
+  color: var(--ui-text);
+  white-space: nowrap;
+}
+
+.edit-layer .add-to-cv button {
+  padding: 2px 12px;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .edit-layer .edit-handle {
+  .edit-layer .edit-handle,
+  .edit-layer .edit-pill {
     transition: none;
   }
 }

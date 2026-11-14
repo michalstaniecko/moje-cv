@@ -11,6 +11,8 @@ const headerSelector = headerParts.map((part) => editMarkupContract[part]).join(
 // Odczyt w `requestAnimationFrame` po każdym nowym podziale stron (`layout`), zmianie skali i zmianie rozmiaru panelu
 // stron (strony są wyśrodkowane, więc szerokość panelu je przesuwa). Hook działa tylko, gdy warstwa istnieje (Edit mode).
 // Przewijanie nie zmienia prostokątów: warstwa przewija się razem ze stronami.
+// `pages` – prostokąty stron (`.cv-pages > .cv-page`) w tych samych współrzędnych, dla kontrolek warstwy poza
+// fragmentami (pasek „Add to CV” pod ostatnią stroną, podpowiedź w pustym CV).
 export function useFragmentRects({
   layer,
   panel,
@@ -23,8 +25,9 @@ export function useFragmentRects({
   document: CvDocument
   layout: PaginateResult | null
   scale: number
-}): Fragment[] {
+}): { fragments: Fragment[]; pages: Rect[] } {
   const [fragments, setFragments] = useState<Fragment[]>([])
+  const [pages, setPages] = useState<Rect[]>([])
   // Dokument, z którego powstał ostatni podział stron – do niego pasują id bloków na stronach.
   const latestDocument = useRef(document)
   useEffect(() => {
@@ -33,8 +36,10 @@ export function useFragmentRects({
 
   const measure = useCallback(() => {
     if (!layer.current || !panel.current) return
-    const next = fragmentRects(readBlocks(layer.current, panel.current), latestDocument.current)
+    const { blocks, pages: nextPages } = readBlocks(layer.current, panel.current)
+    const next = fragmentRects(blocks, latestDocument.current)
     setFragments((current) => (sameFragments(current, next) ? current : next))
+    setPages((current) => (sameRects(current, nextPages) ? current : nextPages))
   }, [layer, panel])
 
   useEffect(() => {
@@ -57,10 +62,17 @@ export function useFragmentRects({
     }
   }, [measure, panel])
 
-  return fragments
+  return { fragments, pages }
 }
 
-function readBlocks(layer: HTMLElement, panel: HTMLElement): MeasuredBlock[] {
+const sameRects = (a: Rect[], b: Rect[]) =>
+  a.length === b.length &&
+  a.every(
+    (rect, index) =>
+      rect.top === b[index]!.top && rect.left === b[index]!.left && rect.right === b[index]!.right && rect.bottom === b[index]!.bottom
+  )
+
+function readBlocks(layer: HTMLElement, panel: HTMLElement): { blocks: MeasuredBlock[]; pages: Rect[] } {
   const origin = layer.getBoundingClientRect()
   const relative = (rect: DOMRect): Rect => ({
     top: rect.top - origin.top,
@@ -75,7 +87,9 @@ function readBlocks(layer: HTMLElement, panel: HTMLElement): MeasuredBlock[] {
   }
 
   const blocks: MeasuredBlock[] = []
+  const pages: Rect[] = []
   panel.querySelectorAll('.cv-pages > .cv-page').forEach((page, index) => {
+    pages.push(relative(page.getBoundingClientRect()))
     page.querySelectorAll<HTMLElement>('[data-block-id]').forEach((element) => {
       // Treść bloku bez odstępu po nim (padding opakowania).
       const rect = union(element.children)
@@ -99,5 +113,5 @@ function readBlocks(layer: HTMLElement, panel: HTMLElement): MeasuredBlock[] {
     const consent = union(page.querySelectorAll(editMarkupContract.consent))
     if (consent) blocks.push({ blockId: CONSENT_BLOCK_ID, page: index, rect: consent, parts: [] })
   })
-  return blocks
+  return { blocks, pages }
 }

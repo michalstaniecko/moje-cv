@@ -364,10 +364,16 @@ test('the editing layer works from the keyboard alone: Tab goes through the frag
   ]
   await expect.poll(() => fragmentNames()).toEqual(expect.arrayContaining(names))
   expect(dedupe(await fragmentNames())).toEqual(names)
-  // Tytuły sekcji i wpisy mają uchwyt menu tuż przed sobą (w marginesie kartki, jak uchwyt wiersza w CV form).
-  const stops = window.locator('.edit-layer .edit-fragment, .edit-layer .edit-handle .row-handle')
-  expect(await stops.evaluateAll((elements) => elements.map((element) => element.textContent || element.getAttribute('aria-label'))))
-    .toEqual(expect.arrayContaining(['Actions for section “Work experience”', 'Edit: Section title “Work experience”']))
+  // Tytuły sekcji i wpisy mają uchwyt menu tuż przed sobą (w marginesie kartki, jak uchwyt wiersza w CV form), sekcje –
+  // pigułkę „+” za swoim ostatnim fragmentem, a na końcu jest pasek „Add to CV”.
+  const stops = window.locator(
+    '.edit-layer .edit-fragment, .edit-layer .edit-handle .row-handle, .edit-layer .edit-pill, .edit-layer .add-to-cv button'
+  )
+  const stopNames = await stops.evaluateAll((elements) => elements.map((element) => element.textContent || element.getAttribute('aria-label')))
+  expect(stopNames).toEqual(expect.arrayContaining(['Actions for section “Work experience”', 'Edit: Section title “Work experience”']))
+  expect(stopNames.slice(-4)).toEqual(['Edit: Section title “Languages”', 'Edit: List “Languages”', '+ Item', 'Consent clause'])
+  const educationHandle = stopNames.indexOf('Actions for section “Education”')
+  expect(stopNames.slice(educationHandle - 2, educationHandle)).toEqual([`Edit: Position “${positions[3]}”`, '+ Position'])
   const count = await stops.count()
   await stops.first().focus()
   for (let index = 1; index < count; index++) {

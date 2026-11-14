@@ -66,6 +66,9 @@ export function fragmentKey(target: EditTarget): string {
   }
 }
 
+// Sekcja CV, do której należy część (tytuł sekcji, wpis, sekcja listowa); nagłówek i klauzula zgody – null.
+export const sectionOf = (target: EditTarget): string | null => ('sectionId' in target ? target.sectionId : null)
+
 // Cel fragmentu bez pola i punktu – to, co otwiera klawiatura (fokus na pierwszym polu karty).
 export function fragmentTarget(target: EditTarget): EditTarget {
   switch (target.kind) {

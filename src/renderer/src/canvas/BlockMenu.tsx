@@ -3,9 +3,6 @@ import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument, Section } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
 import {
-  addEducationItem,
-  addExperienceItem,
-  addListItem,
   moveItem,
   moveSection,
   updateEducationItem,
@@ -17,8 +14,9 @@ import { sectionName } from '../editor/fields/SectionTitleField'
 import type { MoveOffset } from '../editor/moveShortcut'
 import { RowMenu, type RowMenuAction } from '../editor/RowMenu'
 import { useDictionary } from '../i18n'
+import { addSectionElement, type AddedAnchor } from './AddControls'
 import { handleFragments, moveAmongShown, neighbourAfterHiding, sectionFragmentKeys } from './blockMoves'
-import { fragmentKey, type EditTarget } from './editTargets'
+import { fragmentKey, sectionOf } from './editTargets'
 import type { Fragment } from './fragmentRects'
 import type { EditSession } from './useEditSession'
 
@@ -36,7 +34,7 @@ const FIRST_LINE_OFFSET = 4
 //   stronie (uchwyt szukany po kluczu fragmentu po nowym pomiarze stron).
 // - „Ukryj sekcję” przenosi fokus na fragment za sekcją (albo przed nią); karta otwarta w tej sekcji się zamyka.
 // - „Dodaj …” dodaje element na końcu sekcji i otwiera jego kartę z fokusem na pierwszym polu; dopóki nowy wpis nie ma
-//   treści (nie ma go na stronie), karta stoi przy uchwycie, z którego go dodano (`addedAnchor`).
+//   treści (nie ma go na stronie), karta stoi przy uchwycie, z którego go dodano (`added`).
 // Usuwania tu nie ma: wpisy usuwa się przyciskiem tekstowym w karcie (Q11).
 export function useBlockMenu({
   editor,
@@ -45,6 +43,7 @@ export function useBlockMenu({
   layout,
   layer,
   session,
+  added,
   onFocusLost
 }: {
   editor: CvEditor
@@ -53,6 +52,7 @@ export function useBlockMenu({
   layout: PaginateResult | null
   layer: RefObject<HTMLElement | null>
   session: EditSession
+  added: AddedAnchor
   onFocusLost: () => void
 }) {
   const t = useDictionary().editor
@@ -81,11 +81,6 @@ export function useBlockMenu({
     } else onFocusLost()
     // Tylko po nowym pomiarze fragmentów; `layout` porównany z tym sprzed zmiany odróżnia nowy podział stron.
   }, [fragments])
-
-  // Nowy, jeszcze pusty element: klucz jego fragmentu i klucz fragmentu z uchwytem, z którego go dodano (uchwyt
-  // szukany po kluczu – po nowym podziale stron to może być inny element).
-  const added = useRef<{ key: string; from: string } | null>(null)
-  const addedAnchor = (key: string) => (added.current?.key === key ? handleButton(added.current.from) : null)
 
   const shownSections = new Set<string>()
   const shownItems = new Set<string>()
@@ -120,21 +115,10 @@ export function useBlockMenu({
       else onFocusLost()
     }
     const add = () => {
-      editor.edit(
-        section.type === 'experience'
-          ? addExperienceItem(section.id)
-          : section.type === 'education'
-            ? addEducationItem(section.id)
-            : addListItem(section.id)
-      )
-      const item = current().sections.find((candidate) => candidate.id === section.id)?.items.at(-1)
-      if (!item) return
-      const target: EditTarget =
-        section.type === 'list'
-          ? { kind: 'listSection', sectionId: section.id, itemId: item.id }
-          : { kind: section.type === 'experience' ? 'experienceItem' : 'educationItem', sectionId: section.id, itemId: item.id }
+      const target = addSectionElement(editor, section)
+      if (!target) return
       const key = fragmentKey(target)
-      added.current = { key, from: fragment.key }
+      added.remember(key, () => handleButton(fragment.key))
       session.openCard(target, key)
     }
     const addLabel = { experience: t.addPosition, education: t.addEducation, list: t.addListItem }[section.type]
@@ -241,7 +225,7 @@ export function useBlockMenu({
     </div>
   )
 
-  return { handles, liveRegion, addedAnchor }
+  return { handles, liveRegion }
 }
 
 type BlockMenu = { label: string; actions: RowMenuAction[]; onMoveShortcut: (offset: MoveOffset) => void }
@@ -255,6 +239,7 @@ export function BlockHandle({ fragment, menu }: { fragment: Fragment; menu: Bloc
     <div
       className="edit-handle"
       data-fragment={fragment.key}
+      data-section={sectionOf(fragment.target) ?? undefined}
       data-page={fragment.page}
       style={{ top: rect.top - FIRST_LINE_OFFSET, left: rect.left - HANDLE_SIZE - HANDLE_GAP }}
     >

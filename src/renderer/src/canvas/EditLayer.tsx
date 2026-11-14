@@ -4,6 +4,7 @@ import type { CvDocument } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
 import type { RemoveWithUndo } from '../editor/removalUndo'
 import { useDictionary } from '../i18n'
+import { useAddedAnchor, useAddControls } from './AddControls'
 import { BlockHandle, useBlockMenu } from './BlockMenu'
 import { cardLabel, EditCard, hasCard, type CardAnchor, type ClauseLibrary } from './EditCard'
 import {
@@ -11,6 +12,7 @@ import {
   fragmentKey,
   fragmentTarget,
   hitTarget,
+  sectionOf,
   type ContractHit,
   type ContractPart,
   type EditTarget
@@ -28,7 +30,8 @@ export const CONTROLS_MIN_SCALE = 0.5
 // (kolejność dokumentu, obrys przy najechaniu i fokusie), który otwiera kartę: klik – z fokusem na klikniętym polu
 // (kontrakt znaczników), Enter/spacja – na pierwszym polu. Istnieje tylko w Edit mode.
 // Tytuły sekcji i wpisy mają przed przyciskiem fragmentu uchwyt menu w marginesie kartki (BlockMenu.tsx); przy skali
-// poniżej CONTROLS_MIN_SCALE uchwytów nie ma.
+// poniżej CONTROLS_MIN_SCALE uchwytów nie ma. Dodawanie (AddControls.tsx): pigułki „+” pod sekcjami (też tylko od
+// CONTROLS_MIN_SCALE), pasek „Add to CV” pod ostatnią stroną i podpowiedź w pustym CV – wszystko poza treścią kartek.
 // Kartę zamyka Escape (fokus wraca na fragment), klik w tło strony lub poza stronę (poza kartą, fragmentami i paskiem
 // podglądu), przejście do Preview mode i wyjście z edytora. `onFocusLost` – fokus nie ma dokąd wrócić (fragment zniknął).
 export function EditLayer({
@@ -49,7 +52,7 @@ export function EditLayer({
 }) {
   const layer = useRef<HTMLDivElement>(null)
   const card = useRef<HTMLDivElement>(null)
-  const fragments = useFragmentRects({ layer, panel, document, layout, scale })
+  const { fragments, pages } = useFragmentRects({ layer, panel, document, layout, scale })
   const t = useDictionary().editor
   const { card: open, openCard, closeCard } = session
 
@@ -60,12 +63,14 @@ export function EditLayer({
       ),
     []
   )
-  const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, onFocusLost })
+  const added = useAddedAnchor()
+  const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, added, onFocusLost })
   const compact = scale < CONTROLS_MIN_SCALE
-  // Element, przy którym stoi karta: przycisk fragmentu, a dla nowego, jeszcze pustego elementu – uchwyt, z którego go
-  // dodano.
+  const addOnPage = useAddControls({ editor, document, session, fragments, pages, layer, added, compact })
+  // Element, przy którym stoi karta: przycisk fragmentu, a dla nowego, jeszcze pustego elementu – przycisk, którym go
+  // dodano (uchwyt menu, pigułka „+”, pasek „Add to CV”, podpowiedź w pustym CV).
   const anchorElement = (key: string | undefined): HTMLElement | undefined =>
-    key === undefined ? undefined : (fragmentButtons(key)[0] ?? blockMenu.addedAnchor(key) ?? undefined)
+    key === undefined ? undefined : (fragmentButtons(key)[0] ?? added.anchor(key) ?? undefined)
   const anchorKey = open?.anchor
   const focusAnchor = () => {
     const element = anchorElement(anchorKey)
@@ -103,8 +108,8 @@ export function EditLayer({
 
   const onTabOut = (direction: 'forward' | 'backward') => {
     if (anchorKey === undefined) return false
-    // Przyciski fragmentów i uchwyty – kolejne miejsce w kolejności Tab warstwy.
-    const all = [...(layer.current?.querySelectorAll<HTMLButtonElement>('.edit-fragment, .edit-handle .row-handle') ?? [])]
+    // Przyciski fragmentów, uchwyty i przyciski dodawania – kolejne miejsce w kolejności Tab warstwy.
+    const all = [...(layer.current?.querySelectorAll<HTMLButtonElement>(layerControls) ?? [])]
     const own = fragmentButtons(anchorKey)
     const next = direction === 'backward' ? own[0] : all[all.indexOf(own.at(-1)!) + 1]
     if (!next || (direction === 'forward' && own.length === 0)) return false
@@ -141,12 +146,13 @@ export function EditLayer({
 
   // Klik w tło strony albo poza stronę zamyka kartę. Gdy fokus nie trafił w nic (tło nie przyjmuje fokusu), wraca na
   // fragment karty, żeby nie zginął. „Usunięto. Cofnij” nie zamyka karty – „Cofnij” wraca do pola w karcie. Uchwyt
-  // i jego menu też nie: przeniesienie fragmentu z otwartą kartą zostawia kartę przy nim, a „Dodaj …” ją zastępuje.
+  // i jego menu też nie: przeniesienie fragmentu z otwartą kartą zostawia kartę przy nim, a „Dodaj …” ją zastępuje –
+  // tak jak pigułki „+”, pasek „Add to CV” i podpowiedź w pustym CV.
   useEffect(() => {
     if (!open) return
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Element | null
-      if (target?.closest('.edit-card, .edit-fragment, .edit-handle, .preview-bar, .removal-message')) return
+      if (target?.closest(`.edit-card, ${layerControls}, .edit-handle, .preview-bar, .removal-message`)) return
       const anchor = anchorElement(open.anchor)
       closeCard()
       requestAnimationFrame(() => {
@@ -158,7 +164,8 @@ export function EditLayer({
   }, [open, closeCard, fragmentButtons])
 
   return (
-    <div ref={layer} className="edit-layer" data-compact={compact || undefined}>
+    <div ref={layer} className="edit-layer" data-compact={compact || undefined} {...addOnPage.layerEvents}>
+      {addOnPage.hint}
       {fragments
         .filter((fragment) => hasCard(fragment.target))
         .map((fragment) => {
@@ -173,9 +180,11 @@ export function EditLayer({
                 onOpen={onOpen}
                 onKeyDown={onFragmentKeyDown}
               />
+              {addOnPage.pillAfter(fragment)}
             </Group>
           )
         })}
+      {addOnPage.bar}
       {blockMenu.liveRegion}
       {open && (
         <EditCard
@@ -226,6 +235,7 @@ const FragmentButton = memo(
         type="button"
         className="edit-fragment"
         data-fragment={fragment.key}
+        data-section={sectionOf(fragment.target) ?? undefined}
         data-page={fragment.page}
         aria-haspopup="dialog"
         aria-expanded={expanded}
@@ -251,6 +261,10 @@ const FragmentButton = memo(
     previous.fragment.rect.right === next.fragment.rect.right &&
     previous.fragment.rect.bottom === next.fragment.rect.bottom
 )
+
+// Przyciski warstwy w kolejności Tab (poza uchwytami menu): fragmenty, pigułki „+”, pasek „Add to CV” i podpowiedź
+// w pustym CV.
+const layerControls = '.edit-fragment, .edit-handle .row-handle, .edit-pill, .add-to-cv button, .edit-start-hint'
 
 const contractParts = Object.entries(editMarkupContract) as [ContractPart, string][]
 

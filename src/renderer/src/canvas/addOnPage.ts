@@ -2,6 +2,7 @@ import { generateBlocks } from '../domain/blocks'
 import { consentText } from '../domain/consent'
 import type { CvDocument, Section } from '../domain/schema'
 import { templates } from '../template/templates'
+import { sectionOf } from './editTargets'
 import type { Fragment } from './fragmentRects'
 
 // Dodawanie na stronach w Edit mode (docs/specs/inline-editing-redesign.md, Q8, Q10): czysta logika – czego brakuje
@@ -57,13 +58,10 @@ export const isEmptyCv = (document: CvDocument) => blocksOf(document).length ===
 // krawędzi fragmentów sekcji na tej stronie (tytuł obok listy stoi bardziej w lewo niż jej elementy).
 export type SectionPill = { sectionId: string; after: Fragment; top: number; left: number }
 
-const sectionOf = (fragment: Fragment): string | null =>
-  'sectionId' in fragment.target ? fragment.target.sectionId : null
-
 export function sectionPills(fragments: Fragment[]): SectionPill[] {
   const last = new Map<string, Fragment>()
   for (const fragment of fragments) {
-    const sectionId = sectionOf(fragment)
+    const sectionId = sectionOf(fragment.target)
     if (sectionId !== null) last.set(sectionId, fragment)
   }
   return [...last].map(([sectionId, after]) => ({
@@ -72,7 +70,7 @@ export function sectionPills(fragments: Fragment[]): SectionPill[] {
     top: after.rect.bottom,
     left: Math.min(
       ...fragments
-        .filter((fragment) => sectionOf(fragment) === sectionId && fragment.page === after.page)
+        .filter((fragment) => sectionOf(fragment.target) === sectionId && fragment.page === after.page)
         .map((fragment) => fragment.rect.left)
     )
   }))
