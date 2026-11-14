@@ -72,7 +72,7 @@ export function EditLayer({
         const handle = compact ? undefined : blockMenu.handles.find((candidate) => candidate.fragment === fragment)
         return (
           <Group key={`${fragment.key}@${fragment.page}`}>
-            {handle && <BlockHandle fragment={fragment} menu={handle.menu} />}
+            {handle && <BlockHandle fragment={fragment} menu={handle.menu} onClosed={blockMenu.onClosed} />}
             {fragment.target.kind === 'photo' && photo.button(fragment)}
             {addOnPage.pillAfter(fragment)}
           </Group>

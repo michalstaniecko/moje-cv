@@ -2242,6 +2242,84 @@ test('the “+” pill under a section adds an entry with the caret in its job t
   await expect(window.locator('.edit-layer .edit-pill')).toHaveCount(0)
 })
 
+// Tab (albo Shift+Tab) do elementu – najwyżej `max` naciśnięć.
+async function tabTo(target: Locator, key: 'Tab' | 'Shift+Tab' = 'Tab', max = 40) {
+  for (let presses = 0; presses < max && !(await target.evaluate((element) => element === element.ownerDocument.activeElement)); presses++) {
+    await window.keyboard.press(key)
+  }
+  await expect(target).toBeFocused()
+}
+
+test('a CV is edited with the keyboard alone: the start hint, page fields with Enter and Tab, the “Add to CV” bar, a date popover, Shift+F10 menus, Escape and Cmd+Z', async () => {
+  await openNewCv()
+  const bar = (name: string) => addBar().getByRole('button', { name, exact: true })
+  const pages = window.getByRole('main', { name: 'CV pages', exact: true })
+
+  // Podpowiedź w pustym CV: Enter – kursor w imieniu i nazwisku.
+  await startHint().focus()
+  await window.keyboard.press('Enter')
+  await expect(pageField('Full name')).toBeFocused()
+  await window.keyboard.type('Jane Doe')
+
+  // Tab z ostatniego pola stron – do paska „Add to CV” (uchwyty i pigułki są poza kolejnością Tab).
+  await tabTo(bar('Contact'))
+  await window.keyboard.press('Enter')
+  await expect(pageField('Contact value 1')).toBeFocused()
+  await window.keyboard.type('+48 600 000 000')
+  await window.keyboard.press('Enter')
+  await expect(labelField(2)).toBeFocused()
+  await window.keyboard.type('GitHub')
+  await window.keyboard.press('Enter')
+  await window.keyboard.type('github.com/jane')
+  await expect(announcement()).toHaveText('New contact 2.')
+
+  // Escape – panel stron; dalej Tab przez strony do paska i nowe stanowisko z kursorem w nim.
+  await window.keyboard.press('Escape')
+  await expect(pages).toBeFocused()
+  await tabTo(bar('Work experience'))
+  await window.keyboard.press('Enter')
+  await expect(roleField('New position')).toBeFocused()
+  await window.keyboard.type('Buyer')
+  await window.keyboard.press('Enter')
+  await window.keyboard.type('Acme')
+  await window.keyboard.press('Enter')
+  await window.keyboard.type('Leeds')
+  await window.keyboard.press('Tab')
+  await expect(bulletField(1, 'Buyer')).toBeFocused()
+  await window.keyboard.type('Negotiated contracts.')
+  await window.keyboard.press('Enter')
+  await window.keyboard.type('Cut costs.')
+  await expect(bulletField(2, 'Buyer')).toHaveText('Cut costs.')
+
+  // Data końca: popover z żetonu, „I currently work here” spacją, Escape wraca na żeton.
+  const end = dateToken('To – Position “Buyer”')
+  await tabTo(end, 'Shift+Tab')
+  await window.keyboard.press('Enter')
+  // (Tab przechodzi najpierw przez części pola miesiąca.)
+  await tabTo(datePopover('To – Position “Buyer”').getByLabel('I currently work here'), 'Tab', 4)
+  await window.keyboard.press('Space')
+  await window.keyboard.press('Escape')
+  await expect(end).toBeFocused()
+  await expect(end).toHaveText('present')
+
+  // Shift+F10 na żetonie – menu uchwytu wpisu; Escape wraca na żeton. ⌘Z cofa „present”.
+  await window.keyboard.press('Shift+F10')
+  await expect(blockMenu('position “Buyer”').getByRole('menuitemcheckbox', { name: 'New page before this entry' })).toBeFocused()
+  await window.keyboard.press('Escape')
+  await expect(end).toBeFocused()
+  await window.keyboard.press('Meta+z')
+  await expect(end).not.toHaveText('present')
+
+  // Na stronie: wszystko, co wpisano; bez CV form przez cały czas.
+  await window.keyboard.press('Escape')
+  await expect(pages).toBeFocused()
+  await expect(pageName()).toHaveText('Jane Doe')
+  await expect(window.locator('.preview .cv-page .cv-role')).toHaveText(['Buyer'])
+  await expect(window.locator('.preview .cv-page .cv-company')).toHaveText('Acme – Leeds')
+  await expect(window.locator('.preview .cv-page li')).toHaveText(['Negotiated contracts.', 'Cut costs.'])
+  await expect(window.locator('.editor-form')).toHaveCount(0)
+})
+
 test('a full CV is built from a new CV in the Outline without any card and without the CV form: every field of the Sample CV is on the page or in a Field popover, and Edit mode then splits the pages like Preview mode', async () => {
   const photoPath = await writeRedBluePhoto()
   await openNewCv()

@@ -292,14 +292,25 @@ export function useBlockMenu({
     return menu ? [{ fragment, menu }] : []
   })
 
-  return { handles }
+  // Menu otwarte z pola (Shift+F10) zostawia pole aktywne – rozwinięty wpis się nie zwija, a Escape wraca do tego
+  // samego pola. Po zamknięciu, gdy fokus nie trafił w pole (np. Tab z menu), pole przestaje być aktywne.
+  const onClosed = () =>
+    requestAnimationFrame(() => {
+      const field = session.activeField.get()
+      const focused = window.document.activeElement
+      if (field && !(focused instanceof HTMLElement && focused.closest('[data-field-popover]'))) session.activeField.blurred(field, focused)
+    })
+
+  return { handles, onClosed }
 }
 
 type BlockMenu = { label: string; actions: RowMenuAction[]; onMoveShortcut: (offset: MoveOffset) => void }
 
 // Uchwyt menu fragmentu w marginesie kartki. Widać go przy najechaniu na fragment albo na uchwyt, przy fokusie w polu
 // fragmentu i przy otwartym menu (app.css). Poza kolejnością Tab (W22) – z klawiatury Shift+F10 w polu fragmentu.
-export function BlockHandle({ fragment, menu }: { fragment: Fragment; menu: BlockMenu }) {
+// `onClosed` – menu się zamknęło: pole, z którego je otwarto (zostaje aktywne, póki menu jest otwarte), przestaje być
+// aktywne, jeśli fokus nie wrócił do pola.
+export function BlockHandle({ fragment, menu, onClosed }: { fragment: Fragment; menu: BlockMenu; onClosed: () => void }) {
   const { rect } = fragment
   return (
     <div
@@ -309,7 +320,14 @@ export function BlockHandle({ fragment, menu }: { fragment: Fragment; menu: Bloc
       data-page={fragment.page}
       style={{ top: rect.top - FIRST_LINE_OFFSET, left: rect.left - HANDLE_SIZE - HANDLE_GAP }}
     >
-      <RowMenu label={menu.label} actions={menu.actions} onMoveShortcut={menu.onMoveShortcut} tabbable={false} />
+      <RowMenu
+        label={menu.label}
+        actions={menu.actions}
+        onMoveShortcut={menu.onMoveShortcut}
+        tabbable={false}
+        keepsFieldActive
+        onClosed={onClosed}
+      />
     </div>
   )
 }

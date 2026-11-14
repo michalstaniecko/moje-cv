@@ -36,6 +36,8 @@ export type DragHandleProps = {
 // Bez `handleProps` (uchwyt fragmentu na stronie, poza `SortableList`) uchwyt jest samym przyciskiem menu, bez przeciągania.
 // `tabbable={false}` (uchwyt na stronie, docs/specs/wysiwyg-editing.md, W22): uchwyt poza kolejnością Tab, klikalny;
 // z klawiatury menu otwiera Shift+F10 w polu (`handle.click()`), a Escape wraca wtedy do tego pola (`opener`).
+// `keepsFieldActive` – menu jest jak Field popover pola, z którego je otwarto (`data-field-popover`): pole zostaje
+// aktywne (rozwinięty wpis się nie zwija), dopóki menu jest otwarte; `onClosed` – menu się zamknęło (każdą drogą).
 // Menu jest w warstwie górnej (`popover`) i ma pozycję liczoną od uchwytu, więc przewijany panel formularza go nie
 // ucina; przy braku miejsca pod uchwytem otwiera się nad nim.
 export function RowMenu({
@@ -44,7 +46,9 @@ export function RowMenu({
   handleRef,
   handleProps,
   onMoveShortcut,
-  tabbable = true
+  tabbable = true,
+  keepsFieldActive = false,
+  onClosed
 }: {
   label: string
   actions: RowMenuAction[]
@@ -52,6 +56,8 @@ export function RowMenu({
   handleProps?: DragHandleProps
   onMoveShortcut: (offset: MoveOffset) => void
   tabbable?: boolean
+  keepsFieldActive?: boolean
+  onClosed?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const handle = useRef<HTMLButtonElement | null>(null)
@@ -61,6 +67,7 @@ export function RowMenu({
   // Zamknięcie z powrotem fokusu: do elementu, z którego otwarto menu (jeśli nadal jest), inaczej na uchwyt.
   const close = (focusHandle: boolean) => {
     setOpen(false)
+    onClosed?.()
     if (!focusHandle) return
     const from = opener.current
     if (from?.isConnected) from.focus({ preventScroll: true })
@@ -160,6 +167,7 @@ export function RowMenu({
           className="row-menu"
           role="menu"
           aria-label={label}
+          data-field-popover={keepsFieldActive || undefined}
           onKeyDown={onMenuKeyDown}
           onBlur={(event) => {
             const next = event.relatedTarget as Node | null
