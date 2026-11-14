@@ -1019,6 +1019,95 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
   `{ opener }` i – jeśli zostawiają fragment na stronie – wracają do pola przez `active.expect`, nie na uchwyt (jest
   poza Tab). Elementy poza kolejnością Tab muszą mieć `tabindex="-1"`, żeby `focusAfter` je pomijał.
 
+### S7 – pomiar, macierz ręczna i dokumentacja (zrobione)
+
+- **Pomiar W23 (AC 10)** – `e2e/performance.spec.ts` na spakowanej aplikacji (`pnpm dist:e2e`, potem
+  `MOJE_CV_PERF=1 [MOJE_CV_PERF_CPU_SLOWDOWN=4] MOJE_CV_APP="dist-e2e/mac-universal/CV Drawer.app/Contents/MacOS/CV Drawer"
+  pnpm exec playwright test e2e/performance.spec.ts`), Apple M3, macOS 27, okno widoczne, długie CV (4 strony, zdjęcie
+  124 kB, 18 stanowisk), czasy w ms (mediana / p95 / max):
+
+  | Przebieg | CPU ×1 | CPU ×4 |
+  | --- | --- | --- |
+  | Pisanie na stronach (podsumowanie, punkt 1 ostatniego stanowiska) – `cv:keystroke-to-preview` | 16,2 / 18,6 / 21,4 | 18,2 / 24,1 / 29,2 |
+  | Pisanie w CV form (te same pola) – `cv:keystroke-to-preview` | 23,1 / 26,6 / 29,6 | 32,6 / 40,8 / 52,5 |
+  | Wejście we wpis z pustym polem (klik → wpis odsłonięty, nowy podział stron, namalowany) | 32,3 / 33,1 / 33,1 | 32,0 / 33,7 / 36,9 |
+  | Wejście we wpis wypełniony (klik → rozwinięty, namalowany) | 31,5 / 32,2 / 33,3 | 30,9 / 32,5 / 33,9 |
+  | Długie zadania (≥ 50 ms) w czasie pisania – strony / CV form | 0 / 0 | 0 / 0 |
+  | Autozapis `cv:update total` (main) – strony | 7,3 / 8,1 / 8,1 | 2,1 / 7,8 / 7,8 |
+
+  Wszystkie mediany i p95 daleko pod progiem 100 ms, także przy CPU ×4; pisanie na stronach jest szybsze niż w CV form
+  (formularz renderuje się razem ze stronami). Wejście we wpis kończy się zadaniem po malowaniu klatki, więc liczy
+  około dwóch klatek (≈ 32 ms przy 60 Hz) niezależnie od spowolnienia – ponowny podział stron mieści się w tej samej
+  klatce. Pierwszy przebieg ×1 miał w pisaniu na stronach jedną wartość odstającą (max 290,6 ms przy medianie 16,1
+  i p95 18,4, bez długich zadań), której powtórny przebieg (w tabeli) nie powtórzył – do obserwacji w ręcznym pomiarze
+  z checklisty. „Input event duration” (Event Timing, zaokrąglane do 8 ms) – p95 48–72 ms we wszystkich przebiegach.
+- **Checklista wydania** (`docs/release-checklist.md`, sekcja „Edycja na stronach”) przepisana z Edit card na strony:
+  Appearance (pola, placeholdery, żetony, ⚠, Field popovers, menu), trzy szablony (spoczynek = Preview mode, linie
+  złączone), IME (polski, klawisz martwy, japoński), wklejanie z Worda/Pages/WWW i upuszczanie, pisownia macOS, 16
+  języków, VoiceOver (czytanie stron, linia złączona i napis dat jako jedna kontrolka, panel „Strony CV” po Escape,
+  komunikat a nazwa nowego pola po Enterze, Shift+F10 / klawisz menu i powrót Escape do pola, uchwyt kontaktów,
+  przełącznik ukrytej sekcji, popover błędu zdjęcia), minimalne okno z Field popovers i pomiar na M1. Poza sekcją:
+  usunięcie stanowiska z menu uchwytu, VoiceOver w Edit / Preview mode (#71), ⇧⌘P w Page field.
+- **Dokumentacja:** `CHANGELOG.md` (Unreleased: wpis o edycji WYSIWYG zamiast Edit card, Outline stawia kursor, „Usunięto.
+  Cofnij” bez kart), `README.md` (pisanie na stronach albo w formularzu), wskazanie w „Stanie realizacji”
+  `docs/specs/inline-editing-redesign.md`, status ADR-0010.
+- **Porządki:** martwy `PAGE_FIELD_SELECTOR` (`useActiveField.ts`), zbędne eksporty (`CONTROLS_MIN_SCALE`,
+  `focusNextField`), komentarze i nagłówki testów mówiące jeszcze o kartach (`canvas.spec.ts`, `editTargets.test.ts`).
+  Sprawdzone grepem: `EditCard` w `src` – brak; nowe teksty gałęzi w `en.ts` – każdy używany; brak TODO/FIXME; każdy
+  plik `src` jest importowany. Pozostałe eksporty używane tylko w swoim pliku to typy publicznych interfejsów modułów –
+  zostają.
+- **Wynik:** `pnpm typecheck`, Vitest i e2e – zob. raport końcowy S7 w opisie PR; złote strony (Preview i Edit mode)
+  i złoty markup bez zmian wzorców.
+
+### Podsumowanie całości (po S1–S7)
+
+| Kryterium | Stan | Dowód / uwagi |
+| --- | --- | --- |
+| AC 1 – złoty markup, złote strony, tekst PDF, DOCX bez zmian | spełnione | `template/goldenMarkup.test.tsx` (wzorce z pierwszego commitu S1), `e2e/goldenPages.spec.ts`; testy `src/main/docx` i `templateIndependence` bez zmian; żaden wzorzec nie był aktualizowany w S1–S7 |
+| AC 2 – Edit mode w spoczynku = Preview mode | spełnione | drugi przebieg `goldenPages.spec.ts` (te same PNG, ta sama liczba stron i id bloków); testy „…after it the pages split as in Preview mode” |
+| AC 3 – brak formularza treści w Outline, `EditCard` nie istnieje | spełnione | `grep -r EditCard src` puste; e2e „a full CV is built from a new CV in the Outline without any card and without the CV form…” i test pól w trzech szablonach |
+| AC 4 – kursor w klikniętym miejscu; przeżywa podział stron, przeniesienie bloku, skalę, zmianę z CV form | spełnione, z uwagą | e2e: imię (klik w znak), tytuł na innej stronie i skala, Enter na dole strony, przeniesienie z menu otwartego z pola; zmiana innego pola z CV form – z konstrukcji (pole przepisuje DOM tylko przy innej wartości, W8), bez osobnego testu e2e (fokus jest wtedy w formularzu) |
+| AC 5 – wklejanie bogatego tekstu, wiele linii → punkty, IME | spełnione automatycznie, do sprawdzenia ręcznie | e2e: schowek z `text/html`, wklejanie wielu linii (punkty i elementy list), kompozycja przez CDP `Input.imeSetComposition`; prawdziwe IME (polski, japoński) i wklejanie z Worda/WWW – checklista |
+| AC 6 – Enter/Backspace/Delete/Tab/strzałki, ⌥⇧↑/↓, Shift+F10 | spełnione | e2e punktów, list, kontaktów, strzałek, Tab, Escape, menu z klawiatury, „a CV is edited with the keyboard alone” |
+| AC 7 – ⌘Z w krokach CV form, bez natywnego cofania | spełnione | klucze pól = klucze łączenia CV form (test czyta źródła pól); e2e „Cmd+Z undoes it in the same steps as the form”; `historyUndo`/`historyRedo` przechwycone (test wklejania „undo is the editor’s”) |
+| AC 8 – placeholdery tylko w aktywnym / odsłoniętym fragmencie | spełnione | e2e wyczyszczonego tytułu i pól wpisu, dodawania („…left empty leaves the page”), `editable.test.tsx` |
+| AC 9 – czytnik ekranu | spełnione automatycznie, do sprawdzenia z VoiceOver | `export.spec.ts` „screen readers: in Edit mode the pages are the CV with labelled text fields, in Preview mode they are hidden…”; role i nazwy w `canvas.spec.ts`; VoiceOver – checklista |
+| AC 10 – ≤ 100 ms | spełnione | tabela pomiaru S7 (spakowana aplikacja, CPU ×1 i ×4) |
+| AC 11 – 16 języków, jasny i ciemny Appearance | spełnione automatycznie, do przeglądu | nowe teksty we wszystkich 16 słownikach (typ słownika `en`, `languages.test.ts`); kolory z tokenów `app.css` (ADR-0004); mieszczenie się tekstów, tłumaczenia i czytelność – checklista (zrzuty jak w T9) |
+
+**Odstępstwa (zebrane z S1–S7)** – żadne nie zmienia dokumentu ani schematu CV:
+
+1. **`contenteditable="true"` zamiast `plaintext-only`** (W2, W5; S1) – Chromium wymusza `pre-wrap` w `plaintext-only`;
+   czysty tekst pilnuje `PageField.tsx` (`beforeinput`, `paste`/`drop`, spłaszczanie wstawionych elementów). Wklejanie przez
+   zdarzenie `paste`, nie `beforeinput insertFromPaste`.
+2. **Linie złączone i daty są jednym napisem poza aktywnym wpisem** (W9, W12; S2–S4) – granica elementu w środku linii
+   przesuwa resztę linii o 1/64 px; pola z separatorami i dwa żetony dat pojawiają się dopiero po wejściu we wpis
+   (`expanded`), więc wejście we wpis przerysowuje strony (bez nowego podziału, o ile wpis nie ma pustych pól).
+3. **Wklejenie wielu linii** (W6; S2) – tekst za zaznaczeniem trafia na koniec ostatniego nowego elementu (spec tego nie
+   rozstrzygał).
+4. **Enter w pustej wartości kontaktu nic nie robi** (W11; S4), jak w pustym punkcie.
+5. **Pasek klauzuli: natywny `select` „Clause from the library”** zamiast menu „Z biblioteki ▾” (W15; S4); Escape
+   w tekście klauzuli od razu wychodzi na panel stron (pasek nie ma fokusu), Escape w pasku wraca do tekstu (S6).
+6. **Ukryta sekcja w Outline dostała przełącznik „Show on CV”** (W21; S5) – wcześniej go nie było, a W21 zakładał fokus na
+   nim.
+7. **Tytuł sekcji bez treści na stronach nie jest odsłaniany sam** (W10; S1, S5) – pokazuje się z odsłoniętym elementem.
+8. **Bez komunikatu `aria-live` po dodaniu z pigułki, menu, paska i Outline** (W22; S6) – nazwa nowego pola z fokusem mówi
+   to samo; usunięcie wpisu z menu – samo „Removed.”.
+9. **Przycisk zdjęcia zostaje w kolejności Tab** (W22; S6) – jedyne wejście w zdjęcie z klawiatury.
+10. **Ostrzeżenia paska podglądu i sprawdzenie przed eksportem liczą się z bieżącego podziału stron** (W10) – w Edit mode
+    to podział z placeholderami aktywnego fragmentu; `PreviewPane` nie dostaje drugiego podziału Preview mode, o którym
+    mówił W10. Różnica jest możliwa tylko wtedy, gdy placeholdery aktywnej części przesuwają blok ponad wysokość strony
+    (otwarte pytanie 3).
+11. **Pliki** – bez osobnych `canvas/reveal.ts` (odsłonięcie liczy `usePageEditing.ts`) i `FieldPopover` wydzielony dopiero
+    w S4; nazwa `openCard` zastąpiona przez `focusPart`.
+
+**Ręcznie (wymagają człowieka, nie sprawdzone przez agenta):** cała sekcja „Edycja na stronach” checklisty wydania –
+Appearance jasny/ciemny, trzy szablony na oko, prawdziwe IME (polski, klawisz martwy, japoński), wklejanie z Worda,
+Pages i WWW, pisownia macOS, 16 języków (mieszczenie się i jakość tłumaczeń), VoiceOver (strony, linia złączona
+i napis dat jako jedna kontrolka, panel „CV pages” po Escape, komunikat a nazwa nowego pola po Enterze, Shift+F10 /
+klawisz menu i powrót Escape, uchwyt kontaktów, przełącznik ukrytej sekcji, popover błędu zdjęcia), minimalne okno
+oraz pomiar na M1 w spakowanej aplikacji.
+
 ## Ryzyka
 
 - **Styl edytowalnego elementu w Chromium** może zmienić zawijanie (`overflow-wrap`, `line-break` dla edytowalnych
@@ -1040,8 +1129,17 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
 
 ## Otwarte pytania (do właściciela)
 
-1. **[do potwierdzenia]** Wklejenie wielu linii w punkt dzieli je na punkty (W6) – czy tak, czy zawsze jeden punkt?
-2. **[do potwierdzenia]** „Usuń stanowisko/wykształcenie” w menu uchwytu (W21) – odstępstwo od reguły z #111.
-3. **[do potwierdzenia]** Ostrzeżenia w pasku podglądu liczone z podziału Preview mode czy Edit mode (W10)?
-4. Czy CV form zostaje na stałe (W20), skoro strony w Edit mode są dostępne dla czytnika ekranu?
-5. Menu kontekstowe z podpowiedziami pisowni (W24) – osobny ticket?
+Stan po S7 – wszystkie zrealizowane według decyzji roboczej; każde da się zmienić bez zmiany dokumentu.
+
+1. **[do potwierdzenia]** Wklejenie wielu linii w punkt albo element listy dzieli je na osobne punkty/elementy (W6;
+   zrobione, jeden krok cofania) – czy tak, czy zawsze jeden punkt ze spacjami?
+2. **[do potwierdzenia]** „Usuń stanowisko” / „Usuń wykształcenie” w menu uchwytu wpisu (W21; zrobione, w stylu
+   `danger`, za kreską, z „Usunięto. Cofnij”) – odstępstwo od reguły z #111 „wpisy usuwa się tekstowym przyciskiem, nie
+   z menu wiersza”. Bez karty to jedyne miejsce usuwania wpisu na stronach (CV form ma dalej tekstowy przycisk).
+3. **[do potwierdzenia]** Ostrzeżenia w pasku podglądu (liczba stron, „za długie”, sprawdzenie przed eksportem) liczą
+   się dziś z bieżącego podziału stron – w Edit mode z placeholderami aktywnej części (odstępstwo 10). Czy to wystarcza,
+   czy liczyć je zawsze z podziału Preview mode (drugi pomiar przy aktywnym polu z pustymi polami)?
+4. Czy CV form zostaje na stałe (W20), skoro strony w Edit mode są edytowalne i dostępne dla czytnika ekranu? Dziś to
+   drugi widok paska bocznego (Outline | Formularz) i jedyne miejsce zmiany kolejności kontaktów.
+5. Menu kontekstowe z podpowiedziami pisowni (W24) – osobny ticket? Dziś podkreślenia są, podpowiedzi nie ma (jak
+   w formularzu).
