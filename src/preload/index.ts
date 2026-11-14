@@ -35,7 +35,8 @@ const api: Api = {
     updateClause: (id, content) => ipcRenderer.invoke('settings:update-clause', id, content),
     deleteClause: (id) => ipcRenderer.invoke('settings:delete-clause', id),
     setDefaultClause: (id) => ipcRenderer.invoke('settings:set-default-clause', id),
-    setFormWidth: (width) => ipcRenderer.invoke('settings:set-form-width', width)
+    setFormWidth: (width) => ipcRenderer.invoke('settings:set-form-width', width),
+    setEditorSidebar: (sidebar) => ipcRenderer.invoke('settings:set-editor-sidebar', sidebar)
   },
   photo: {
     pick: () => ipcRenderer.invoke('photo:pick')

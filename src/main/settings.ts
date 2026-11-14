@@ -1,9 +1,9 @@
 import { ipcMain } from 'electron'
-import { clauseContentSchema, formWidthSchema } from '../renderer/src/domain/schema'
+import { clauseContentSchema, editorSidebarSchema, formWidthSchema } from '../renderer/src/domain/schema'
 import { requireString } from './ipcArgs'
 import type { SettingsRepository } from './settingsRepository'
 
-// Biblioteka klauzul zgody i szerokość formularza w edytorze dostępne dla renderera. Argumenty z IPC są weryfikowane przed użyciem.
+// Biblioteka klauzul zgody i szerokość formularza i pasek boczny w edytorze dostępne dla renderera. Argumenty z IPC są weryfikowane przed użyciem.
 export function registerSettings(settings: SettingsRepository): void {
   ipcMain.handle('settings:get', () => settings.get())
   ipcMain.handle('settings:add-clause', (_event, content: unknown) => settings.addClause(clauseContentSchema.parse(content)))
@@ -15,4 +15,7 @@ export function registerSettings(settings: SettingsRepository): void {
     settings.setDefaultClause(id === null ? null : requireString(id))
   )
   ipcMain.handle('settings:set-form-width', (_event, width: unknown) => settings.setFormWidth(formWidthSchema.parse(width)))
+  ipcMain.handle('settings:set-editor-sidebar', (_event, sidebar: unknown) =>
+    settings.setEditorSidebar(editorSidebarSchema.parse(sidebar))
+  )
 }

@@ -1,4 +1,4 @@
-import type { AppSettings, Clause, ClauseContent, CvDocument } from '../renderer/src/domain/schema'
+import type { AppSettings, Clause, ClauseContent, CvDocument, EditorSidebar } from '../renderer/src/domain/schema'
 import type { InterfaceLanguage } from './i18n/languages'
 
 // Kontrakt API wystawianego przez preload (window.api) – wspólny dla procesu głównego i renderera.
@@ -80,7 +80,7 @@ export type Api = {
     exportFile: (id: string) => Promise<ExportCvFileResult>
     importFile: () => Promise<ImportCvFileResult>
   }
-  // Ustawienia globalne: biblioteka klauzul zgody i szerokość formularza w edytorze.
+  // Ustawienia globalne: biblioteka klauzul zgody, szerokość formularza i pasek boczny w edytorze.
   settings: {
     get: () => Promise<AppSettings>
     addClause: (content: ClauseContent) => Promise<Clause>
@@ -89,6 +89,8 @@ export type Api = {
     setDefaultClause: (id: string | null) => Promise<AppSettings>
     // Szerokość formularza w edytorze CV (px) – jedna preferencja dla całej aplikacji.
     setFormWidth: (width: number) => Promise<AppSettings>
+    // Pasek boczny edytora CV w Edit mode (Outline, CV form, szyna) – jedna preferencja dla całej aplikacji.
+    setEditorSidebar: (sidebar: EditorSidebar) => Promise<AppSettings>
   }
   photo: {
     pick: () => Promise<PickPhotoResult>

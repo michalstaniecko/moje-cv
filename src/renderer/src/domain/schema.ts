@@ -130,6 +130,11 @@ export const clauseName = (clause: Pick<Clause, 'name'>, untitled: string) => cl
 // Szerokość formularza w edytorze CV w px (separator między formularzem a podglądem).
 export const formWidthSchema = z.int().positive()
 
+// Pasek boczny edytora CV w Edit mode (GLOSSARY.md): Outline, CV form albo szyna z ikonami (zwinięty).
+export const editorSidebars = ['outline', 'form', 'collapsed'] as const
+export const editorSidebarSchema = z.enum(editorSidebars)
+export type EditorSidebar = z.infer<typeof editorSidebarSchema>
+
 export const appSettingsSchema = z.object({
   schemaVersion: z.literal(1),
   clauses: z.array(clauseSchema),
@@ -152,6 +157,10 @@ export const appSettingsSchema = z.object({
   // Szerokość formularza w edytorze CV w px (separator między formularzem a podglądem) – jedna dla całej aplikacji.
   // Brak pola = szerokość domyślna (bez podbijania wersji schematu).
   formWidth: formWidthSchema.optional(),
+  // Pasek boczny edytora CV: `outline`, `form` albo `collapsed` – jeden dla całej aplikacji. Brak pola = `outline`
+  // (bez podbijania wersji schematu). Nieznana wartość (np. z nowszej wersji aplikacji) znaczy to samo co brak pola,
+  // zamiast blokować cały plik ustawień, i znika przy następnym zapisie.
+  editorSidebar: editorSidebarSchema.optional().catch(undefined),
   // Stan sprawdzania nowej wersji w `.dmg` (ADR-0006): kiedy ostatnio się udało, jaka wersja była wtedy najnowsza
   // i którą wersję użytkownik zamknął w pasku. Brak pola = sprawdzenie nigdy się nie odbyło (bez podbijania wersji schematu).
   updateCheck: z

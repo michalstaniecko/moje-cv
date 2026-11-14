@@ -1,6 +1,14 @@
 import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
-import { appSettingsSchema, type AppSettings, type Clause, type ClauseContent, type WindowState } from '../renderer/src/domain/schema'
+import {
+  appSettingsSchema,
+  editorSidebarSchema,
+  type AppSettings,
+  type Clause,
+  type ClauseContent,
+  type EditorSidebar,
+  type WindowState
+} from '../renderer/src/domain/schema'
 import type { Appearance } from '../shared/appearance'
 import type { InterfaceLanguage } from '../shared/i18n/languages'
 import { exists, writeJsonAtomic } from './atomicFile'
@@ -9,7 +17,7 @@ export type SettingsRepository = ReturnType<typeof createSettingsRepository>
 
 const emptySettings: AppSettings = { schemaVersion: 1, clauses: [], defaultClauseId: null }
 
-// Ustawienia globalne (biblioteka klauzul zgody, język interfejsu, wygląd interfejsu, szerokość formularza, stan okna) w jednym pliku JSON, zapisywanym atomowo.
+// Ustawienia globalne (biblioteka klauzul zgody, język interfejsu, wygląd interfejsu, szerokość formularza, pasek boczny edytora, stan okna) w jednym pliku JSON, zapisywanym atomowo.
 // Uszkodzonego pliku (niepoprawny JSON lub niezgodność ze schematem) nie da się odczytać ani nadpisać.
 export function createSettingsRepository(path: string) {
   async function get(): Promise<AppSettings> {
@@ -82,6 +90,13 @@ export function createSettingsRepository(path: string) {
     // Szerokość formularza w edytorze CV (preferencja interfejsu, nie geometria okna).
     async setFormWidth(formWidth: number): Promise<AppSettings> {
       return change((settings) => ({ ...settings, formWidth }))
+    },
+
+    // Pasek boczny edytora CV (Outline, CV form albo szyna) – preferencja interfejsu jak szerokość formularza.
+    // Nieznana wartość jest odrzucana (schemat pliku zamieniłby ją po cichu na brak pola).
+    async setEditorSidebar(editorSidebar: EditorSidebar): Promise<AppSettings> {
+      const valid = editorSidebarSchema.parse(editorSidebar)
+      return change((settings) => ({ ...settings, editorSidebar: valid }))
     },
 
     // Wynik udanego sprawdzenia nowej wersji (ADR-0006). Zamknięta wersja zostaje.

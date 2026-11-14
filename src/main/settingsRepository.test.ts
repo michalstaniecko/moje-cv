@@ -313,6 +313,41 @@ describe('form width preference', () => {
   })
 })
 
+describe('editor sidebar preference', () => {
+  test('is not set before the sidebar has been switched – the editor then shows the Outline', async () => {
+    expect((await repository.get()).editorSidebar).toBeUndefined()
+  })
+
+  test('a chosen sidebar is kept in the settings file next to the other preferences', async () => {
+    await repository.setFormWidth(520)
+    await repository.setEditorSidebar('form')
+    expect(await createSettingsRepository(settingsPath).get()).toMatchObject({ formWidth: 520, editorSidebar: 'form' })
+
+    await repository.setEditorSidebar('collapsed')
+    expect(JSON.parse(await readFile(settingsPath, 'utf8')).editorSidebar).toBe('collapsed')
+  })
+
+  test('an unknown sidebar is rejected and not saved', async () => {
+    await repository.setEditorSidebar('form')
+    await expect(repository.setEditorSidebar('wide' as never)).rejects.toThrow()
+    expect((await repository.get()).editorSidebar).toBe('form')
+  })
+
+  test('a settings file without the sidebar, or with an unknown one, loads with the other settings intact', async () => {
+    const old = { schemaVersion: 1, clauses: [], defaultClauseId: null, appearance: 'dark', formWidth: 500 }
+    await writeFile(settingsPath, JSON.stringify(old))
+    expect(await repository.get()).toEqual(old)
+
+    await writeFile(settingsPath, JSON.stringify({ ...old, editorSidebar: 'floating' }))
+    const loaded = await repository.get()
+    expect(loaded).toMatchObject(old)
+    expect(loaded.editorSidebar).toBeUndefined()
+    // Następny zapis zastępuje nieznaną wartość.
+    await repository.setAppearance('light')
+    expect(JSON.parse(await readFile(settingsPath, 'utf8'))).not.toHaveProperty('editorSidebar')
+  })
+})
+
 describe('damaged settings file', () => {
   const damagedFiles = {
     'invalid JSON': '{ "schemaVersion": 1, "clauses": ',
@@ -333,6 +368,7 @@ describe('damaged settings file', () => {
       await expect(repository.setAppearance(null)).rejects.toThrow()
       await expect(repository.setWindowState({ x: 0, y: 0, width: 1000, height: 700, maximized: false })).rejects.toThrow()
       await expect(repository.setFormWidth(520)).rejects.toThrow()
+      await expect(repository.setEditorSidebar('form')).rejects.toThrow()
 
       expect(await readFile(settingsPath, 'utf8')).toBe(content)
     })
