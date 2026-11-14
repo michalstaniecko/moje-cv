@@ -176,7 +176,12 @@ export const de: Dictionary = {
     exportCutOffHint: 'Die zu langen Abschnitte sind im Bearbeitungsmodus hervorgehoben.',
     mode: { label: 'Modus', edit: 'Bearbeiten', preview: 'Vorschau' },
     cvDesignButton: 'Design',
-    canvas: { edit: (what) => `Bearbeiten: ${what}` },
+    canvas: {
+      edit: (what) => `Bearbeiten: ${what}`,
+      addToCv: 'Zum Lebenslauf hinzufügen:',
+      startHint: 'Beginne mit deinem vollständigen Namen',
+      add: { position: 'Position', education: 'Ausbildung', item: 'Eintrag' }
+    },
     card: {
       close: 'Schließen',
       sectionTitle: 'Abschnittstitel',

@@ -169,7 +169,12 @@ export const vi: Dictionary = {
     exportCutOffHint: 'Các đoạn quá dài được đánh dấu trong chế độ chỉnh sửa.',
     mode: { label: 'Chế độ', edit: 'Chỉnh sửa', preview: 'Xem trước' },
     cvDesignButton: 'Thiết kế',
-    canvas: { edit: (what) => `Sửa: ${what}` },
+    canvas: {
+      edit: (what) => `Sửa: ${what}`,
+      addToCv: 'Thêm vào CV:',
+      startHint: 'Bắt đầu với họ và tên của bạn',
+      add: { position: 'Vị trí', education: 'Học vấn', item: 'Mục' }
+    },
     card: {
       close: 'Đóng',
       sectionTitle: 'Tiêu đề mục',

@@ -169,7 +169,12 @@ export const uk: Dictionary = {
     exportCutOffHint: 'Задовгі фрагменти виділено в режимі редагування.',
     mode: { label: 'Режим', edit: 'Редагування', preview: 'Перегляд' },
     cvDesignButton: 'Дизайн',
-    canvas: { edit: (what) => `Редагувати: ${what}` },
+    canvas: {
+      edit: (what) => `Редагувати: ${what}`,
+      addToCv: 'Додати до резюме:',
+      startHint: 'Почніть з імені та прізвища',
+      add: { position: 'Посада', education: 'Освіта', item: 'Елемент' }
+    },
     card: {
       close: 'Закрити',
       sectionTitle: 'Заголовок розділу',

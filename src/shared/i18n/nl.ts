@@ -176,7 +176,12 @@ export const nl: Dictionary = {
     exportCutOffHint: 'De te lange fragmenten zijn gemarkeerd in de bewerkingsmodus.',
     mode: { label: 'Modus', edit: 'Bewerken', preview: 'Voorbeeld' },
     cvDesignButton: 'Ontwerp',
-    canvas: { edit: (what) => `Bewerken: ${what}` },
+    canvas: {
+      edit: (what) => `Bewerken: ${what}`,
+      addToCv: 'Toevoegen aan cv:',
+      startHint: 'Begin met je volledige naam',
+      add: { position: 'Functie', education: 'Opleiding', item: 'Item' }
+    },
     card: {
       close: 'Sluiten',
       sectionTitle: 'Sectietitel',

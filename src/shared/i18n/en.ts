@@ -192,7 +192,13 @@ export const en = {
     // Przycisk „Projekt CV” w pasku narzędzi: otwiera panel CV design (krótko – pasek mieści się w oknie minimalnym).
     cvDesignButton: 'CV design',
     // Edycja na stronach CV w Edit mode: przycisk fragmentu strony („Edit: <co>”) i Edit card.
-    canvas: { edit: (what: string) => `Edit: ${what}` },
+    canvas: {
+      edit: (what: string) => `Edit: ${what}`,
+      // Dodawanie na stronach: pasek pod ostatnią stroną, podpowiedź w pustym CV i pigułki „+ …” pod sekcjami.
+      addToCv: 'Add to CV:',
+      startHint: 'Start with your full name',
+      add: { position: 'Position', education: 'Education', item: 'Item' }
+    },
     card: {
       close: 'Close',
       sectionTitle: 'Section title',

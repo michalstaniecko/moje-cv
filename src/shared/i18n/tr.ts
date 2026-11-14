@@ -169,7 +169,12 @@ export const tr: Dictionary = {
     exportCutOffHint: 'Çok uzun bölümler düzenleme modunda vurgulanır.',
     mode: { label: 'Mod', edit: 'Düzenleme', preview: 'Önizleme' },
     cvDesignButton: 'Tasarım',
-    canvas: { edit: (what) => `Düzenle: ${what}` },
+    canvas: {
+      edit: (what) => `Düzenle: ${what}`,
+      addToCv: 'CV’ye ekle:',
+      startHint: 'Ad soyadınızla başlayın',
+      add: { position: 'Pozisyon', education: 'Eğitim', item: 'Öğe' }
+    },
     card: {
       close: 'Kapat',
       sectionTitle: 'Bölüm başlığı',

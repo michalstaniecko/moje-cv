@@ -169,7 +169,12 @@ export const fr: Dictionary = {
     exportCutOffHint: 'Les passages trop longs sont mis en évidence en mode édition.',
     mode: { label: 'Mode', edit: 'Édition', preview: 'Aperçu' },
     cvDesignButton: 'Design',
-    canvas: { edit: (what) => `Modifier : ${what}` },
+    canvas: {
+      edit: (what) => `Modifier : ${what}`,
+      addToCv: 'Ajouter au CV :',
+      startHint: 'Commencez par votre nom complet',
+      add: { position: 'Poste', education: 'Formation', item: 'Élément' }
+    },
     card: {
       close: 'Fermer',
       sectionTitle: 'Titre de la section',

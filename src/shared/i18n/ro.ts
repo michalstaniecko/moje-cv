@@ -169,7 +169,12 @@ export const ro: Dictionary = {
     exportCutOffHint: 'Fragmentele prea lungi sunt evidențiate în modul de editare.',
     mode: { label: 'Mod', edit: 'Editare', preview: 'Previzualizare' },
     cvDesignButton: 'Design',
-    canvas: { edit: (what) => `Editează: ${what}` },
+    canvas: {
+      edit: (what) => `Editează: ${what}`,
+      addToCv: 'Adaugă în CV:',
+      startHint: 'Începe cu numele complet',
+      add: { position: 'Post', education: 'Studii', item: 'Element' }
+    },
     card: {
       close: 'Închide',
       sectionTitle: 'Titlul secțiunii',

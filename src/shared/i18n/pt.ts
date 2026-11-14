@@ -169,7 +169,12 @@ export const pt: Dictionary = {
     exportCutOffHint: 'Os trechos longos demais estão destacados no modo de edição.',
     mode: { label: 'Modo', edit: 'Edição', preview: 'Pré-visualização' },
     cvDesignButton: 'Design',
-    canvas: { edit: (what) => `Editar: ${what}` },
+    canvas: {
+      edit: (what) => `Editar: ${what}`,
+      addToCv: 'Adicionar ao currículo:',
+      startHint: 'Comece pelo seu nome completo',
+      add: { position: 'Cargo', education: 'Formação', item: 'Item' }
+    },
     card: {
       close: 'Fechar',
       sectionTitle: 'Título da seção',

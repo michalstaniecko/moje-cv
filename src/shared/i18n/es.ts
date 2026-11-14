@@ -169,7 +169,12 @@ export const es: Dictionary = {
     exportCutOffHint: 'Los fragmentos demasiado largos están resaltados en el modo de edición.',
     mode: { label: 'Modo', edit: 'Edición', preview: 'Vista previa' },
     cvDesignButton: 'Diseño',
-    canvas: { edit: (what) => `Editar: ${what}` },
+    canvas: {
+      edit: (what) => `Editar: ${what}`,
+      addToCv: 'Añadir al CV:',
+      startHint: 'Empieza por tu nombre completo',
+      add: { position: 'Puesto', education: 'Formación', item: 'Elemento' }
+    },
     card: {
       close: 'Cerrar',
       sectionTitle: 'Título de la sección',
