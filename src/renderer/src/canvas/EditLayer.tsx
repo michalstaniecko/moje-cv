@@ -31,7 +31,7 @@ export const CONTROLS_MIN_SCALE = 0.5
 // Tytuły sekcji i wpisy mają uchwyt menu w marginesie kartki (BlockMenu.tsx); przy skali
 // poniżej CONTROLS_MIN_SCALE uchwytów nie ma. Dodawanie (AddControls.tsx): pigułki „+” pod sekcjami (też tylko od
 // CONTROLS_MIN_SCALE), pasek „Add to CV” pod ostatnią stroną i podpowiedź w pustym CV – wszystko poza treścią kartek.
-// Kartę (już tylko nowego, pustego wpisu i sekcji, której nie ma na stronach – do S5) zamyka Escape (fokus wraca na jej
+// Kartę (po S5 nic jej nie otwiera – do usunięcia w S6) zamyka Escape (fokus wraca na jej
 // kotwicę), klik w tło strony lub poza stronę (poza kartą, kontrolkami warstwy i paskiem podglądu), przejście do Preview
 // mode i wyjście z edytora. `onFocusLost` – fokus nie ma dokąd wrócić (fragment zniknął).
 export function EditLayer({
@@ -60,7 +60,7 @@ export function EditLayer({
   const compact = scale < CONTROLS_MIN_SCALE
   const photo = usePhotoEditing({ editor, photo: document.header.photo, onRemove, onFocusLost })
   const addOnPage = useAddControls({ editor, document, session, fragments, pages, layer, added, compact, addPhoto: photo.add })
-  // Element, przy którym stoi karta: pierwsze pole tekstu fragmentu na stronie (nie żeton daty; nowy wpis, do S5), a dla
+  // Element, przy którym stoi karta: pierwsze pole tekstu fragmentu na stronie (nie żeton daty), a dla
   // nowego, jeszcze pustego elementu – przycisk, którym go dodano (uchwyt menu, pigułka „+”, pasek „Add to CV”,
   // podpowiedź w pustym CV, wiersz Outline). Najpierw Page field (fokus w nim nie rozwija wpisu), dopiero potem linia
   // złączona.

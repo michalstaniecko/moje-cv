@@ -1930,6 +1930,20 @@ test('“Add …” in the menu of a section title adds an element with the care
   await expect(window.getByRole('dialog')).toHaveCount(0)
   await window.keyboard.type('SQL')
   await expect(pageItem('SQL')).toHaveCount(1)
+
+  // Wykształcenie dodane i zostawione puste: odsłonięte tylko, dopóki ma kursor – po wyjściu znika ze strony
+  // (zostaje w danych, jak w CV form), a strony dzielą się jak w Preview mode.
+  const split = await pageSplit()
+  await handle('section “Education”').click()
+  await blockMenu('section “Education”').getByRole('menuitem', { name: 'Add education' }).click()
+  const level = pageField('Level – Education “New education”')
+  await expect(level).toBeFocused()
+  expect(await placeholderOf(level)).toBe('"Level"')
+  await expect(form.getByLabel('Level')).toHaveCount(3)
+  await clickAtCharacter(pageField('Full name'), 0)
+  await expect(level).toHaveCount(0)
+  await expect(form.getByLabel('Level')).toHaveCount(3)
+  await expect.poll(pageSplit).toEqual(split)
 })
 
 test('the menu works from the keyboard alone, and there are no handles below 50% zoom', async () => {

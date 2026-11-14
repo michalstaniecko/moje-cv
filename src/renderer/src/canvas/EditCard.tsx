@@ -16,9 +16,8 @@ import { markInput } from '../preview/keystrokeTiming'
 import { anchoredPosition, type Box } from './anchoredPosition'
 import type { EditTarget } from './editTargets'
 
-// Edit card (wycofywana, docs/specs/wysiwyg-editing.md, W20): żadna część strony już jej nie otwiera – tekst CV to
-// Page fields, a wartości nietekstowe mają Field popovers. Zostaje do S5 dla tego, czego jeszcze nie ma na stronach:
-// nowego, pustego wpisu, sekcji ukrytej albo pustej (z Outline i dodawania) i zdjęcia z „Add to CV”, gdy zdjęcia nie ma.
+// Edit card (wycofywana, docs/specs/wysiwyg-editing.md, W20): po S5 nic jej już nie otwiera – tekst CV to Page fields,
+// wartości nietekstowe mają Field popovers, a dodawanie odsłania nowe części na stronie. Kod do usunięcia w S6.
 
 const findSection = (document: CvDocument, sectionId: string) =>
   document.sections.find((candidate) => candidate.id === sectionId)
