@@ -348,7 +348,11 @@ function ModeToggle({
 }
 
 // Cmd+Shift+P (Ctrl na innych systemach) przełącza Edit mode / Preview mode, także w polu tekstowym – jak Widok →
-// Podgląd w menu. Skrót obsłużony tutaj (preventDefault) nie uruchamia już pozycji menu (jak Cmd+Z w `useEditorLifecycle`).
+// Podgląd w menu. Skrót obsłużony tutaj (preventDefault) nie uruchamia już pozycji menu (jak Cmd+Z w `useEditorLifecycle`),
+// więc jedno naciśnięcie przełącza raz: na macOS klawisz z ⌘ trafia najpierw do strony, a do menu aplikacji (akcelerator
+// pozycji Widok → Podgląd) Electron przekazuje tylko zdarzenie, którego strona nie obsłużyła (`HandleKeyboardEvent` dla
+// nieobsłużonych klawiszy). Powtórzenia przy przytrzymaniu też mają preventDefault, więc nie przełączają ani tu, ani w menu.
+// Samo menu (klik albo skrót, gdy strona nie ma fokusu) przychodzi jako `toggle-preview` z `onMenuCommand`.
 function usePreviewShortcut(toggle: () => void) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
