@@ -47,6 +47,8 @@ export function handleListFieldKeyDown(
   if (event.altKey || event.metaKey || event.ctrlKey) return
   const field = event.currentTarget
   const empty = field.value.trim() === ''
+  // Ta sama lista bywa naraz w CV form i w Edit card – fokus zostaje tam, gdzie się pisze.
+  const root = field.closest('[data-entry-root]') ?? window.document
 
   if (event.key === 'Enter') {
     if (event.shiftKey && multiline) return
@@ -54,17 +56,17 @@ export function handleListFieldKeyDown(
     if (event.shiftKey || empty) return
     const at = textSplit(field.selectionStart ?? field.value.length, field.selectionEnd ?? field.value.length)
     flushSync(() => split(at))
-    focusEntryField(at.newItemId, 'start')
+    focusEntryField(root, at.newItemId, 'start')
   } else if (event.key === 'Backspace' && !event.shiftKey && empty && previousId !== undefined) {
     event.preventDefault()
     flushSync(remove)
-    focusEntryField(previousId, 'end')
+    focusEntryField(root, previousId, 'end')
   }
 }
 
-// Fokus na polu tekstowym wiersza listy (`data-entry-id`) z kursorem na początku albo na końcu.
-function focusEntryField(entryId: string, caret: 'start' | 'end') {
-  const field = window.document
+// Fokus na polu tekstowym wiersza listy (`data-entry-id`) w `root` z kursorem na początku albo na końcu.
+function focusEntryField(root: ParentNode, entryId: string, caret: 'start' | 'end') {
+  const field = root
     .querySelector(`[data-entry-id="${CSS.escape(entryId)}"]`)
     ?.querySelector<ListField>('input, textarea')
   if (!field) return

@@ -7,10 +7,18 @@ import type { CvEditor } from './cvEditor'
 type Change = (document: CvDocument) => CvDocument
 
 // Dokąd wraca fokus po „Cofnij”: do pierwszego pola przywróconej pozycji (element z `data-entry-id`), a gdy go nie ma,
-// do przycisku dodawania w tej samej liście (`data-add-for`).
-export type RemovalFocus = { entryId: string; listId: string }
+// do przycisku dodawania w tej samej liście (`data-add-for`). `root` – gdzie najpierw szukać (Edit card, z której
+// usunięto; ten sam wpis jest też w CV form); `restore` – zamiast szukania pola (np. ponowne otwarcie karty
+// przywróconego wpisu, która zamknęła się po jego usunięciu).
+export type RemovalFocus = {
+  entryId: string
+  listId: string
+  root?: () => ParentNode | null
+  restore?: () => void
+}
 
-// Usunięcie z formularza (kontakt, zdjęcie, stanowisko, punkt, wykształcenie, element listy) – z komunikatem „Usunięto. Cofnij”.
+// Usunięcie z formularza albo z Edit card (kontakt, zdjęcie, stanowisko, punkt, wykształcenie, element listy) –
+// z komunikatem „Usunięto. Cofnij”.
 export type RemoveWithUndo = (change: Change, focus: RemovalFocus) => void
 
 type Removal = { key: number; document: CvDocument; focus: RemovalFocus }
@@ -65,16 +73,25 @@ export function useRemovalUndo(editor: CvEditor) {
   return { removal, remove, undo, dismiss }
 }
 
-function focusNear({ entryId, listId }: RemovalFocus) {
-  const entry = window.document.querySelector(`[data-entry-id="${CSS.escape(entryId)}"]`)
-  const target =
-    entry?.querySelector<HTMLElement>('input:not([type="checkbox"]):not(:disabled), textarea') ??
-    entry?.querySelector<HTMLElement>('button') ??
-    window.document.querySelector<HTMLElement>(`[data-add-for="${CSS.escape(listId)}"]`)
-  target?.focus()
+function focusNear({ entryId, listId, root, restore }: RemovalFocus) {
+  if (restore) {
+    restore()
+    return
+  }
+  const near = (scope: ParentNode) => {
+    const entry = scope.querySelector(`[data-entry-id="${CSS.escape(entryId)}"]`)
+    return (
+      entry?.querySelector<HTMLElement>('input:not([type="checkbox"]):not(:disabled), textarea') ??
+      entry?.querySelector<HTMLElement>('button') ??
+      scope.querySelector<HTMLElement>(`[data-add-for="${CSS.escape(listId)}"]`)
+    )
+  }
+  const scope = root?.()
+  ;((scope && near(scope)) ?? near(window.document))?.focus()
 }
 
-// „Usunięto. Cofnij” na dole kolumny formularza. Kontener `role="status"` jest stale w DOM, a treść pojawia się po
+// „Usunięto. Cofnij” – pływający komunikat w lewym dolnym rogu panelu stron, wspólny dla Edit card i CV form (widoczny
+// niezależnie od paska bocznego). Kontener `role="status"` jest stale w DOM, a treść pojawia się po
 // usunięciu, żeby czytnik ekranu ją ogłosił. Fokus nie jest przenoszony; „Cofnij” jest osiągalne Tabem.
 export function RemovalMessage({
   removal,

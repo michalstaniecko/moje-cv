@@ -32,6 +32,24 @@ describe('anchoredPosition', () => {
     expect(anchoredPosition({ anchor: low, panel: tall, viewport })).toEqual({ top: 694, left: 400, placement: 'below' })
   })
 
+  it('with `contain`, keeps a panel that fits neither below nor above inside the window, on the roomier side', () => {
+    // Wysoki fragment (wpis z punktami) i wysoka karta: ani pod, ani nad nim nie ma miejsca.
+    const tallAnchor = { top: 100, left: 400, right: 700, bottom: 600 }
+    const card = { width: 340, height: 500 }
+    expect(anchoredPosition({ anchor: tallAnchor, panel: card, viewport, contain: true })).toEqual({
+      top: 296,
+      left: 400,
+      placement: 'below'
+    })
+    expect(anchoredPosition({ anchor: { ...tallAnchor, top: 500, bottom: 790 }, panel: card, viewport, contain: true })).toEqual({
+      top: 4,
+      left: 400,
+      placement: 'above'
+    })
+    // Gdy się mieści, `contain` niczego nie zmienia.
+    expect(anchoredPosition({ anchor, panel, viewport, contain: true })).toEqual(anchoredPosition({ anchor, panel, viewport }))
+  })
+
   it('keeps the panel inside the window horizontally', () => {
     expect(anchoredPosition({ anchor: { ...anchor, left: 1000 }, panel, viewport }).left).toBe(876)
     expect(anchoredPosition({ anchor: { ...anchor, left: -20 }, panel, viewport }).left).toBe(4)
