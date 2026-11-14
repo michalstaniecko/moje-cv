@@ -873,3 +873,123 @@ test('the contacts card edits, adds and removes contacts like the form; removing
   await expect(contactsCard.getByRole('combobox', { name: 'Contact label 2' })).toBeFocused()
   await expect(contactsCard.getByRole('textbox', { name: 'Contact value 2' })).toHaveValue('jane.example@example.com.uk')
 })
+
+// ---------- „Projekt CV” w pasku narzędzi ----------
+
+const designButton = () => window.locator('.toolbar').getByRole('button', { name: 'CV design', exact: true })
+const designPanel = () => window.getByRole('dialog', { name: 'CV design', exact: true })
+
+async function pdfFillColors(path: string): Promise<string[]> {
+  const { getDocument, OPS } = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  const document = await getDocument({ data: new Uint8Array(await readFile(path)) }).promise
+  const colors = new Set<string>()
+  for (let number = 1; number <= document.numPages; number++) {
+    const operators = await (await document.getPage(number)).getOperatorList()
+    operators.fnArray.forEach((fn, index) => {
+      if (fn === OPS.setFillRGBColor) colors.add(String(operators.argsArray[index]?.[0]).toLowerCase())
+    })
+  }
+  return [...colors]
+}
+
+test('CV design in the toolbar opens a panel with the colour, font, Template and CV language in both modes; Escape and a click outside close it and return the focus to the button', async () => {
+  await openFirstCv()
+  await expect(designButton()).toHaveAttribute('aria-expanded', 'false')
+
+  // Otwarcie panelu zamyka otwartą Edit card; fokus na pierwszym polu panelu.
+  await clickOnPage(pageName())
+  await expect(card('Full name')).toBeVisible()
+  await designButton().click()
+  await expect(card('Full name')).toHaveCount(0)
+  const panel = designPanel()
+  await expect(panel).toBeVisible()
+  await expect(designButton()).toHaveAttribute('aria-expanded', 'true')
+  await expect(panel.getByLabel('Accent color')).toBeFocused()
+  await expect(panel.getByLabel('Accent color')).toHaveValue('#1a6e72')
+  await expect(panel.getByLabel('Font')).toHaveValue('lato')
+  await expect(panel.getByRole('radiogroup', { name: 'Template' }).getByRole('radio', { name: 'Classic' })).toBeChecked()
+  await expect(panel.getByLabel('CV language')).toHaveValue('en')
+  // Panel leży pod przyciskiem, cały w oknie.
+  const buttonBox = (await designButton().boundingBox())!
+  const panelBox = (await panel.boundingBox())!
+  expect(panelBox.y).toBeGreaterThanOrEqual(buttonBox.y + buttonBox.height)
+  expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(await window.locator('html').evaluate((html) => html.clientWidth))
+
+  await window.keyboard.press('Escape')
+  await expect(panel).toHaveCount(0)
+  await expect(designButton()).toBeFocused()
+  await expect(designButton()).toHaveAttribute('aria-expanded', 'false')
+
+  // Ponowny klik przycisku przy otwartym panelu zamyka go.
+  await designButton().click()
+  await expect(panel).toBeVisible()
+  await designButton().click()
+  await expect(panel).toHaveCount(0)
+
+  // Preview mode: ten sam panel; klik w kartkę go zamyka, fokus wraca na przycisk.
+  await previewButton().click()
+  await expectPreviewMode()
+  await designButton().click()
+  await expect(panel).toBeVisible()
+  await expect(panel.getByRole('radiogroup', { name: 'Template' })).toBeVisible()
+  await window.locator('.preview .cv-page').first().click({ position: { x: 20, y: 20 } })
+  await expect(panel).toHaveCount(0)
+  await expect(designButton()).toBeFocused()
+
+  // Klawiatura: Enter otwiera, Tab przechodzi po polach panelu.
+  await window.keyboard.press('Enter')
+  await expect(panel).toBeVisible()
+  await expect(panel.getByLabel('Accent color')).toBeFocused()
+  await window.keyboard.press('Tab')
+  await expect(panel.getByLabel('Font')).toBeFocused()
+  await window.keyboard.press('Escape')
+  await expect(panel).toHaveCount(0)
+  await expect(designButton()).toBeFocused()
+})
+
+test('changing the Template and the accent colour in the CV design panel changes the pages and the PDF, and Cmd+Z undoes each change', async () => {
+  await openFirstCv()
+  await previewButton().click()
+  await expectPreviewMode()
+  const preview = window.locator('.preview')
+  await designButton().click()
+  const panel = designPanel()
+
+  await panel.getByLabel('Accent color').fill('#8a2be2')
+  await expect(pageName()).toHaveCSS('color', 'rgb(138, 43, 226)')
+  const picker = panel.getByRole('radiogroup', { name: 'Template' })
+  await picker.locator('label', { has: window.getByRole('radio', { name: 'Modern' }) }).click()
+  await expect(picker.getByRole('radio', { name: 'Modern' })).toBeChecked()
+  await expect(preview.locator('.cv.cv-template-modern')).toHaveCount(1)
+  // Panel zostaje otwarty przy zmianach – strony przerysowane pod nim.
+  await expect(panel).toBeVisible()
+  const pageCount = await preview.locator('.cv-page').count()
+
+  // Eksport z panelem otwartym: klik w „Export to PDF” zamyka panel, PDF w nowym szablonie i kolorze.
+  const pdfPath = join(outputDir, 'modern.pdf')
+  await stubSaveDialog(pdfPath)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(panel).toHaveCount(0)
+  await expect(window.getByText('Saved PDF: modern.pdf')).toBeVisible()
+  const text = await pdfText(pdfPath)
+  expect(text).toContain(`1 / ${pageCount}`)
+  expect(await pdfFillColors(pdfPath)).toContain('#8a2be2')
+
+  // Każda zmiana to jeden krok cofania, jak w formularzu.
+  await window.keyboard.press('Meta+z')
+  await expect(preview.locator('.cv.cv-template-classic')).toHaveCount(1)
+  await expect(pageName()).toHaveCSS('color', 'rgb(138, 43, 226)')
+  await window.keyboard.press('Meta+z')
+  await expect(pageName()).toHaveCSS('color', 'rgb(26, 110, 114)')
+  await designButton().click()
+  await expect(panel.getByLabel('Accent color')).toHaveValue('#1a6e72')
+  await expect(picker.getByRole('radio', { name: 'Classic' })).toBeChecked()
+  await window.keyboard.press('Meta+Shift+z')
+  await expect(panel.getByLabel('Accent color')).toHaveValue('#8a2be2')
+
+  // W Edit mode CV form pokazuje te same ustawienia.
+  await window.keyboard.press('Escape')
+  await editButton().click()
+  await expect(window.locator('.editor-form').getByLabel('Accent color')).toHaveValue('#8a2be2')
+  await expect(window.locator('.editor-form').getByRole('radio', { name: 'Classic' })).toBeChecked()
+})
