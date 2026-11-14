@@ -18,9 +18,11 @@ export type EditTarget =
   | { kind: 'listSection'; sectionId: string; itemId?: string }
   | { kind: 'consent' }
 
-// Kontrakt znaczników edycji: klasy, których używają wszystkie szablony (wspólny markup w CvBlockView i nadpisania
-// bloków). Z nich warstwa edycji dzieli nagłówek na fragmenty i rozpoznaje kliknięte pole. Brak klasy w nowym szablonie
-// kosztuje tylko wygodę (fokus na pierwszym polu karty, nagłówek jako jeden fragment), nigdy treść.
+// Kontrakt znaczników edycji: klasy, których używają szablony (wspólny markup w CvBlockView i nadpisania bloków). Z nich
+// warstwa edycji dzieli nagłówek na fragmenty i rozpoznaje kliknięte pole. Wszystkie trzy szablony mają każdą klasę poza
+// `educationLevel`: wspólny markup wpisu wykształcenia (Classic) łączy poziom i szczegóły w jednym tekście bez klasy –
+// klik w tę linię daje fokus na pierwszym polu karty (wzorców stron nie zmieniamy, ADR-0009). Brak klasy w nowym
+// szablonie kosztuje tylko wygodę (fokus na pierwszym polu karty, nagłówek jako jeden fragment), nigdy treść.
 // `contact` – dzieci elementu to kolejne kontakty; `item` – punkt stanowiska albo element wiersza listy; `consent` –
 // klauzula zgody na dole ostatniej strony (rysuje ją wspólny `CvPages`, nie szablon i nie jako blok).
 export const editMarkupContract = {

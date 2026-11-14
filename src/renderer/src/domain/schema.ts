@@ -61,8 +61,10 @@ export type Section = z.infer<typeof sectionSchema>
 // 4. podbicie CV_SCHEMA_VERSION z pustą migracją w migrations.ts (ADR 0002),
 // 5. kontrakt znaczników edycji (ADR-0009, `editMarkupContract` w canvas/editTargets.ts): nadpisania bloków używają
 //    klas .cv-name, .cv-photo, .cv-contact (dzieci = kolejne kontakty), .cv-summary, .cv-section-title, .cv-role,
-//    .cv-company, .cv-date, .cv-education-level i `li` w punktach i wierszach list – po nich warstwa edycji dzieli
-//    nagłówek na fragmenty i rozpoznaje kliknięte pole; nowy szablon dopisać do testu kontraktu w e2e/canvas.spec.ts.
+//    .cv-company, .cv-date i `li` w punktach i wierszach list – po nich warstwa edycji dzieli nagłówek na fragmenty
+//    i rozpoznaje kliknięte pole; opcjonalnie .cv-education-level (wspólny markup bloku wykształcenia, którego używa
+//    Classic, jej nie ma – klik w tę linię daje fokus na pierwszym polu karty); nowy szablon dopisać do testu
+//    kontraktu w e2e/canvas.spec.ts.
 // DOCX export celowo nie zależy od szablonu (jeden wspólny układ, ADR-0008) – nowy szablon nie wymaga pracy przy DOCX.
 export const cvTemplateIds = ['classic', 'modern', 'bold'] as const
 export type CvTemplateId = (typeof cvTemplateIds)[number]
