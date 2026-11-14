@@ -8,6 +8,8 @@ type BlockKind = CvBlock['kind']
 export type BlockContentView<K extends BlockKind> = ComponentType<{ block: Extract<CvBlock, { kind: K }> }>
 
 // Nadpisania wspólnych komponentów bloków – rodzaj bloku bez wpisu rysuje komponent wspólny.
+// Tekst pól, które są już Page fields (imię i nazwisko, podsumowanie, tytuł sekcji), nadpisanie rysuje przez sloty
+// edycji (`CvText`, `useShown` z editable.tsx, ADR-0010) – w dokumencie dają ten sam markup co sam tekst.
 // Nadpisanie trzyma się kontraktu znaczników edycji (ADR-0009, `editMarkupContract` w canvas/editTargets.ts): klasy
 // .cv-name, .cv-photo, .cv-contact, .cv-summary, .cv-section-title, .cv-role, .cv-company, .cv-date i `li` w punktach
 // i wierszach list; opcjonalnie .cv-education-level (wspólny markup – Classic – ma poziom i kierunek w jednym tekście bez

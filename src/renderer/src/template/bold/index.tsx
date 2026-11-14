@@ -1,3 +1,4 @@
+import { CvText, useShown } from '../editable'
 import type { BlockContentView, PageFooterView, TemplateDefinition } from '../templateDefinition'
 import './bold.css'
 
@@ -5,13 +6,19 @@ import './bold.css'
 // Tytuł sekcji i kolejne punkty doświadczenia rysuje wspólny markup – wystarcza im arkusz.
 
 const Header: BlockContentView<'header'> = ({ block }) => {
-  const hasBand = block.fullName.trim() || block.contacts.length > 0 || block.photoUrl
+  const shownName = useShown(block, 'fullName', block.fullName)
+  const shownSummary = useShown(block, 'summary', block.summary)
+  const hasBand = shownName || block.contacts.length > 0 || block.photoUrl
   return (
     <header className={block.photoUrl ? 'cv-header cv-header--photo' : 'cv-header'}>
       {hasBand && (
         <div className="cv-band">
           <div className="cv-band-main">
-            {block.fullName.trim() && <h1 className="cv-name">{block.fullName}</h1>}
+            {shownName && (
+              <h1 className="cv-name">
+                <CvText block={block} slot="fullName" text={block.fullName} />
+              </h1>
+            )}
             {block.contacts.length > 0 && (
               <ul className="cv-contact">
                 {block.contacts.map((contact) => (
@@ -26,7 +33,11 @@ const Header: BlockContentView<'header'> = ({ block }) => {
           {block.photoUrl && <img className="cv-photo" src={block.photoUrl} alt="" />}
         </div>
       )}
-      {block.summary.trim() && <p className="cv-summary">{block.summary}</p>}
+      {shownSummary && (
+        <p className="cv-summary">
+          <CvText block={block} slot="summary" text={block.summary} />
+        </p>
+      )}
     </header>
   )
 }

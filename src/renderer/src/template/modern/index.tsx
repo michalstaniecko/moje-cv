@@ -1,33 +1,44 @@
+import { CvText, useShown } from '../editable'
 import type { BlockContentView, PageFooterView, TemplateDefinition } from '../templateDefinition'
 import './modern.css'
 
 // „Nowoczesny” – wygląd z projektu Claude Design „Moje CV – Szablon Nowoczesny” (issue #37).
 // Tytuł sekcji i kolejne punkty doświadczenia rysuje wspólny markup – wystarcza im arkusz.
 
-const Header: BlockContentView<'header'> = ({ block }) => (
-  <header className="cv-header">
-    <div className="cv-header-main">
-      {block.fullName.trim() && (
-        <>
-          <h1 className="cv-name">{block.fullName}</h1>
-          <div className="cv-name-bar" aria-hidden />
-        </>
-      )}
-      {block.contacts.length > 0 && (
-        <div className="cv-contact">
-          {block.contacts.map((contact) => (
-            <div key={contact.id}>
-              {contact.label.trim() && <div className="cv-contact-label">{contact.label}</div>}
-              <div>{contact.value}</div>
-            </div>
-          ))}
-        </div>
-      )}
-      {block.summary.trim() && <p className="cv-summary">{block.summary}</p>}
-    </div>
-    {block.photoUrl && <img className="cv-photo" src={block.photoUrl} alt="" />}
-  </header>
-)
+const Header: BlockContentView<'header'> = ({ block }) => {
+  const shownName = useShown(block, 'fullName', block.fullName)
+  const shownSummary = useShown(block, 'summary', block.summary)
+  return (
+    <header className="cv-header">
+      <div className="cv-header-main">
+        {shownName && (
+          <>
+            <h1 className="cv-name">
+              <CvText block={block} slot="fullName" text={block.fullName} />
+            </h1>
+            <div className="cv-name-bar" aria-hidden />
+          </>
+        )}
+        {block.contacts.length > 0 && (
+          <div className="cv-contact">
+            {block.contacts.map((contact) => (
+              <div key={contact.id}>
+                {contact.label.trim() && <div className="cv-contact-label">{contact.label}</div>}
+                <div>{contact.value}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {shownSummary && (
+          <p className="cv-summary">
+            <CvText block={block} slot="summary" text={block.summary} />
+          </p>
+        )}
+      </div>
+      {block.photoUrl && <img className="cv-photo" src={block.photoUrl} alt="" />}
+    </header>
+  )
+}
 
 const ExperienceEntry: BlockContentView<'experienceEntry'> = ({ block }) => (
   <div className="cv-entry">

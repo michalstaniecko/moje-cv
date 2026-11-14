@@ -1,29 +1,78 @@
 import type { ComponentType, Ref } from 'react'
 import type { CvBlock } from '../domain/blocks'
+import { CvText, useShown } from './editable'
 import type { BlockViewOverrides } from './templateDefinition'
 
-// Wspólne komponenty bloków – szablon może nadpisać dowolny rodzaj bloku (BlockViewOverrides).
+// Wspólne komponenty bloków – szablon może nadpisać dowolny rodzaj bloku (BlockViewOverrides). Tekst pól przez sloty
+// edycji (editable.tsx).
 function BlockContent({ block }: { block: CvBlock }) {
   switch (block.kind) {
     case 'header':
-      return (
-        <header className={block.photoUrl ? 'cv-header cv-header--photo' : 'cv-header'}>
-          {block.photoUrl && <img className="cv-photo" src={block.photoUrl} alt="" />}
-          <div>
-            {block.fullName.trim() && <h1 className="cv-name">{block.fullName}</h1>}
-            {block.contacts.length > 0 && (
-              <div className="cv-contact">
-                {block.contacts.map((contact) => (
-                  <p key={contact.id}>{contact.label.trim() ? `${contact.label}: ${contact.value}` : contact.value}</p>
-                ))}
-              </div>
-            )}
-            {block.summary.trim() && <p className="cv-summary">{block.summary}</p>}
-          </div>
-        </header>
-      )
+      return <Header block={block} />
     case 'sectionTitle':
-      return <h2 className="cv-section-title">{block.title}</h2>
+      return (
+        <h2 className="cv-section-title">
+          <CvText block={block} slot="title" text={block.title} />
+        </h2>
+      )
+    case 'listRow':
+      return <ListRow block={block} />
+  }
+  return <EntryContent block={block} />
+}
+
+function Header({ block }: { block: Extract<CvBlock, { kind: 'header' }> }) {
+  const shownName = useShown(block, 'fullName', block.fullName)
+  const shownSummary = useShown(block, 'summary', block.summary)
+  return (
+    <header className={block.photoUrl ? 'cv-header cv-header--photo' : 'cv-header'}>
+      {block.photoUrl && <img className="cv-photo" src={block.photoUrl} alt="" />}
+      <div>
+        {shownName && (
+          <h1 className="cv-name">
+            <CvText block={block} slot="fullName" text={block.fullName} />
+          </h1>
+        )}
+        {block.contacts.length > 0 && (
+          <div className="cv-contact">
+            {block.contacts.map((contact) => (
+              <p key={contact.id}>{contact.label.trim() ? `${contact.label}: ${contact.value}` : contact.value}</p>
+            ))}
+          </div>
+        )}
+        {shownSummary && (
+          <p className="cv-summary">
+            <CvText block={block} slot="summary" text={block.summary} />
+          </p>
+        )}
+      </div>
+    </header>
+  )
+}
+
+// Tytuł obok listy (`listSectionLayout.title: 'beside'`) w pierwszym wierszu; w pozostałych wierszach puste miejsce.
+function ListRow({ block }: { block: Extract<CvBlock, { kind: 'listRow' }> }) {
+  const shownTitle = useShown(block, 'title', block.title)
+  return (
+    <div className="cv-two-col">
+      {shownTitle ? (
+        <h2 className="cv-section-title">
+          <CvText block={block} slot="title" text={block.title} />
+        </h2>
+      ) : (
+        <div />
+      )}
+      <ul className="cv-plain-list">
+        {block.items.map((item) => (
+          <li key={item.id}>{item.text}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function EntryContent({ block }: { block: Exclude<CvBlock, { kind: 'header' | 'sectionTitle' | 'listRow' }> }) {
+  switch (block.kind) {
     case 'experienceEntry':
       return (
         <div className="cv-entry">
@@ -53,17 +102,6 @@ function BlockContent({ block }: { block: CvBlock }) {
         <div className="cv-entry">
           <div className="cv-date cv-date--dot">{block.dates}</div>
           <div>{[block.level, block.details].filter((part) => part !== '').join(', ')}</div>
-        </div>
-      )
-    case 'listRow':
-      return (
-        <div className="cv-two-col">
-          {block.title.trim() ? <h2 className="cv-section-title">{block.title}</h2> : <div />}
-          <ul className="cv-plain-list">
-            {block.items.map((item) => (
-              <li key={item.id}>{item.text}</li>
-            ))}
-          </ul>
         </div>
       )
   }

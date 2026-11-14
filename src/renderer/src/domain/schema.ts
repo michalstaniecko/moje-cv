@@ -64,7 +64,8 @@ export type Section = z.infer<typeof sectionSchema>
 //    .cv-company, .cv-date i `li` w punktach i wierszach list – po nich warstwa edycji dzieli nagłówek na fragmenty
 //    i rozpoznaje kliknięte pole; opcjonalnie .cv-education-level (wspólny markup bloku wykształcenia, którego używa
 //    Classic, jej nie ma – klik w tę linię daje fokus na pierwszym polu karty); nowy szablon dopisać do testu
-//    kontraktu w e2e/canvas.spec.ts.
+//    kontraktu w e2e/canvas.spec.ts; tekst imienia, podsumowania i tytułów sekcji przez sloty z template/editable.tsx
+//    (`CvText`, `useShown` – ADR-0010, Page fields), sprawdzane tym samym testem i goldenMarkup.test.tsx.
 // DOCX export celowo nie zależy od szablonu (jeden wspólny układ, ADR-0008) – nowy szablon nie wymaga pracy przy DOCX.
 export const cvTemplateIds = ['classic', 'modern', 'bold'] as const
 export type CvTemplateId = (typeof cvTemplateIds)[number]

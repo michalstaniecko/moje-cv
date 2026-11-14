@@ -78,3 +78,9 @@
   color: #fff;
   font: 600 12px system-ui, sans-serif;
 }
+
+/* ---------- Edit mode ---------- */
+/* Stopka strony w Edit mode jest ukryta przed czytnikiem ekranu w ramce bez własnego pudełka (CvPages). */
+.cv-page-footer-frame {
+  display: contents;
+}
