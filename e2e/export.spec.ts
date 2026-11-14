@@ -2018,7 +2018,12 @@ test('screen readers: in Edit mode the pages are the CV with labelled text field
   await expect(pages.getByRole('textbox', { name: 'Full name', exact: true })).toHaveText('Jane Example')
   await expect(pages.getByRole('textbox', { name: 'Summary', exact: true })).toHaveCount(1)
   await expect(pages.getByRole('textbox', { name: 'Section title “Education”', exact: true })).toHaveText('Education')
-  await expect(preview.getByRole('textbox')).toHaveCount(6)
+  // Także stanowiska, punkty i elementy list (S2); linia złączona wpisu bez fokusu („firma – miejscowość”) to jedno pole
+  // z nazwami swoich pól.
+  await expect(pages.getByRole('textbox', { name: 'Job title – Position “Procurement Specialist”', exact: true })).toHaveCount(1)
+  await expect(pages.getByRole('textbox', { name: 'Item 2 – List “Languages”', exact: true })).toHaveText('German – B2')
+  await expect(pages.getByRole('textbox', { name: 'Company – Position “Procurement Specialist”, City – Position “Procurement Specialist”', exact: true })).toHaveText('Example Trading plc – Leeds')
+  await expect(pages.getByRole('listitem').locator('[role="textbox"]')).toHaveCount(await pages.getByRole('listitem').count())
   await expect(pages.getByRole('listitem').first()).toBeVisible()
 
   // Pasek podglądu zostaje dostępny: licznik stron jako status i przyciski powiększenia.
