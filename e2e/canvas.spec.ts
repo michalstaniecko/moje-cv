@@ -2436,6 +2436,17 @@ test('a section hidden from the Outline leaves the pages but stays in the Outlin
     await expect(outlineRow(expected.source.startsWith('^Skills & tools') ? 'Skills & tools' : 'Skills')).toHaveText(expected)
   }
   await expect(skillsOnPage()).toHaveText(['Skills'])
+
+  // „Add item” w menu ukrytej sekcji dodaje element, a fokus idzie na przełącznik „Show on CV” – bez karty.
+  await outlineHandle('Skills').click()
+  await hide.click()
+  await outlineHandle('Skills').click()
+  await window.getByRole('menuitem', { name: 'Add item' }).click()
+  await expect(outlineRow('Skills')).toHaveText(/^Skillshidden6Show on CV$/)
+  await expect(showSkills).toBeFocused()
+  await expect(window.getByRole('dialog')).toHaveCount(0)
+  await window.keyboard.press('Space')
+  await expect(titleField('Skills')).toBeFocused()
 })
 
 test('sections are reordered in the Outline by dragging and from the row menu, also the hidden ones; the pages follow and each move is one undo step', async () => {

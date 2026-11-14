@@ -109,9 +109,11 @@ export function Outline({
       {
         label: addLabel,
         run: () => {
-          // Pusta sekcja dostaje swój istniejący, pusty element zamiast kolejnego (jak pasek „Add to CV”).
+          // Pusta sekcja dostaje swój istniejący, pusty element zamiast kolejnego (jak pasek „Add to CV”). Ukrytej nie
+          // ma na stronach – nowy element czeka w niej, a fokus idzie na jej przełącznik „Pokaż na CV”.
           const target = addSectionElement(editor, section, { reuseEmpty: isEmpty(section) })
-          if (target) openCard(target, handle)
+          if (section.hidden) switches.current.get(section.id)?.focus()
+          else if (target) openCard(target, handle)
         }
       }
     ]
