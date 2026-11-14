@@ -179,8 +179,9 @@ for (const language of interfaceLanguageCodes) {
     )
     await expect(preview.locator('.cv-page .cv-date').first()).toHaveText(`03.2023 – ${t.cvText.present}`)
     await expect(window.locator('.preview-page-count')).toHaveText(plural(language, t.preview.pages, SAMPLE_CV_PAGES))
-    expect(await controlsThatDoNotFit('.toolbar, .preview-bar, .editor-form, .sponsor-bar')).toEqual([])
-    expect(await controlsThatDoNotFitAtMinimumSize('.toolbar, .preview-bar, .editor-form, .sponsor-bar')).toEqual([])
+    // Z paskiem „Add to CV” pod ostatnią stroną (Sample CV bez klauzuli zgody ma w nim „Klauzulę zgody”).
+    expect(await controlsThatDoNotFit('.toolbar, .preview-bar, .editor-form, .add-to-cv, .sponsor-bar')).toEqual([])
+    expect(await controlsThatDoNotFitAtMinimumSize('.toolbar, .preview-bar, .editor-form, .add-to-cv, .sponsor-bar')).toEqual([])
 
     // PDF ma tyle stron co podgląd Sample CV.
     const pdfPath = join(outputDir, `${language}.pdf`)

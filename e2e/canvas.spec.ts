@@ -1207,3 +1207,259 @@ test('the menu works from the keyboard alone, and there are no handles below 50%
   // Edycja dalej działa przez klik we fragment.
   await expect(fragment('Section title “Education”')).toHaveCount(1)
 })
+
+// ---------- Dodawanie na stronach: pigułki „+”, pasek „Add to CV”, puste CV ----------
+
+const addBar = () => window.locator('.edit-layer').getByRole('group', { name: 'Add to CV:' })
+const addBarButtons = () => addBar().getByRole('button')
+const pill = (name: string) => window.locator('.edit-layer').getByRole('button', { name: `+ ${name}`, exact: true })
+const startHint = () => window.locator('.edit-layer').getByRole('button', { name: 'Start with your full name' })
+
+// „New CV” w bibliotece i otwarcie go (nowe CV jest na liście pierwsze).
+async function openNewCv() {
+  await window.setViewportSize({ width: 1600, height: 1000 })
+  await window.getByRole('button', { name: 'New CV', exact: true }).click()
+  const list = window.getByRole('list', { name: 'CV list' })
+  await expect(list.getByRole('listitem')).toHaveCount(2)
+  await list.getByRole('listitem').filter({ hasText: 'New CV' }).getByRole('button', { name: 'Open' }).click()
+  await expect(window.locator('.preview .cv-page').first()).toBeVisible()
+}
+
+// Bloki na kolejnych stronach (id bloków i klauzula zgody) – podział stron do porównania Edit mode z Preview mode.
+const pageSplit = () =>
+  window
+    .locator('.preview .cv-pages > .cv-page')
+    .evaluateAll((pages) =>
+      pages.map((page) => [...page.querySelectorAll('[data-block-id], .cv-consent')].map((element) => element.getAttribute('data-block-id') ?? 'consent'))
+    )
+
+test('a new CV shows the start hint on its empty first page and an “Add to CV” bar under it; the bar lists only what is missing and updates', async () => {
+  await openNewCv()
+  await expect(window.locator('.preview .cv-pages > .cv-page')).toHaveCount(1)
+  await expect(window.locator('.preview .cv-page [data-block-id]')).toHaveCount(0)
+  await expect(startHint()).toBeVisible()
+  await expect(addBarButtons()).toHaveText([
+    'Full name',
+    'Photo',
+    'Contact',
+    'Summary',
+    'Work experience',
+    'Education',
+    'Skills',
+    'Languages',
+    'Consent clause'
+  ])
+  // Pasek stoi pod ostatnią stroną, poza kartką; podpowiedź – na środku pierwszej strony.
+  const page = (await window.locator('.preview .cv-page').first().boundingBox())!
+  const bar = (await addBar().boundingBox())!
+  expect(bar.y).toBeGreaterThan(page.y + page.height)
+  const hint = (await startHint().boundingBox())!
+  expect(Math.abs(hint.x + hint.width / 2 - (page.x + page.width / 2))).toBeLessThan(2)
+  expect(Math.abs(hint.y + hint.height / 2 - (page.y + page.height / 2))).toBeLessThan(2)
+
+  // Podpowiedź otwiera kartę imienia przy sobie; po pierwszym znaku karta przeskakuje do imienia na stronie.
+  await startHint().click()
+  const nameCard = card('Full name')
+  await expect(nameCard.getByLabel('Full name')).toBeFocused()
+  await expectCardNextTo(nameCard, startHint())
+  await window.keyboard.type('J')
+  await expect(pageName()).toHaveText('J')
+  await expect(startHint()).toHaveCount(0)
+  await expectCardNextTo(nameCard, fragment('Full name'))
+  await window.keyboard.type('ane Doe')
+  await expect(addBarButtons()).toHaveText(['Photo', 'Contact', 'Summary', 'Work experience', 'Education', 'Skills', 'Languages', 'Consent clause'])
+  await window.keyboard.press('Escape')
+  await expect(fragment('Full name')).toBeFocused()
+
+  // Pusta sekcja z paska: element na końcu sekcji, karta przy przycisku paska, z fokusem na nowym elemencie.
+  await addBar().getByRole('button', { name: 'Languages' }).click()
+  const languages = card('List “Languages”')
+  await expect(languages.getByRole('textbox', { name: 'Item 1' })).toBeFocused()
+  await expectCardNextTo(languages, addBar().getByRole('button', { name: 'Languages' }))
+  await window.keyboard.type('English – native')
+  await expect(pageItem('English – native')).toHaveCount(1)
+  await expect(addBar().getByRole('button', { name: 'Languages' })).toHaveCount(0)
+  await expectCardNextTo(languages, fragment('List “Languages”'))
+
+  // Cofnięcie przywraca przycisk w pasku.
+  await window.keyboard.press('Escape')
+  await window.keyboard.press('Meta+z')
+  await expect(pageItem('English – native')).toHaveCount(0)
+  await expect(addBar().getByRole('button', { name: 'Languages' })).toHaveCount(1)
+
+  // Tryb Preview: ani podpowiedzi, ani paska, ani pigułek.
+  await window.keyboard.press('Meta+Shift+P')
+  await expectPreviewMode()
+  await expect(window.locator('.add-to-cv, .edit-pill, .edit-start-hint')).toHaveCount(0)
+})
+
+test('the “+” pill under a section adds an entry: its card opens at the pill with the focus on the first field, and moves to the new block after the first character', async () => {
+  await openFirstCv()
+  await window.setViewportSize({ width: 1600, height: 1000 })
+  const form = window.locator('.editor-form')
+  const position = pill('Position')
+  // Niewidoczna, dopóki kursor nie jest nad sekcją; najechanie na wpis sekcji ją pokazuje.
+  await expect(position).toHaveCSS('opacity', '0')
+  await fragment(`Position “${positions[1]}”`).first().hover()
+  await expect(position).toHaveCSS('opacity', '1')
+  await fragment('Full name').hover()
+  await expect(position).toHaveCSS('opacity', '0')
+
+  // Pigułka stoi pod ostatnim wpisem sekcji.
+  await fragment(`Position “${positions[3]}”`).last().hover()
+  await expect(position).toHaveCSS('opacity', '1')
+  const last = (await fragment(`Position “${positions[3]}”`).last().boundingBox())!
+  const pillBox = (await position.boundingBox())!
+  expect(pillBox.y).toBeGreaterThanOrEqual(last.y + last.height)
+  expect(pillBox.y).toBeLessThan(last.y + last.height + 8)
+  await position.click()
+
+  const added = card('Position “New position”')
+  await expect(added.getByLabel('Job title')).toBeFocused()
+  await expect(form.getByLabel('Job title')).toHaveCount(5)
+  await expectCardNextTo(added, position)
+  await window.keyboard.type('B')
+  const buyer = card('Position “B”')
+  await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^B$/ })).toHaveCount(1)
+  await expectCardNextTo(buyer, fragment('Position “B”').first())
+  await window.keyboard.type('uyer')
+  await expect(card('Position “Buyer”')).toBeVisible()
+
+  // Pigułki listy i wykształcenia; z klawiatury – pigułka jest w kolejności Tab za ostatnim fragmentem sekcji.
+  await window.keyboard.press('Escape')
+  await expect(fragment('Position “Buyer”').first()).toBeFocused()
+  await fragment('List “Skills”').last().focus()
+  await window.keyboard.press('Tab')
+  const item = pill('Item').first()
+  await expect(item).toBeFocused()
+  await expect(item).toHaveCSS('opacity', '1')
+  await window.keyboard.press('Enter')
+  const skills = card('List “Skills”')
+  await expect(skills.getByRole('textbox').last()).toBeFocused()
+  await expect(skills.getByRole('textbox').last()).toHaveValue('')
+  await window.keyboard.press('Escape')
+  await expect(pill('Education')).toHaveCount(1)
+
+  // Poniżej 50% pigułek nie ma.
+  const preview = window.locator('.preview')
+  await preview.getByRole('button', { name: '100%' }).click()
+  for (let step = 0; step < 3; step++) await preview.getByRole('button', { name: 'Zoom out' }).click()
+  await expect(window.locator('.edit-layer')).toHaveAttribute('data-compact', 'true')
+  await expect(window.locator('.edit-layer .edit-pill')).toHaveCount(0)
+})
+
+test('a full CV can be built from a new CV with the editing layer and cards alone, and Edit mode splits the pages like Preview mode', async () => {
+  const photoPath = await writeRedBluePhoto()
+  await openNewCv()
+  const bar = (name: string) => addBar().getByRole('button', { name, exact: true })
+
+  await bar('Full name').click()
+  await window.keyboard.type('Jane Doe')
+  await expect(pageName()).toHaveText('Jane Doe')
+
+  // Zdjęcie: karta z „Choose photo”, wybór i kadrowanie.
+  await stubOpenDialog(photoPath)
+  await bar('Photo').click()
+  await card('Photo').getByRole('button', { name: 'Choose photo' }).click()
+  await window.getByRole('dialog', { name: 'Crop photo' }).getByRole('button', { name: 'Apply' }).click()
+  await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(1)
+  await expect(bar('Photo')).toHaveCount(0)
+
+  // Kontakt: fokus na wartości pierwszego pustego kontaktu (etykiety nowego CV).
+  await bar('Contact').click()
+  await expect(card('Contact').getByRole('textbox', { name: 'Contact value 1' })).toBeFocused()
+  await window.keyboard.type('+48 600 000 000')
+  await expect(window.locator('.preview .cv-page .cv-contact')).toContainText('+48 600 000 000')
+
+  await bar('Summary').click()
+  await expect(card('Summary').getByLabel('Summary')).toBeFocused()
+  await window.keyboard.type('Buyer with ten years in procurement.')
+
+  // Stanowisko z punktami.
+  await bar('Work experience').click()
+  const position = card('Position “New position”')
+  await expect(position.getByLabel('Job title')).toBeFocused()
+  await window.keyboard.type('Senior Buyer')
+  await card('Position “Senior Buyer”').getByLabel('Company').fill('Acme')
+  const seniorBuyer = card('Position “Senior Buyer”')
+  await seniorBuyer.getByRole('button', { name: 'Add bullet' }).click()
+  await seniorBuyer.getByRole('textbox', { name: 'Bullet 1' }).fill('Negotiated annual contracts.')
+  // Enter dzieli punkt jak w formularzu.
+  await window.keyboard.press('Enter')
+  await expect(seniorBuyer.getByRole('textbox', { name: 'Bullet 2' })).toBeFocused()
+  await window.keyboard.type('Cut costs by 12%.')
+  await expect(pageItem('Cut costs by 12%.')).toHaveCount(1)
+  // Drugie stanowisko pigułką.
+  await window.keyboard.press('Escape')
+  await fragment('Position “Senior Buyer”').first().hover()
+  await pill('Position').click()
+  await window.keyboard.type('Buyer')
+
+  await bar('Education').click()
+  await expect(card('Education “New education”').getByLabel('Level')).toBeFocused()
+  await window.keyboard.type('Master’s degree')
+
+  for (const [section, text] of [
+    ['Skills', 'Negotiation'],
+    ['Languages', 'English – native']
+  ] as const) {
+    await bar(section).click()
+    await expect(card(`List “${section}”`).getByRole('textbox', { name: 'Item 1' })).toBeFocused()
+    await window.keyboard.type(text)
+    await window.keyboard.press('Enter')
+    await window.keyboard.type(`${text} 2`)
+  }
+
+  // Klauzula zgody: włączona przyciskiem paska, fokus na tekście.
+  await bar('Consent clause').click()
+  const consent = card('Consent clause')
+  await expect(consent.getByLabel('Show the clause at the bottom of the last page')).toBeChecked()
+  await expect(consent.getByLabel('Text in this CV')).toBeFocused()
+  await window.keyboard.type('I agree to the processing of my personal data.')
+  await expect(window.locator('.preview .cv-page .cv-consent')).toHaveText('I agree to the processing of my personal data.')
+  await window.keyboard.press('Escape')
+
+  // Wszystko jest na stronach – pasek znika.
+  await expect(addBar()).toHaveCount(0)
+
+  // Podział stron w Edit mode jak w Preview mode: te same strony i te same bloki na nich – także po kilku stronach.
+  for (let copy = 0; copy < 3; copy++) {
+    await fragment('Position “Senior Buyer”').first().hover()
+    await pill('Position').click()
+    await window.keyboard.type(`Buyer ${copy}`)
+    const bullets = card(`Position “Buyer ${copy}”`)
+    await bullets.getByRole('button', { name: 'Add bullet' }).click()
+    await bullets.getByRole('textbox', { name: 'Bullet 1' }).focus()
+    for (let line = 0; line < 8; line++) {
+      await window.keyboard.type(`Achievement ${copy}.${line} with a sentence long enough to wrap onto a second line of the page.`)
+      await window.keyboard.press('Enter')
+    }
+    await window.keyboard.press('Escape')
+  }
+  const edit = await pageSplit()
+  expect(edit.length).toBeGreaterThan(1)
+  await window.keyboard.press('Meta+Shift+P')
+  await expectPreviewMode()
+  await expect.poll(pageSplit).toEqual(edit)
+
+  const pdfPath = join(outputDir, 'cv.pdf')
+  await stubSaveDialog(pdfPath)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: cv.pdf')).toBeVisible()
+  const text = await pdfText(pdfPath)
+  for (const expected of [
+    'Jane Doe',
+    '+48 600 000 000',
+    'Buyer with ten years in procurement.',
+    'Senior Buyer',
+    'Acme',
+    'Cut costs by 12%.',
+    'Master’s degree',
+    'Negotiation 2',
+    'English – native 2',
+    'I agree to the processing of my personal data.'
+  ]) {
+    expect(text).toContain(expected)
+  }
+  expect(await pdfImagesPerPage(pdfPath)).toEqual([1, ...Array(edit.length - 1).fill(0)])
+})
