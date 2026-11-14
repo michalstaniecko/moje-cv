@@ -1,4 +1,4 @@
-import { CvText, useShown } from '../editable'
+import { CompanyLine, CvText, EducationDetails, useShown } from '../editable'
 import type { BlockContentView, PageFooterView, TemplateDefinition } from '../templateDefinition'
 import './modern.css'
 
@@ -40,42 +40,64 @@ const Header: BlockContentView<'header'> = ({ block }) => {
   )
 }
 
-const ExperienceEntry: BlockContentView<'experienceEntry'> = ({ block }) => (
-  <div className="cv-entry">
-    <span className="cv-dot" aria-hidden />
-    {(block.role.trim() || block.dates) && (
+const ExperienceEntry: BlockContentView<'experienceEntry'> = ({ block }) => {
+  const shownRole = useShown(block, 'role', block.role)
+  const shownCompany = useShown(block, 'company', block.companyLine)
+  return (
+    <div className="cv-entry">
+      <span className="cv-dot" aria-hidden />
+      {(shownRole || block.dates) && (
+        <div className="cv-role-row">
+          <div className="cv-role">
+            <CvText block={block} slot="role" text={block.role} />
+          </div>
+          <div className="cv-date">{block.dates}</div>
+        </div>
+      )}
+      {shownCompany && (
+        <div className="cv-company">
+          <CompanyLine block={block} />
+        </div>
+      )}
+      {block.firstBullet !== null && (
+        <ul className="cv-bullets">
+          <li>
+            <CvText block={block} slot="bullet" text={block.firstBullet} />
+          </li>
+        </ul>
+      )}
+    </div>
+  )
+}
+
+const EducationEntry: BlockContentView<'educationEntry'> = ({ block }) => {
+  const shownLevel = useShown(block, 'level', block.level)
+  const shownDetails = useShown(block, 'field', block.details)
+  return (
+    <div className="cv-entry">
+      <span className="cv-dot" aria-hidden />
       <div className="cv-role-row">
-        <div className="cv-role">{block.role}</div>
+        <div>
+          {shownLevel && (
+            <strong className="cv-education-level">
+              <CvText block={block} slot="level" text={block.level} />
+            </strong>
+          )}
+          {shownLevel && shownDetails && ', '}
+          <EducationDetails block={block} />
+        </div>
         <div className="cv-date">{block.dates}</div>
       </div>
-    )}
-    {block.companyLine && <div className="cv-company">{block.companyLine}</div>}
-    {block.firstBullet !== null && (
-      <ul className="cv-bullets">
-        <li>{block.firstBullet}</li>
-      </ul>
-    )}
-  </div>
-)
-
-const EducationEntry: BlockContentView<'educationEntry'> = ({ block }) => (
-  <div className="cv-entry">
-    <span className="cv-dot" aria-hidden />
-    <div className="cv-role-row">
-      <div>
-        {block.level && <strong className="cv-education-level">{block.level}</strong>}
-        {block.level && block.details && ', '}
-        {block.details}
-      </div>
-      <div className="cv-date">{block.dates}</div>
     </div>
-  </div>
-)
+  )
+}
 
 const ListRow: BlockContentView<'listRow'> = ({ block }) => (
   <ul className="cv-list-row">
     {block.items.map((item) => (
-      <li key={item.id}>{item.text}</li>
+      <li key={item.id}>
+        <CvText block={block} slot="item" part={item.id} text={item.text} />
+      </li>
     ))}
   </ul>
 )

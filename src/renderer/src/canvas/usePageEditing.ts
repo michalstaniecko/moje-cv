@@ -37,7 +37,7 @@ export function usePageEditing({
   }, [active, panel])
   const editing = useMemo(
     (): PageEditing => ({
-      fieldOf: (block, slot) => pageFieldOf(block, slot, document, t),
+      fieldOf: (block, slot, part) => pageFieldOf(block, slot, document, t, reveal, part),
       reveal,
       Field: PageField,
       onPagesCommitted

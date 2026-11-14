@@ -1,6 +1,6 @@
 import type { ComponentType, Ref } from 'react'
 import type { CvBlock } from '../domain/blocks'
-import { CvText, useShown } from './editable'
+import { CompanyLine, CvText, EducationLine, useShown } from './editable'
 import type { BlockViewOverrides } from './templateDefinition'
 
 // Wspólne komponenty bloków – szablon może nadpisać dowolny rodzaj bloku (BlockViewOverrides). Tekst pól przez sloty
@@ -64,7 +64,9 @@ function ListRow({ block }: { block: Extract<CvBlock, { kind: 'listRow' }> }) {
       )}
       <ul className="cv-plain-list">
         {block.items.map((item) => (
-          <li key={item.id}>{item.text}</li>
+          <li key={item.id}>
+            <CvText block={block} slot="item" part={item.id} text={item.text} />
+          </li>
         ))}
       </ul>
     </div>
@@ -74,26 +76,15 @@ function ListRow({ block }: { block: Extract<CvBlock, { kind: 'listRow' }> }) {
 function EntryContent({ block }: { block: Exclude<CvBlock, { kind: 'header' | 'sectionTitle' | 'listRow' }> }) {
   switch (block.kind) {
     case 'experienceEntry':
-      return (
-        <div className="cv-entry">
-          <div className="cv-date cv-date--dot">{block.dates}</div>
-          <div>
-            {block.role.trim() && <div className="cv-role">{block.role}</div>}
-            {block.companyLine && <div className="cv-company">{block.companyLine}</div>}
-            {block.firstBullet !== null && (
-              <ul className="cv-bullets">
-                <li>{block.firstBullet}</li>
-              </ul>
-            )}
-          </div>
-        </div>
-      )
+      return <ExperienceEntry block={block} />
     case 'experienceBullet':
       return (
         <div className="cv-entry">
           <div />
           <ul className="cv-bullets">
-            <li>{block.text}</li>
+            <li>
+              <CvText block={block} slot="bullet" text={block.text} />
+            </li>
           </ul>
         </div>
       )
@@ -101,10 +92,41 @@ function EntryContent({ block }: { block: Exclude<CvBlock, { kind: 'header' | 's
       return (
         <div className="cv-entry">
           <div className="cv-date cv-date--dot">{block.dates}</div>
-          <div>{[block.level, block.details].filter((part) => part !== '').join(', ')}</div>
+          <div>
+            <EducationLine block={block} />
+          </div>
         </div>
       )
   }
+}
+
+function ExperienceEntry({ block }: { block: Extract<CvBlock, { kind: 'experienceEntry' }> }) {
+  const shownRole = useShown(block, 'role', block.role)
+  const shownCompany = useShown(block, 'company', block.companyLine)
+  return (
+    <div className="cv-entry">
+      <div className="cv-date cv-date--dot">{block.dates}</div>
+      <div>
+        {shownRole && (
+          <div className="cv-role">
+            <CvText block={block} slot="role" text={block.role} />
+          </div>
+        )}
+        {shownCompany && (
+          <div className="cv-company">
+            <CompanyLine block={block} />
+          </div>
+        )}
+        {block.firstBullet !== null && (
+          <ul className="cv-bullets">
+            <li>
+              <CvText block={block} slot="bullet" text={block.firstBullet} />
+            </li>
+          </ul>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export function CvBlockView({
