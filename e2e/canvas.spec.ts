@@ -411,6 +411,11 @@ test('the summary and the section titles are edited on the page in every place a
   await clickAtCharacter(pageField('Summary'), 6)
   await window.keyboard.press('Enter')
   await expect(formField('Summary')).toHaveValue(/^Hello\.\n Procurement specialist/)
+  // Enter na końcu pola: kursor w nowej, pustej linii – pisanie trafia za nową linię.
+  await window.keyboard.press('Meta+ArrowDown')
+  await window.keyboard.press('Enter')
+  await window.keyboard.type('Next.')
+  await expect(formField('Summary')).toHaveValue(/supply running smoothly\.\nNext\.$/)
 })
 
 test('a cleared section title keeps its field with a placeholder while it has the focus and leaves the page after it; the pages then split as in Preview mode', async () => {

@@ -188,7 +188,7 @@ function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
       const selection = range ?? readSelection(span)
       if (!selection) return
       const next = replaceSelection(span.textContent ?? '', selection, insertText)
-      span.textContent = next.value
+      span.replaceChildren(...textNodes(next.value))
       writeSelection(span, { start: next.caret, end: next.caret })
       commit()
     }
@@ -310,12 +310,17 @@ function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
       commit()
     }
     const onFocus = () => active.focused(current(), span)
+    // Pomocniczy `<br>` po końcowej nowej linii jest tylko na czas edycji (bez fokusu pole ma dokładnie tekst dokumentu).
+    const onBlur = () => {
+      if (span.lastChild?.nodeName === 'BR') span.lastChild.remove()
+    }
 
     span.addEventListener('beforeinput', onBeforeInput)
     span.addEventListener('input', onInput)
     span.addEventListener('compositionstart', onCompositionStart)
     span.addEventListener('compositionend', onCompositionEnd)
     span.addEventListener('focus', onFocus)
+    span.addEventListener('blur', onBlur)
     span.addEventListener('keydown', onKeyDown)
     span.addEventListener('pointerup', rememberSelection)
     span.addEventListener('paste', onPaste)
@@ -326,6 +331,7 @@ function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
       span.removeEventListener('compositionstart', onCompositionStart)
       span.removeEventListener('compositionend', onCompositionEnd)
       span.removeEventListener('focus', onFocus)
+      span.removeEventListener('blur', onBlur)
       span.removeEventListener('keydown', onKeyDown)
       span.removeEventListener('pointerup', rememberSelection)
       span.removeEventListener('paste', onPaste)
@@ -360,15 +366,27 @@ function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
 const plainTextInput = (type: string) =>
   type === 'insertText' || type === 'insertReplacementText' || type === 'insertCompositionText' || type.startsWith('delete')
 
-// Pole to jeden węzeł tekstowy (albo nic – placeholder `:empty`): element wstawiony przez przeglądarkę (np. `<br>`
-// w wyczyszczonym polu) jest zastępowany samym tekstem, z zachowanym kursorem.
+// Treść pola o tekście `text`: jeden węzeł tekstowy (albo nic – placeholder `:empty`), a po końcowej nowej linii
+// (Enter na końcu pola wielowierszowego) – pomocniczy `<br>`: przeglądarka nie daje końcowej nowej linii własnej linii,
+// więc kursor nie miałby gdzie stanąć, a pisanie trafiałoby przed nią. `<br>` nie należy do tekstu pola (`textContent`
+// go nie liczy), a bez fokusu pole go nie ma (`blur`).
+function textNodes(text: string): (string | HTMLBRElement)[] {
+  if (text === '') return []
+  return text.endsWith('\n') ? [text, window.document.createElement('br')] : [text]
+}
+
+// Pole to jego tekst (`textNodes`): element wstawiony przez przeglądarkę (np. `<br>` w wyczyszczonym polu) jest
+// zastępowany samym tekstem, z zachowanym kursorem.
 function flatten(span: HTMLElement) {
-  const only = span.firstChild
-  if (span.childNodes.length === 1 && only?.nodeType === Node.TEXT_NODE && only.textContent !== '') return
-  if (span.childNodes.length === 0) return
-  const selection = readSelection(span)
   const text = span.textContent ?? ''
-  span.replaceChildren(...(text === '' ? [] : [text]))
+  const expected = textNodes(text)
+  const nodes = [...span.childNodes]
+  const same =
+    nodes.length === expected.length &&
+    nodes.every((node, index) => (typeof expected[index] === 'string' ? node.nodeType === Node.TEXT_NODE : node.nodeName === 'BR'))
+  if (same) return
+  const selection = readSelection(span)
+  span.replaceChildren(...expected)
   if (selection && window.document.activeElement === span) writeSelection(span, selection)
 }
 
