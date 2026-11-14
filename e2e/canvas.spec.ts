@@ -378,11 +378,13 @@ test('the summary and the section titles are edited on the page in every place a
   await window.keyboard.type('Hello. ')
   await expect(formField('Summary')).toHaveValue(/^Hello\. Procurement specialist/)
 
-  // Classic nie pokazuje nowych linii w podsumowaniu (w PDF byłyby spacją), więc Enter go nie łamie – przechodzi dalej.
+  // Enter w polu jednowierszowym przechodzi do następnego pola (z imienia – do etykiety pierwszego kontaktu).
   await clickAtCharacter(pageField('Full name'), 0)
   await window.keyboard.press('Enter')
+  await expect.poll(caret).toEqual({ key: 'contact:c1:label', offset: 0, collapsed: true })
+  // Classic nie pokazuje nowych linii w podsumowaniu (w PDF byłyby spacją), więc Enter go nie łamie – przechodzi dalej.
+  await clickAtCharacter(summary, 0)
   await expect(summary).toBeFocused()
-  await expect.poll(caret).toEqual({ key: 'header:summary', offset: 0, collapsed: true })
   await window.keyboard.press('Enter')
   await expect(titleField('Work experience')).toBeFocused()
   await expect(formField('Summary')).toHaveValue(/^Hello\. Procurement specialist/)
@@ -527,43 +529,44 @@ test('composing text with an input method changes the document only when the com
 
 test('cards still open for the parts without page fields: one card at a time, Escape returns the focus to its fragment, a click on a page field or the page background closes it', async () => {
   await openFirstCv()
+  await enableConsent('I agree to the processing of my personal data.')
   const preview = window.locator('.preview')
-  const firstContact = preview.locator('.cv-page .cv-contact > *').first()
+  const clause = preview.locator('.cv-page .cv-consent')
   await clickOnPage(preview.locator('.cv-page .cv-photo'))
   await expect(card('Photo')).toBeVisible()
 
   // Jedna karta naraz: klik innego fragmentu przełącza kartę.
-  await clickOnPage(firstContact)
-  await expect(card('Contact')).toBeVisible()
+  await clickOnPage(clause)
+  await expect(card('Consent clause')).toBeVisible()
   await expect(card('Photo')).toHaveCount(0)
   await window.keyboard.press('Escape')
   await expect(window.getByRole('dialog')).toHaveCount(0)
-  await expect(fragment('Contact')).toBeFocused()
+  await expect(fragment('Consent clause')).toBeFocused()
 
   // Klik w Page field zamyka kartę i stawia kursor w polu.
-  await clickOnPage(firstContact)
-  await expect(card('Contact')).toBeVisible()
+  await clickOnPage(clause)
+  await expect(card('Consent clause')).toBeVisible()
   await clickAtCharacter(pageField('Full name'), 2)
   await expect(window.getByRole('dialog')).toHaveCount(0)
   await expect(pageField('Full name')).toBeFocused()
 
   // Klik w tło strony (margines kartki) albo obok strony zamyka kartę.
   const firstPage = preview.locator('.cv-page').first()
-  await clickOnPage(firstContact)
-  await expect(card('Contact')).toBeVisible()
+  await clickOnPage(preview.locator('.cv-page .cv-photo'))
+  await expect(card('Photo')).toBeVisible()
   let page = (await firstPage.boundingBox())!
   await window.mouse.click(page.x + 4, page.y + 4)
   await expect(window.getByRole('dialog')).toHaveCount(0)
-  await clickOnPage(firstContact)
-  await expect(card('Contact')).toBeVisible()
+  await clickOnPage(preview.locator('.cv-page .cv-photo'))
+  await expect(card('Photo')).toBeVisible()
   page = (await firstPage.boundingBox())!
   await window.mouse.click(page.x - 8, page.y + 40)
   await expect(window.getByRole('dialog')).toHaveCount(0)
 
   // Pasek podglądu nie zamyka karty (powiększenie przy otwartej karcie).
-  await clickOnPage(firstContact)
+  await clickOnPage(preview.locator('.cv-page .cv-photo'))
   await preview.getByRole('button', { name: 'Zoom out' }).click()
-  await expect(card('Contact')).toBeVisible()
+  await expect(card('Photo')).toBeVisible()
 })
 
 test('the pages work from the keyboard alone: Tab goes through every page field and date in document order, also into the joined lines of entries, then through the editing layer; Enter opens a card, Tab leaves it', async () => {
@@ -577,8 +580,10 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
       return joined ? (JSON.parse(joined) as [string, number][]).map(([key]) => key) : [element.getAttribute('data-field-key')!]
     })
   )
-  expect(expected.slice(0, 8)).toEqual([
+  const contactKeys = ['c1', 'c2', 'c3', 'c4'].flatMap((id) => [`contact:${id}:label`, `contact:${id}:value`])
+  expect(expected.slice(0, 16)).toEqual([
     'header:fullName',
+    ...contactKeys,
     'header:summary',
     'section:experience:title',
     'experience:e1:start',
@@ -596,15 +601,15 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
     await expect.poll(focusedKey).toBe(key)
   }
 
-  // Warstwa edycji: części z Edit card (wpisy już nie), uchwyty, pigułki „+” i pasek.
-  const names = ['Photo', 'Contact']
+  // Warstwa edycji: części z Edit card (wpisy i kontakty już nie), uchwyty, pigułki „+” i pasek.
+  const names = ['Photo']
   await expect.poll(() => fragmentNames()).toEqual(expect.arrayContaining(names))
   expect(dedupe(await fragmentNames())).toEqual(names)
   const stops = window.locator(
     '.edit-layer .edit-fragment, .edit-layer .edit-handle .row-handle, .edit-layer .edit-pill, .edit-layer .add-to-cv button'
   )
   const stopNames = await stops.evaluateAll((elements) => elements.map((element) => element.textContent || element.getAttribute('aria-label')))
-  expect(stopNames.slice(2, 4)).toEqual(['Actions for section “Work experience”', 'Actions for position “Senior Procurement Specialist”'])
+  expect(stopNames.slice(1, 3)).toEqual(['Actions for section “Work experience”', 'Actions for position “Senior Procurement Specialist”'])
   expect(stopNames.slice(-3)).toEqual(['Actions for section “Languages”', '+ Item', 'Consent clause'])
   const educationHandle = stopNames.indexOf('Actions for section “Education”')
   expect(stopNames.slice(educationHandle - 2, educationHandle)).toEqual([`Actions for position “${positions[3]}”`, '+ Position'])
@@ -616,12 +621,7 @@ test('the pages work from the keyboard alone: Tab goes through every page field 
     await expect(stops.nth(index)).toBeFocused()
   }
 
-  await fragment('Contact').focus()
-  await window.keyboard.press('Enter')
-  const contactCard = card('Contact')
-  await expect(contactCard.getByRole('combobox', { name: 'Contact label 1' })).toBeFocused()
-
-  // Spacja też otwiera; „×” zamyka i fokus wraca na fragment.
+  // Spacja otwiera kartę; „×” zamyka i fokus wraca na fragment.
   const photo = fragment('Photo')
   await photo.focus()
   await window.keyboard.press('Space')
@@ -745,7 +745,6 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
 
     const expected: [string, Locator][] = [
       ['Photo', page('.cv-photo')],
-      ...[0, 1, 2, 3].map((index): [string, Locator] => ['Contact', contacts.nth(index)]),
       ['Consent clause', page('.cv-consent')]
     ]
     await expect
@@ -786,12 +785,16 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     await clickOnPage(page('.cv-consent'))
     await expect(card('Consent clause').getByRole('textbox', { name: 'Text in this CV' })).toBeFocused()
     await window.keyboard.press('Escape')
-    // N-te dziecko `.cv-contact` to n-ty kontakt: fokus na jego wartości w karcie kontaktów.
+    // N-te dziecko `.cv-contact` to n-ty kontakt: etykieta i wartość to Page fields (w Classic – jedna linia
+    // „etykieta: wartość” do wejścia w kontakty); klik stawia kursor w klikniętym znaku.
     for (const index of [1, 3]) {
-      await clickOnPage(contacts.nth(index))
-      await expect(card('Contact').getByRole('textbox', { name: `Contact value ${index + 1}` })).toBeFocused()
-      await window.keyboard.press('Escape')
-      await expect(window.getByRole('dialog')).toHaveCount(0)
+      const contact = sampleContacts[index]!
+      const text = contacts.nth(index).locator('[data-joined], [data-field-key$=":value"]').first()
+      await clickAtCharacter(text, ((await text.textContent()) ?? '').indexOf(contact.value) + 2)
+      await expect(pageField(`Contact value ${index + 1}`)).toHaveText(contact.value)
+      await expect.poll(caret).toEqual({ key: `contact:c${index + 1}:value`, offset: 2, collapsed: true })
+      await expect(pageField(`Contact label ${index + 1}`)).toHaveText(contact.label)
+      await expect(contacts.nth(index)).toHaveText(new RegExp(`^${contact.label}(: )?${contact.value.replace(/[.+]/g, '\\$&')}$`))
     }
     // Zdjęcie: karta zdjęcia z fokusem na „Change photo” (karta nie ma pól tekstowych).
     await clickOnPage(page('.cv-photo'))
@@ -800,6 +803,14 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     await expect(fragment('Photo')).toBeFocused()
   })
 }
+
+// Kontakty Sample CV po angielsku.
+const sampleContacts = [
+  { label: 'Phone', value: '+44 7700 900000' },
+  { label: 'Email', value: 'jane.example@example.com' },
+  { label: 'LinkedIn', value: 'linkedin.com/in/jane-example' },
+  { label: 'City', value: 'Manchester' }
+]
 
 // Klauzula zgody w formularzu: włączona, z treścią (Sample CV po angielsku jej nie ma).
 async function enableConsent(text: string) {
@@ -1297,7 +1308,7 @@ test('Cmd+Z with the card of a newly added position open undoes the adding, clos
   await expect(form.getByRole('button', { name: 'Form', exact: true })).toBeFocused()
 })
 
-// ---------- Karty zdjęcia i kontaktów ----------
+// ---------- Karta zdjęcia i kontakty na stronie ----------
 
 // Systemowe okno wyboru pliku podmienione w procesie głównym, jak w export.spec.ts.
 async function stubOpenDialog(filePath: string | null) {
@@ -1423,40 +1434,75 @@ test('clicking the photo opens its card: changing and cropping the photo there c
   expect((await pdfImagesPerPage(withoutPhoto)).every((count) => count === 0)).toBe(true)
 })
 
-test('the contacts card edits, adds and removes contacts like the form; removing says “Removed.” and Undo brings the contact back', async () => {
+test('contacts are edited on the page: a Classic contact is one “label: value” line until the caret enters it; Enter in a value adds a contact after it, Backspace in an empty contact removes it; each is one undo step', async () => {
   await openFirstCv()
   const contacts = window.locator('.preview .cv-page .cv-contact > *')
-  await clickOnPage(contacts.nth(1))
-  const contactsCard = card('Contact')
-  const value2 = contactsCard.getByRole('textbox', { name: 'Contact value 2' })
+  const email = contacts.nth(1)
+  const formValues = window.locator('.editor-form').getByLabel(/^Contact value \d$/)
+  await expect(email).toHaveText('Email: jane.example@example.com')
+  await expect(email.locator('[data-joined]')).toHaveCount(1)
+  await expect(window.getByRole('dialog')).toHaveCount(0)
+
+  // Klik w wartość: kursor w klikniętym znaku; wszystkie kontakty to osobne pola, z tym samym tekstem na stronie.
+  await clickAtCharacter(email.locator('[data-joined]'), 'Email: jane'.length)
+  const value2 = pageField('Contact value 2')
   await expect(value2).toBeFocused()
-  await expect(value2).toHaveValue('jane.example@example.com')
+  await expect.poll(caret).toEqual({ key: 'contact:c2:value', offset: 'jane'.length, collapsed: true })
+  await expect(pageField('Contact label 1')).toHaveText('Phone')
+  await expect(email).toHaveText('Email: jane.example@example.com')
 
-  // Pisanie w karcie zmienia stronę i formularz (te same pola).
+  // Pisanie zmienia stronę i formularz (te same pola).
+  await clickAtCharacter(value2, 'jane.example@example.com'.length - 1)
+  await window.keyboard.press('ArrowRight')
   await window.keyboard.type('.uk')
-  await expect(contacts.nth(1)).toContainText('jane.example@example.com.uk')
-  await expect(window.locator('.editor-form').getByLabel('Contact value 2')).toHaveValue('jane.example@example.com.uk')
+  await expect(email).toHaveText('Email: jane.example@example.com.uk')
+  await expect(formField('Contact value 2')).toHaveValue('jane.example@example.com.uk')
 
-  // Dodanie: nowy wiersz w karcie (etykieta z podpowiedziami), kontakt na stronie po wpisaniu wartości.
-  await contactsCard.getByRole('button', { name: 'Add contact' }).click()
-  const label5 = contactsCard.getByRole('combobox', { name: 'Contact label 5' })
-  await expect(label5).toBeVisible()
-  await label5.fill('GitHub')
-  await contactsCard.getByRole('textbox', { name: 'Contact value 5' }).fill('github.com/jane-example')
+  // Enter w wartości: nowy kontakt za nim, kursor w jego pustej etykiecie (placeholdery).
+  await window.keyboard.press('Enter')
+  const label3 = pageField('Contact label 3')
+  await expect(label3).toBeFocused()
+  await expect(label3).toHaveText('')
+  expect(await placeholderOf(label3)).toBe('"Label"')
+  expect(await placeholderOf(pageField('Contact value 3'))).toBe('"Value"')
   await expect(contacts).toHaveCount(5)
-  await expect(contacts.nth(4)).toContainText('github.com/jane-example')
+  await expect(formValues).toHaveCount(5)
+  await window.keyboard.type('GitHub')
+  // Enter w etykiecie – do wartości.
+  await window.keyboard.press('Enter')
+  await expect(pageField('Contact value 3')).toBeFocused()
+  await window.keyboard.type('github.com/jane-example')
+  await expect(contacts.nth(2)).toHaveText('GitHub: github.com/jane-example')
+  await expect(formField('Contact value 3')).toHaveValue('github.com/jane-example')
 
-  // Usunięcie drugiego kontaktu: „Removed.”, a „Undo” przywraca go z fokusem na jego pierwszym polu w karcie.
-  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
-  await contactsCard.getByRole('button', { name: 'Remove contact 2' }).click()
+  // Cofanie: wartość, etykieta i dodanie – każde jednym krokiem.
+  await window.keyboard.press('Meta+z')
+  await expect(pageField('Contact value 3')).toHaveText('')
+  await window.keyboard.press('Meta+z')
+  await expect(pageField('Contact label 3')).toHaveText('')
+  await window.keyboard.press('Meta+z')
+  await expect(formValues).toHaveCount(4)
   await expect(contacts).toHaveCount(4)
-  await expect(window.locator('.preview .cv-page .cv-contact')).not.toContainText('jane.example@example.com.uk')
-  await expect(removed).toBeVisible()
-  await expect(contactsCard).toBeVisible()
-  await removed.getByRole('button', { name: 'Undo' }).click()
-  await expect(contacts).toHaveCount(5)
-  await expect(contactsCard.getByRole('combobox', { name: 'Contact label 2' })).toBeFocused()
-  await expect(contactsCard.getByRole('textbox', { name: 'Contact value 2' })).toHaveValue('jane.example@example.com.uk')
+
+  // Backspace w pustym kontakcie usuwa go, kursor na końcu poprzedniej wartości; cofnięcie przywraca go jednym krokiem.
+  // (Cofnięte dodanie zabrało pole z kursorem – kontakty są znowu jedną linią.)
+  const emailText = email.locator('[data-joined], [data-field-key="contact:c2:value"]')
+  await clickAtCharacter(emailText, ((await emailText.textContent()) ?? '').length - 1)
+  await window.keyboard.press('ArrowRight')
+  await window.keyboard.press('Enter')
+  await expect(pageField('Contact label 3')).toBeFocused()
+  await expect(formValues).toHaveCount(5)
+  await window.keyboard.press('Backspace')
+  await expect(formValues).toHaveCount(4)
+  await expect.poll(caret).toEqual({ key: 'contact:c2:value', offset: 'jane.example@example.com.uk'.length, collapsed: true })
+  await window.keyboard.press('Meta+z')
+  await expect(formValues).toHaveCount(5)
+
+  // Po wyjściu z kontaktów pusty kontakt znika ze strony (zostaje w danych), a linie są znowu jednym napisem.
+  await clickAtCharacter(pageField('Full name'), 1)
+  await expect(contacts).toHaveCount(4)
+  await expect(email.locator('[data-joined]')).toHaveCount(1)
+  await expect(formValues).toHaveCount(5)
 })
 
 // ---------- „Projekt CV” w pasku narzędzi ----------
@@ -1790,7 +1836,7 @@ test('the menu works from the keyboard alone, and there are no handles below 50%
   await expect(window.locator('.edit-layer .edit-handle')).toHaveCount(0)
   // Edycja dalej działa: tytuł jest Page field, a części z kartą mają przyciski fragmentów.
   await expect(titleField('Education')).toHaveCount(1)
-  await expect(fragment('Contact')).toHaveCount(1)
+  await expect(fragment('Photo')).toHaveCount(1)
 })
 
 // ---------- Dodawanie na stronach: pigułki „+”, pasek „Add to CV”, puste CV ----------
@@ -1955,9 +2001,10 @@ test('a full CV can be built from a new CV with the editing layer and cards alon
   await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(1)
   await expect(bar('Photo')).toHaveCount(0)
 
-  // Kontakt: fokus na wartości pierwszego pustego kontaktu (etykiety nowego CV).
+  // Kontakt: kursor na stronie w wartości pierwszego pustego kontaktu (etykiety nowego CV), z placeholderem.
   await bar('Contact').click()
-  await expect(card('Contact').getByRole('textbox', { name: 'Contact value 1' })).toBeFocused()
+  await expect(pageField('Contact value 1')).toBeFocused()
+  expect(await placeholderOf(pageField('Contact value 1'))).toBe('"Value"')
   await window.keyboard.type('+48 600 000 000')
   await expect(window.locator('.preview .cv-page .cv-contact')).toContainText('+48 600 000 000')
 

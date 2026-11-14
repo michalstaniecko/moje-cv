@@ -3,7 +3,6 @@ import type { Dictionary } from '../../../shared/i18n/en'
 import type { Clause, ClauseContent, CvDocument, EducationItem, ExperienceItem } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
 import { ConsentFields } from '../editor/fields/ConsentFields'
-import { ContactsFields } from '../editor/fields/ContactsFields'
 import { EducationItemFields } from '../editor/fields/EducationItemFields'
 import { educationName, entryName } from '../editor/fields/entryNames'
 import { ExperienceItemFields } from '../editor/fields/ExperienceItemFields'
@@ -18,11 +17,12 @@ import { markInput } from '../preview/keystrokeTiming'
 import { anchoredPosition, type Box } from './anchoredPosition'
 import type { EditTarget } from './editTargets'
 
-// Części CV, które na stronie otwierają Edit card (przycisk fragmentu warstwy edycji). Imię i nazwisko, podsumowanie,
-// tytuły sekcji, wpisy (tekst i żetony dat) i listy edytuje się już wprost na stronie (Page fields, pageFields.ts):
+// Części CV, które na stronie otwierają Edit card (przycisk fragmentu warstwy edycji). Imię i nazwisko, kontakty,
+// podsumowanie, tytuły sekcji, wpisy (tekst i żetony dat) i listy edytuje się już wprost na stronie (Page fields,
+// pageFields.ts):
 // karta tytułu i listy otwiera się jeszcze tylko z Outline i dodawania dla sekcji, której nie ma na stronach
 // (useEditSession.ts), a karta wpisu – tylko dla nowego, pustego wpisu (do S5).
-const cardKinds: ReadonlySet<EditTarget['kind']> = new Set(['photo', 'contacts', 'consent'])
+const cardKinds: ReadonlySet<EditTarget['kind']> = new Set(['photo', 'consent'])
 export const hasCard = (target: EditTarget) => cardKinds.has(target.kind)
 
 const findSection = (document: CvDocument, sectionId: string) =>
@@ -97,13 +97,6 @@ function CardFields({
           <PhotoField editor={editor} photo={document.header.photo} inCard />
         </>
       )
-    case 'contacts':
-      return (
-        <>
-          <CardHeading>{t.contact}</CardHeading>
-          <ContactsFields editor={editor} contacts={document.header.contacts} inCard />
-        </>
-      )
     case 'summary':
       return <SummaryField editor={editor} header={document.header} />
     case 'sectionTitle': {
@@ -166,8 +159,6 @@ function focusKey(target: EditTarget): string | undefined {
       return target.field
     case 'listSection':
       return target.itemId
-    case 'contacts':
-      return target.contactId
     case 'consent':
       return 'text'
     default:

@@ -1,6 +1,6 @@
 import type { ComponentType, Ref } from 'react'
 import type { CvBlock } from '../domain/blocks'
-import { CompanyLine, CvText, DateRange, EducationLine, useShown } from './editable'
+import { CompanyLine, ContactLine, CvText, DateRange, EducationLine, useShown } from './editable'
 import type { BlockViewOverrides } from './templateDefinition'
 
 // Wspólne komponenty bloków – szablon może nadpisać dowolny rodzaj bloku (BlockViewOverrides). Tekst pól przez sloty
@@ -36,7 +36,9 @@ function Header({ block }: { block: Extract<CvBlock, { kind: 'header' }> }) {
         {block.contacts.length > 0 && (
           <div className="cv-contact">
             {block.contacts.map((contact) => (
-              <p key={contact.id}>{contact.label.trim() ? `${contact.label}: ${contact.value}` : contact.value}</p>
+              <p key={contact.id}>
+                <ContactLine block={block} contact={contact} />
+              </p>
             ))}
           </div>
         )}

@@ -1,6 +1,9 @@
 import { CompanyLine, CvText, DateRange, EducationDetails, useShown } from '../editable'
+import type { CvBlock } from '../../domain/blocks'
 import type { BlockContentView, PageFooterView, TemplateDefinition } from '../templateDefinition'
 import './bold.css'
+
+type HeaderBlock = Extract<CvBlock, { kind: 'header' }>
 
 // „Wyrazisty” – akcent jako wypełnienie: pas nagłówka ze spadem, tytuły-pigułki, kwadratowe znaczniki (issue #39).
 // Tytuł sekcji i kolejne punkty doświadczenia rysuje wspólny markup – wystarcza im arkusz.
@@ -22,10 +25,7 @@ const Header: BlockContentView<'header'> = ({ block }) => {
             {block.contacts.length > 0 && (
               <ul className="cv-contact">
                 {block.contacts.map((contact) => (
-                  <li key={contact.id} className="cv-contact-item">
-                    {contact.label.trim() && <span className="cv-contact-label">{contact.label}</span>}
-                    <span>{contact.value}</span>
-                  </li>
+                  <Contact key={contact.id} block={block} contact={contact} />
                 ))}
               </ul>
             )}
@@ -39,6 +39,23 @@ const Header: BlockContentView<'header'> = ({ block }) => {
         </p>
       )}
     </header>
+  )
+}
+
+// Kontakt: etykieta (tylko niepusta, w Edit mode także w odsłoniętych kontaktach) przed wartością.
+function Contact({ block, contact }: { block: HeaderBlock; contact: HeaderBlock['contacts'][number] }) {
+  const shownLabel = useShown(block, 'contactLabel', contact.label, contact.id)
+  return (
+    <li className="cv-contact-item">
+      {shownLabel && (
+        <span className="cv-contact-label">
+          <CvText block={block} slot="contactLabel" part={contact.id} text={contact.label} />
+        </span>
+      )}
+      <span>
+        <CvText block={block} slot="contactValue" part={contact.id} text={contact.value} />
+      </span>
+    </li>
   )
 }
 

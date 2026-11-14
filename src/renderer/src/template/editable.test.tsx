@@ -61,6 +61,9 @@ function editingWith(document: CvDocument, reveal: string[] = [], expanded: stri
       if (block.kind === 'header') {
         if (slot === 'fullName') return field('header:fullName', 'fullName', document.header.fullName)
         if (slot === 'summary') return field('header:summary', 'summary', document.header.summary)
+        const contact = document.header.contacts.find((candidate) => candidate.id === part)
+        if (contact && slot === 'contactLabel') return field(`contact:${contact.id}:label`, 'contacts', contact.label)
+        if (contact && slot === 'contactValue') return field(`contact:${contact.id}:value`, 'contacts', contact.value)
         return null
       }
       const [first, rest] = block.id.split(':') as [string, string | undefined]
@@ -137,6 +140,7 @@ const emptyHeader: CvDocument = {
 const titles = ['experience', 'education', 'skills', 'languages'].map((id) => `section:${id}:title`)
 const templateIds = Object.keys(templates) as (keyof typeof templates)[]
 const headerAndTitles = (keys: string[]) => keys.filter((key) => key.startsWith('header:') || key.endsWith(':title'))
+const contactKeys = (keys: string[]) => keys.filter((key) => key.startsWith('contact:'))
 
 // Pierwsze stanowisko i pierwsze wykształcenie Sample CV podmienione na podane.
 function withEntries(position: Partial<ExperienceItem>, education: Partial<EducationItem>): CvDocument {
@@ -276,6 +280,48 @@ describe('editing slots', () => {
         { key: 'list:new:text', text: '', measuring: false },
         { key: 'list:s1:text', text: 'Commercial negotiation', measuring: false }
       ])
+    })
+  }
+
+  it('draw a Classic contact as one “label: value” text outside the active contacts, and as two fields with the separator in them', () => {
+    const idle = render(sample, 'classic', editingWith(sample))
+    expect(idle.html).toContain('<p><span data-joined="contact:c1:label contact:c1:value">Phone: +44 7700 900000</span></p>')
+    expect(contactKeys(idle.keys)).toEqual([])
+
+    const active = render(sample, 'classic', editingWith(sample, [], ['contacts']))
+    expect(active.html).toContain(
+      '<p><span data-field-key="contact:c1:label" data-placeholder="label">Phone</span>: <span data-field-key="contact:c1:value" data-placeholder="value">+44 7700 900000</span></p>'
+    )
+    // Kontakt bez etykiety: sama wartość, bez separatora.
+    const unlabelled: CvDocument = { ...sample, header: { ...sample.header, contacts: [{ id: 'c1', label: ' ', value: 'jane@example.com' }] } }
+    expect(render(unlabelled, 'classic', editingWith(unlabelled)).html).toContain('<p><span data-joined="contact:c1:value">jane@example.com</span></p>')
+    expect(render(unlabelled, 'classic', editingWith(unlabelled, [], ['contacts'])).html).toContain(
+      '<p><span data-field-key="contact:c1:value" data-placeholder="value">jane@example.com</span></p>'
+    )
+  })
+
+  for (const templateId of ['modern', 'bold'] as const) {
+    it(`draw the label and the value of every contact as their own fields in the ${templateId} template`, () => {
+      const page = render(sample, templateId, editingWith(sample))
+      expect(contactKeys(page.keys)).toEqual(sample.header.contacts.flatMap((contact) => [`contact:${contact.id}:label`, `contact:${contact.id}:value`]))
+      const labelElement = templateId === 'modern' ? 'div' : 'span'
+      expect(page.html).toContain(`<${labelElement} class="cv-contact-label"><span data-field-key="contact:c1:label"`)
+    })
+  }
+
+  for (const templateId of templateIds) {
+    it(`draw every contact of revealed contacts, the empty ones with placeholders and the separator, in the ${templateId} template`, () => {
+      const document: CvDocument = {
+        ...sample,
+        header: { ...sample.header, contacts: [{ id: 'c1', label: '', value: '' }, ...sample.header.contacts.slice(1)] }
+      }
+      expect(contactKeys(render(document, templateId, editingWith(document)).keys)).not.toContain('contact:c1:value')
+      const page = render(document, templateId, editingWith(document, ['contacts']))
+      expect(page.fields.filter((field) => field.key.startsWith('contact:c1:'))).toEqual([
+        { key: 'contact:c1:label', text: '', measuring: false },
+        { key: 'contact:c1:value', text: '', measuring: false }
+      ])
+      if (templateId === 'classic') expect(page.html).toMatch(/data-placeholder="label"><\/span>: <span data-field-key="contact:c1:value"/)
     })
   }
 

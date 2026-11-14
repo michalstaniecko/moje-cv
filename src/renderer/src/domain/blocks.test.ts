@@ -191,6 +191,21 @@ describe('generateBlocks', () => {
       }
     })
 
+    it('gives the header a block with every contact, the empty ones too, when the contacts are revealed', () => {
+      const document = { ...withSections(listSection()), header: { ...emptyHeader, contacts: [...emptyHeader.contacts, { id: 'c2', label: '', value: 'jane@example.com' }] } }
+
+      expect(generateBlocks(document, geometry())[0]).toEqual(
+        expect.objectContaining({ kind: 'header', contacts: [{ id: 'c2', label: '', value: 'jane@example.com' }] })
+      )
+      expect(generateBlocks(document, geometry(), { reveal: new Set(['contacts']) })[0]).toEqual(
+        expect.objectContaining({ kind: 'header', contacts: document.header.contacts })
+      )
+      const noContacts = { ...withSections(listSection()), header: emptyHeader }
+      expect(generateBlocks(noContacts, geometry(), { reveal: new Set(['contacts']) })[0]).toEqual(
+        expect.objectContaining({ kind: 'header', id: 'header', contacts: emptyHeader.contacts })
+      )
+    })
+
     it('gives a section with entries a title block for its empty title when the title is revealed', () => {
       const document = withSections(withEmptyTitle(experience), withEmptyTitle(listSection()))
       const reveal = new Set(['sectionTitle:experience', 'sectionTitle:skills'])

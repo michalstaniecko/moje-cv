@@ -102,6 +102,13 @@ export const addContact = (): Change<CvDocument> =>
 export const updateContact = (id: string, patch: Partial<Omit<Contact, 'id'>>): Change<CvDocument> =>
   updateContacts((contacts) => replaceById(contacts, id, (contact) => ({ ...contact, ...patch })))
 
+// Nowy, pusty kontakt tuż za kontaktem `id` (Enter w wartości kontaktu na stronie, docs/specs/wysiwyg-editing.md, W11).
+// Nieznany kontakt – bez zmian.
+export const insertContactAfter = (id: string, newContactId: string = newId()): Change<CvDocument> =>
+  updateContacts((contacts) =>
+    contacts.flatMap((contact) => (contact.id === id ? [contact, { id: newContactId, label: '', value: '' }] : [contact]))
+  )
+
 export const removeContact = (id: string): Change<CvDocument> =>
   updateContacts((contacts) => contacts.filter((contact) => contact.id !== id))
 

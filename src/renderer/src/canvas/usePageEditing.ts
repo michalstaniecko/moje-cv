@@ -34,7 +34,7 @@ export function usePageEditing({
   const fragment = useActiveFragment(active)
   const revealed = fragment !== null && fragmentHasEmptyField(fragment, document) ? fragment : null
   const reveal = useMemo(() => (revealed === null ? noReveal : new Set([revealed])), [revealed])
-  // Aktywny fragment z liniami złączonymi z kilku pól (wpis) ma je rozwinięte w osobne pola – tylko on, bo poza nim
+  // Aktywny fragment z liniami złączonymi z kilku pól (wpis, kontakty) ma je rozwinięte w osobne pola – tylko on, bo poza nim
   // strony muszą być piksel w piksel jak w PDF (template/editable.tsx). Wejście we wpis przerysowuje więc strony (bez
   // ponownego podziału stron); wejście w inne fragmenty – nie.
   const expandedFragment = fragment !== null && fragmentHasJoinedFields(fragment) ? fragment : null

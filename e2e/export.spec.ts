@@ -2023,6 +2023,8 @@ test('screen readers: in Edit mode the pages are the CV with labelled text field
   await expect(pages.getByRole('textbox', { name: 'Job title – Position “Procurement Specialist”', exact: true })).toHaveCount(1)
   await expect(pages.getByRole('textbox', { name: 'Item 2 – List “Languages”', exact: true })).toHaveText('German – B2')
   await expect(pages.getByRole('textbox', { name: 'Company – Position “Procurement Specialist”, City – Position “Procurement Specialist”', exact: true })).toHaveText('Example Trading plc – Leeds')
+  // Kontakty (S4): w Classic „etykieta: wartość” bez fokusu to jedno pole z nazwami obu pól.
+  await expect(pages.getByRole('textbox', { name: 'Contact label 2, Contact value 2', exact: true })).toHaveText('Email: jane.example@example.com')
   await expect(pages.getByRole('listitem').locator('[role="textbox"]')).toHaveCount(await pages.getByRole('listitem').count())
   await expect(pages.getByRole('listitem').first()).toBeVisible()
 
@@ -2683,7 +2685,7 @@ test('a second removal replaces the “Removed.” message and its Undo brings b
   await window.getByRole('button', { name: 'Remove contact 1' }).click()
   await expect(removed).toBeVisible()
   await removed.getByRole('button', { name: 'Undo' }).click()
-  await expect(window.getByLabel('Contact label 1')).toBeFocused()
+  await expect(window.locator('.editor-form').getByLabel('Contact label 1')).toBeFocused()
 })
 
 test('the “Removed.” message goes away by itself after a while, but not while the pointer or the focus is on it', async () => {

@@ -23,8 +23,8 @@ export type EditSession = ReturnType<typeof useEditSession>
 //   zamyka kartę i woła `onCardGone` (edytor przenosi fokus w bezpieczne miejsce).
 // - Aktywne pole (`activeField`, useActiveField.ts): Page field z fokusem na stronach (docs/specs/wysiwyg-editing.md);
 //   otwarty Field popover daty (`datePopover`, DatePopover.tsx) – zamykany przy przejściu do Preview mode.
-//   Części CV edytowane już na stronie (imię i nazwisko, podsumowanie, tytuł sekcji, pole tekstowe wpisu, element
-//   listy) nie mają karty: „otwarcie” ich z Outline, „Add to CV” czy menu stawia kursor w ich polu na stronie (pusta
+//   Części CV edytowane już na stronie (imię i nazwisko, kontakty, podsumowanie, tytuł sekcji, pole tekstowe wpisu,
+//   element listy) nie mają karty: „otwarcie” ich z Outline, „Add to CV” czy menu stawia kursor w ich polu na stronie (pusta
 //   część jest odsłaniana). Karta tytułu i listy zostaje tylko dla sekcji, której nie ma na stronach (ukrytej albo
 //   pustej) – do czasu odsłaniania sekcji (S5); karta wpisu – tylko dla nowego wpisu (do S5; daty zmienia żeton daty).
 export function useEditSession(document: CvDocument, { onCardGone }: { onCardGone?: () => void } = {}) {
@@ -71,7 +71,10 @@ export function useEditSession(document: CvDocument, { onCardGone }: { onCardGon
       if (key !== null && onPages(target, latestDocument.current)) {
         setCard(null)
         activeField.request({ key, fragment: fragmentKey(target) }, window.document)
-      } else setCard({ target, anchor })
+      } else if (target.kind !== 'contacts') {
+        // Kontakty nie mają już karty: bez kontaktu (nie ma gdzie postawić kursora) – nic.
+        setCard({ target, anchor })
+      }
     },
     [activeField]
   )
@@ -80,11 +83,12 @@ export function useEditSession(document: CvDocument, { onCardGone }: { onCardGon
   return { mode, setMode, togglePreview, card, openCard, closeCard, activeField, datePopover }
 }
 
-// Czy część CV edytowana na stronie może tam dostać kursor: nagłówek zawsze (pusty jest odsłaniany), tytuł sekcji –
+// Czy część CV edytowana na stronie może tam dostać kursor: nagłówek (imię i nazwisko, podsumowanie, kontakty) zawsze
+// (pusty jest odsłaniany), tytuł sekcji –
 // gdy sekcja jest na stronach (nie ukryta i z treścią), wpis i element listy – gdy ich sekcja nie jest ukryta (pusty
 // jest odsłaniany razem z sekcją).
 function onPages(target: EditTarget, document: CvDocument): boolean {
-  if (target.kind === 'fullName' || target.kind === 'summary') return true
+  if (target.kind === 'fullName' || target.kind === 'summary' || target.kind === 'contacts') return true
   const section = 'sectionId' in target ? document.sections.find((candidate) => candidate.id === target.sectionId) : undefined
   if (!section) return false
   return target.kind === 'sectionTitle' ? sectionShown(section, document) : !section.hidden

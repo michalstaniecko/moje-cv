@@ -3,6 +3,7 @@ import { generateBlocks, type CvBlock, type Reveal } from '../domain/blocks'
 import { formatYearMonth, isEndBeforeStart } from '../domain/dates'
 import type { CvDocument, EducationItem, ExperienceItem, Section, TextItem, YearMonth } from '../domain/schema'
 import {
+  insertContactAfter,
   mergeBulletIntoPrevious,
   mergeListItemIntoPrevious,
   moveBullet,
@@ -10,12 +11,14 @@ import {
   pasteIntoBullet,
   pasteIntoListItem,
   removeBullet,
+  removeContact,
   removeListItem,
   splitBullet,
   splitListItem,
   textPaste,
   textSplit,
   updateBullet,
+  updateContact,
   updateEducationItem,
   updateExperienceItem,
   updateHeader,
@@ -39,17 +42,21 @@ import type { TextSelection } from './pageFieldInput'
 // Klucz pola = klucz łączenia kroków cofania pola CV form (te same kroki cofania na stronie i w formularzu)
 // = `data-field-key` na stronie: `header:fullName`, `header:summary`, `section:<sekcja>:title`,
 // `experience:<wpis>:role|company|location`, `experience:<wpis>:bullet:<punkt>`, `education:<wpis>:level|field|institution`,
-// `list:<element>:text`; żetony dat (W12): `experience|education:<wpis>:start|end`. Fragment pola (aktywny fragment, `reveal`) – klucz fragmentu warstwy edycji (`fragmentKey`):
-// `fullName`, `summary`, `sectionTitle:<sekcja>`, `item:<wpis>` (wpis z punktami), `list:<sekcja>`.
+// `list:<element>:text`, `contact:<kontakt>:label|value`; żetony dat (W12): `experience|education:<wpis>:start|end`.
+// Fragment pola (aktywny fragment, `reveal`) – klucz fragmentu warstwy edycji (`fragmentKey`): `fullName`, `summary`,
+// `contacts` (wszystkie kontakty), `sectionTitle:<sekcja>`, `item:<wpis>` (wpis z punktami), `list:<sekcja>`.
 
 type ExperienceText = 'role' | 'company' | 'location'
 type EducationText = 'level' | 'field' | 'institution'
+type ContactText = 'label' | 'value'
 export type DateField = 'start' | 'end'
+type Contact = CvDocument['header']['contacts'][number]
 
 // Pole CV wskazane kluczem, rozwiązane w dokumencie (z sekcją, w której leży).
 type FieldRef =
   | { kind: 'fullName' }
   | { kind: 'summary' }
+  | { kind: 'contact'; contact: Contact; index: number; field: ContactText }
   | { kind: 'title'; section: Section }
   | { kind: 'experience'; sectionId: string; item: ExperienceItem; field: ExperienceText }
   | { kind: 'bullet'; sectionId: string; item: ExperienceItem; index: number }
@@ -62,6 +69,7 @@ type Entry = { type: 'experience'; item: ExperienceItem } | { type: 'education';
 
 const fullNameKey = 'header:fullName'
 const summaryKey = 'header:summary'
+const contactKey = (contactId: string, field: ContactText) => `contact:${contactId}:${field}`
 const titleKey = (sectionId: string) => `section:${sectionId}:title`
 const experienceKey = (itemId: string, field: ExperienceText) => `experience:${itemId}:${field}`
 const bulletKey = (itemId: string, bulletId: string) => `experience:${itemId}:bullet:${bulletId}`
@@ -77,6 +85,8 @@ function keyOf(ref: FieldRef): string {
       return fullNameKey
     case 'summary':
       return summaryKey
+    case 'contact':
+      return contactKey(ref.contact.id, ref.field)
     case 'title':
       return titleKey(ref.section.id)
     case 'experience':
@@ -97,6 +107,8 @@ function fragmentOf(ref: FieldRef): string {
     case 'fullName':
     case 'summary':
       return ref.kind
+    case 'contact':
+      return 'contacts'
     case 'title':
       return `sectionTitle:${ref.section.id}`
     case 'listItem':
@@ -114,6 +126,8 @@ function valueOf(ref: FieldRef, document: CvDocument): string {
       return document.header.fullName
     case 'summary':
       return document.header.summary
+    case 'contact':
+      return ref.contact[ref.field]
     case 'title':
       return ref.section.title
     case 'experience':
@@ -146,6 +160,11 @@ function findEntry(document: CvDocument, itemId: string) {
   return null
 }
 
+function findContact(document: CvDocument, contactId: string, field: ContactText): FieldRef | null {
+  const index = document.header.contacts.findIndex((contact) => contact.id === contactId)
+  return index === -1 ? null : { kind: 'contact', contact: document.header.contacts[index]!, index, field }
+}
+
 function findListItem(document: CvDocument, itemId: string): FieldRef | null {
   for (const section of document.sections) {
     if (section.type !== 'list') continue
@@ -159,6 +178,8 @@ function findListItem(document: CvDocument, itemId: string): FieldRef | null {
 function refOf(key: string, document: CvDocument): FieldRef | null {
   if (key === fullNameKey) return { kind: 'fullName' }
   if (key === summaryKey) return { kind: 'summary' }
+  const contact = /^contact:(.+):(label|value)$/.exec(key)
+  if (contact) return findContact(document, contact[1]!, contact[2] as ContactText)
   const title = /^section:(.+):title$/.exec(key)
   if (title) {
     const section = document.sections.find((candidate) => candidate.id === title[1])
@@ -197,13 +218,20 @@ function refOf(key: string, document: CvDocument): FieldRef | null {
 
 // Klucz Page field (albo żetonu daty) części CV edytowanej na stronie (fokus z Outline, „Add to CV”, menu) albo null –
 // część bez pola albo z kartą (wpis bez wskazanego pola: nowy wpis ma kartę do S5). Sekcja listowa bez wskazanego
-// elementu – jej pierwszy element (gdy podano dokument).
+// elementu – jej pierwszy element; kontakt – jego pierwsze puste pole, a wypełniony – wartość; bez wskazanego kontaktu –
+// pierwszy (gdy podano dokument).
 export function pageFieldKey(target: EditTarget, document?: CvDocument): string | null {
   switch (target.kind) {
     case 'fullName':
       return fullNameKey
     case 'summary':
       return summaryKey
+    case 'contacts': {
+      const contacts = document?.header.contacts ?? []
+      const contact = target.contactId === undefined ? contacts[0] : contacts.find((candidate) => candidate.id === target.contactId)
+      if (!contact) return null
+      return contactKey(contact.id, isFilled(contact.label) ? 'value' : 'label')
+    }
     case 'sectionTitle':
       return titleKey(target.sectionId)
     case 'experienceItem':
@@ -232,6 +260,8 @@ export function pageFieldTarget(key: string, document: CvDocument): EditTarget |
       return { kind: 'fullName' }
     case 'summary':
       return { kind: 'summary' }
+    case 'contact':
+      return { kind: 'contacts', contactId: ref.contact.id }
     case 'title':
       return { kind: 'sectionTitle', sectionId: ref.section.id }
     case 'experience':
@@ -258,6 +288,10 @@ function describe(ref: FieldRef, t: Dictionary['editor']): Pick<EditableField, '
       return { label: t.fullName, placeholder: t.fullName, spellcheck: false }
     case 'summary':
       return { label: t.summary, placeholder: t.summary, spellcheck: true }
+    case 'contact':
+      return ref.field === 'label'
+        ? { label: t.contactLabel(ref.index + 1), placeholder: t.contactLabelPlaceholder, spellcheck: false }
+        : { label: t.contactValue(ref.index + 1), placeholder: t.contactValuePlaceholder, spellcheck: false }
     case 'title':
       return { label: t.sectionTitle(sectionName(ref.section, t)), placeholder: t.sectionTypes[ref.section.type], spellcheck: true }
     case 'experience':
@@ -330,6 +364,10 @@ export function pageFieldOf(
   if (block.kind === 'header') {
     if (slot === 'fullName') return field({ kind: 'fullName' }, document, t)
     if (slot === 'summary') return field({ kind: 'summary' }, document, t)
+    const contactField = slot === 'contactLabel' ? 'label' : slot === 'contactValue' ? 'value' : null
+    if (contactField && part !== undefined && block.contacts.some((contact) => contact.id === part)) {
+      return field(findContact(document, part, contactField), document, t)
+    }
     return null
   }
   const target = blockTarget(block.id, document)
@@ -401,6 +439,8 @@ export function fieldChange(key: string, value: string): Change<CvDocument> {
         return updateHeader({ fullName: value })(document)
       case 'summary':
         return updateHeader({ summary: value })(document)
+      case 'contact':
+        return updateContact(ref.contact.id, { [ref.field]: value })(document)
       case 'title':
         return updateSection(ref.section.id, { title: value })(document)
       case 'experience':
@@ -423,6 +463,7 @@ export function fieldChange(key: string, value: string): Change<CvDocument> {
 export function fragmentHasEmptyField(fragment: string, document: CvDocument): boolean {
   if (fragment === 'fullName') return !isFilled(document.header.fullName)
   if (fragment === 'summary') return !isFilled(document.header.summary)
+  if (fragment === 'contacts') return document.header.contacts.some((contact) => !isFilled(contact.label) || !isFilled(contact.value))
   const separator = fragment.indexOf(':')
   const [kind, id] = [fragment.slice(0, separator), fragment.slice(separator + 1)]
   if (kind === 'sectionTitle') {
@@ -444,9 +485,10 @@ export function fragmentHasEmptyField(fragment: string, document: CvDocument): b
   return false
 }
 
-// Czy fragment ma linie złączone z kilku pól („firma – miejscowość”, „poziom, kierunek, uczelnia”) – wpis. Takie
-// linie są osobnymi polami tylko w aktywnym fragmencie (template/editable.tsx, `PageEditing.expanded`).
-export const fragmentHasJoinedFields = (fragment: string) => fragment.startsWith('item:')
+// Czy fragment ma linie złączone z kilku pól („firma – miejscowość”, „poziom, kierunek, uczelnia”, w Classic „etykieta:
+// wartość” kontaktu) – wpis i kontakty. Takie linie są osobnymi polami tylko w aktywnym fragmencie
+// (template/editable.tsx, `PageEditing.expanded`).
+export const fragmentHasJoinedFields = (fragment: string) => fragment.startsWith('item:') || fragment === 'contacts'
 
 // ---------- Struktura z klawiatury (W6, W11) ----------
 
@@ -471,8 +513,18 @@ const mergeIntoPrevious = (ref: ListRef, itemId: string) =>
 // Czy pole to punkt albo element listy (Enter dzieli, wklejenie wielu linii tworzy kolejne elementy).
 export const isListField = (key: string) => /^experience:.+?:bullet:.+$/.test(key) || /^list:.+:text$/.test(key)
 
-// Enter: podział w miejscu kursora (zaznaczenie znika), kursor na początku nowego elementu; w pustym – nic.
+// Czy Enter w polu zmienia strukturę (`splitField`): punkt, element listy, wartość kontaktu.
+export const splitsOnEnter = (key: string) => isListField(key) || /^contact:.+:value$/.test(key)
+
+// Enter: podział w miejscu kursora (zaznaczenie znika), kursor na początku nowego elementu; w pustym – nic. W wartości
+// kontaktu – nowy, pusty kontakt za bieżącym, kursor w jego etykiecie (W11); w pustej wartości – nic.
 export function splitField(key: string, document: CvDocument, selection: TextSelection, newItemId?: string): FieldEdit | null {
+  const contact = refOf(key, document)
+  if (contact?.kind === 'contact') {
+    if (contact.field !== 'value' || !isFilled(contact.contact.value)) return null
+    const id = newItemId ?? crypto.randomUUID()
+    return { change: insertContactAfter(contact.contact.id, id), focus: { key: contactKey(id, 'label'), caret: 0 } }
+  }
   const ref = listRef(key, document)
   if (!ref) return null
   const current = listItems(ref)[ref.index]!
@@ -483,8 +535,14 @@ export function splitField(key: string, document: CvDocument, selection: TextSel
 }
 
 // Backspace na początku: pusty element znika (kursor na końcu poprzedniego), niepusty dołącza do poprzedniego (kursor
-// w miejscu złączenia); pierwszy – nic.
+// w miejscu złączenia); pierwszy – nic. Kontakt: pusty (etykieta i wartość) znika, kursor na końcu wartości poprzedniego.
 export function mergeBackward(key: string, document: CvDocument): FieldEdit | null {
+  const contact = refOf(key, document)
+  if (contact?.kind === 'contact') {
+    const previous = document.header.contacts[contact.index - 1]
+    if (!previous || isFilled(contact.contact.label) || isFilled(contact.contact.value)) return null
+    return { change: removeContact(contact.contact.id), focus: { key: contactKey(previous.id, 'value'), caret: previous.value.length } }
+  }
   const ref = listRef(key, document)
   if (!ref || ref.index === 0) return null
   const items = listItems(ref)

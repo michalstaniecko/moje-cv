@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { sampleCvs } from '../domain/sampleCv'
 import {
   addEducationItem,
+  insertContactAfter,
+  removeContact,
   addListItem,
   applyClause,
   moveBullet,
@@ -225,6 +227,21 @@ describe('pasting lines into a bullet or a list item', () => {
     const paste = textPaste(0, 0, ['a', 'b', 'c'])
     expect(paste.newItemIds).toHaveLength(2)
     expect(new Set(paste.newItemIds).size).toBe(2)
+  })
+})
+
+describe('contacts', () => {
+  const contacts = (document: typeof sampleCv) => document.header.contacts.map((contact) => contact.id)
+
+  it('inserts an empty contact right after the given one', () => {
+    const changed = insertContactAfter('c2', 'new')(sampleCv)
+    expect(contacts(changed)).toEqual(['c1', 'c2', 'new', 'c3', 'c4'])
+    expect(changed.header.contacts[2]).toEqual({ id: 'new', label: '', value: '' })
+    expect(insertContactAfter('gone', 'new')(sampleCv)).toEqual(sampleCv)
+  })
+
+  it('removes a contact', () => {
+    expect(contacts(removeContact('c1')(sampleCv))).toEqual(['c2', 'c3', 'c4'])
   })
 })
 

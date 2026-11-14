@@ -61,17 +61,19 @@ const joinFilled = (parts: string[], separator: string): string => parts.filter(
 
 // Części CV odsłonięte w Edit mode (docs/specs/wysiwyg-editing.md, W4, W10): mają blok mimo pustych pól, żeby było
 // gdzie postawić kursor. Klucze to klucze fragmentów strony warstwy edycji (`fragmentKey` w canvas/editTargets.ts):
-// `fullName` i `summary` (części nagłówka), `sectionTitle:<id sekcji>`, `item:<id wpisu>` (stanowisko albo wykształcenie –
-// blok mimo pustych pól, a stanowisko ze wszystkimi punktami, także pustymi) i `list:<id sekcji>` (wiersze ze wszystkimi
-// elementami listy, także pustymi). PDF, DOCX i Preview mode nigdy ich nie podają.
+// `fullName`, `summary` i `contacts` (części nagłówka; odsłonięte kontakty – wszystkie, także puste),
+// `sectionTitle:<id sekcji>`, `item:<id wpisu>` (stanowisko albo wykształcenie – blok mimo pustych pól, a stanowisko ze
+// wszystkimi punktami, także pustymi) i `list:<id sekcji>` (wiersze ze wszystkimi elementami listy, także pustymi). PDF,
+// DOCX i Preview mode nigdy ich nie podają.
 export type Reveal = ReadonlySet<string>
 
 export type GenerateBlocksOptions = { reveal?: Reveal }
 
-const headerParts = ['fullName', 'summary']
+const headerParts = ['fullName', 'summary', 'contacts']
 
+// Kontakty na stronie: z niepustą wartością; odsłonięte (`contacts`) – wszystkie, także puste.
 function headerBlocks(header: CvDocument['header'], spacing: BlockSpacingMm, reveal: Reveal): DraftBlock[] {
-  const contacts = header.contacts.filter((contact) => isFilled(contact.value))
+  const contacts = reveal.has('contacts') ? header.contacts : header.contacts.filter((contact) => isFilled(contact.value))
   const photoUrl = header.photo?.dataUrl ?? null
   const revealed = headerParts.some((part) => reveal.has(part))
   if (!isFilled(header.fullName) && contacts.length === 0 && !isFilled(header.summary) && !photoUrl && !revealed) return []

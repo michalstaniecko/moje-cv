@@ -12,10 +12,13 @@ import type { ListSectionLayout } from '../domain/templateGeometry'
 // Tekst bloku rysowany przez slot: `fullName` i `summary` nagłówka, `title` tytułu sekcji (także obok listy), pola
 // stanowiska (`role`, `company`, `location`) i jego punkt (`bullet` – pierwszy punkt w bloku wpisu albo punkt bloku
 // punktu), pola wykształcenia (`level`, `field`, `institution`), element wiersza listy (`item`, z id elementu) i daty
-// wpisu (`start`, `end` – żetony dat, `DateRange`).
+// wpisu (`start`, `end` – żetony dat, `DateRange`), etykieta i wartość kontaktu (`contactLabel`, `contactValue`, z id
+// kontaktu).
 export type SlotName =
   | 'fullName'
   | 'summary'
+  | 'contactLabel'
+  | 'contactValue'
   | 'title'
   | 'role'
   | 'company'
@@ -102,9 +105,9 @@ function useField(block: CvBlock, slot: SlotName, part?: string): Editable | nul
 const shownField = ({ context, field }: Editable) => isFilled(field.value) || context.editing.reveal.has(field.fragment)
 
 // Czy szablon rysuje element pola: w dokumencie – gdy tekst jest niepusty (jak dotąd), w Edit mode także wtedy, gdy
-// fragment pola jest odsłonięty (pusty Page field z placeholderem w aktywnym fragmencie).
-export function useShown(block: CvBlock, slot: SlotName, text: string): boolean {
-  const editable = useField(block, slot)
+// fragment pola jest odsłonięty (pusty Page field z placeholderem w aktywnym fragmencie). `part` – jak w `CvText`.
+export function useShown(block: CvBlock, slot: SlotName, text: string, part?: string): boolean {
+  const editable = useField(block, slot, part)
   return isFilled(text) || (editable !== null && editable.context.editing.reveal.has(editable.field.fragment))
 }
 
@@ -140,8 +143,19 @@ function Joined({ fields, separator, text }: { fields: Editable[]; separator: st
   ))
 }
 
+type HeaderBlock = Extract<CvBlock, { kind: 'header' }>
 type ExperienceEntryBlock = Extract<CvBlock, { kind: 'experienceEntry' }>
 type EducationEntryBlock = Extract<CvBlock, { kind: 'educationEntry' }>
+
+// „Etykieta: wartość” kontaktu wspólnego markupu (Classic): w dokumencie jeden napis (bez etykiety – sama wartość),
+// w Edit mode dwa pola z separatorem „: ” (poza aktywnymi kontaktami – jeden napis, jak każda linia złączona).
+export function ContactLine({ block, contact }: { block: HeaderBlock; contact: HeaderBlock['contacts'][number] }) {
+  const label = useField(block, 'contactLabel', contact.id)
+  const value = useField(block, 'contactValue', contact.id)
+  const text = contact.label.trim() ? `${contact.label}: ${contact.value}` : contact.value
+  if (!label || !value) return text
+  return <Joined fields={[label, value]} separator=": " text={text} />
+}
 
 // „Firma – miejscowość” stanowiska: w dokumencie `companyLine`, w Edit mode dwa pola z separatorem.
 export function CompanyLine({ block }: { block: ExperienceEntryBlock }) {

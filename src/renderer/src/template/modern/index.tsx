@@ -1,6 +1,9 @@
 import { CompanyLine, CvText, DateRange, EducationDetails, useShown } from '../editable'
+import type { CvBlock } from '../../domain/blocks'
 import type { BlockContentView, PageFooterView, TemplateDefinition } from '../templateDefinition'
 import './modern.css'
+
+type HeaderBlock = Extract<CvBlock, { kind: 'header' }>
 
 // „Nowoczesny” – wygląd z projektu Claude Design „Moje CV – Szablon Nowoczesny” (issue #37).
 // Tytuł sekcji i kolejne punkty doświadczenia rysuje wspólny markup – wystarcza im arkusz.
@@ -22,10 +25,7 @@ const Header: BlockContentView<'header'> = ({ block }) => {
         {block.contacts.length > 0 && (
           <div className="cv-contact">
             {block.contacts.map((contact) => (
-              <div key={contact.id}>
-                {contact.label.trim() && <div className="cv-contact-label">{contact.label}</div>}
-                <div>{contact.value}</div>
-              </div>
+              <Contact key={contact.id} block={block} contact={contact} />
             ))}
           </div>
         )}
@@ -37,6 +37,23 @@ const Header: BlockContentView<'header'> = ({ block }) => {
       </div>
       {block.photoUrl && <img className="cv-photo" src={block.photoUrl} alt="" />}
     </header>
+  )
+}
+
+// Kontakt: etykieta (tylko niepusta, w Edit mode także w odsłoniętych kontaktach) nad wartością.
+function Contact({ block, contact }: { block: HeaderBlock; contact: HeaderBlock['contacts'][number] }) {
+  const shownLabel = useShown(block, 'contactLabel', contact.label, contact.id)
+  return (
+    <div>
+      {shownLabel && (
+        <div className="cv-contact-label">
+          <CvText block={block} slot="contactLabel" part={contact.id} text={contact.label} />
+        </div>
+      )}
+      <div>
+        <CvText block={block} slot="contactValue" part={contact.id} text={contact.value} />
+      </div>
+    </div>
   )
 }
 

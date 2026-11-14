@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useLayoutEffect, useRef } from 'r
 import type { CvEditor } from '../editor/cvEditor'
 import type { JoinedFieldsProps, PageFieldProps } from '../template/editable'
 import { caretAfterChange, fieldValue, normalizePastedText, pastedLines, replaceSelection, type TextSelection } from './pageFieldInput'
-import { fieldChange, isListField, mergeBackward, mergeForward, moveField, pasteLines, splitField, type FieldEdit } from './pageFields'
+import { fieldChange, isListField, mergeBackward, mergeForward, moveField, pasteLines, splitField, splitsOnEnter, type FieldEdit } from './pageFields'
 import type { DatePopoverStore } from './DatePopover'
 import { offsetOf, readSelection, writeSelection, type ActiveFieldStore } from './useActiveField'
 
@@ -20,6 +20,7 @@ import { offsetOf, readSelection, writeSelection, type ActiveFieldStore } from '
 //   działa); formatowanie zablokowane. Wklejanie i upuszczanie (`paste`, `drop`) – czysty tekst ze schowka.
 // - Punkty stanowiska i elementy list (W6, W11): Enter dzieli w miejscu kursora, Backspace na początku łączy
 //   z poprzednim (pusty – usuwa), Delete na końcu łączy z następnym, wklejenie wielu linii tworzy kolejne elementy.
+//   Kontakty: Enter w wartości dodaje za kontaktem nowy (kursor w jego etykiecie), Backspace w pustym kontakcie go usuwa.
 //   Każda taka zmiana to osobny krok cofania, a kursor staje we wskazanym polu po nowym podziale stron
 //   (`active.expect` – nowe pole powstaje dopiero z nowymi blokami).
 // - ⌥⇧↑/↓ przenosi punkt albo element listy o pozycję, a w polu wpisu – cały wpis; kursor zostaje w polu.
@@ -221,8 +222,9 @@ function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
         else editor.redo()
       } else if (type === 'insertParagraph' || type === 'insertLineBreak') {
         event.preventDefault()
-        if (isListField(latest.current.key)) {
-          // Enter dzieli punkt albo element listy; Shift+Enter nic nie robi (szablon nie pokazuje w nim nowej linii).
+        if (splitsOnEnter(latest.current.key)) {
+          // Enter dzieli punkt albo element listy, a w wartości kontaktu dodaje za nim nowy kontakt; Shift+Enter nic nie
+          // robi (szablon nie pokazuje w nich nowej linii).
           const selection = readSelection(span)
           if (type === 'insertParagraph' && selection) restructure(splitField(latest.current.key, documentNow(), selection))
         } else if (isMultiline(span)) insert('\n')

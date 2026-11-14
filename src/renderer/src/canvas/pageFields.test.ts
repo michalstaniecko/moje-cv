@@ -33,7 +33,12 @@ const t = en.editor
 function fieldsOf(document: CvDocument, template: keyof typeof templates, slots: SlotName[] = ['fullName', 'summary', 'title']) {
   return generateBlocks(document, templates[template].geometry).flatMap((block) =>
     slots.flatMap((slot) => {
-      const parts = slot === 'item' && block.kind === 'listRow' ? block.items.map((item) => item.id) : [undefined]
+      const parts =
+        slot === 'item' && block.kind === 'listRow'
+          ? block.items.map((item) => item.id)
+          : (slot === 'contactLabel' || slot === 'contactValue') && block.kind === 'header'
+            ? block.contacts.map((contact) => contact.id)
+            : [undefined]
       return parts.flatMap((part) => {
         const field = pageFieldOf(block, slot, document, t, undefined, part)
         return field ? [{ block: block.id, slot, ...field }] : []
@@ -124,6 +129,17 @@ describe('pageFieldOf', () => {
     expect(pageFieldOf(entry(revealed), 'bullet', withEmptyFirst, t, revealed)!.key).toBe('experience:e1:bullet:empty')
   })
 
+  it('gives the label and the value of every contact on the page, named like the CV form, without spellchecking', () => {
+    const fields = fieldsOf(sample, 'classic', ['contactLabel', 'contactValue'])
+    expect(fields.filter((field) => field.key.startsWith('contact:c1:'))).toEqual([
+      { block: 'header', slot: 'contactLabel', key: 'contact:c1:label', fragment: 'contacts', label: 'Contact label 1', placeholder: 'Label', spellcheck: false, value: 'Phone' },
+      { block: 'header', slot: 'contactValue', key: 'contact:c1:value', fragment: 'contacts', label: 'Contact value 1', placeholder: 'Value', spellcheck: false, value: '+44 7700 900000' }
+    ])
+    expect(fields.map((field) => field.key).sort()).toEqual(
+      sample.header.contacts.flatMap((contact) => [`contact:${contact.id}:label`, `contact:${contact.id}:value`]).sort()
+    )
+  })
+
   it('gives no field for a slot of another block or a block from outside the document', () => {
     const blocks = generateBlocks(sample, templates.classic.geometry)
     const entry = blocks.find((block) => block.id === 'e1')!
@@ -147,6 +163,8 @@ describe('field keys', () => {
     expect(source('ExperienceItemFields.tsx')).toContain("patchItem({ start }, 'start')")
     expect(source('EducationItemFields.tsx')).toContain("patchItem({ end }, 'end')")
     expect(source('ListItemsFields.tsx')).toContain('`list:${item.id}:text`')
+    expect(source('ContactsFields.tsx')).toContain('`contact:${contact.id}:label`')
+    expect(source('ContactsFields.tsx')).toContain('`contact:${contact.id}:value`')
   })
 
   it('map to the part of the CV and back', () => {
@@ -162,6 +180,13 @@ describe('field keys', () => {
     ] as const
     for (const target of targets) expect(pageFieldTarget(pageFieldKey(target)!, titled)).toEqual(target)
     expect(pageFieldKey({ kind: 'photo' })).toBeNull()
+    // Kontakt: pierwsze puste pole (nowy kontakt – etykieta), a wypełniony – wartość; bez wskazanego – pierwszy kontakt.
+    expect(pageFieldKey({ kind: 'contacts', contactId: 'c2' }, sample)).toBe('contact:c2:value')
+    expect(pageFieldTarget('contact:c2:value', sample)).toEqual({ kind: 'contacts', contactId: 'c2' })
+    expect(pageFieldKey({ kind: 'contacts', contactId: 'c2' }, fieldChange('contact:c2:label', '')(sample))).toBe('contact:c2:label')
+    expect(pageFieldKey({ kind: 'contacts' }, sample)).toBe('contact:c1:value')
+    expect(pageFieldKey({ kind: 'contacts' }, { ...sample, header: { ...sample.header, contacts: [] } })).toBeNull()
+    expect(pageFieldTarget('contact:gone:label', sample)).toBeNull()
     // Daty wpisu – żetony dat; wpis bez wskazanego pola (nowy wpis) – jeszcze karta (do S5).
     for (const target of [
       { kind: 'experienceItem', sectionId: 'experience', itemId: 'e1', field: 'start' },
@@ -238,6 +263,8 @@ describe('fieldChange', () => {
     const education = fieldChange('education:ed1:field', 'Physics')(sample)
     expect((sectionOf(education, 'education').items[0] as { field: string }).field).toBe('Physics')
     expect(listTexts(fieldChange('list:l2:text', 'French')(sample), 'languages')).toEqual(['English – native', 'French'])
+    expect(fieldChange('contact:c2:label', 'E-mail')(sample).header.contacts[1]).toEqual({ id: 'c2', label: 'E-mail', value: 'jane.example@example.com' })
+    expect(fieldChange('contact:c2:value', 'jane@example.com')(sample).header.contacts[1]!.value).toBe('jane@example.com')
     expect(fieldChange('experience:gone:role', 'x')(sample)).toBe(sample)
   })
 })
@@ -260,6 +287,9 @@ describe('fragmentHasEmptyField', () => {
     expect(fragmentHasEmptyField('item:e2', fieldChange('experience:e2:bullet:e2-b4', '')(sample))).toBe(true)
     expect(fragmentHasEmptyField('item:ed2', fieldChange('education:ed2:level', '')(sample))).toBe(true)
     expect(fragmentHasEmptyField('list:skills', fieldChange('list:s3:text', '')(sample))).toBe(true)
+    expect(fragmentHasEmptyField('contacts', sample)).toBe(false)
+    expect(fragmentHasEmptyField('contacts', fieldChange('contact:c3:label', ' ')(sample))).toBe(true)
+    expect(fragmentHasEmptyField('contacts', fieldChange('contact:c3:value', '')(sample))).toBe(true)
   })
 })
 
@@ -276,6 +306,32 @@ describe('revealing', () => {
     const title = generateBlocks(sample, geometry).find((block) => block.id === 'education:title')!
     const revealed = generateBlocks(empty, geometry, { reveal: new Set([pageFieldOf(title, 'title', sample, t)!.fragment]) })
     expect(revealed.map((block) => block.id)).toContain('education:title')
+  })
+})
+
+describe('contacts from the keyboard', () => {
+  const ids = (document: CvDocument) => document.header.contacts.map((contact) => contact.id)
+
+  it('adds a contact after the current one with Enter in a filled value, with the caret in its label', () => {
+    const added = splitField('contact:c2:value', sample, { start: 3, end: 3 }, 'new')!
+    expect(ids(added.change(sample))).toEqual(['c1', 'c2', 'new', 'c3', 'c4'])
+    expect(added.change(sample).header.contacts[1]).toEqual(sample.header.contacts[1])
+    expect(added.focus).toEqual({ key: 'contact:new:label', caret: 0 })
+    expect(splitField('contact:c2:value', fieldChange('contact:c2:value', ' ')(sample), { start: 0, end: 0 })).toBeNull()
+    expect(splitField('contact:c2:label', sample, { start: 0, end: 0 })).toBeNull()
+  })
+
+  it('removes an empty contact with Backspace, with the caret at the end of the value before it; the first one and a filled one stay', () => {
+    const empty = fieldChange('contact:c3:value', '')(fieldChange('contact:c3:label', '')(sample))
+    for (const key of ['contact:c3:label', 'contact:c3:value']) {
+      const removed = mergeBackward(key, empty)!
+      expect(ids(removed.change(empty))).toEqual(['c1', 'c2', 'c4'])
+      expect(removed.focus).toEqual({ key: 'contact:c2:value', caret: 'jane.example@example.com'.length })
+    }
+    expect(mergeBackward('contact:c3:label', fieldChange('contact:c3:label', '')(sample))).toBeNull()
+    const firstEmpty = fieldChange('contact:c1:value', '')(fieldChange('contact:c1:label', '')(sample))
+    expect(mergeBackward('contact:c1:value', firstEmpty)).toBeNull()
+    expect(mergeForward('contact:c1:value', sample)).toBeNull()
   })
 })
 
