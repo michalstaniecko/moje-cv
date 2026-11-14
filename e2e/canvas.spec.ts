@@ -224,6 +224,14 @@ async function clickOnPage(element: Locator) {
 }
 
 const fragment = (what: string) => window.locator('.edit-layer').getByRole('button', { name: `Edit: ${what}`, exact: true })
+const fragmentNames = () =>
+  window
+    .locator('.edit-layer .edit-fragment')
+    .evaluateAll((buttons) => buttons.map((button) => button.textContent!.replace(/^Edit: /, '')))
+// Kolejne powtórzenia nazwy (fragmenty jednego wpisu na dwóch stronach) jako jedna nazwa.
+const dedupe = (names: string[]) => names.filter((name, index) => name !== names[index - 1])
+const positions = ['Senior Procurement Specialist', 'Procurement Specialist', 'Procurement Assistant', 'Junior Customer Service Specialist']
+const educations = ['Postgraduate diploma, Procurement Management', 'Master’s degree, Logistics']
 const card = (name: string) => window.getByRole('dialog', { name, exact: true })
 const pageName = () => window.locator('.preview .cv-page .cv-name')
 
@@ -338,12 +346,28 @@ test('Escape closes the card and returns the focus to its fragment; clicking ano
 
 test('the editing layer works from the keyboard alone: Tab goes through the fragments in document order, Enter opens a card, Tab leaves it to the next fragment', async () => {
   await openFirstCv()
-  const names = ['Full name', 'Summary', ...['Work experience', 'Education', 'Skills', 'Languages'].map((title) => `Section title “${title}”`)]
-  await expect(window.locator('.edit-layer .edit-fragment')).toHaveCount(names.length)
-  await fragment('Full name').focus()
-  for (const name of names.slice(1)) {
+  // Classic: tytuł listy obok niej, więc przed jej elementami. Wpis rozdzielony podziałem stron ma fragment na każdej
+  // stronie (ta sama nazwa dwa razy z rzędu).
+  const names = [
+    'Full name',
+    'Summary',
+    'Section title “Work experience”',
+    ...positions.map((role) => `Position “${role}”`),
+    'Section title “Education”',
+    ...educations.map((name) => `Education “${name}”`),
+    'Section title “Skills”',
+    'List “Skills”',
+    'Section title “Languages”',
+    'List “Languages”'
+  ]
+  const buttons = window.locator('.edit-layer .edit-fragment')
+  await expect.poll(() => fragmentNames()).toEqual(expect.arrayContaining(names))
+  expect(dedupe(await fragmentNames())).toEqual(names)
+  const count = await buttons.count()
+  await buttons.first().focus()
+  for (let index = 1; index < count; index++) {
     await window.keyboard.press('Tab')
-    await expect(fragment(name)).toBeFocused()
+    await expect(buttons.nth(index)).toBeFocused()
   }
 
   await fragment('Summary').focus()
@@ -432,9 +456,9 @@ test('Preview mode has no editing layer: switching closes the open card and focu
   await expect(window.getByRole('dialog')).toHaveCount(0)
 })
 
-// Kontrakt znaczników edycji (ADR-0009): w każdym szablonie każdy fragment Sample CV, który ma już Edit card, ma swój
-// przycisk w warstwie edycji, a przycisk leży na swoim fragmencie strony. Tytuły list w Classic stoją obok listy
-// (wewnątrz wiersza listy), w Modern i Bold nad nią.
+// Kontrakt znaczników edycji (ADR-0009): w każdym szablonie każdy fragment Sample CV (z włączoną klauzulą zgody), który
+// ma już Edit card, ma swój przycisk w warstwie edycji, a przycisk leży na swoim fragmencie strony. Tytuły list
+// w Classic stoją obok listy (wewnątrz wiersza listy), w Modern i Bold nad nią.
 for (const template of ['Classic', 'Modern', 'Bold'] as const) {
   test(`markup contract: every fragment of the Sample CV in the ${template} template has its element in the editing layer`, async () => {
     await openFirstCv()
@@ -442,27 +466,229 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     const picker = window.getByRole('radiogroup', { name: 'Template' })
     await picker.locator('label', { has: window.getByRole('radio', { name: template }) }).click()
     await expect(preview.locator(`.cv.cv-template-${template.toLowerCase()}`)).toHaveCount(1)
+    await enableConsent('I agree to the processing of my personal data.')
 
+    const page = (selector: string, text?: string) =>
+      preview.locator(`.cv-page ${selector}`, text ? { hasText: new RegExp(`^${text.replace(/[()]/g, '\\$&')}$`) } : {})
     const titles = ['Work experience', 'Education', 'Skills', 'Languages']
     const expected: [string, Locator][] = [
-      ['Full name', preview.locator('.cv-page .cv-name')],
-      ['Summary', preview.locator('.cv-page .cv-summary')],
-      ...titles.map((title): [string, Locator] => [
-        `Section title “${title}”`,
-        preview.locator('.cv-page .cv-section-title', { hasText: title })
-      ])
+      ['Full name', page('.cv-name')],
+      ['Summary', page('.cv-summary')],
+      ...titles.map((title): [string, Locator] => [`Section title “${title}”`, page('.cv-section-title', title)]),
+      ...positions.map((role): [string, Locator] => [`Position “${role}”`, page('.cv-role', role)]),
+      // Classic nie ma .cv-education-level (poziom i kierunek w jednym tekście) – wpis po jego bloku.
+      ...educations.map((name, index): [string, Locator] => [`Education “${name}”`, page(`[data-block-id="ed${index + 1}"] > :first-child`)]),
+      ...['Commercial negotiation', 'Driving licence (category B)'].map((item): [string, Locator] => ['List “Skills”', page('li', item)]),
+      ...['English – native', 'German – B2'].map((item): [string, Locator] => ['List “Languages”', page('li', item)]),
+      ['Consent clause', page('.cv-consent')]
     ]
     await expect
-      .poll(() => window.locator('.edit-layer .edit-fragment').evaluateAll((buttons) => buttons.map((button) => button.textContent)))
-      .toEqual(expected.map(([name]) => `Edit: ${name}`))
+      .poll(async () => [...new Set(await fragmentNames())].sort())
+      .toEqual([...new Set(expected.map(([name]) => name))].sort())
     for (const [name, element] of expected) {
       const box = (await element.boundingBox())!
-      const button = (await fragment(name).boundingBox())!
       const [x, y] = [box.x + box.width / 2, box.y + box.height / 2]
-      expect(x, name).toBeGreaterThanOrEqual(button.x)
-      expect(x, name).toBeLessThanOrEqual(button.x + button.width)
-      expect(y, name).toBeGreaterThanOrEqual(button.y)
-      expect(y, name).toBeLessThanOrEqual(button.y + button.height)
+      // Fragment rozdzielony podziałem stron ma przycisk na każdej stronie – element leży pod jednym z nich.
+      const buttons = await Promise.all((await fragment(name).all()).map((button) => button.boundingBox()))
+      expect(
+        buttons.some((button) => button && x >= button.x && x <= button.x + button.width && y >= button.y && y <= button.y + button.height),
+        name
+      ).toBe(true)
+    }
+
+    // Kliknięte pole, punkt i element listy dostają fokus w karcie w każdym szablonie.
+    const clicks: [Locator, string, string][] = [
+      [page('li', 'Preparing and analysing requests for quotation and bid comparisons.'), 'Position “Senior Procurement Specialist”', 'Bullet 3'],
+      [page('.cv-role', 'Procurement Assistant'), 'Position “Procurement Assistant”', 'Job title'],
+      [page('li', 'German – B2'), 'List “Languages”', 'Item 2'],
+      [page('[data-block-id="ed1"] > :first-child'), `Education “${educations[0]}”`, 'Level'],
+      [page('.cv-consent'), 'Consent clause', 'Text in this CV']
+    ]
+    for (const [element, name, field] of clicks) {
+      await clickOnPage(element)
+      await expect(card(name).getByRole('textbox', { name: field }), name).toBeFocused()
+      await window.keyboard.press('Escape')
+      await expect(window.getByRole('dialog')).toHaveCount(0)
     }
   })
 }
+
+// Klauzula zgody w formularzu: włączona, z treścią (Sample CV po angielsku jej nie ma).
+async function enableConsent(text: string) {
+  const form = window.locator('.editor-form')
+  await form.getByLabel('Show the clause at the bottom of the last page').check()
+  await form.getByLabel('Text in this CV').fill(text)
+  await expect(window.locator('.preview .cv-page .cv-consent')).toHaveText(text)
+}
+
+// ---------- Karty wpisów, list i klauzuli zgody ----------
+
+// Przeciąga element za uchwyt myszą krok po kroku, jak w export.spec.ts (dnd-kit reaguje na zdarzenia wskaźnika).
+async function dragOnto(handle: Locator, target: Locator) {
+  const from = (await handle.boundingBox())!
+  const to = (await target.boundingBox())!
+  await window.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+  await window.mouse.down()
+  await window.mouse.move(from.x + from.width / 2, from.y + from.height / 2 - 10, { steps: 5 })
+  await window.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 15 })
+  await window.mouse.up()
+  // dnd-kit przez 50 ms po upuszczeniu blokuje kliknięcia (żeby upuszczenie nie było kliknięciem).
+  await window.waitForTimeout(100)
+}
+
+const pageItem = (text: string) => window.locator('.preview .cv-page li', { hasText: text })
+
+test('clicking the third bullet of a position opens its card with the focus in that bullet; Enter splits it and Backspace joins it back, like in the form', async () => {
+  await openFirstCv()
+  const third = 'Preparing and analysing requests for quotation and bid comparisons.'
+  await clickOnPage(pageItem(third))
+  const positionCard = card('Position “Senior Procurement Specialist”')
+  await expect(positionCard).toBeVisible()
+  const bullet = (number: number) => positionCard.getByLabel(`Bullet ${number}`, { exact: true })
+  await expect(bullet(3)).toBeFocused()
+  await expect(bullet(3)).toHaveValue(third)
+  await expect(fragment('Position “Senior Procurement Specialist”').first()).toHaveAttribute('aria-expanded', 'true')
+
+  // Enter w środku punktu dzieli go: nowy punkt pod spodem, fokus na jego początku – w karcie, nie w formularzu.
+  await bullet(3).evaluate((field) => (field as unknown as { setSelectionRange: (start: number, end: number) => void }).setSelectionRange(26, 26))
+  await window.keyboard.press('Enter')
+  await expect(bullet(3)).toHaveValue('Preparing and analysing re')
+  await expect(bullet(4)).toHaveValue('quests for quotation and bid comparisons.')
+  await expect(bullet(4)).toBeFocused()
+  await expect(pageItem('quests for quotation and bid comparisons.')).toHaveCount(1)
+  await expect(window.locator('.editor-form').getByLabel('Bullet 4', { exact: true }).first()).toHaveValue(
+    'quests for quotation and bid comparisons.'
+  )
+  await window.keyboard.press('Meta+z')
+  await expect(bullet(3)).toHaveValue(third)
+
+  // Enter na końcu – pusty punkt; Backspace w nim usuwa go i wraca na koniec poprzedniego.
+  await bullet(3).focus()
+  await bullet(3).evaluate((field) => (field as unknown as { setSelectionRange: (start: number, end: number) => void }).setSelectionRange(9999, 9999))
+  await window.keyboard.press('Enter')
+  await expect(bullet(4)).toHaveValue('')
+  await expect(bullet(4)).toBeFocused()
+  await window.keyboard.press('Backspace')
+  await expect(bullet(4)).toHaveValue('Introducing quarterly supplier reviews that cut delivery times by 15%.')
+  await expect(bullet(3)).toBeFocused()
+
+  // Kliknięcie innego pola tego samego wpisu: ta sama karta, fokus na klikniętym polu.
+  await clickOnPage(window.locator('.preview .cv-page .cv-company', { hasText: 'Fictional Manufacturing Ltd' }))
+  await expect(positionCard.getByLabel('Company')).toBeFocused()
+  await clickOnPage(window.locator('.preview .cv-page .cv-role', { hasText: 'Senior Procurement Specialist' }))
+  await expect(positionCard.getByLabel('Job title')).toBeFocused()
+})
+
+test('the education card focuses the clicked field; the list card focuses the clicked item and reorders items by dragging', async () => {
+  await openFirstCv()
+  // Classic: poziom i kierunek w jednym tekście bez klasy kontraktu – fokus na pierwszym polu karty (poziom).
+  const education = window.locator('.preview .cv-page [data-block-id="ed2"]')
+  await clickOnPage(education.getByText('Master’s degree'))
+  const educationCard = card('Education “Master’s degree, Logistics”')
+  await expect(educationCard.getByLabel('Level')).toBeFocused()
+  await window.keyboard.type(' (honours)')
+  await expect(education).toContainText('Master’s degree (honours), Logistics')
+  await expect(card('Education “Master’s degree (honours), Logistics”')).toBeVisible()
+  await window.keyboard.press('Escape')
+
+  await clickOnPage(pageItem('ERP systems (SAP, Oracle)'))
+  const skills = card('List “Skills”')
+  await expect(skills).toBeVisible()
+  const item = (number: number) => skills.getByLabel(`Item ${number}`, { exact: true })
+  await expect(item(3)).toBeFocused()
+
+  // Przeciągnięcie trzeciego elementu na pierwszy – kolejność na stronie i w formularzu.
+  await dragOnto(skills.getByRole('button', { name: 'Actions for item 3' }), item(1))
+  await expect(item(1)).toHaveValue('ERP systems (SAP, Oracle)')
+  const skillItems = window.locator('.preview .cv-page [data-block-id^="skills:"] li')
+  await expect(skillItems).toHaveText([
+    'ERP systems (SAP, Oracle)',
+    'Commercial negotiation',
+    'Bid and purchase cost analysis',
+    'MS Excel – pivot tables, formulas',
+    'Driving licence (category B)'
+  ])
+  await expect(skills).toBeVisible()
+
+  // Klauzula zgody (włączona w formularzu) – karta z fokusem na treści.
+  await window.keyboard.press('Escape')
+  await enableConsent('I agree to the processing of my personal data.')
+  await clickOnPage(window.locator('.preview .cv-page .cv-consent'))
+  const consent = card('Consent clause')
+  await expect(consent.getByLabel('Text in this CV')).toBeFocused()
+  await window.keyboard.type(' Thank you.')
+  await expect(window.locator('.preview .cv-page .cv-consent')).toHaveText('I agree to the processing of my personal data. Thank you.')
+})
+
+test('removing a bullet, an item or a whole position in a card says “Removed.” over the pages; Undo brings it back and the focus returns to it', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+  const second = 'Sourcing and qualifying new suppliers in Europe and Asia.'
+  await clickOnPage(pageItem(second))
+  const positionCard = card('Position “Procurement Specialist”')
+  await expect(positionCard.getByLabel('Bullet 2', { exact: true })).toBeFocused()
+
+  // Punkt: „Remove” w menu wiersza.
+  await positionCard.getByRole('button', { name: 'Actions for bullet 2' }).click()
+  await window.getByRole('menuitem', { name: 'Remove' }).click()
+  await expect(pageItem(second)).toHaveCount(0)
+  await expect(removed).toBeVisible()
+  // Komunikat pływa w lewym dolnym rogu panelu stron, nie w kolumnie formularza.
+  await expect(window.locator('.editor-form').getByRole('status').filter({ hasText: 'Removed.' })).toHaveCount(0)
+  const message = (await removed.locator('.removal-message-content').boundingBox())!
+  const pages = (await preview.boundingBox())!
+  expect(message.x).toBeGreaterThanOrEqual(pages.x)
+  expect(message.x).toBeLessThan(pages.x + 40)
+  expect(message.y + message.height).toBeGreaterThan(pages.y + pages.height - 40)
+
+  // „Undo” (klik nie zamyka karty) przywraca punkt, a fokus wraca na niego w karcie.
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect(pageItem(second)).toHaveCount(1)
+  await expect(positionCard.getByLabel('Bullet 2', { exact: true })).toBeFocused()
+  await expect(positionCard.getByLabel('Bullet 2', { exact: true })).toHaveValue(second)
+
+  // Cały wpis: „Remove position” w karcie zamyka ją (wpisu już nie ma), fokus nie ginie.
+  await positionCard.getByRole('button', { name: 'Remove position' }).click()
+  await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^Procurement Specialist$/ })).toHaveCount(0)
+  await expect(window.getByRole('dialog')).toHaveCount(0)
+  await expect(removed).toBeVisible()
+  await expect.poll(() => window.evaluate('document.activeElement !== document.body')).toBe(true)
+  // „Undo” przywraca wpis i otwiera jego kartę z fokusem na pierwszym polu.
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect(window.locator('.preview .cv-page .cv-role', { hasText: /^Procurement Specialist$/ })).toHaveCount(1)
+  await expect(card('Position “Procurement Specialist”').getByLabel('Job title')).toBeFocused()
+
+  // Element listy: to samo w karcie sekcji listowej.
+  await clickOnPage(pageItem('German – B2'))
+  const languages = card('List “Languages”')
+  await languages.getByRole('button', { name: 'Actions for item 2' }).click()
+  await window.getByRole('menuitem', { name: 'Remove' }).click()
+  await expect(pageItem('German – B2')).toHaveCount(0)
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect(pageItem('German – B2')).toHaveCount(1)
+  await expect(languages.getByLabel('Item 2', { exact: true })).toBeFocused()
+})
+
+test('Cmd+Z with the card of a newly added position open undoes the adding, closes the card and keeps the focus', async () => {
+  await openFirstCv()
+  const form = window.locator('.editor-form')
+  await form.getByRole('button', { name: 'Add position' }).click()
+  await form.getByLabel('Job title').last().fill('Buyer')
+  const role = window.locator('.preview .cv-page .cv-role', { hasText: /^Buyer$/ })
+  await expect(role).toHaveCount(1)
+
+  await clickOnPage(role)
+  const buyer = card('Position “Buyer”')
+  await expect(buyer.getByLabel('Job title')).toBeFocused()
+  // Cofnięcie wpisanej nazwy: wpis bez treści znika ze strony, ale karta zostaje (wpis istnieje).
+  await window.keyboard.press('Meta+z')
+  await expect(role).toHaveCount(0)
+  await expect(card('Position “New position”')).toBeVisible()
+  await expect(card('Position “New position”').getByLabel('Job title')).toBeFocused()
+  // Cofnięcie dodania: wpisu nie ma, karta się zamyka, fokus przechodzi w bezpieczne miejsce.
+  await window.keyboard.press('Meta+z')
+  await expect(window.getByRole('dialog')).toHaveCount(0)
+  await expect(form.getByLabel('Job title')).toHaveCount(4)
+  await expect(editButton()).toBeFocused()
+})
