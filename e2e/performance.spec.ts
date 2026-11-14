@@ -117,6 +117,8 @@ test('a 4+ page CV with a photo: keystroke-to-preview time, autosave time in the
   const photo = await photoDataUrl()
   await importCv(longCv(photo))
   await window.getByRole('list', { name: 'CV list' }).getByRole('listitem').filter({ hasText: LONG_CV_NAME }).getByRole('button', { name: 'Open' }).click()
+  // Pisanie w CV form (domyślny pasek boczny to Outline).
+  await window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click()
 
   // Fixture: co najmniej 4 strony i zdjęcie w podglądzie.
   const preview = window.locator('.preview')

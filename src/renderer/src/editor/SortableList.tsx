@@ -31,13 +31,16 @@ export type SortableRow = {
 // Lista z ręczną kolejnością: przeciąganie za uchwyt myszą i menu wiersza pod uchwytem (także z klawiatury).
 // `onMove(id, toIndex)` – element ma trafić na pozycję `toIndex`; `children` dostaje sterowanie wiersza (`SortableRow`).
 // `onRemove` dodaje do menu wiersza „Usuń” (punkty i elementy list; całe wpisy usuwa się przyciskiem w ich polu) –
-// wywołujący usuwa element z „Usunięto. Cofnij” i decyduje o fokusie.
+// wywołujący usuwa element z „Usunięto. Cofnij” i decyduje o fokusie. `moreActions` dokłada do menu wiersza kolejne
+// pozycje po „Przenieś wyżej/niżej” (np. w Outline „Nowa strona przed”, „Ukryj sekcję”, „Dodaj …”); `focusHandle`
+// wraca na uchwyt wiersza, gdy pozycja nie przenosi fokusu gdzie indziej.
 export function SortableList<T extends { id: string }>({
   items,
   label,
   handleLabel,
   onMove,
   onRemove,
+  moreActions,
   children
 }: {
   items: T[]
@@ -48,6 +51,7 @@ export function SortableList<T extends { id: string }>({
   handleLabel: (item: T, index: number) => string
   onMove: (id: string, toIndex: number) => void
   onRemove?: (item: T) => void
+  moreActions?: (item: T, focusHandle: () => void) => RowMenuAction[]
   children: (item: T, row: SortableRow, index: number) => ReactNode
 }) {
   const { order } = useDictionary().editor
@@ -130,6 +134,7 @@ export function SortableList<T extends { id: string }>({
           const actions: RowMenuAction[] = [
             { label: order.moveUp, disabled: index === 0, run: () => moveAndRefocus(-1) },
             { label: order.moveDown, disabled: index === items.length - 1, run: () => moveAndRefocus(1) },
+            ...(moreActions?.(item, () => focusHandle(item.id)) ?? []),
             ...(onRemove ? [{ label: order.remove, run: () => onRemove(item) }] : [])
           ]
           return (

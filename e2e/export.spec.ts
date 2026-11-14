@@ -31,6 +31,7 @@ async function launch({
   extraEnv = {}
 }: { language?: InterfaceLanguage | null; appearance?: Appearance | null; extraEnv?: Record<string, string> } = {}) {
   const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
+  await showCvFormByDefault()
   const env = { ...process.env, ...extraEnv } as Record<string, string>
   // Okno w tle (bez fokusu i niewidoczne); `MOJE_CV_E2E_HEADED=1` pokazuje je normalnie do debugowania.
   if (!process.env['MOJE_CV_E2E_HEADED']) env['MOJE_CV_E2E_HIDDEN'] = '1'
@@ -46,6 +47,16 @@ async function launch({
       : { args: ['.', userDataDir], env, colorScheme: null }
   )
   window = await app.firstWindow()
+}
+
+// Testy tego pliku edytują CV polami CV form (po etykietach), więc pasek boczny edytora to CV form, a nie domyślny
+// Outline (canvas.spec.ts): przy pierwszym uruchomieniu plik ustawień ma tylko tę preferencję – tak, jakby użytkownik
+// raz wybrał „Form” w pasku bocznym. Istniejący plik (ponowne uruchomienie w tym samym teście) zostaje bez zmian.
+async function showCvFormByDefault() {
+  const settingsPath = join(outputDir, 'user-data', 'settings.json')
+  if (await access(settingsPath).then(() => true, () => false)) return
+  await mkdir(join(outputDir, 'user-data'), { recursive: true })
+  await writeFile(settingsPath, JSON.stringify({ schemaVersion: 1, clauses: [], defaultClauseId: null, editorSidebar: 'form' }))
 }
 
 // Każdy test startuje z pustym katalogiem danych (pierwsze uruchomienie).

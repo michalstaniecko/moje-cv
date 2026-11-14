@@ -1,10 +1,10 @@
-import { Fragment as Group, memo, useCallback, useEffect, useRef, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
+import { Fragment as Group, memo, useCallback, useEffect, useLayoutEffect, useRef, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
 import type { RemoveWithUndo } from '../editor/removalUndo'
 import { useDictionary } from '../i18n'
-import { useAddedAnchor, useAddControls } from './AddControls'
+import { useAddControls, type AddedAnchor } from './AddControls'
 import { BlockHandle, useBlockMenu } from './BlockMenu'
 import { cardLabel, EditCard, hasCard, type CardAnchor, type ClauseLibrary } from './EditCard'
 import {
@@ -43,7 +43,8 @@ export function EditLayer({
   scale,
   onFocusLost,
   onRemove,
-  library
+  library,
+  added
 }: EditingContext & {
   document: CvDocument
   panel: RefObject<HTMLElement | null>
@@ -63,7 +64,6 @@ export function EditLayer({
       ),
     []
   )
-  const added = useAddedAnchor()
   const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, added, onFocusLost })
   const compact = scale < CONTROLS_MIN_SCALE
   const addOnPage = useAddControls({ editor, document, session, fragments, pages, layer, added, compact })
@@ -77,6 +77,21 @@ export function EditLayer({
     if (element) element.focus()
     else onFocusLost()
   }
+
+  // Karta nowego elementu przeskakuje z przycisku, którym go dodano (albo wiersza Outline), do jego pierwszego fragmentu
+  // na stronie: gdy ten fragment jest poza widokiem (np. na kolejnej stronie), strony przewijają się do niego, żeby
+  // karta nie stała przy krawędzi okna z dala od tego, co edytuje.
+  const lastAnchor = useRef<{ key: string; onPage: boolean } | null>(null)
+  useLayoutEffect(() => {
+    if (!open) {
+      lastAnchor.current = null
+      return
+    }
+    const fragment = fragmentButtons(open.anchor)[0]
+    const previous = lastAnchor.current
+    lastAnchor.current = { key: open.anchor, onPage: fragment !== undefined }
+    if (fragment && previous?.key === open.anchor && !previous.onPage) fragment.scrollIntoView({ block: 'nearest' })
+  })
 
   // Bieżący dokument dla obsługi kliknięcia – bez niego w zależnościach przyciski nie przerysowują się przy każdym klawiszu.
   const latestDocument = useRef(document)
@@ -111,7 +126,8 @@ export function EditLayer({
     // Przyciski fragmentów, uchwyty i przyciski dodawania – kolejne miejsce w kolejności Tab warstwy.
     const all = [...(layer.current?.querySelectorAll<HTMLButtonElement>(layerControls) ?? [])]
     const own = fragmentButtons(anchorKey)
-    const next = direction === 'backward' ? own[0] : all[all.indexOf(own.at(-1)!) + 1]
+    // Karta bez fragmentu na stronie (np. ukryta sekcja otwarta z Outline) – Shift+Tab wraca na jej kotwicę.
+    const next = direction === 'backward' ? (own[0] ?? anchorElement(anchorKey)) : all[all.indexOf(own.at(-1)!) + 1]
     if (!next || (direction === 'forward' && own.length === 0)) return false
     next.focus()
     return true
@@ -147,12 +163,12 @@ export function EditLayer({
   // Klik w tło strony albo poza stronę zamyka kartę. Gdy fokus nie trafił w nic (tło nie przyjmuje fokusu), wraca na
   // fragment karty, żeby nie zginął. „Usunięto. Cofnij” nie zamyka karty – „Cofnij” wraca do pola w karcie. Uchwyt
   // i jego menu też nie: przeniesienie fragmentu z otwartą kartą zostawia kartę przy nim, a „Dodaj …” ją zastępuje –
-  // tak jak pigułki „+”, pasek „Add to CV” i podpowiedź w pustym CV.
+  // tak jak pigułki „+”, pasek „Add to CV”, podpowiedź w pustym CV i Outline (jego wiersze otwierają inną kartę).
   useEffect(() => {
     if (!open) return
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Element | null
-      if (target?.closest(`.edit-card, ${layerControls}, .edit-handle, .preview-bar, .removal-message`)) return
+      if (target?.closest(`.edit-card, ${layerControls}, .edit-handle, .preview-bar, .removal-message, .outline`)) return
       const anchor = anchorElement(open.anchor)
       closeCard()
       requestAnimationFrame(() => {
@@ -209,13 +225,15 @@ export function EditLayer({
 }
 
 // Co edytor daje warstwie edycji (przez PreviewPane): dokument do zmian, sesję (tryb, otwarta karta), bezpieczne miejsce
-// dla fokusu, usuwanie z „Usunięto. Cofnij” i bibliotekę klauzul.
+// dla fokusu, usuwanie z „Usunięto. Cofnij”, bibliotekę klauzul i kotwicę kart otwartych poza fragmentem strony
+// (`added` – wspólna z Outline: karta ukrytej lub pustej sekcji stoi przy wierszu Outline).
 export type EditingContext = {
   editor: CvEditor
   session: EditSession
   onFocusLost: () => void
   onRemove: RemoveWithUndo
   library: ClauseLibrary
+  added: AddedAnchor
 }
 
 type FragmentButtonProps = {

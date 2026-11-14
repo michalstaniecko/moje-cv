@@ -67,6 +67,8 @@ body {
 .export-dialog,
 .library,
 .editor-form,
+.outline,
+.editor-rail,
 .row-menu,
 .edit-card,
 .edit-pill,
@@ -877,8 +879,9 @@ textarea:focus-visible {
 .editor-panes {
   position: relative;
   display: grid;
-  /* --form-width ustawia separator (editor/PaneSeparator.tsx) w granicach formularza i podglądu. */
-  grid-template-columns: var(--form-width, 440px) minmax(0, 1fr);
+  /* --sidebar-width: Outline (240 px), szyna (44 px) albo CV form (--form-width z separatora, editor/PaneSeparator.tsx)
+     – canvas/EditorSidebar.tsx. */
+  grid-template-columns: var(--sidebar-width, 240px) minmax(0, 1fr);
   flex: 1;
   min-height: 0;
   /* Zabezpieczenie: nic z paneli nie rozszerza ekranu (.app-screen), więc ekran edytora nigdy się nie przewija.
@@ -923,9 +926,208 @@ textarea:focus-visible {
 }
 
 /* ---------- Formularz edytora ---------- */
+/* Kolumna z formularzem i przełącznikiem paska bocznego przyklejonym do dołu (.sidebar-footer). */
 .editor-form {
+  display: flex;
+  flex-direction: column;
   background: var(--ui-app-bg);
   border-right: 1px solid var(--ui-border);
+}
+
+.editor-form > .form {
+  flex: 1 0 auto;
+}
+
+/* ---------- Pasek boczny: Outline, przełącznik widoku, szyna (canvas/EditorSidebar.tsx, canvas/Outline.tsx) ---------- */
+.editor-panes > .outline {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ui-app-bg);
+  border-right: 1px solid var(--ui-border);
+}
+
+.outline-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 8px;
+}
+
+/* Wiersz Outline: nazwa części CV (przycisk na całą szerokość), za nią oznaczenie i liczba wpisów. Bez ramki – lista,
+   nie rząd przycisków; tło akcentu przy najechaniu, fokusie i otwartej karcie. */
+.outline-row-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  min-height: 30px;
+  padding: 4px 8px;
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+}
+
+.outline-row-button:hover:not(:disabled) {
+  background: var(--ui-accent-glow);
+  border-color: transparent;
+}
+
+.outline-header {
+  width: 100%;
+  padding-left: 36px;
+  font-weight: 600;
+}
+
+/* Długa nazwa (dłuższe tłumaczenia, własny tytuł sekcji) zawija się zamiast znikać pod wielokropkiem. */
+.outline-row-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.outline-section {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 4px;
+}
+
+.outline-section[data-hidden] .outline-row-name {
+  color: var(--ui-text-muted);
+  text-decoration: line-through;
+}
+
+.outline-badge {
+  flex-shrink: 0;
+  padding: 0 6px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  line-height: 18px;
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
+}
+
+.outline-count {
+  flex-shrink: 0;
+  min-width: 1.5em;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.outline-consent {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ui-border);
+}
+
+.outline-consent .outline-row-button {
+  width: 100%;
+  padding-left: 36px;
+}
+
+.outline-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 36px;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.outline-switch input {
+  margin: 0;
+  accent-color: var(--ui-accent);
+}
+
+/* Dół Outline i CV form: „Outline | Formularz” (jak przełącznik trybu) i „Zwiń”. W CV form przyklejony do dołu
+   przewijanej kolumny. */
+.sidebar-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--ui-app-bg);
+  border-top: 1px solid var(--ui-border);
+}
+
+.sidebar-switch {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-switch button {
+  flex: 1;
+  min-width: 0;
+  padding-inline: 8px;
+  white-space: nowrap;
+}
+
+.sidebar-switch button:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.sidebar-switch button:last-child {
+  margin-left: -1px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.sidebar-switch button:focus-visible {
+  position: relative;
+}
+
+.sidebar-switch button[aria-pressed='true'] {
+  color: var(--ui-text-on-accent);
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+}
+
+.sidebar-switch button[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--ui-accent-dark);
+  border-color: var(--ui-accent-dark);
+}
+
+.sidebar-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--ui-text-muted);
+  background: transparent;
+  border-color: transparent;
+}
+
+.sidebar-icon-button:hover:not(:disabled) {
+  color: var(--ui-text);
+  border-color: transparent;
+}
+
+/* Zwinięty pasek boczny: ikony widoków u góry, „Rozwiń” na dole. */
+.editor-panes > .editor-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0 8px;
+  overflow: hidden;
+  background: var(--ui-app-bg);
+  border-right: 1px solid var(--ui-border);
+}
+
+.editor-rail-expand {
+  margin-top: auto;
 }
 
 .form {
@@ -1302,7 +1504,7 @@ textarea:focus-visible {
 .removal-message-anchor {
   position: absolute;
   bottom: 16px;
-  left: calc(var(--form-width, 440px) + 16px);
+  left: calc(var(--sidebar-width, 240px) + 16px);
   width: 0;
   height: 0;
   anchor-name: --removal-message;

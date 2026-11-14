@@ -36,8 +36,10 @@ test.afterEach(async () => {
   await rm(outputDir, { recursive: true, force: true })
 })
 
+// Otwiera pierwsze CV i przełącza pasek boczny na CV form – separator jest tylko przy nim (domyślny Outline ma stałą szerokość).
 async function openFirstCv() {
   await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
+  await window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click()
 }
 
 async function setWindowWidth(width: number) {

@@ -171,6 +171,25 @@ for (const language of interfaceLanguageCodes) {
     const preview = window.locator('.preview')
     await expect(preview.locator('.cv-page .cv-name')).toHaveText(sample.header.fullName)
     await expect(preview.locator('.cv')).toHaveAttribute('lang', language)
+    // Domyślny pasek boczny – Outline – i szyna po zwinięciu: wiersze, oznaczenia i przełącznik się mieszczą.
+    const panes = window.locator('.editor-panes')
+    await panes.getByRole('button', { name: t.editor.outline.collapse }).click()
+    await expect(panes.getByRole('button', { name: t.editor.outline.expand })).toBeFocused()
+    expect(await controlsThatDoNotFit('.editor-rail')).toEqual([])
+    await panes.getByRole('button', { name: t.editor.outline.expand }).click()
+    await expect(window.locator('.outline .outline-badge')).toHaveText(t.editor.outline.hidden)
+    // Outline nie przewija się w poziomie, a nazwy w jego wierszach (sekcje Sample CV, „Nagłówek”, „Klauzula zgody”)
+    // nie wystają – długie się zawijają (wiersz sekcji ma nazwę, oznaczenie i liczbę w różnych rozmiarach pisma, więc
+    // ogólne sprawdzenie przycisków liczyłoby je jako kilka linii).
+    const cutOffInOutline = () =>
+      window
+        .locator('.outline-body, .outline .outline-row-name, .outline-switch')
+        .evaluateAll((elements) => elements.filter((element) => element.scrollWidth > element.clientWidth + 1).map((element) => element.textContent))
+    expect(await cutOffInOutline()).toEqual([])
+    expect(await controlsThatDoNotFit('.sidebar-footer')).toEqual([])
+    expect(await controlsThatDoNotFitAtMinimumSize('.sidebar-footer')).toEqual([])
+    // Dalej CV form.
+    await panes.getByRole('button', { name: t.editor.outline.form, exact: true }).click()
     await expect(window.getByLabel(t.editor.cvLanguage)).toHaveValue(language)
     await expect(
       window.locator('label.form-field', { has: window.getByText(t.editor.font, { exact: true }) }).locator('select')
@@ -180,8 +199,10 @@ for (const language of interfaceLanguageCodes) {
     await expect(preview.locator('.cv-page .cv-date').first()).toHaveText(`03.2023 – ${t.cvText.present}`)
     await expect(window.locator('.preview-page-count')).toHaveText(plural(language, t.preview.pages, SAMPLE_CV_PAGES))
     // Z paskiem „Add to CV” pod ostatnią stroną (Sample CV bez klauzuli zgody ma w nim „Klauzulę zgody”).
-    expect(await controlsThatDoNotFit('.toolbar, .preview-bar, .editor-form, .add-to-cv, .sponsor-bar')).toEqual([])
-    expect(await controlsThatDoNotFitAtMinimumSize('.toolbar, .preview-bar, .editor-form, .add-to-cv, .sponsor-bar')).toEqual([])
+    expect(await controlsThatDoNotFit('.toolbar, .preview-bar, .editor-form, .sidebar-footer, .add-to-cv, .sponsor-bar')).toEqual([])
+    expect(
+      await controlsThatDoNotFitAtMinimumSize('.toolbar, .preview-bar, .editor-form, .sidebar-footer, .add-to-cv, .sponsor-bar')
+    ).toEqual([])
 
     // PDF ma tyle stron co podgląd Sample CV.
     const pdfPath = join(outputDir, `${language}.pdf`)

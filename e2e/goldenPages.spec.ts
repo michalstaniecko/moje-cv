@@ -61,6 +61,8 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
   test(`golden pages: the Sample CV in the ${template} template looks exactly as before, on the pages and in the PDF`, async () => {
     const slug = template.toLowerCase()
     await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
+    // Template wybierany w CV form (domyślny pasek boczny to Outline); zrzuty stron i tak powstają w Preview mode.
+    await window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click()
     const preview = window.locator('.preview')
     const picker = window.getByRole('radiogroup', { name: 'Template' })
     await picker.locator('label', { has: window.getByRole('radio', { name: template }) }).click()

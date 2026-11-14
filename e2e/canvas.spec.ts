@@ -37,9 +37,22 @@ test.afterEach(async () => {
   await rm(outputDir, { recursive: true, force: true })
 })
 
+// Otwiera pierwsze CV z biblioteki i przełącza pasek boczny na CV form: testy warstwy edycji sprawdzają w nim, że karta
+// i formularz zmieniają to samo. Outline (domyślny pasek) ma własne testy z `openFirstCvWithOutline`.
 async function openFirstCv() {
+  await openFirstCvWithOutline()
+  await showCvForm()
+}
+
+async function openFirstCvWithOutline() {
   await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
   await expect(window.locator('.preview .cv-page').first()).toBeVisible()
+}
+
+// „Form” w przełączniku paska bocznego (w Outline, przy CV form i na szynie).
+async function showCvForm() {
+  await window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click()
+  await expect(window.locator('.editor-form')).toBeVisible()
 }
 
 // Pozycja menu aplikacji wywołana w procesie głównym (natywnego menu Playwright nie kliknie), jak w export.spec.ts.
@@ -714,11 +727,12 @@ test('Cmd+Z with the card of a newly added position open undoes the adding, clos
   await expect(role).toHaveCount(0)
   await expect(card('Position “New position”')).toBeVisible()
   await expect(card('Position “New position”').getByLabel('Job title')).toBeFocused()
-  // Cofnięcie dodania: wpisu nie ma, karta się zamyka, fokus przechodzi w bezpieczne miejsce.
+  // Cofnięcie dodania: wpisu nie ma, karta się zamyka, fokus przechodzi w bezpieczne miejsce – na pasek boczny (przy
+  // CV form – jego przycisk w przełączniku Outline / Form).
   await window.keyboard.press('Meta+z')
   await expect(window.getByRole('dialog')).toHaveCount(0)
   await expect(form.getByLabel('Job title')).toHaveCount(4)
-  await expect(editButton()).toBeFocused()
+  await expect(form.getByRole('button', { name: 'Form', exact: true })).toBeFocused()
 })
 
 // ---------- Karty zdjęcia i kontaktów ----------
@@ -1463,3 +1477,4 @@ test('a full CV can be built from a new CV with the editing layer and cards alon
   }
   expect(await pdfImagesPerPage(pdfPath)).toEqual([1, ...Array(edit.length - 1).fill(0)])
 })
+

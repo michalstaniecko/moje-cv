@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { useStore } from 'zustand'
 import type { MenuCommand } from '../../shared/api'
+import { useAddedAnchor } from './canvas/AddControls'
+import { EditorSidebar, sidebarWidth } from './canvas/EditorSidebar'
 import { useEditSession, type EditorMode } from './canvas/useEditSession'
 import type { PaginateResult } from './domain/paginate'
 import { cvDisplayName, type Clause, type ClauseContent, type CvDocument } from './domain/schema'
 import { createCvEditor, type CvEditor } from './editor/cvEditor'
 import { CvDesignButton } from './editor/CvDesignButton'
-import { CvForm } from './editor/CvForm'
 import { updateName } from './editor/documentEdits'
-import { PaneSeparator } from './editor/PaneSeparator'
+import { useEditorSidebar } from './editor/useEditorSidebar'
 import { useFormWidth } from './editor/useFormWidth'
 import { RemovalMessage, useRemovalUndo } from './editor/removalUndo'
 import { useDictionary } from './i18n'
 import { useMenuCommands } from './menuCommands'
-import { markInput } from './preview/keystrokeTiming'
 import { PreviewPane } from './preview/PreviewPane'
 
 // `confirming` – CV ma bloki wyższe niż strona i eksport czeka na „Eksportuj mimo to”; `timed-out` – strona wydruku
@@ -40,8 +40,9 @@ type DocxExportState =
 const idleUnlessExporting = <State extends { status: string }>(state: State): State | { status: 'idle' } =>
   state.status === 'exporting' ? state : { status: 'idle' }
 
-// Otwarte CV: formularz edycji (lewo), podgląd stron (prawo) i eksport do PDF. W Preview mode tylko strony – bez
-// formularza i bez wyróżnień na kartkach; pasek narzędzi, cofanie i powiększenie działają w obu trybach.
+// Otwarte CV: pasek boczny (Outline, CV form albo szyna – canvas/EditorSidebar.tsx), strony z warstwą edycji i eksport do
+// PDF. W Preview mode tylko strony – bez paska bocznego i bez wyróżnień na kartkach; pasek narzędzi, cofanie
+// i powiększenie działają w obu trybach.
 // `onBack` dostaje komendę menu Plik (Nowe CV, Dodaj przykładowe CV, Importuj…), gdy edytor wychodzi, żeby wykonała
 // ją biblioteka CV.
 export function CvScreen({
@@ -71,12 +72,17 @@ export function CvScreen({
   }, [])
   useEditorLifecycle(editor)
   const modeToggle = useRef<ModeToggleHandle>(null)
-  // Fokus, który nie ma dokąd wrócić (zamknięta karta części CV, której już nie ma – np. po cofnięciu), trafia na
-  // przełącznik trybu. Docelowo (T7) – na Outline.
+  const panes = useRef<HTMLDivElement>(null)
+  // Fokus, który nie ma dokąd wrócić (zamknięta karta części CV, której już nie ma – np. po cofnięciu), trafia na pasek
+  // boczny: „Nagłówek” w Outline, przełącznik przy CV form, ikonę Outline na szynie (`data-safe-focus`); bez paska –
+  // na przełącznik trybu.
   const focusSafePlace = useCallback(() => {
     requestAnimationFrame(() => {
       const active = window.document.activeElement
-      if (!active || active === window.document.body) modeToggle.current?.focus('edit')
+      if (active && active !== window.document.body) return
+      const sidebar = panes.current?.querySelector<HTMLElement>('[data-safe-focus]')
+      if (sidebar) sidebar.focus()
+      else modeToggle.current?.focus('edit')
     })
   }, [])
   const session = useEditSession(document, { onCardGone: focusSafePlace })
@@ -88,8 +94,10 @@ export function CvScreen({
     previousMode.current = session.mode
   }, [session.mode])
   usePreviewShortcut(session.togglePreview)
-  const panes = useRef<HTMLDivElement>(null)
   const formWidth = useFormWidth(panes)
+  const sidebar = useEditorSidebar()
+  // Kotwica kart otwartych przy kontrolce zamiast fragmentu strony – wspólna dla warstwy edycji i Outline.
+  const added = useAddedAnchor()
 
   // Ponowiony albo kolejny zapis kończy pytanie o wyjście; przy następnym błędzie pasek wraca do zwykłego komunikatu.
   useEffect(() => {
@@ -259,15 +267,26 @@ export function CvScreen({
       <div
         ref={panes}
         className={session.mode === 'preview' ? 'editor-panes editor-panes--preview' : 'editor-panes'}
-        style={{ '--form-width': `${formWidth.width}px` } as CSSProperties}
+        style={
+          {
+            '--form-width': `${formWidth.width}px`,
+            '--sidebar-width': session.mode === 'edit' ? `${sidebarWidth(sidebar.sidebar, formWidth.width)}px` : '0px'
+          } as CSSProperties
+        }
       >
-        {/* Początek pomiaru odpowiedzi podglądu na klawisz (preview/keystrokeTiming.ts). */}
         {session.mode === 'edit' && (
-          <aside className="editor-form" data-entry-root onInput={(event) => markInput(event.timeStamp)}>
-            <CvForm editor={editor} clauses={clauses} onSaveClause={saveClause} onRemove={removal.remove} />
-          </aside>
+          <EditorSidebar
+            control={sidebar}
+            editor={editor}
+            document={document}
+            session={session}
+            added={added}
+            formWidth={formWidth}
+            clauses={clauses}
+            onSaveClause={saveClause}
+            onRemove={removal.remove}
+          />
         )}
-        {session.mode === 'edit' && <PaneSeparator formWidth={formWidth} />}
         {/* Ten sam element w obu trybach (pozycja w drzewie stała), więc przewinięcie i skala zostają. */}
         <PreviewPane
           document={document}
@@ -278,7 +297,8 @@ export function CvScreen({
             session,
             onFocusLost: focusSafePlace,
             onRemove: removal.remove,
-            library: { clauses, onSaveClause: saveClause }
+            library: { clauses, onSaveClause: saveClause },
+            added
           }}
           onShowOversized={() => {
             session.setMode('edit')
