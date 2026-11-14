@@ -5,7 +5,8 @@ import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
 import type { CvDocument, ExperienceItem } from '../src/renderer/src/domain/schema'
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
 
-// Pomiar wydajności dużego CV (ticket #72, próg 100 ms – zob. .docs/spec.md, sekcja „Pomiar”).
+// Pomiar wydajności dużego CV (ticket #72, próg 100 ms – zob. .docs/spec.md, sekcja „Pomiar”): pisanie w CV form i w Edit card
+// (docs/specs/inline-editing-redesign.md, Q23, AC 7).
 // Opcjonalny: pomijany bez `MOJE_CV_PERF=1`, bo czasy zależą od sprzętu i w CI byłyby niestabilne. Asercje sprawdzają
 // tylko poprawność fixture'a; progi ocenia człowiek na M1. Uruchamiać na zbudowanej aplikacji, nigdy na serwerze
 // deweloperskim:
@@ -112,91 +113,127 @@ function stats(values: number[]): Stats {
   return { count: sorted.length, median: round(at(0.5)), p95: round(at(0.95)), max: round(sorted.at(-1) ?? NaN) }
 }
 
-test('a 4+ page CV with a photo: keystroke-to-preview time, autosave time in the main process and long tasks', async () => {
-  test.setTimeout(180_000)
-  const photo = await photoDataUrl()
-  await importCv(longCv(photo))
-  await window.getByRole('list', { name: 'CV list' }).getByRole('listitem').filter({ hasText: LONG_CV_NAME }).getByRole('button', { name: 'Open' }).click()
+// Gdzie się pisze: CV form (przebieg z ticketu #72) albo Edit card na stronach (T9 redesignu, spec Q23 i AC 7).
+// `type` pisze `typed` w podsumowaniu i w punkcie 1 ostatniego stanowiska, potem `paused` w tym samym punkcie.
+type TypingPath = { label: string; prepare: () => Promise<void>; type: (typed: string, paused: string) => Promise<void> }
+
+const typingInForm: TypingPath = {
+  label: 'CV form',
   // Pisanie w CV form (domyślny pasek boczny to Outline).
-  await window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click()
-
-  // Fixture: co najmniej 4 strony i zdjęcie w podglądzie.
-  const preview = window.locator('.preview')
-  await expect(preview.locator('.cv-page .cv-photo')).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
-  await expect.poll(() => preview.locator('.cv-page').count()).toBeGreaterThanOrEqual(4)
-  const pageCount = await preview.locator('.cv-page').count()
-  await expect(window.getByText('Changes saved')).toHaveCount(0)
-
-  // Pomiar od czystego stanu: bez wpisów z otwarcia CV i importu.
-  await app.evaluate(() => {
-    const entries = (globalThis as { cvPerfEntries?: unknown[] }).cvPerfEntries
-    if (!entries) throw new Error('Brak pomiaru w procesie głównym – czy aplikacja ma MOJE_CV_PERF=1?')
-    entries.length = 0
-  })
-  await window.evaluate(() => {
-    performance.clearMeasures()
-    const recorded: { longTasks: number[]; events: { name: string; duration: number }[] } = { longTasks: [], events: [] }
-    ;(globalThis as { perfRecorded?: typeof recorded }).perfRecorded = recorded
-    // Typy `e2e` są bez biblioteki DOM: typy wpisów przeglądarki (`longtask`, `event`) nie są w typach Node.
-    const options = (options: object) => options as Parameters<PerformanceObserver['observe']>[0]
-    new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) recorded.longTasks.push(entry.duration)
-    }).observe(options({ type: 'longtask' }))
-    // Event Timing (pomocniczo): opóźnienie samego pola, od klawisza do następnej klatki.
-    new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) recorded.events.push({ name: entry.name, duration: entry.duration })
-    }).observe(options({ type: 'event', durationThreshold: 16 }))
-  })
-
-  // 30 znaków w podsumowaniu i 30 w punkcie ostatniego stanowiska, co ok. 150 ms (jak szybkie pisanie).
-  const typed = 'Faster preview for long CVs ok'
-  const summary = window.getByLabel('Summary')
-  await summary.click()
-  await summary.pressSequentially(typed, { delay: 150 })
-  const lastBullet = window
-    .locator('.form fieldset', { hasText: LAST_ROLE })
-    .getByRole('textbox', { name: 'Bullet 1', exact: true })
-  await lastBullet.scrollIntoViewIfNeeded()
-  await lastBullet.click()
-  await lastBullet.pressSequentially(typed, { delay: 150 })
-  // Przy pisaniu co 150 ms debounce autozapisu (500 ms) zapisuje dopiero po ostatnim znaku. Dla próbki autozapisów
-  // jeszcze 10 znaków co 800 ms – każdy trafia na dysk osobno (długie zadania są zbierane dalej).
-  const paused = '..........'
-  await lastBullet.pressSequentially(paused, { delay: 800 })
-  await expect(preview.locator('.cv-page').filter({ hasText: typed })).toHaveCount(2)
-  await expect(preview.locator('.cv-page').filter({ hasText: typed + paused })).toHaveCount(1)
-  await expect(window.getByText('Changes saved')).toBeVisible()
-
-  const renderer = await window.evaluate(() => ({
-    keystrokes: performance.getEntriesByName('cv:keystroke-to-preview', 'measure').map((entry) => entry.duration),
-    ...(globalThis as { perfRecorded?: { longTasks: number[]; events: { name: string; duration: number }[] } }).perfRecorded!
-  }))
-  const main = await app.evaluate(
-    () => (globalThis as { cvPerfEntries?: { name: string; duration: number }[] }).cvPerfEntries ?? []
-  )
-  const byName = (name: string) => main.filter((entry) => entry.name === name).map((entry) => entry.duration)
-  const photoKb = Math.round(photo.length / 1024)
-  const fileKb = Math.round(JSON.stringify(longCv(photo), null, 2).length / 1024)
-
-  const table = {
-    'keystroke → preview painted (renderer)': stats(renderer.keystrokes),
-    'input event duration (Event Timing ≥ 16 ms)': stats(
-      renderer.events.filter((event) => ['keydown', 'keypress', 'input', 'keyup', 'beforeinput'].includes(event.name)).map((event) => event.duration)
-    ),
-    'long tasks while typing (renderer)': stats(renderer.longTasks),
-    'cv:update total (main)': stats(byName('cv:update')),
-    '  validate (Zod)': stats(byName('cv:update/validate')),
-    '  read + parse (update)': stats(byName('cv:update/read')),
-    '  read + parse (save → listEntry)': stats(byName('cv:update/check')),
-    '  writeJsonAtomic': stats(byName('cv:update/write'))
+  prepare: () => window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click(),
+  type: async (typed, paused) => {
+    const summary = window.getByLabel('Summary')
+    await summary.click()
+    await summary.pressSequentially(typed, { delay: 150 })
+    const lastBullet = window
+      .locator('.form fieldset', { hasText: LAST_ROLE })
+      .getByRole('textbox', { name: 'Bullet 1', exact: true })
+    await lastBullet.scrollIntoViewIfNeeded()
+    await lastBullet.click()
+    await lastBullet.pressSequentially(typed, { delay: 150 })
+    await lastBullet.pressSequentially(paused, { delay: 800 })
   }
-  console.log(
-    `Performance (${pageCount} pages, photo ${photoKb} kB, file ~${fileKb} kB, ${packagedExecutable ? 'packaged app' : 'out/ build'}, ` +
-      `renderer CPU slowdown ×${process.env['MOJE_CV_PERF_CPU_SLOWDOWN'] ?? 1}), ms:`
-  )
-  console.table(table)
+}
 
-  // Pomiar się odbył (bez progów czasowych).
-  expect(renderer.keystrokes.length).toBeGreaterThan(0)
-  expect(byName('cv:update').length).toBeGreaterThanOrEqual(10)
-})
+// Edit card: klik w podsumowanie na stronie, potem w ostatnie stanowisko (na ostatniej stronie). Domyślny pasek boczny
+// (Outline), czyli strony szersze niż obok CV form; warstwa edycji przelicza prostokąty fragmentów po każdym podziale.
+const typingInCard: TypingPath = {
+  label: 'Edit card',
+  prepare: async () => {},
+  type: async (typed, paused) => {
+    const fragment = (what: string) => window.locator('.edit-layer').getByRole('button', { name: `Edit: ${what}`, exact: true })
+    const card = (name: string) => window.getByRole('dialog', { name, exact: true })
+    await fragment('Summary').click()
+    const summary = card('Summary').getByLabel('Summary')
+    await expect(summary).toBeFocused()
+    await summary.pressSequentially(typed, { delay: 150 })
+    await window.keyboard.press('Escape')
+    const position = `Position “${LAST_ROLE}”`
+    await fragment(position).first().click()
+    const lastBullet = card(position).getByRole('textbox', { name: 'Bullet 1', exact: true })
+    await lastBullet.click()
+    await lastBullet.pressSequentially(typed, { delay: 150 })
+    await lastBullet.pressSequentially(paused, { delay: 800 })
+  }
+}
+
+for (const path of [typingInForm, typingInCard]) {
+  test(`a 4+ page CV with a photo, typing in the ${path.label}: keystroke-to-preview time, autosave time in the main process and long tasks`, async () => {
+    test.setTimeout(180_000)
+    const photo = await photoDataUrl()
+    await importCv(longCv(photo))
+    await window.getByRole('list', { name: 'CV list' }).getByRole('listitem').filter({ hasText: LONG_CV_NAME }).getByRole('button', { name: 'Open' }).click()
+    await path.prepare()
+
+    // Fixture: co najmniej 4 strony i zdjęcie w podglądzie.
+    const preview = window.locator('.preview')
+    await expect(preview.locator('.cv-page .cv-photo')).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+    await expect.poll(() => preview.locator('.cv-page').count()).toBeGreaterThanOrEqual(4)
+    const pageCount = await preview.locator('.cv-page').count()
+    await expect(window.getByText('Changes saved')).toHaveCount(0)
+
+    // Pomiar od czystego stanu: bez wpisów z otwarcia CV i importu.
+    await app.evaluate(() => {
+      const entries = (globalThis as { cvPerfEntries?: unknown[] }).cvPerfEntries
+      if (!entries) throw new Error('Brak pomiaru w procesie głównym – czy aplikacja ma MOJE_CV_PERF=1?')
+      entries.length = 0
+    })
+    await window.evaluate(() => {
+      performance.clearMeasures()
+      const recorded: { longTasks: number[]; events: { name: string; duration: number }[] } = { longTasks: [], events: [] }
+      ;(globalThis as { perfRecorded?: typeof recorded }).perfRecorded = recorded
+      // Typy `e2e` są bez biblioteki DOM: typy wpisów przeglądarki (`longtask`, `event`) nie są w typach Node.
+      const options = (options: object) => options as Parameters<PerformanceObserver['observe']>[0]
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) recorded.longTasks.push(entry.duration)
+      }).observe(options({ type: 'longtask' }))
+      // Event Timing (pomocniczo): opóźnienie samego pola, od klawisza do następnej klatki.
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) recorded.events.push({ name: entry.name, duration: entry.duration })
+      }).observe(options({ type: 'event', durationThreshold: 16 }))
+    })
+
+    // 30 znaków w podsumowaniu i 30 w punkcie ostatniego stanowiska, co ok. 150 ms (jak szybkie pisanie). Przy pisaniu co
+    // 150 ms debounce autozapisu (500 ms) zapisuje dopiero po ostatnim znaku. Dla próbki autozapisów jeszcze 10 znaków
+    // co 800 ms – każdy trafia na dysk osobno (długie zadania są zbierane dalej).
+    const typed = 'Faster preview for long CVs ok'
+    const paused = '..........'
+    await path.type(typed, paused)
+    await expect(preview.locator('.cv-page').filter({ hasText: typed })).toHaveCount(2)
+    await expect(preview.locator('.cv-page').filter({ hasText: typed + paused })).toHaveCount(1)
+    await expect(window.getByText('Changes saved')).toBeVisible()
+
+    const renderer = await window.evaluate(() => ({
+      keystrokes: performance.getEntriesByName('cv:keystroke-to-preview', 'measure').map((entry) => entry.duration),
+      ...(globalThis as { perfRecorded?: { longTasks: number[]; events: { name: string; duration: number }[] } }).perfRecorded!
+    }))
+    const main = await app.evaluate(
+      () => (globalThis as { cvPerfEntries?: { name: string; duration: number }[] }).cvPerfEntries ?? []
+    )
+    const byName = (name: string) => main.filter((entry) => entry.name === name).map((entry) => entry.duration)
+    const photoKb = Math.round(photo.length / 1024)
+    const fileKb = Math.round(JSON.stringify(longCv(photo), null, 2).length / 1024)
+
+    const table = {
+      'keystroke → preview painted (renderer)': stats(renderer.keystrokes),
+      'input event duration (Event Timing ≥ 16 ms)': stats(
+        renderer.events.filter((event) => ['keydown', 'keypress', 'input', 'keyup', 'beforeinput'].includes(event.name)).map((event) => event.duration)
+      ),
+      'long tasks while typing (renderer)': stats(renderer.longTasks),
+      'cv:update total (main)': stats(byName('cv:update')),
+      '  validate (Zod)': stats(byName('cv:update/validate')),
+      '  read + parse (update)': stats(byName('cv:update/read')),
+      '  read + parse (save → listEntry)': stats(byName('cv:update/check')),
+      '  writeJsonAtomic': stats(byName('cv:update/write'))
+    }
+    console.log(
+      `Performance, typing in the ${path.label} (${pageCount} pages, photo ${photoKb} kB, file ~${fileKb} kB, ` +
+        `${packagedExecutable ? 'packaged app' : 'out/ build'}, renderer CPU slowdown ×${process.env['MOJE_CV_PERF_CPU_SLOWDOWN'] ?? 1}), ms:`
+    )
+    console.table(table)
+
+    // Pomiar się odbył (bez progów czasowych): w karcie też – karta wywołuje `markInput`.
+    expect(renderer.keystrokes.length).toBeGreaterThan(0)
+    expect(byName('cv:update').length).toBeGreaterThanOrEqual(10)
+  })
+}
