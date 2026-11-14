@@ -5,6 +5,7 @@ import { useEditSession, type EditorMode } from './canvas/useEditSession'
 import type { PaginateResult } from './domain/paginate'
 import { cvDisplayName, type Clause, type ClauseContent, type CvDocument } from './domain/schema'
 import { createCvEditor, type CvEditor } from './editor/cvEditor'
+import { CvDesignButton } from './editor/CvDesignButton'
 import { CvForm } from './editor/CvForm'
 import { updateName } from './editor/documentEdits'
 import { PaneSeparator } from './editor/PaneSeparator'
@@ -184,6 +185,8 @@ export function CvScreen({
         </button>
         <CvNameHeading name={document.name} onRename={(name) => editor.edit(updateName(name))} />
         <ModeToggle ref={modeToggle} mode={session.mode} onChange={session.setMode} />
+        {/* „Projekt CV” – w obu trybach; otwarcie panelu zamyka otwartą Edit card. */}
+        <CvDesignButton editor={editor} document={document} onOpen={session.closeCard} />
         {/* Przy nieudanym zapisie status jest pusty – błąd ogłasza pasek komunikatu pod paskiem narzędzi. */}
         <span className="toolbar-status" role="status">
           {saveStatus === 'failed' ? '' : t.saveStatus[saveStatus]}

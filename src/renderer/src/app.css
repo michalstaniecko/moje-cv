@@ -69,6 +69,7 @@ body {
 .editor-form,
 .row-menu,
 .edit-card,
+.cv-design-panel,
 .removal-message,
 .preview-bar,
 .photo-cropper,
@@ -509,6 +510,44 @@ textarea:focus-visible {
 .mode-toggle button[aria-pressed='true']:hover:not(:disabled) {
   background: var(--ui-accent-dark);
   border-color: var(--ui-accent-dark);
+}
+
+/* ---------- „Projekt CV” w pasku narzędzi ----------
+   Przycisk obok przełącznika trybu (wyróżniony, gdy panel jest otwarty) i niemodalny panel CV design w warstwie
+   górnej (popover) – pozycję pod przyciskiem ustawia CvDesignButton. Szerokość mieści trzy Template thumbnails
+   w rzędzie; przy niskim oknie panel przewija się w sobie. */
+.cv-design-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.cv-design-button[aria-expanded='true'] {
+  background: var(--ui-accent-glow);
+  border-color: var(--ui-accent);
+}
+
+.cv-design-panel {
+  position: fixed;
+  inset: auto;
+  box-sizing: border-box;
+  width: 500px;
+  max-width: calc(100vw - 8px);
+  max-height: calc(100vh - 8px);
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px var(--ui-shadow);
+}
+
+.cv-design-panel .form {
+  padding: 14px 16px 16px;
+}
+
+.cv-design-panel .form-section {
+  margin-bottom: 0;
 }
 
 /* ---------- Split button „Nowe CV” z menu pod strzałką ---------- */
