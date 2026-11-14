@@ -296,11 +296,18 @@ test('Escape closes the card and returns the focus to its fragment; clicking ano
   await expect(card('Summary')).toBeVisible()
   await expect(card('Summary').getByLabel('Summary')).toBeFocused()
 
-  // Jedna karta naraz: klik innego fragmentu przełącza kartę.
+  // Jedna karta naraz: klik innego fragmentu przełącza kartę (imię jest nad podsumowaniem, więc karta go nie zasłania).
+  await clickOnPage(pageName())
+  await expect(card('Full name')).toBeVisible()
+  await expect(card('Summary')).toHaveCount(0)
+  await expect(card('Full name').getByLabel('Full name')).toBeFocused()
+  await window.keyboard.press('Escape')
+  await expect(window.getByRole('dialog')).toHaveCount(0)
+  await expect(fragment('Full name')).toBeFocused()
+
   await clickOnPage(preview.locator('.cv-page .cv-section-title', { hasText: 'Education' }))
   const titleCard = card('Section title “Education”')
   await expect(titleCard).toBeVisible()
-  await expect(card('Summary')).toHaveCount(0)
   await expect(titleCard.getByLabel('Section title')).toBeFocused()
   await titleCard.getByLabel('Section title').fill('Studies')
   await expect(preview.locator('.cv-page .cv-section-title', { hasText: 'Studies' })).toBeVisible()
@@ -311,13 +318,15 @@ test('Escape closes the card and returns the focus to its fragment; clicking ano
   await expect(fragment('Section title “Studies”')).toBeFocused()
 
   // Klik w tło strony (margines kartki) albo obok strony zamyka kartę.
-  await window.keyboard.press('Enter')
-  await expect(card('Section title “Studies”')).toBeVisible()
-  const page = (await preview.locator('.cv-page').first().boundingBox())!
+  const firstPage = preview.locator('.cv-page').first()
+  await clickOnPage(pageName())
+  await expect(card('Full name')).toBeVisible()
+  let page = (await firstPage.boundingBox())!
   await window.mouse.click(page.x + 4, page.y + 4)
   await expect(window.getByRole('dialog')).toHaveCount(0)
   await clickOnPage(pageName())
   await expect(card('Full name')).toBeVisible()
+  page = (await firstPage.boundingBox())!
   await window.mouse.click(page.x - 8, page.y + 40)
   await expect(window.getByRole('dialog')).toHaveCount(0)
 
