@@ -383,6 +383,10 @@ export function fragmentHasEmptyField(fragment: string, document: CvDocument): b
   return false
 }
 
+// Czy fragment ma linie złączone z kilku pól („firma – miejscowość”, „poziom, kierunek, uczelnia”) – wpis. Takie
+// linie są osobnymi polami tylko w aktywnym fragmencie (template/editable.tsx, `PageEditing.expanded`).
+export const fragmentHasJoinedFields = (fragment: string) => fragment.startsWith('item:')
+
 // ---------- Struktura z klawiatury (W6, W11) ----------
 
 // Gdzie stawiamy kursor po zmianie struktury: pole i przesunięcie znaków w nim.

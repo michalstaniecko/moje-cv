@@ -32,3 +32,20 @@
   outline: 2px solid var(--ui-fragment-outline);
   outline-offset: 2px;
 }
+
+/* Daty wpisów otwierają jeszcze kartę wpisu (do S3 – żetony dat). */
+.cv-editing .cv-pages [data-block='experienceEntry'] .cv-date,
+.cv-editing .cv-pages [data-block='educationEntry'] .cv-date {
+  cursor: pointer;
+}
+
+/* Linia złączona z kilku pól poza aktywnym wpisem (jeden napis jak w PDF): klik stawia kursor w polu pod znakiem. */
+.cv-editing .cv-pages .cv-page-joined {
+  cursor: text;
+  outline: none;
+}
+
+.cv-editing .cv-pages .cv-page-joined:hover {
+  outline: 1px solid var(--ui-fragment-outline);
+  outline-offset: 2px;
+}

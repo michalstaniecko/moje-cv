@@ -42,17 +42,28 @@ export type EditableField = {
 // `measuring` – kopia w kontenerze pomiarowym: ten sam tekst i placeholder (identyczna geometria), bez edycji i fokusu.
 export type PageFieldProps = { field: EditableField; text: string; measuring: boolean }
 
+// Linia złączona z kilku pól (np. „firma – miejscowość”) poza rozwiniętym fragmentem: `text` – napis dokumentu
+// (dokładnie ten sam węzeł tekstowy co w PDF), `fields` – pola na nim, w kolejności, rozdzielone `separator`.
+export type JoinedFieldsProps = { fields: EditableField[]; separator: string; text: string; measuring: boolean }
+
 // Edycja stron w Edit mode – implementuje ją warstwa edycji (canvas/), szablony widzą tylko ten interfejs.
 // - `fieldOf` – pole CV, którego tekst rysuje slot `slot` w bloku `block` (`part` – id elementu wiersza listy); null –
 //   tekst nie jest (jeszcze) polem i zostaje jak w dokumencie.
 // - `reveal` – fragmenty, które mają blok i pokazują swoje puste pola mimo pustej treści (`generateBlocks`).
-// - `Field` – komponent Page field (musi mieć stałą tożsamość, inaczej pole traci kursor przy każdym renderze).
+// - `expanded` – fragmenty, w których linie złączone z kilku pól są rysowane jako osobne Page fields (aktywny fragment;
+//   odsłonięte są rozwinięte zawsze). W pozostałych taka linia to jeden napis jak w dokumencie (`Joined`): granica
+//   elementów w środku linii przesuwa dalszy tekst o ułamek piksela (pozycja każdego elementu jest zaokrąglana do 1/64
+//   px), a strony w spoczynku muszą być piksel w piksel jak w PDF.
+// - `Field` – komponent Page field (musi mieć stałą tożsamość, inaczej pole traci kursor przy każdym renderze);
+//   `Joined` – komponent linii złączonej poza rozwiniętym fragmentem (klik i fokus rozwijają fragment).
 // - `onPagesCommitted` – wołane przed malowaniem po każdym nowym podziale stron (np. przywrócenie kursora w polu
 //   przeniesionym na inną stronę).
 export type PageEditing = {
   fieldOf: (block: CvBlock, slot: SlotName, part?: string) => EditableField | null
   reveal: Reveal
+  expanded: ReadonlySet<string>
   Field: ComponentType<PageFieldProps>
+  Joined: ComponentType<JoinedFieldsProps>
   onPagesCommitted: () => void
 }
 
@@ -101,10 +112,18 @@ export function CvText({ block, slot, text, part }: { block: CvBlock; slot: Slot
   return <PageFieldOf editable={editable} />
 }
 
-// Pola złączone w jeden napis bloku: w Edit mode każde osobno, a separator między dwoma polami na stronie – w dokumencie
-// tylko między niepustymi polami (jak `joinFilled` w domain/blocks.ts), w odsłoniętym fragmencie między wszystkimi.
-function Joined({ fields, separator }: { fields: Editable[]; separator: string }) {
-  return fields.filter(shownField).map((editable, index) => (
+// Pola złączone w jeden napis bloku (`text` – napis dokumentu). W rozwiniętym fragmencie każde pole osobno, a separator
+// między dwoma polami na stronie – między niepustymi polami (jak `joinFilled` w domain/blocks.ts), w odsłoniętym
+// fragmencie między wszystkimi. Poza nim – jeden napis (`PageEditing.Joined`).
+function Joined({ fields, separator, text }: { fields: Editable[]; separator: string; text: string }) {
+  const shown = fields.filter(shownField)
+  const { context } = fields[0]!
+  if (!context.editing.expanded.has(fields[0]!.field.fragment)) {
+    if (text === '') return text
+    const { Joined: JoinedText } = context.editing
+    return <JoinedText fields={shown.map(({ field }) => field)} separator={separator} text={text} measuring={context.measuring} />
+  }
+  return shown.map((editable, index) => (
     <Fragment key={editable.field.key}>
       {index > 0 && separator}
       <PageFieldOf editable={editable} />
@@ -120,7 +139,7 @@ export function CompanyLine({ block }: { block: ExperienceEntryBlock }) {
   const company = useField(block, 'company')
   const location = useField(block, 'location')
   if (!company || !location) return block.companyLine
-  return <Joined fields={[company, location]} separator=" – " />
+  return <Joined fields={[company, location]} separator=" – " text={block.companyLine} />
 }
 
 // „Poziom, kierunek, uczelnia” wspólnego markupu (Classic): w dokumencie jeden napis, w Edit mode trzy pola.
@@ -128,8 +147,9 @@ export function EducationLine({ block }: { block: EducationEntryBlock }) {
   const level = useField(block, 'level')
   const field = useField(block, 'field')
   const institution = useField(block, 'institution')
-  if (!level || !field || !institution) return [block.level, block.details].filter((part) => part !== '').join(', ')
-  return <Joined fields={[level, field, institution]} separator=", " />
+  const text = [block.level, block.details].filter((part) => part !== '').join(', ')
+  if (!level || !field || !institution) return text
+  return <Joined fields={[level, field, institution]} separator=", " text={text} />
 }
 
 // „Kierunek, uczelnia” obok wyróżnionego poziomu (Modern, Bold): w dokumencie `details`, w Edit mode dwa pola. Czy
@@ -138,5 +158,5 @@ export function EducationDetails({ block }: { block: EducationEntryBlock }) {
   const field = useField(block, 'field')
   const institution = useField(block, 'institution')
   if (!field || !institution) return block.details
-  return <Joined fields={[field, institution]} separator=", " />
+  return <Joined fields={[field, institution]} separator=", " text={block.details} />
 }

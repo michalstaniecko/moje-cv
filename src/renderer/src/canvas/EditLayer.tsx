@@ -8,6 +8,7 @@ import { useAddControls, type AddedAnchor } from './AddControls'
 import { BlockHandle, useBlockMenu } from './BlockMenu'
 import { cardLabel, EditCard, hasCard, type CardAnchor, type ClauseLibrary } from './EditCard'
 import {
+  blockTarget,
   editMarkupContract,
   fragmentKey,
   fragmentTarget,
@@ -18,6 +19,9 @@ import {
   type EditTarget
 } from './editTargets'
 import type { Fragment } from './fragmentRects'
+import { pageFieldKinds } from './pageFields'
+import { activateJoined } from './PageField'
+import { offsetOf, writeSelection, type ActiveFieldStore } from './useActiveField'
 import { useFragmentRects } from './useFragmentRects'
 import type { EditSession } from './useEditSession'
 
@@ -180,6 +184,8 @@ export function EditLayer({
   }, [open, closeCard, fragmentButtons])
 
   useHandlesOfPageFields(panel, layer)
+  usePointerOnPages(panel, latestDocument, openCard, session.activeField)
+  useSectionHoverOnPages(panel, latestDocument, addOnPage.hoverOnPage)
 
   return (
     <div ref={layer} className="edit-layer" data-compact={compact || undefined} {...addOnPage.layerEvents}>
@@ -194,6 +200,7 @@ export function EditLayer({
                 fragment={fragment}
                 label={t.canvas.edit(cardLabel(fragment.target, document, t))}
                 expanded={anchorKey === fragment.key}
+                keysOnly={pageFieldKinds.has(fragment.target.kind)}
                 onOpen={onOpen}
                 onKeyDown={onFragmentKeyDown}
               />
@@ -238,22 +245,25 @@ export type EditingContext = {
   added: AddedAnchor
 }
 
+// `keysOnly` – fragment z Page fields, który ma jeszcze kartę (wpis – jego daty, do S3): przycisk tylko dla klawiatury,
+// mysz trafia w pola pod nim.
 type FragmentButtonProps = {
   fragment: Fragment
   label: string
   expanded: boolean
+  keysOnly: boolean
   onOpen: (fragment: Fragment, event: MouseEvent<HTMLButtonElement>) => void
   onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void
 }
 
 // Przycisk fragmentu – przerysowany tylko, gdy zmienił się jego prostokąt, nazwa albo stan karty.
 const FragmentButton = memo(
-  function FragmentButton({ fragment, label, expanded, onOpen, onKeyDown }: FragmentButtonProps) {
+  function FragmentButton({ fragment, label, expanded, keysOnly, onOpen, onKeyDown }: FragmentButtonProps) {
     const { rect } = fragment
     return (
       <button
         type="button"
-        className="edit-fragment"
+        className={keysOnly ? 'edit-fragment edit-fragment--keys' : 'edit-fragment'}
         data-fragment={fragment.key}
         data-section={sectionOf(fragment.target) ?? undefined}
         data-page={fragment.page}
@@ -272,6 +282,7 @@ const FragmentButton = memo(
   (previous, next) =>
     previous.label === next.label &&
     previous.expanded === next.expanded &&
+    previous.keysOnly === next.keysOnly &&
     previous.onOpen === next.onOpen &&
     previous.onKeyDown === next.onKeyDown &&
     previous.fragment.key === next.fragment.key &&
@@ -309,6 +320,105 @@ function useHandlesOfPageFields(panel: RefObject<HTMLElement | null>, layer: Ref
       for (const [type, listener] of listeners) element.removeEventListener(type, listener)
     }
   }, [panel, layer])
+}
+
+// Kursor nad treścią sekcji na stronie pokazuje jej pigułkę „+” (AddControls.tsx) – tak jak dotąd najechanie na
+// przycisk fragmentu, którego wpisy edytowane na stronie pod myszą już nie mają.
+function useSectionHoverOnPages(
+  panel: RefObject<HTMLElement | null>,
+  latestDocument: RefObject<CvDocument>,
+  hoverOnPage: (sectionId: string | null) => void
+) {
+  const hover = useRef(hoverOnPage)
+  useEffect(() => {
+    hover.current = hoverOnPage
+  })
+  useEffect(() => {
+    const element = panel.current
+    if (!element) return
+    const sectionAt = (target: EventTarget | null) => {
+      const block = target instanceof Element ? target.closest<HTMLElement>('.cv-pages [data-block-id]') : null
+      const part = block ? blockTarget(block.dataset['blockId']!, latestDocument.current) : null
+      return part ? sectionOf(part) : null
+    }
+    const onOver = (event: PointerEvent) => {
+      const section = sectionAt(event.target)
+      if (section !== null) hover.current(section)
+    }
+    const onOut = (event: PointerEvent) => {
+      if (sectionAt(event.target) !== null && sectionAt(event.relatedTarget) === null) hover.current(null)
+    }
+    element.addEventListener('pointerover', onOver)
+    element.addEventListener('pointerout', onOut)
+    return () => {
+      element.removeEventListener('pointerover', onOver)
+      element.removeEventListener('pointerout', onOut)
+    }
+  }, [panel, latestDocument])
+}
+
+// Klik myszą na stronie poza Page field (docs/specs/wysiwyg-editing.md, W9): w datę wpisu – karta wpisu z fokusem na
+// dacie początku (do S3, żetony dat); w separator, kropkę osi czasu albo puste miejsce bloku – kursor w najbliższym
+// polu tego bloku, w miejscu najbliższym kliknięciu. Tło strony poza blokami – nic (zamyka kartę, jak dotąd).
+function usePointerOnPages(
+  panel: RefObject<HTMLElement | null>,
+  latestDocument: RefObject<CvDocument>,
+  openCard: (target: EditTarget, anchor: string) => void,
+  active: ActiveFieldStore
+) {
+  useEffect(() => {
+    const element = panel.current
+    if (!element) return
+    const onMouseDown = (event: globalThis.MouseEvent) => {
+      if (event.button !== 0 || !(event.target instanceof Element)) return
+      const target = event.target
+      if (!target.closest('.cv-pages') || target.closest('[data-field-key], [data-joined]')) return
+      const block = target.closest<HTMLElement>('[data-block-id]')
+      if (!block) return
+      const date = target.closest('.cv-date')
+      const entry = date ? blockTarget(block.dataset['blockId']!, latestDocument.current) : null
+      if (entry?.kind === 'experienceItem' || entry?.kind === 'educationItem') {
+        event.preventDefault()
+        openCard({ kind: entry.kind, sectionId: entry.sectionId, itemId: entry.itemId, field: 'start' }, fragmentKey(entry))
+        return
+      }
+      const nearest = nearestField(block, event.clientX, event.clientY)
+      if (!nearest) return
+      event.preventDefault()
+      if (nearest.field.dataset['joined'] !== undefined) {
+        activateJoined(nearest.field, nearest.caret, active)
+        return
+      }
+      nearest.field.focus({ preventScroll: true })
+      writeSelection(nearest.field, { start: nearest.caret, end: nearest.caret })
+    }
+    element.addEventListener('mousedown', onMouseDown)
+    return () => element.removeEventListener('mousedown', onMouseDown)
+  }, [panel, latestDocument, openCard, active])
+}
+
+// Page field (albo linia złączona z kilku pól) bloku najbliższe punktowi okna i miejsce kursora w nim (znak pod punktem
+// przesuniętym na linię pola).
+function nearestField(block: HTMLElement, x: number, y: number): { field: HTMLElement; caret: number } | null {
+  let best: { field: HTMLElement; rect: DOMRect; distance: number } | null = null
+  for (const field of block.querySelectorAll<HTMLElement>('[data-field-key], [data-joined]')) {
+    for (const rect of field.getClientRects()) {
+      if (rect.height === 0) continue
+      const dx = Math.max(rect.left - x, 0, x - rect.right)
+      const dy = Math.max(rect.top - y, 0, y - rect.bottom)
+      const distance = Math.hypot(dx, dy)
+      if (!best || distance < best.distance) best = { field, rect, distance }
+    }
+  }
+  if (!best) return null
+  const { field, rect } = best
+  const length = (field.textContent ?? '').length
+  const point = window.document.caretPositionFromPoint(
+    Math.min(Math.max(x, rect.left + 1), rect.right - 1),
+    Math.min(Math.max(y, rect.top + 1), rect.bottom - 1)
+  )
+  const caret = point && field.contains(point.offsetNode) ? offsetOf(field, point.offsetNode, point.offset) : x < rect.left ? 0 : length
+  return { field, caret }
 }
 
 // Przyciski warstwy w kolejności Tab (poza uchwytami menu): fragmenty, pigułki „+”, pasek „Add to CV” i podpowiedź

@@ -284,6 +284,12 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
+/* Fragment z Page fields, który ma jeszcze kartę (wpis – jego daty): przycisk tylko dla klawiatury, mysz trafia w pola
+   pod nim (docs/specs/wysiwyg-editing.md, S2). */
+.edit-layer .edit-fragment--keys {
+  pointer-events: none;
+}
+
 .edit-layer .edit-fragment:hover:not(:disabled) {
   background: var(--ui-fragment-fill);
   outline: 1px solid var(--ui-fragment-outline);

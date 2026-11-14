@@ -21,9 +21,10 @@ export type EditSession = ReturnType<typeof useEditSession>
 // - Po każdej zmianie dokumentu (także cofnij/ponów) sesja sprawdza, czy część CV z karty nadal istnieje; jeśli nie,
 //   zamyka kartę i woła `onCardGone` (edytor przenosi fokus w bezpieczne miejsce).
 // - Aktywne pole (`activeField`, useActiveField.ts): Page field z fokusem na stronach (docs/specs/wysiwyg-editing.md).
-//   Części CV edytowane już na stronie (imię i nazwisko, podsumowanie, tytuł sekcji) nie mają karty: „otwarcie” ich
-//   z Outline, „Add to CV” czy menu stawia kursor w ich polu na stronie (pusta część jest odsłaniana). Karta tytułu
-//   zostaje tylko dla sekcji, której nie ma na stronach (ukrytej albo pustej) – do czasu odsłaniania sekcji (S5).
+//   Części CV edytowane już na stronie (imię i nazwisko, podsumowanie, tytuł sekcji, pole tekstowe wpisu, element
+//   listy) nie mają karty: „otwarcie” ich z Outline, „Add to CV” czy menu stawia kursor w ich polu na stronie (pusta
+//   część jest odsłaniana). Karta tytułu i listy zostaje tylko dla sekcji, której nie ma na stronach (ukrytej albo
+//   pustej) – do czasu odsłaniania sekcji (S5); karta wpisu – dla jego dat i nowego wpisu (do S3 i S5).
 export function useEditSession(document: CvDocument, { onCardGone }: { onCardGone?: () => void } = {}) {
   const [mode, setModeState] = useState<EditorMode>('edit')
   const [card, setCard] = useState<OpenCard | null>(null)
@@ -61,7 +62,7 @@ export function useEditSession(document: CvDocument, { onCardGone }: { onCardGon
   }, [activeField])
   const openCard = useCallback(
     (target: EditTarget, anchor: string) => {
-      const key = pageFieldKey(target)
+      const key = pageFieldKey(target, latestDocument.current)
       if (key !== null && onPages(target, latestDocument.current)) {
         setCard(null)
         activeField.request({ key, fragment: fragmentKey(target) }, window.document)
@@ -75,9 +76,11 @@ export function useEditSession(document: CvDocument, { onCardGone }: { onCardGon
 }
 
 // Czy część CV edytowana na stronie może tam dostać kursor: nagłówek zawsze (pusty jest odsłaniany), tytuł sekcji –
-// gdy sekcja jest na stronach (nie ukryta i z treścią).
+// gdy sekcja jest na stronach (nie ukryta i z treścią), wpis i element listy – gdy ich sekcja nie jest ukryta (pusty
+// jest odsłaniany razem z sekcją).
 function onPages(target: EditTarget, document: CvDocument): boolean {
-  if (target.kind !== 'sectionTitle') return true
-  const section = document.sections.find((candidate) => candidate.id === target.sectionId)
-  return section !== undefined && sectionShown(section, document)
+  if (target.kind === 'fullName' || target.kind === 'summary') return true
+  const section = 'sectionId' in target ? document.sections.find((candidate) => candidate.id === target.sectionId) : undefined
+  if (!section) return false
+  return target.kind === 'sectionTitle' ? sectionShown(section, document) : !section.hidden
 }

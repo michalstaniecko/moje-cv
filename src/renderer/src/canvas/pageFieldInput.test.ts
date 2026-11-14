@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { caretAfterChange, fieldValue, normalizePastedText, replaceSelection } from './pageFieldInput'
+import { caretAfterChange, fieldValue, normalizePastedText, pastedLines, replaceSelection } from './pageFieldInput'
 
 describe('normalizePastedText', () => {
   it('keeps plain text, unifies line ends and turns tabs and control characters into spaces, keeping no-break spaces', () => {
@@ -44,5 +44,13 @@ describe('fieldValue', () => {
     expect(fieldValue('a\u00a0 \u00a0b')).toBe('a   b')
     expect(fieldValue('a \u00a0b')).toBe('a  b')
     expect(fieldValue('10\u00a0km')).toBe('10\u00a0km')
+  })
+})
+
+describe('pastedLines', () => {
+  it('splits pasted text into the lines of new bullets or list items, normalised and without empty lines', () => {
+    expect(pastedLines('First\r\n\r\n  \nSecond\tpart\rThird\n')).toEqual(['First', 'Second part', 'Third'])
+    expect(pastedLines('One line')).toEqual(['One line'])
+    expect(pastedLines('\n \n')).toEqual([])
   })
 })

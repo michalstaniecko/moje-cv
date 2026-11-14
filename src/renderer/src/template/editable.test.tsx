@@ -4,7 +4,7 @@ import { generateBlocks, type CvBlock } from '../domain/blocks'
 import { sampleCvs } from '../domain/sampleCv'
 import type { CvDocument, EducationItem, ExperienceItem, Section } from '../domain/schema'
 import { CvBlockView } from './CvBlockView'
-import { EditingProvider, type EditableField, type PageEditing, type PageFieldProps, type SlotName } from './editable'
+import { EditingProvider, type EditableField, type JoinedFieldsProps, type PageEditing, type PageFieldProps, type SlotName } from './editable'
 import { templates } from './templates'
 
 // Sloty w trybie edycji (docs/specs/wysiwyg-editing.md, W2, W9, W10): osobne pola z kluczem, separatory między polami,
@@ -18,6 +18,10 @@ function Field({ field, text, measuring }: PageFieldProps) {
   )
 }
 
+function Joined({ fields, text }: JoinedFieldsProps) {
+  return <span data-joined={fields.map((field) => field.key).join(' ')}>{text}</span>
+}
+
 const entryOf = (document: CvDocument, itemId: string) => {
   for (const section of document.sections) {
     const item = (section.items as Section['items'][number][]).find((candidate) => candidate.id === itemId)
@@ -28,7 +32,8 @@ const entryOf = (document: CvDocument, itemId: string) => {
 
 // Edycja testowa: pole dla każdego slotu, z wartością z dokumentu. Klucze i fragmenty jak w warstwie edycji
 // (canvas/pageFields.ts), ale rozwiązane tu prosto z id bloków. Tytuł w wierszu listy – tylko w pierwszym wierszu.
-function editingWith(document: CvDocument, reveal: string[] = []): PageEditing {
+// `expanded` – fragmenty z liniami złączonymi rozwiniętymi w pola (domyślnie: odsłonięte).
+function editingWith(document: CvDocument, reveal: string[] = [], expanded: string[] = reveal): PageEditing {
   const field = (key: string, fragment: string, value: string): EditableField => ({
     key,
     fragment,
@@ -74,7 +79,9 @@ function editingWith(document: CvDocument, reveal: string[] = []): PageEditing {
       return typeof value === 'string' ? field(`${prefix}:${first}:${slot}`, fragment, value) : null
     },
     reveal: new Set(reveal),
+    expanded: new Set([...reveal, ...expanded]),
     Field,
+    Joined,
     onPagesCommitted: () => {}
   }
 }
@@ -122,6 +129,9 @@ function withEntries(position: Partial<ExperienceItem>, education: Partial<Educa
   }
 }
 
+// Wszystkie wpisy Sample CV rozwinięte (jakby każdy był aktywnym fragmentem).
+const allEntries = sample.sections.flatMap((section) => (section.type === 'list' ? [] : section.items.map((item) => `item:${item.id}`)))
+
 const blockHtml = (html: string, blockId: string) => html.split('\n').find((block) => block.includes(`data-block-id="${blockId}"`))!
 
 describe('editing slots', () => {
@@ -136,7 +146,7 @@ describe('editing slots', () => {
     })
 
     it(`draw every text field of the entries and lists as its own field in the ${templateId} template`, () => {
-      const page = render(sample, templateId, editingWith(sample))
+      const page = render(sample, templateId, editingWith(sample, [], allEntries))
       const position = sample.sections[0]!.type === 'experience' ? sample.sections[0]!.items[0]! : null
       expect(page.keys).toEqual(
         expect.arrayContaining([
@@ -162,9 +172,20 @@ describe('editing slots', () => {
       )
     })
 
+    it(`draw the lines joined from several fields as one text outside an expanded fragment, in the ${templateId} template`, () => {
+      const page = render(sample, templateId, editingWith(sample))
+      expect(blockHtml(page.html, 'e1')).toContain(
+        '<div class="cv-company"><span data-joined="experience:e1:company experience:e1:location">Fictional Manufacturing Ltd – Manchester</span></div>'
+      )
+      expect(blockHtml(page.html, 'ed2')).toMatch(/<span data-joined="([^"]*education:ed2:field education:ed2:institution)">([^<]*)Logistics, Fictional Academy<\/span>/)
+      // Pola pojedyncze (stanowisko, punkty) są polami także poza rozwiniętym fragmentem.
+      expect(page.keys).toContain('experience:e1:role')
+      expect(page.keys).not.toContain('experience:e1:company')
+    })
+
     it(`draw an empty field outside a revealed fragment as in the document, without a placeholder, in the ${templateId} template`, () => {
       const document = withEntries({ role: '', company: '' }, { level: '', institution: ' ' })
-      const page = render(document, templateId, editingWith(document))
+      const page = render(document, templateId, editingWith(document, [], ['item:e1', 'item:ed1']))
       const entry = blockHtml(page.html, 'e1')
       expect(entry).not.toContain('experience:e1:role')
       expect(entry).not.toContain('experience:e1:company')

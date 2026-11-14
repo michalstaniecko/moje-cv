@@ -114,8 +114,8 @@ function stats(values: number[]): Stats {
 }
 
 // Gdzie się pisze: CV form (przebieg z ticketu #72) albo Page fields na stronach (docs/specs/wysiwyg-editing.md, W23).
-// `type` pisze `typed` w podsumowaniu i w polu na ostatniej stronie (CV form: punkt 1 ostatniego stanowiska, strony:
-// tytuł ostatniej sekcji), potem `paused` w tym samym polu.
+// `type` pisze `typed` w podsumowaniu i w punkcie 1 ostatniego stanowiska (na ostatniej stronie), potem `paused` w tym
+// samym punkcie.
 type TypingPath = { label: string; prepare: () => Promise<void>; type: (typed: string, paused: string) => Promise<void> }
 
 const typingInForm: TypingPath = {
@@ -136,9 +136,9 @@ const typingInForm: TypingPath = {
   }
 }
 
-// Na stronach (Page fields, kawałek S1): podsumowanie na pierwszej stronie, potem tytuł ostatniej sekcji (na ostatniej
-// stronie). Domyślny pasek boczny (Outline), czyli strony szersze niż obok CV form; `cv:keystroke-to-preview` mierzy
-// pisanie na stronie (`markInput` z `input` pól, PreviewPane).
+// Na stronach (Page fields): podsumowanie na pierwszej stronie, potem punkt 1 ostatniego stanowiska (na ostatniej
+// stronie, kawałek S2). Domyślny pasek boczny (Outline), czyli strony szersze niż obok CV form;
+// `cv:keystroke-to-preview` mierzy pisanie na stronie (`markInput` z `input` pól, PreviewPane).
 const typingOnPage: TypingPath = {
   label: 'pages',
   prepare: async () => {},
@@ -147,9 +147,9 @@ const typingOnPage: TypingPath = {
     await field('Summary').click()
     await window.keyboard.press('Meta+ArrowDown')
     await window.keyboard.type(typed, { delay: 150 })
-    const title = field('Section title “Languages”')
-    await title.scrollIntoViewIfNeeded()
-    await title.click()
+    const lastBullet = field(`Bullet 1 – Position “${LAST_ROLE}”`)
+    await lastBullet.scrollIntoViewIfNeeded()
+    await lastBullet.click()
     await window.keyboard.press('Meta+ArrowRight')
     await window.keyboard.type(typed, { delay: 150 })
     await window.keyboard.type(paused, { delay: 800 })

@@ -110,6 +110,13 @@ export function useAddControls({
       if (sectionAt(event.relatedTarget) === null) setFocused(null)
     }
   }
+  // Kursor nad treścią sekcji na stronie (Page fields wpisów nie mają przycisku fragmentu pod myszą): `null` – poza
+  // sekcjami, pigułka gaśnie po chwili (przejście ze strony na pigułkę jej nie chowa).
+  const hoverOnPage = (sectionId: string | null) => {
+    window.clearTimeout(linger.current)
+    if (sectionId !== null) setHovered(sectionId)
+    else linger.current = window.setTimeout(() => setHovered(null), PILL_LINGER_MS)
+  }
 
   const pills = new Map<Fragment, SectionPill>()
   if (!compact) for (const pill of sectionPills(fragments)) pills.set(pill.after, pill)
@@ -214,5 +221,5 @@ export function useAddControls({
     </button>
   )
 
-  return { layerEvents, pillAfter, bar, hint }
+  return { layerEvents, hoverOnPage, pillAfter, bar, hint }
 }

@@ -15,6 +15,14 @@ export function normalizePastedText(text: string, multiline: boolean): string {
   return multiline ? plain : plain.replace(/\n/g, ' ')
 }
 
+// Linie wklejonego tekstu dla punktu stanowiska albo elementu listy: znormalizowane jak wyżej, puste linie pominięte
+// (W6) – pierwsza trafia w miejsce kursora, kolejne to nowe elementy.
+export function pastedLines(text: string): string[] {
+  return normalizePastedText(text, true)
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+}
+
 // Wartość po zastąpieniu zaznaczenia tekstem `insert` i kursor za wstawionym tekstem.
 export function replaceSelection(value: string, selection: TextSelection, insert: string): { value: string; caret: number } {
   const start = Math.min(selection.start, selection.end)

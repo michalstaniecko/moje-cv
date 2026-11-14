@@ -6,17 +6,21 @@ import type { TextSelection } from './pageFieldInput'
 // poza stanem React: zmiana zaznaczenia nie renderuje stron, a zmiana aktywnego fragmentu – tylko tych, którzy go czytają
 // (`useActiveFragment`).
 // - `focused` – pole dostało fokus (klik, Tab, przywrócenie): staje się aktywne.
-// - `blurred` – pole straciło fokus: przestaje być aktywne, chyba że fokus wrócił do pola o tym samym kluczu (blok
-//   przeniesiony na inną stronę jest nowym węzłem, a fokus przywraca `restore` jeszcze przed malowaniem).
+// - `blurred` – pole straciło fokus: przestaje być aktywne, chyba że fokus idzie do innego Page field (to staje się
+//   aktywne) albo wrócił do pola o tym samym kluczu (blok przeniesiony na inną stronę jest nowym węzłem, a fokus
+//   przywraca `restore` jeszcze przed malowaniem).
 // - `request` – fokus z zewnątrz (Outline, „Add to CV”, menu): pole staje się aktywne od razu (jego fragment jest
 //   odsłaniany), a fokus dostaje teraz albo – gdy pola jeszcze nie ma na stronach – po najbliższym podziale stron.
+// - `expect` – fokus po zmianie struktury z pola (podział, złączenie, wklejenie wielu linii, przeniesienie): pole
+//   staje się aktywne od razu, a fokus z zaznaczeniem `selection` dostaje po najbliższym podziale stron, gdy jego tekst
+//   jest już nowy (pole mogło dopiero powstać albo zostać przemontowane).
 // - `leave` – wyjście z Edit mode: żadne pole nie jest aktywne.
 // - `restore` – po każdym nowym podziale stron: oczekujący fokus albo pole aktywne, które zgubiło fokus przez
 //   przemontowanie, dostaje go z powrotem z zapamiętanym zaznaczeniem, bez przewijania.
 
 export type ActiveField = { key: string; fragment: string }
 
-type Pending = { key: string; caret: 'start' | 'end' }
+type Pending = { key: string; caret: 'start' | 'end' | TextSelection; scroll: 'center' | 'nearest' }
 
 export type ActiveFieldStore = ReturnType<typeof createActiveFieldStore>
 
@@ -30,6 +34,8 @@ export function createActiveFieldStore() {
   let active: ActiveField | null = null
   let selection: TextSelection | null = null
   let pending: Pending | null = null
+  // Pole przed aktywnym w tym samym fragmencie – dostaje kursor, gdy aktywne zniknie (np. cofnięty podział punktu).
+  let previous: string | null = null
   const listeners = new Set<() => void>()
 
   const setActive = (next: ActiveField | null) => {
@@ -53,38 +59,58 @@ export function createActiveFieldStore() {
       if (active?.key !== field.key) selection = null
       setActive(field)
       selection ??= readSelection(element)
+      previous = previousInFragment(element, field.fragment)
     },
-    blurred(field: ActiveField) {
+    blurred(field: ActiveField, next: EventTarget | null = null) {
+      // Fokus przechodzi do innego Page field albo linii złączonej (Tab, strzałki, klik): ono samo stanie się aktywne
+      // (linia złączona – rozwinięta). Bez czekania na to
+      // aktywny fragment na chwilę by zniknął, a z nim pola linii złączonej, do której właśnie idzie fokus.
+      const toField = next instanceof HTMLElement && (next.dataset['fieldKey'] !== undefined || next.dataset['joined'] !== undefined)
+      if (toField && next.closest('.cv-pages')) return
       // Po zakończeniu bieżącego renderu: przywrócenie fokusu w nowym węźle pola dzieje się w tym samym zadaniu.
       queueMicrotask(() => {
         const element = window.document.activeElement
         if (element instanceof HTMLElement && element.dataset['fieldKey'] === field.key) return
         if (pending || active?.key !== field.key) return
+        // Pole zniknęło ze stron (cofnięty podział, usunięty punkt), a fokus nigdzie nie trafił: kursor na koniec pola
+        // przed nim w tym samym fragmencie (W19).
+        const fallback = previous === null ? null : pageFieldElement(window.document, previous)
+        if (fallback && !pageFieldElement(window.document, field.key) && (!element || element === window.document.body)) {
+          focusField(fallback, 'end', { scroll: 'nearest' })
+          return
+        }
         selection = null
         setActive(null)
       })
     },
+    // Czy pole czeka na fokus z zaznaczeniem po zmianie struktury (jego tekst zmienia się, ale kursor ustawi `restore`).
+    isPending: (key: string) => pending?.key === key,
     // Wyjście z Edit mode: żadne pole nie jest aktywne (strony w Preview mode nie mają pól).
     leave() {
       pending = null
       selection = null
       setActive(null)
     },
-    request(field: ActiveField, root: ParentNode, caret: Pending['caret'] = 'end') {
+    expect(field: ActiveField, at: TextSelection) {
+      setActive(field)
+      selection = at
+      pending = { key: field.key, caret: at, scroll: 'nearest' }
+    },
+    request(field: ActiveField, root: ParentNode, caret: 'start' | 'end' = 'end') {
       setActive(field)
       selection = null
       const element = pageFieldElement(root, field.key)
       if (element) {
         pending = null
         focusField(element, caret, { scroll: 'center' })
-      } else pending = { key: field.key, caret }
+      } else pending = { key: field.key, caret, scroll: 'center' }
     },
     restore(root: ParentNode) {
       if (pending) {
-        const { key, caret } = pending
+        const { key, caret, scroll } = pending
         pending = null
         const element = pageFieldElement(root, key)
-        if (element) focusField(element, caret, { scroll: 'center' })
+        if (element) focusField(element, caret, { scroll })
         else if (active?.key === key) setActive(null)
         return
       }
@@ -102,6 +128,15 @@ export function createActiveFieldStore() {
   }
 }
 
+// Klucz pola przed `element` w kolejności stron, w tym samym fragmencie (null – pierwsze pole fragmentu).
+function previousInFragment(element: HTMLElement, fragment: string): string | null {
+  const root = element.closest('.cv-pages')
+  if (!root) return null
+  const fields = [...root.querySelectorAll<HTMLElement>('[data-field-key]')]
+  const before = fields.slice(0, fields.indexOf(element)).reverse()
+  return before.find((candidate) => candidate.dataset['fragment'] === fragment)?.dataset['fieldKey'] ?? null
+}
+
 const noStore = () => () => {}
 
 // Fragment aktywnego pola (null – żadne pole nie jest aktywne); komponent renderuje się tylko przy jego zmianie.
@@ -112,7 +147,7 @@ export function useActiveFragment(store: ActiveFieldStore | undefined): string |
 function focusField(element: HTMLElement, caret: Pending['caret'], { scroll }: { scroll: 'center' | 'nearest' }) {
   element.focus({ preventScroll: true })
   const position = caret === 'start' ? 0 : (element.textContent ?? '').length
-  writeSelection(element, { start: position, end: position })
+  writeSelection(element, typeof caret === 'object' ? caret : { start: position, end: position })
   element.scrollIntoView({ block: scroll })
 }
 
