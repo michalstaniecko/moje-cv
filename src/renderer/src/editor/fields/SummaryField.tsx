@@ -3,7 +3,7 @@ import { useDictionary } from '../../i18n'
 import type { CvEditor } from '../cvEditor'
 import { updateHeader } from '../documentEdits'
 
-// Podsumowanie pod nagłówkiem – w CV form i w Edit card (te same klucze łączenia kroków cofania).
+// Podsumowanie pod nagłówkiem w CV form (ten sam klucz łączenia kroków cofania co Page field na stronie).
 export function SummaryField({ editor, header }: { editor: CvEditor; header: CvDocument['header'] }) {
   const t = useDictionary().editor
   return (

@@ -1,4 +1,4 @@
-// Pole wyboru z etykietą – w CV form i w Edit card.
+// Pole wyboru z etykietą – w CV form i w Field popovers (np. „I currently work here” w popoverze daty).
 export function Checkbox({
   label,
   checked,

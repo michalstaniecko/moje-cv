@@ -937,6 +937,88 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
   musi oddać fokus – tu kursor w pokazanej sekcji / przycisk zdjęcia. `addSectionElement` robi `editor.edit`, więc cel
   rozwiązuje się w bieżącym dokumencie (`current` w `useEditSession`, `editor.store.getState()` w Outline).
 
+### S6 – koniec Edit card, klawiatura i dostępność (zrobione)
+
+- **Edit card usunięta (W20, AC 3):** `canvas/EditCard.tsx` i jej style; stan karty w `useEditSession` – `openCard`
+  zastąpione przez `focusPart(target)` („postaw kursor w części CV na stronie”, bez kotwicy); w `EditLayer.tsx`
+  `onPage` / `anchorElement` / `locate` / `removeInCard`, przewijanie do kotwicy i zamykanie kliknięciem obok;
+  `useAddedAnchor` (z przekazywaniem przez `CvScreen`, `EditorSidebar`, `Outline`, `BlockMenu`, `AddControls`
+  i `data-outline-row`); sprawdzanie `session.card` w `BlockMenu`, `Outline`, `EditorSidebar`; `hitTarget`,
+  `ContractHit` i `targetExists` w `editTargets.ts` (z testami); położenie `beside` w `anchoredPosition`; to, czego
+  używała tylko karta: `inCard` (pola kontaktów, zdjęcia, klauzuli), `labelled` (`SectionTitleField`), wariant bez
+  `handle` (pola stanowiska i wykształcenia), `data-edit-focus` i `focusKey` (`MonthField`), `RemovalFocus.root`,
+  `onOpen` w `CvDesignButton`. Teksty `editor.card.close` i `editor.card.sectionTitle` usunięte z 16 słowników,
+  a `editor.card` (nazwy wpisów i list w nazwach Page fields) to teraz `editor.part`. `grep -r EditCard src` – pusty.
+- **Escape (W11):** w Page field, na żetonie daty i w linii złączonej przenosi fokus na panel stron (`main.preview`,
+  `tabindex="-1"`, nazwa „CV pages” – nowy tekst `preview.pagesPanel`; obrys fokusu tylko z klawiatury): pole przestaje
+  być aktywne (pusta część znika ze strony), strzałki przewijają strony. Otwarta lista podpowiedzi etykiety kontaktu
+  bierze pierwszy Escape. **Odstępstwo:** pasek klauzuli to Field popover bez fokusu – Escape w tekście klauzuli od razu
+  wychodzi na panel (pasek znika razem z aktywnym fragmentem), zamiast najpierw „zamknąć popover”; Escape w pasku
+  wraca do tekstu (jak w S4).
+- **Komunikaty `aria-live` (W22):** region i jego magazyn przeniesione z `BlockMenu` do sesji edycji
+  (`canvas/announcer.tsx`: `createAnnouncer`, `LiveRegion` w warstwie), więc mówią przez niego i Page fields, i menu
+  uchwytów. Enter / Backspace / Delete w punktach, elementach list i kontaktach („New bullet 4.”, „Joined with bullet
+  3.”, „Removed bullet 4.”, „New contact 3.”, „Removed contact 3.”), ⌥⇧↑/↓ w polu i na żetonie („Moved bullet 3 to
+  position 2 of 8.”, „Moved position “…” to position 1 of 4.” – te same teksty co menu wiersza). Teksty liczą czyste
+  funkcje obok zmian struktury (`FieldEdit.announce`; `moveField` zwraca `{ change, announce }`); 8 nowych tekstów
+  `editor.canvas.announce.*` w 16 słownikach. Wklejenie wielu linii mówi o ostatnim nowym elemencie (kursor stoi w nim).
+  **Odstępstwo:** dodanie z pigułki „+”, menu uchwytu, paska „Add to CV” i Outline jest bez komunikatu – fokus trafia
+  w nowe pole, którego nazwa już to mówi („Job title – Position “New position””), drugi komunikat byłby szumem;
+  usunięcie wpisu z menu – „Removed.” (status), jak w S3.
+- **Uchwyty i pigułki poza kolejnością Tab (W22):** `RowMenu tabbable={false}` na stronach, pigułki
+  `tabindex="-1"` (dalej klikalne). Tab z ostatniego pola stron idzie do przycisku zdjęcia (zostaje w kolejności – jedyne
+  wejście w zdjęcie z klawiatury) i paska „Add to CV”; podpowiedź pustego CV też zostaje. `focusAfter`
+  (`FieldPopover.tsx`, Tab z ostatniej kontrolki popovera) pomija elementy z `tabindex="-1"`. `RowMenu` zapamiętuje
+  `opener` – element z fokusem przed otwarciem menu, jeśli nie był nim uchwyt (Shift+F10 / klawisz menu w polu):
+  Escape wraca do niego, a akcje dostają `{ opener }` – przeniesienie i „Nowa strona przed” z menu otwartego z pola
+  zostawiają kursor w tym polu w tym samym miejscu (`active.expect`), także gdy fragment przechodzi na inną stronę.
+  Menu uchwytu na stronie liczy się jak Field popover pola (`keepsFieldActive` → `data-field-popover`): Shift+F10
+  z żetonu daty albo z pola linii złączonej nie zwija już wpisu (błąd znaleziony testem „tylko klawiatura”: pole,
+  z którego otwarto menu, znikało, a Escape lądował na uchwycie); po zamknięciu menu bez powrotu fokusu do pola pole
+  przestaje być aktywne (`onClosed`).
+- **Uchwyt kontaktów (W14 – zrobione):** fragment `contacts` ma uchwyt (`handleFragments`) z jedną pozycją „Add
+  contact” – nowy kontakt na końcu, kursor w jego etykiecie, jeden krok cofania; nazwa „Actions for contacts” (nowy
+  tekst `editor.order.handle.contacts`). Shift+F10 w polu kontaktu otwiera to menu. W trzech szablonach stoi w marginesie
+  przed `.cv-contact` (sprawdzone zrzutami); ⌥⇧↑/↓ na nim nic nie robi (kolejność kontaktów – tylko CV form, W14).
+- **Obrysy:** nad tekstem nie ma już żadnych elementów warstwy (przycisków fragmentów nie ma od S4), obrys pola rysuje
+  samo Page field (`pageFields.css`), więc wymaganie „obrysy `pointer-events: none`” jest spełnione bez zmian.
+- **Kontrakt nowego szablonu:** krok 5 checklisty „Nowy szablon” (`domain/schema.ts`) i komentarz `BlockViewOverrides`
+  (`templateDefinition.ts`) mówią: tekst każdego pola przez sloty `template/editable.tsx`, klasy kontraktu tylko dla
+  warstwy, nowy szablon w teście pól i w złotym markupie. `editMarkupContract` bez `.cv-role`, `.cv-company`,
+  `.cv-education-level` (służyły tylko mapowaniu kliknięć karty); `.cv-date` warstwa czyta przez kontrakt. Test pól
+  w trzech szablonach przemianowany („page fields: every field of the Sample CV in the … template is edited on the
+  page …”) i sprawdza też uchwyty kontaktów, tytułów i wpisów.
+- **Dokumentacja:** `GLOSSARY.md` (Edit card – wycofana, kodu nie ma; Edit mode – Tab, Shift+F10, Escape),
+  ADR-0009 (status), ADR-0010 (konsekwencje: mniejszy kontrakt klas, klawiatura i `aria-live`).
+- **Testy:** Vitest – `pageFields.test.ts` (komunikaty po Enter / Backspace / Delete / ⌥⇧↑↓), `blockMoves.test.ts`
+  (uchwyt kontaktów), `anchoredPosition.test.ts` (bez `beside`), `editTargets.test.ts` (bez `hitTarget`
+  i `targetExists`). e2e (`canvas.spec.ts`) – nowe: „Escape leaves a page field, a date or a joined line for the pages
+  panel …”, „a CV is edited with the keyboard alone …” (od podpowiedzi pustego CV: imię, kontakty z paska i Enterem,
+  stanowisko z paska, pola Enterem i Tabem, punkty, popover daty z „I currently work here”, Shift+F10 na żetonie,
+  Escape, ⌘Z – bez myszy i bez CV form); zmienione: Tab przez strony (po polach tylko zdjęcie i pasek; uchwyty
+  i pigułki `tabindex="-1"`), menu z klawiatury (Shift+F10 i klawisz menu z tytułu, Escape wraca do pola z kursorem,
+  przeniesienie z kursorem w polu, „Add education”, „Add contact”), Shift+F10 w polu wpisu, komunikaty w testach
+  punktów, kontaktów i ⌥⇧↑ wpisu, Escape w podpowiedziach etykiet, pigułka „+” klikana myszą, test pól w trzech
+  szablonach; usunięte pomocniki kart (`fragment`, `fragmentNames`, `card`, `expectCardNextTo`).
+- **Wynik:** `pnpm typecheck`, Vitest 704/704, e2e 169 passed / 16 skipped (pomiar i testy wydania), złote strony (Preview i Edit mode) i złoty markup bez
+  zmian wzorców.
+
+#### Przekazanie dla S7
+
+- **Checklista wydania** (`docs/release-checklist.md`) mówi jeszcze o Edit card (wiersze: usunięcie stanowiska „z Edit
+  card”, Appearance „Edit card”, minimalne okno „Edit card przy wysokim wpisie”, pomiar „typing in the Edit card”) –
+  przepisać na strony (menu uchwytu, Field popovers, przebiegi „pages” i „entering an entry” z `performance.spec.ts`).
+  Dopisać do VoiceOver: panel „CV pages” po Escape, komunikaty `aria-live` (czy komunikat i nazwa nowego pola nie
+  zagłuszają się po Enterze), Shift+F10 / klawisz menu i powrót Escape do pola, uchwyt kontaktów, linia złączona jako
+  jeden `textbox` z nazwami pól, napis dat jako przycisk (zostały z S2–S5).
+- **CHANGELOG** – wpis zastępujący opis Edit card (S7).
+- **Pomiar W23:** ścieżka pisania bez zmian (komunikat tylko przy zmianie struktury); oba przebiegi stron i „entering an
+  entry” na zbudowanej aplikacji – S7.
+- **Pułapki:** nowe menu przy polach na stronie – `RowMenu` z `keepsFieldActive` i `onClosed`, inaczej pole, z którego
+  je otwarto, przestaje być aktywne i może zniknąć (linia złączona, żeton). Nowe akcje menu uchwytu przyjmują
+  `{ opener }` i – jeśli zostawiają fragment na stronie – wracają do pola przez `active.expect`, nie na uchwyt (jest
+  poza Tab). Elementy poza kolejnością Tab muszą mieć `tabindex="-1"`, żeby `focusAfter` je pomijał.
+
 ## Ryzyka
 
 - **Styl edytowalnego elementu w Chromium** może zmienić zawijanie (`overflow-wrap`, `line-break` dla edytowalnych

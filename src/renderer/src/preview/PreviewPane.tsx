@@ -18,7 +18,7 @@ import { fitScale, PREVIEW_MARGIN_PX, zoomIn, zoomOut } from './zoom'
 // Bloki wyższe niż strona są wyróżnione na kartkach w Edit mode; w Preview mode kartki są jak w PDF, a w pasku
 // podglądu jest ostrzeżenie z „Pokaż” (`onShowOversized` – przejście do Edit mode).
 // `editing` – w Edit mode tekst na stronach to Page fields (ADR-0010, canvas/usePageEditing.ts), a nad stronami leży
-// warstwa edycji z uchwytami i Edit card (canvas/EditLayer.tsx); w Preview mode nie ma ani jednego, ani drugiego.
+// warstwa edycji z uchwytami i Field popovers (canvas/EditLayer.tsx); w Preview mode nie ma ani jednego, ani drugiego.
 export function PreviewPane({
   document,
   onLayout: onLayoutChange,
