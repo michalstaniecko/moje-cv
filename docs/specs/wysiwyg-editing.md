@@ -548,6 +548,60 @@ Kryteria: AC 10, 11; wyniki pomiaru w opisie PR.
 
 Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
 
+## Stan realizacji i odstępstwa
+
+### S1 – fundament, imię i nazwisko, podsumowanie, tytuły sekcji (zrobione)
+
+- **Złoty markup** zapisany przed pierwszą zmianą szablonów (`template/goldenMarkup.test.tsx`, wzorce w
+  `template/__golden__/`): `renderToString` (nie `renderToStaticMarkup`), żeby wzorzec utrwalał też granice sąsiednich
+  węzłów tekstowych; obok Sample CV `en`/`pl` dwa fixture'y przypadków brzegowych (drugi – nagłówek bez imienia
+  i podsumowania – dopisany osobnym commitem, też na niezmienionych szablonach).
+- **`reveal`** (`domain/blocks.ts`) to zbiór kluczy fragmentów warstwy edycji (`fullName`, `summary`,
+  `sectionTitle:<id>`, dalej `item:<id>` itd.), nie id bloków. Tytuł sekcji bez wpisów na stronach nie jest odsłaniany
+  (S5). Bez osobnego `canvas/reveal.ts`: odsłonięcie liczy `usePageEditing.ts` z aktywnego fragmentu
+  i `fragmentHasEmptyField` (`canvas/pageFields.ts`, testy w `pageFields.test.ts`); aktywne pole i przywracanie kursora –
+  `canvas/useActiveField.ts` (magazyn w sesji edycji, `session.activeField`).
+- **Odstępstwo (W2, W5): `contenteditable="true"`, nie `plaintext-only`.** Ryzyko z „Ryzyk” się zmaterializowało:
+  Chromium wymusza w edytowalnych elementach `plaintext-only` `white-space: pre-wrap` (nadpisuje każdy styl autora),
+  więc nowe linie podsumowania w Classic i podwójne spacje wyglądałyby inaczej niż w PDF. Zamiast włączania edycji
+  dopiero na fokus (zapasowe rozwiązanie z „Ryzyk” – tekst przeskakiwałby przy wejściu w pole, a kopia pomiarowa
+  liczyłaby inny podział) pola są `contenteditable="true"` z `white-space`/`overflow-wrap`/`line-break: inherit`
+  (`canvas/pageFields.css`), a czysty tekst pilnuje `canvas/PageField.tsx`: `beforeinput` przepuszcza tylko
+  wpisywanie, poprawki pisowni, kompozycję i kasowanie (formatowanie, listy itd. – zablokowane), wklejanie i upuszczanie
+  idą przez `paste`/`drop` (tylko `text/plain`), a element wstawiony mimo to przez przeglądarkę (np. `<br>`) jest
+  spłaszczany do tekstu. Złote strony w Edit mode (W3.3) i test „ten sam podział linii podsumowania z nowymi liniami
+  i podwójnymi spacjami” w `e2e/canvas.spec.ts` to sprawdzają.
+- **Spacje:** w edytowalnym elemencie z `white-space: normal` przeglądarka pisze spację na końcu i spacje obok siebie
+  jako twarde (U+00A0); do dokumentu trafiają jako zwykłe (`fieldValue` w `canvas/pageFieldInput.ts`). Twarda spacja
+  między dwoma znakami zostaje (W6).
+- **Wklejanie:** zdarzenie `paste` zamiast `beforeinput insertFromPaste` (w nim `dataTransfer` bywa pusty, a tekst
+  przychodzi już przerobiony z HTML). Wklejanie wielu linii w punkty – S2.
+- **Kursor:** zaznaczenie aktywnego pola jest zapamiętywane także przy `keydown`/`pointerup` i każdej zmianie, nie tylko
+  na `selectionchange` (przychodzi za późno, gdy ⌘Z przemontowuje pole w tym samym zadaniu). `CvPages` woła
+  `onPagesCommitted` tylko po renderze z podziałem stron policzonym z bieżących bloków.
+- **Enter** w polu jednowierszowym przechodzi do następnego Page field (kursor na początku); w podsumowaniu Modern
+  i Bold wstawia nową linię (W5, W11). Escape (wyjście na panel stron) i strzałki między polami – później (S2/S6).
+- **Wejścia „otwierające” te części** (Outline „Nagłówek” i sekcja, „Add to CV” Imię i nazwisko/Podsumowanie, podpowiedź
+  w pustym CV) przechodzą przez `session.openCard`, które dla Page fields stawia kursor w polu (`activeField.request`,
+  pusta część odsłaniana) zamiast karty. Karta tytułu zostaje tylko dla sekcji, której nie ma na stronach (ukrytej albo
+  pustej) – do S5 (W21: fokus na „Pokaż” / odsłonięcie pierwszego elementu).
+- **Uchwyt tytułu sekcji** bez przycisku fragmentu pokazuje się przy najechaniu na Page field i przy jego fokusie
+  (`data-hovered`/`data-focused`, `EditLayer.tsx`); „Ukryj sekcję” przenosi fokus na Page field następnego tytułu.
+  Przycisk fragmentu listy obejmuje już tylko elementy (`li`), nie kolumnę tytułu obok listy (w Classic zasłaniał
+  tytuł).
+- **Powiększenie:** klik w „− / + / 100% / Dopasuj” nie zabiera fokusu (kursor zostaje w polu przy zmianie skali, AC 4).
+- **Przełączanie trybu** nie montuje stron od nowa (to samo drzewo `PageFieldsProvider` → `CvPages` w obu trybach), więc
+  przewinięcie i podział stron zostają.
+- **ADR-0010** – opis Page field poprawiony (`contenteditable="true"` zamiast `plaintext-only`, powód jak wyżej).
+- **Dostępność:** strony w Edit mode bez `aria-hidden`, stopki stron ukryte (`.cv-page-footer-frame`,
+  `display: contents`). Nazwy Page fields to nazwy pól CV form („Full name”, „Summary”, „Section title “…””), więc testy
+  e2e szukają pól formularza w `.editor-form` (zmienione lokatory w `export.spec.ts`, `languages.spec.ts`,
+  `crash.spec.ts`, `updates.spec.ts`, `performance.spec.ts`; poza tym `export.spec.ts` bez zmian oprócz testu czytnika ekranu).
+- **Nowe teksty:** żadnych – etykiety i placeholdery to istniejące teksty pól CV form („Full name”, „Summary”,
+  `sectionTitle(…)`, nazwy typów sekcji).
+- **Pomiar:** przebieg „Edit card” w `e2e/performance.spec.ts` zastąpiony przebiegiem „pages” (podsumowanie na
+  pierwszej stronie i tytuł ostatniej sekcji na ostatniej – ostatnie stanowisko dostanie Page fields w S2).
+
 ## Ryzyka
 
 - **Styl edytowalnego elementu w Chromium** może zmienić zawijanie (`overflow-wrap`, `line-break` dla edytowalnych
