@@ -689,6 +689,89 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
   linii złączonej pod kursorem. Nowe pola w szablonach: `fieldOf` musi znać slot, a test „Tab przez wszystkie pola”
   (`canvas.spec.ts`) pilnuje kolejności.
 
+### S3 – daty i usuwanie wpisów (zrobione)
+
+- **Slot `DateRange`** (`template/editable.tsx`) w `.cv-date` wspólnego markupu (Classic – z kropką osi `cv-date--dot`),
+  Modern i Bold; sloty `start`/`end`, pola `experience|education:<wpis>:start|end` (= klucze łączenia `MonthField`
+  w CV form, test czyta źródła pól). Napis daty – „MM.RRRR”, „present” w CV language (`dictionaryFor`), pusta data –
+  pusty napis. Bold rysuje `.cv-date` także pusty, gdy wpis jest odsłonięty (`useShown(block, 'start', block.dates)`).
+  Złoty markup i złote strony (też w Edit mode) bez zmian i bez nowych wzorców.
+- **Odstępstwo (W12): poza rozwiniętym wpisem daty są jednym napisem, nie dwoma żetonami.** Przekazanie z S2 zakładało,
+  że żetony nie potrzebują `expanded`, ale dwa żetony z „ – ” między nimi to granica elementów w środku linii (ta sama
+  przesunięta o 1/64 px reszta linii co w liniach złączonych). Dlatego poza `expanded` `DateRange` rysuje
+  `PageEditing.JoinedDates` (`canvas/DatePopover.tsx`, `.cv-page-dates`): jeden `span` z napisem dokumentu,
+  `role="button"`, `aria-haspopup="dialog"`, `data-joined` jak linia złączona. Klik w niego rozwija wpis i otwiera
+  popover daty pod kliknięciem; Tab i strzałki rozwijają wpis i stawiają fokus na żetonie. W rozwiniętym wpisie –
+  żetony `DateToken` (`.cv-page-date`, `role="button"`, `tabindex="0"`, `aria-expanded`, nazwa „<data> – <część>:
+  <napis>”, placeholder „From”/„To” przez `::before` jak w polach).
+- **Popover daty** (`DatePopover.tsx`; bez osobnego `FieldPopover.tsx` – jedyny Field popover, wspólną część wydzielić
+  w S4): `MonthField` (ta sama reguła „niedokończony wpis zostaje w polu”), „I currently work here” tylko przy końcu
+  stanowiska (zapamiętuje koniec sprzed zaznaczenia, jak CV form), „Clear”, `DateOrderWarning` przy odwróconych datach
+  (`aria-describedby` pola miesiąca). `popover="manual"` w warstwie górnej, pozycja z `anchoredPosition` pod żetonem
+  (bez miejsca – nad nim), liczona po każdym renderze, przewinięciu i zmianie okna; zawsze 1:1. Enter w polu miesiąca
+  i Escape zamykają i wracają na żeton; klik poza popoverem i żetonem zamyka; Tab z ostatniej kontrolki zamyka i idzie
+  do pola za żetonem, Shift+Tab z pierwszej – na żeton. Stan otwarcia – mały magazyn w sesji (`session.datePopover`,
+  zamykany przy przejściu do Preview mode, przy usunięciu wpisu i gdy żetonu już nie ma). Fokus w popoverze nie
+  dezaktywuje pola (`blurred` pomija cele w `[data-field-popover]`), więc wpis zostaje rozwinięty. Zmiana miesiąca –
+  z kluczem pola (jak `MonthField` w formularzu), „present”/„Clear” – osobne kroki. Wygląd: panel jak menu wiersza
+  (`.field-popover` w `app.css`, tokeny `--ui-panel-bg`, `--ui-border`, `--ui-shadow`).
+- **Kursor po kliknięciu w napis dat:** `openDatesAt` używa nowego `active.activate` (pole aktywne bez oczekującego
+  fokusu), nie `active.expect` – przywrócenie fokusu po nowym podziale stron (wejście we wpis z pustą datą go odsłania)
+  zabierało fokus popoverowi. Popover bierze fokus, gdy żeton pojawi się na stronie (`mounted` w magazynie).
+- **⚠ odwróconych dat** (`DateWarnings` w `EditLayer.tsx`): znaczek w warstwie obok napisu dat (po prawej, gdy daty
+  kończą blok – Modern, Bold; inaczej po lewej – Classic), `pointer-events: none`, kolor `--ui-page-warning` (jedna
+  wartość – kartka zawsze biała, ADR-0004); poniżej 50% bez znaczka. Opis (`endBeforeStart`, ukryty wizualnie)
+  wskazują oba żetony wpisu (`aria-describedby`, `dateWarningId`) – także napis dat poza rozwiniętym wpisem.
+- **Klawiatura:** żetony są w kolejności Tab i strzałek stron (Classic: daty przed stanowiskiem); Enter/spacja otwiera
+  popover, ⌥⇧↑/↓ przenosi wpis, Shift+F10 – menu uchwytu. Wejście strzałką/Tab w napis dat stawia fokus na pierwszej
+  niepustej dacie (wykształcenie bez początku: na dacie końca, odsłonięty pusty żeton początku jest przed nią).
+- **`fragmentHasEmptyField('item:…')`** liczy puste daty, więc wpis bez daty (np. wykształcenie Sample CV bez daty
+  początku, każdy nowy wpis) jest odsłaniany przy wejściu – to kosztuje ponowny podział stron (W23; pomiar w S5/S7).
+- **Usuwanie (W21):** „Remove position” / „Remove education” na końcu menu uchwytu wpisu, za kreską, w stylu `danger`
+  (`RowMenuAction.danger`, `role="separator"`), z „Removed. Undo” (`useRemovalUndo`). Fokus po usunięciu – na pierwszym
+  polu tekstu następnego fragmentu (`neighbourAfterHiding`, jak „Ukryj sekcję”), a bez niego `onFocusLost`; „Undo”
+  stawia kursor na końcu pierwszego pola przywróconego wpisu (`activeField.request` – stanowisko/poziom, pusty
+  odsłaniany). Usunięcie i przywrócenie to po jednym kroku cofania. Otwarte pytanie 2 (odstępstwo od #111) nadal do
+  potwierdzenia przez właściciela.
+- **Karty:** wpisy nie mają już przycisków fragmentów ani kart ze stron (`cardKinds`: zdjęcie, kontakty, klauzula;
+  usunięte `edit-fragment--keys`, `keysOnly`, `pageFieldKinds` i gałąź karty w `usePointerOnPages` – klik w `.cv-date`
+  obok żetonu otwiera teraz popover najbliższej daty, więc kursor `pointer` na `.cv-date` zostaje). Karta wpisu otwiera
+  się tylko dla nowego, pustego wpisu (do S5) i stoi przy pierwszym polu tekstu jego fragmentu (`onPage` w
+  `EditLayer.tsx`); Escape wraca tam (wpis z pustymi polami jest wtedy odsłonięty). `pageFieldKey` zwraca klucz daty dla
+  celu z `field: 'start' | 'end'`.
+- **Pigułki „+”** nie zabierają fokusu na `mousedown`: utrata fokusu pola chowała placeholdery odsłoniętego wpisu nad
+  pigułką, strony się przesuwały i klik nie trafiał (po S3 częstsze – puste daty odsłaniają wpis).
+- **Nowe teksty:** tylko „Clear” (`editor.clearDate`) w 16 słownikach; reszta to teksty CV form („From”, „To”, „From
+  (optional)”, „Graduation date”, „I currently work here”, „Remove position/education”, ostrzeżenie o kolejności dat).
+- **Testy:** Vitest – `pageFields.test.ts` (żetony dat: wartości w CV language, nazwy, `describedBy`, `dateChange`,
+  `entryDates`, `dateName`, puste daty w `fragmentHasEmptyField`, ⌥⇧↑ z żetonu), `editable.test.tsx` (napis dat poza
+  rozwiniętym wpisem, żetony z separatorem, puste żetony z placeholderami także w Bold). e2e (`canvas.spec.ts`): nowy
+  test dat (klik w napis, popover przy żetonie, zmiana na stronie i w formularzu, Enter/Escape na żeton, spacja,
+  „I currently work here”, ⚠ i opisy, „Clear” z placeholderem, napis po wyjściu, krok cofania na zmianę, wykształcenie
+  bez początku, klik obok zamyka), nowy test usuwania z menu uchwytu; przepisane testy kart wpisów (karty zdjęcia,
+  kontaktów i klauzuli zamiast kart wpisów; położenie wpisów przez `pageIndexOf`, kolejność przez `.cv-role`), Tab
+  i strzałki przez żetony, test pól w trzech szablonach (przycisk dat w `.cv-date` każdego wpisu, popover z klikniętej
+  daty).
+
+#### Przekazanie dla S4–S7
+
+- **S4:** wzór Field popover – `DatePopover.tsx` (magazyn otwarcia w sesji, `data-field-popover` dla `blurred`,
+  `anchoredPosition`, zamykanie kliknięciem obok, Escape na pole); przy `PhotoPopover`/`ConsentToolbar` wydziel wspólny
+  `FieldPopover`. Kontakty w Classic – `Joined`/`expanded` jak dotąd w przekazaniu S2.
+- **S5:** jedyna karta wpisu to nowy, pusty wpis (`pageFieldKey` bez pola → null). Nowy wpis ma puste daty, więc po
+  zmianie na klucz roli/poziomu `reveal` pokaże go od razu z żetonami-placeholderami. Pomiar „wejście we wpis z pustym
+  polem” – dotyczy teraz też wpisów bez dat.
+- **S6:** do usunięcia przy `EditCard.tsx`: `removeInCard` i `onPage`/`anchorElement` w `EditLayer.tsx`, `hasCard`.
+  Escape z pola, komunikaty `aria-live` (usunięcie wpisu z menu ma tylko „Removed.”). Sprawdzić z VoiceOver: napis dat
+  jako przycisk z nazwą obu dat, żetony w kolejności strzałek (może lepiej, żeby strzałki je pomijały – decyzja z
+  VoiceOver).
+- **Pułapki:** fokus do popovera nie przez `active.expect` (przywrócenie po podziale stron go zabiera) – `activate`
+  i fokus z popovera po zamontowaniu żetonu. Klik w kontrolkę warstwy przy aktywnym odsłoniętym wpisie przesuwa strony
+  (chowa placeholdery) – kontrolki, które nie muszą brać fokusu, niech robią `preventDefault` na `mousedown` (pigułki,
+  powiększenie).
+- **Niestabilny test (sprzed S3):** „the handle of a section title shows on hover…” w `canvas.spec.ts` czasem nie
+  otwiera menu Enterem po ⌥⇧↓ na końcu (na commicie S2 4 z 20 powtórzeń, po S3 podobnie) – do naprawy osobno.
+
 ## Ryzyka
 
 - **Styl edytowalnego elementu w Chromium** może zmienić zawijanie (`overflow-wrap`, `line-break` dla edytowalnych
