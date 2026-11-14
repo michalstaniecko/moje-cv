@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import type { Dictionary } from '../../../shared/i18n/en'
-import type { CvDocument } from '../domain/schema'
-import { useDictionary } from '../i18n'
-import type { CvEditor } from './cvEditor'
-import { updateHeader } from './documentEdits'
-import { useRemove } from './removalUndo'
-import { clampView, cropRect, initialView, MAX_ZOOM, nudgeView, outputSize, PHOTO_ASPECT, type CropView } from './photoCrop'
+import type { Dictionary } from '../../../../shared/i18n/en'
+import type { CvDocument } from '../../domain/schema'
+import { useDictionary } from '../../i18n'
+import type { CvEditor } from '../cvEditor'
+import { updateHeader } from '../documentEdits'
+import { useRemove } from '../removalUndo'
+import { clampView, cropRect, initialView, MAX_ZOOM, nudgeView, outputSize, PHOTO_ASPECT, type CropView } from '../photoCrop'
 
 type PickError = keyof Dictionary['editor']['photo']['errors']
 const JPEG_QUALITY = 0.9

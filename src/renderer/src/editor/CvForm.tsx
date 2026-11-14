@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { useStore } from 'zustand'
 import { cvFontFamilies } from '../../../shared/cvFonts'
 import { interfaceLanguages } from '../../../shared/i18n/languages'
@@ -7,27 +7,25 @@ import { useDictionary } from '../i18n'
 import type { Font } from '../template/fonts'
 import type { CvEditor } from './cvEditor'
 import {
-  addContact,
   addEducationItem,
   addExperienceItem,
   moveItem,
   moveSection,
-  removeContact,
-  updateContact,
   updateSection,
   updateSettings
 } from './documentEdits'
 import { Checkbox } from './fields/Checkbox'
 import { ConsentFields } from './fields/ConsentFields'
+import { ContactsFields } from './fields/ContactsFields'
 import { EducationItemFields } from './fields/EducationItemFields'
 import { educationName, entryName } from './fields/entryNames'
 import { ExperienceItemFields } from './fields/ExperienceItemFields'
 import { FullNameField } from './fields/FullNameField'
 import { ListItemsFields } from './fields/ListItemsFields'
+import { PhotoField } from './fields/PhotoField'
 import { SectionTitleField, sectionName } from './fields/SectionTitleField'
 import { SummaryField } from './fields/SummaryField'
-import { PhotoField } from './PhotoField'
-import { RemoveProvider, useRemove, type RemoveWithUndo } from './removalUndo'
+import { RemoveProvider, type RemoveWithUndo } from './removalUndo'
 import { SortableList } from './SortableList'
 import { TemplatePicker } from './TemplatePicker'
 
@@ -121,55 +119,14 @@ function CvDesignFields({ editor, document }: { editor: CvEditor; document: CvDo
 }
 
 function HeaderFields({ editor, header }: { editor: CvEditor; header: CvDocument['header'] }) {
-  const suggestionsId = useId()
-  const { editor: t, defaultContent } = useDictionary()
-  const remove = useRemove()
+  const t = useDictionary().editor
 
   return (
     <section className="form-section">
       <h2 className="form-section-title">{t.header}</h2>
       <FullNameField editor={editor} header={header} />
-
       <PhotoField editor={editor} photo={header.photo} />
-
-      <fieldset className="form-group">
-        <legend>{t.contact}</legend>
-        <datalist id={suggestionsId}>
-          {defaultContent.contactLabels.map((label) => (
-            <option key={label} value={label} />
-          ))}
-        </datalist>
-        {header.contacts.map((contact, index) => (
-          <div key={contact.id} className="form-row" data-entry-id={contact.id}>
-            <input
-              className="form-contact-label"
-              aria-label={t.contactLabel(index + 1)}
-              placeholder={t.contactLabelPlaceholder}
-              list={suggestionsId}
-              value={contact.label}
-              onChange={(event) =>
-                editor.edit(updateContact(contact.id, { label: event.target.value }), `contact:${contact.id}:label`)
-              }
-            />
-            <input
-              aria-label={t.contactValue(index + 1)}
-              placeholder={t.contactValuePlaceholder}
-              value={contact.value}
-              onChange={(event) =>
-                editor.edit(updateContact(contact.id, { value: event.target.value }), `contact:${contact.id}:value`)
-              }
-            />
-            <RowRemoveButton
-              label={t.removeContact(index + 1)}
-              onClick={() => remove(removeContact(contact.id), { entryId: contact.id, listId: 'contacts' })}
-            />
-          </div>
-        ))}
-        <button type="button" data-add-for="contacts" onClick={() => editor.edit(addContact())}>
-          {t.addContact}
-        </button>
-      </fieldset>
-
+      <ContactsFields editor={editor} contacts={header.contacts} />
       <SummaryField editor={editor} header={header} />
     </section>
   )
@@ -248,14 +205,4 @@ function SectionItems({ editor, section }: { editor: CvEditor; section: Section 
     case 'list':
       return <ListItemsFields editor={editor} sectionId={section.id} items={section.items} />
   }
-}
-
-// Usunięcie kontaktu: kompaktowa ikona ✕ z podpowiedzią, która powtarza etykietę dostępności (np. „Usuń kontakt 3”).
-// Punkty i elementy list usuwa się z menu wiersza, a całe wpisy (stanowisko, wykształcenie) tekstowym przyciskiem.
-function RowRemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button type="button" className="row-remove" aria-label={label} title={label} onClick={onClick}>
-      ✕
-    </button>
-  )
 }
