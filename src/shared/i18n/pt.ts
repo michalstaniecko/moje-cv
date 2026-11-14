@@ -336,7 +336,8 @@ export const pt: Dictionary = {
     showInEditMode: 'Mostrar',
     zoomOut: 'Reduzir',
     zoomIn: 'Ampliar',
-    fit: 'Ajustar'
+    fit: 'Ajustar',
+    pagesPanel: 'Páginas do currículo'
   },
   sponsor: {
     bar: (appName) => `Apoio ao ${appName}`,

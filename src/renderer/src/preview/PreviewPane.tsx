@@ -78,8 +78,16 @@ export function PreviewPane({
     [document, onLayout, oversizedMessage, editable, pageEditing?.fields, pageEditing?.editing]
   )
 
+  // Panel stron przyjmuje fokus skryptem (`tabindex="-1"`, poza kolejnością Tab): Escape w polu na stronie wychodzi na
+  // niego (docs/specs/wysiwyg-editing.md, W11), więc strzałki przewijają strony, a ⌘⇧P przełącza tryb.
   return (
-    <main ref={panel} className="preview" style={{ '--scale': scale, '--page-gap': `${PREVIEW_MARGIN_PX}px` } as CSSProperties}>
+    <main
+      ref={panel}
+      className="preview"
+      tabIndex={-1}
+      aria-label={t.pagesPanel}
+      style={{ '--scale': scale, '--page-gap': `${PREVIEW_MARGIN_PX}px` } as CSSProperties}
+    >
       <div className="preview-bar">
         {pageCount !== null && (
           <span className="preview-page-count" role="status">

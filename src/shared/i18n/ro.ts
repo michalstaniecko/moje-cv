@@ -336,7 +336,8 @@ export const ro: Dictionary = {
     showInEditMode: 'Arată',
     zoomOut: 'Micșorează',
     zoomIn: 'Mărește',
-    fit: 'Potrivește'
+    fit: 'Potrivește',
+    pagesPanel: 'Paginile CV-ului'
   },
   sponsor: {
     bar: (appName) => `Susține ${appName}`,

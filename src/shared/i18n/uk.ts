@@ -338,7 +338,8 @@ export const uk: Dictionary = {
     showInEditMode: 'Показати',
     zoomOut: 'Зменшити',
     zoomIn: 'Збільшити',
-    fit: 'За розміром'
+    fit: 'За розміром',
+    pagesPanel: 'Сторінки резюме'
   },
   sponsor: {
     bar: (appName) => `Підтримка ${appName}`,

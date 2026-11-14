@@ -331,7 +331,8 @@ export const tr: Dictionary = {
     showInEditMode: 'Göster',
     zoomOut: 'Uzaklaştır',
     zoomIn: 'Yakınlaştır',
-    fit: 'Sığdır'
+    fit: 'Sığdır',
+    pagesPanel: 'CV sayfaları'
   },
   sponsor: {
     bar: (appName) => `${appName} uygulamasını destekleyin`,

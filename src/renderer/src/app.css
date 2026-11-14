@@ -195,6 +195,17 @@ textarea:focus-visible {
   background: var(--ui-preview-bg);
 }
 
+/* Panel stron z fokusem (Escape z pola na stronie): obrys wewnątrz krawędzi panelu tylko z klawiatury; klik w tło stron
+   (też fokus panelu) – bez obrysu. */
+.preview:focus {
+  outline: none;
+}
+
+.preview:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: -2px;
+}
+
 /* Podgląd skaluje same strony (transform), więc pomiar bloków i podział stron nie zależą od powiększenia.
    Ramka ma wymiary przeskalowanych stron, żeby przewijanie i wyśrodkowanie odpowiadały temu, co widać.
    --scale i --page-gap ustawia PreviewPane. */

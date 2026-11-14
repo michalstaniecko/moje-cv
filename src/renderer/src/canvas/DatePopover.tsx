@@ -8,7 +8,7 @@ import { MonthField } from '../editor/MonthField'
 import { useDictionary } from '../i18n'
 import type { JoinedFieldsProps, PageFieldProps } from '../template/editable'
 import { FieldPopover } from './FieldPopover'
-import { activateJoined, focusSibling, fragmentHandle, joinedTarget, usePageFieldsContext } from './PageField'
+import { activateJoined, focusSibling, fragmentHandle, joinedTarget, leaveToPages, usePageFieldsContext } from './PageField'
 import { dateChange, dateName, entryDates, isPositionEnd, moveField, pageFieldByKey } from './pageFields'
 import { offsetOf, pageFieldElement, type ActiveFieldStore } from './useActiveField'
 
@@ -176,7 +176,10 @@ function LiveDateToken({ field, text }: Omit<PageFieldProps, 'measuring'>) {
         return
       }
       if (event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return
-      if (event.key === 'Enter' || event.key === ' ') {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        leaveToPages(span)
+      } else if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault()
         dates.open(latest.current.key)
       } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {

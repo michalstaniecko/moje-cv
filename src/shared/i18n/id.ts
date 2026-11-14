@@ -330,7 +330,8 @@ export const id: Dictionary = {
     showInEditMode: 'Tampilkan',
     zoomOut: 'Perkecil',
     zoomIn: 'Perbesar',
-    fit: 'Sesuaikan'
+    fit: 'Sesuaikan',
+    pagesPanel: 'Halaman CV'
   },
   sponsor: {
     bar: (appName) => `Dukung ${appName}`,

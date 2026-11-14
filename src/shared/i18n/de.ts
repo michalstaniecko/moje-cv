@@ -339,7 +339,8 @@ export const de: Dictionary = {
     showInEditMode: 'Anzeigen',
     zoomOut: 'Verkleinern',
     zoomIn: 'Vergrößern',
-    fit: 'Einpassen'
+    fit: 'Einpassen',
+    pagesPanel: 'Seiten des Lebenslaufs'
   },
   sponsor: {
     bar: (appName) => `${appName} unterstützen`,

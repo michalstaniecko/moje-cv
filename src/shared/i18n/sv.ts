@@ -336,7 +336,8 @@ export const sv: Dictionary = {
     showInEditMode: 'Visa',
     zoomOut: 'Zooma ut',
     zoomIn: 'Zooma in',
-    fit: 'Anpassa'
+    fit: 'Anpassa',
+    pagesPanel: 'Cv-sidor'
   },
   sponsor: {
     bar: (appName) => `Stöd ${appName}`,

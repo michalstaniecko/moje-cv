@@ -338,7 +338,8 @@ export const nl: Dictionary = {
     showInEditMode: 'Tonen',
     zoomOut: 'Zoom uit',
     zoomIn: 'Zoom in',
-    fit: 'Passend'
+    fit: 'Passend',
+    pagesPanel: 'Pagina’s van het cv'
   },
   sponsor: {
     bar: (appName) => `Steun ${appName}`,

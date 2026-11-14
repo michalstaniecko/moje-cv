@@ -1104,6 +1104,44 @@ test('a cleared field of an entry keeps its place with a placeholder, and the em
   await expect.poll(pageSplit).toEqual(edit)
 })
 
+test('Escape leaves a page field, a date or a joined line for the pages panel: a cleared field leaves the page with it, and the arrow keys then scroll the pages', async () => {
+  await openFirstCv()
+  const pages = window.getByRole('main', { name: 'CV pages', exact: true })
+  const roleOnPage = window.locator('.preview .cv-pages [data-block-id="e2"] .cv-role')
+
+  // Wyczyszczone stanowisko ma placeholder, dopóki wpis ma fokus; Escape – fokus na panelu stron, pole znika ze strony.
+  await clickAtCharacter(roleField(positions[1]), 2)
+  await window.keyboard.press('Meta+a')
+  await window.keyboard.press('Backspace')
+  await expect(roleField('New position')).toBeFocused()
+  await window.keyboard.press('Escape')
+  await expect(pages).toBeFocused()
+  await expect(roleOnPage).toHaveCount(0)
+  await expect(window.locator('.preview [contenteditable]:focus')).toHaveCount(0)
+  // Strzałki przewijają panel stron.
+  const scrollTop = () => pages.evaluate((element) => element.scrollTop)
+  const before = await scrollTop()
+  await window.keyboard.press('ArrowDown')
+  await window.keyboard.press('PageDown')
+  await expect.poll(scrollTop).toBeGreaterThan(before)
+  await window.keyboard.press('Meta+z')
+  await expect(roleOnPage).toHaveText(positions[1])
+
+  // Żeton daty (bez otwartego popovera) i linia złączona (kontakt w Classic) – tak samo.
+  await clickAtCharacter(roleField(positions[0]), 2)
+  await window.keyboard.press('Shift+Tab')
+  await expect.poll(focusedKey).toBe('experience:e1:end')
+  await window.keyboard.press('Escape')
+  await expect(pages).toBeFocused()
+  await expect(window.getByRole('dialog')).toHaveCount(0)
+  await pages.evaluate((element) => element.scrollTo({ top: 0 }))
+  const email = window.locator('.preview .cv-pages [data-joined*="contact:c2:value"]')
+  await email.focus()
+  await expect.poll(focusedKey).toBe('contact:c2:label')
+  await window.keyboard.press('Escape')
+  await expect(pages).toBeFocused()
+})
+
 test('“Remove position” and “Remove education” in the handle menu remove the entry and say “Removed.” over the pages; Undo brings it back with the caret in it; each is one undo step', async () => {
   await openFirstCv()
   const preview = window.locator('.preview')
@@ -1538,6 +1576,17 @@ test('the label of a contact on the page suggests the usual labels in a list und
   await window.keyboard.press('Enter')
   await expect(pageField('Contact value 5')).toBeFocused()
   await expect(list).toHaveCount(0)
+
+  // Escape przy otwartej liście chowa tylko listę; drugi Escape wychodzi z pola na panel stron.
+  await label5.focus()
+  await window.keyboard.press('Meta+ArrowRight')
+  await window.keyboard.press('Backspace')
+  await expect(list.getByRole('option')).not.toHaveCount(0)
+  await window.keyboard.press('Escape')
+  await expect(list).toHaveCount(0)
+  await expect(label5).toBeFocused()
+  await window.keyboard.press('Escape')
+  await expect(window.getByRole('main', { name: 'CV pages', exact: true })).toBeFocused()
 })
 
 test('the consent clause is edited on the page; its toolbar saves the text as a new clause, applies and restores a library clause and hides the clause; each change is one undo step', async () => {

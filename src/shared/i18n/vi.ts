@@ -330,7 +330,8 @@ export const vi: Dictionary = {
     showInEditMode: 'Hiển thị',
     zoomOut: 'Thu nhỏ',
     zoomIn: 'Phóng to',
-    fit: 'Vừa khít'
+    fit: 'Vừa khít',
+    pagesPanel: 'Các trang CV'
   },
   sponsor: {
     bar: (appName) => `Ủng hộ ${appName}`,

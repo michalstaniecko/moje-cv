@@ -371,7 +371,9 @@ export const en = {
     showInEditMode: 'Show',
     zoomOut: 'Zoom out',
     zoomIn: 'Zoom in',
-    fit: 'Fit'
+    fit: 'Fit',
+    // Panel stron w Edit mode (nazwa dla czytnika ekranu): Escape w polu na stronie przenosi na niego fokus.
+    pagesPanel: 'CV pages'
   },
   // Sponsor bar i okno „Więcej” (zob. GLOSSARY.md). Podziękowanie, nie płatność: niczego nie odblokowuje.
   sponsor: {

@@ -31,6 +31,8 @@ import { offsetOf, readSelection, writeSelection, type ActiveFieldStore } from '
 // - Strzałki: ←/→ na początku/końcu pola, ↑/↓ w jego pierwszej/ostatniej linii przechodzą do poprzedniego/następnego
 //   Page field w kolejności stron (też przez granicę stron, W8). Shift+F10 / klawisz menu otwiera menu uchwytu
 //   fragmentu pola (jeśli fragment ma uchwyt, W22).
+// - Escape wychodzi z pola na panel stron (`leaveToPages`, W11); otwartą listę podpowiedzi etykiety kontaktu Escape
+//   najpierw chowa (ContactLabelSuggestions.tsx).
 // - Kompozycja (IME): w trakcie nic nie trafia do edytora i nikt nie przepisuje pola; po niej jedna zmiana.
 // - Puste pole pokazuje placeholder (`::before` z `data-placeholder`, pageFields.css) – tylko w odsłoniętym fragmencie,
 //   bo tylko tam szablon rysuje pusty element pola.
@@ -88,11 +90,18 @@ function DormantJoined({ fields, separator, text }: Omit<JoinedFieldsProps, 'mea
       const backward = from instanceof Node && from.isConnected && (span.compareDocumentPosition(from) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
       activateJoined(span, backward ? (span.textContent ?? '').length : 0, active)
     }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.isComposing) return
+      event.preventDefault()
+      leaveToPages(span)
+    }
     span.addEventListener('mousedown', onMouseDown)
     span.addEventListener('focus', onFocus)
+    span.addEventListener('keydown', onKeyDown)
     return () => {
       span.removeEventListener('mousedown', onMouseDown)
       span.removeEventListener('focus', onFocus)
+      span.removeEventListener('keydown', onKeyDown)
     }
   }, [active])
   return (
@@ -292,6 +301,11 @@ function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
         return
       }
       if (event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        leaveToPages(span)
+        return
+      }
       const selection = readSelection(span)
       if (!selection || selection.start !== selection.end) return
       const length = (span.textContent ?? '').length
@@ -464,6 +478,12 @@ export function focusSibling(span: HTMLElement, direction: -1 | 1, vertical: boo
   }
   focusAt(target, caret, active)
   return true
+}
+
+// Escape w polu, żetonie daty albo linii złączonej: fokus na panel stron (`.preview`, `tabindex="-1"`, nazwa „CV pages”) –
+// pole przestaje być aktywne (pusta część znika ze strony), strzałki przewijają strony.
+export function leaveToPages(element: HTMLElement) {
+  element.closest<HTMLElement>('.preview')?.focus({ preventScroll: true })
 }
 
 // Uchwyt menu fragmentu pola w warstwie edycji (tytuł sekcji, wpis) – Shift+F10 z pola go „klika”.
