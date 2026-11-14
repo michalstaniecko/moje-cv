@@ -904,8 +904,10 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
 // szukane po treści.
 const announcement = (text: string | RegExp) => window.locator('[aria-live]').filter({ hasText: text })
 
-// Uchwyt wiersza listy z ręczną kolejnością („Actions for …”) i jego menu.
-const rowHandle = (scope: Page | Locator, item: string) => scope.getByRole('button', { name: `Actions for ${item}`, exact: true })
+// Uchwyt wiersza listy z ręczną kolejnością („Actions for …”) i jego menu. Bez węższego zakresu – w CV form: tytuły
+// sekcji i wpisy na stronach (Edit mode) mają uchwyty o tych samych nazwach.
+const rowHandle = (scope: Page | Locator, item: string) =>
+  (scope === window ? window.locator('.editor-form') : scope).getByRole('button', { name: `Actions for ${item}`, exact: true })
 const rowMenu = () => window.getByRole('menu')
 // Usuwa punkt albo element listy z menu jego wiersza.
 const removeFromRowMenu = async (scope: Page | Locator, item: string) => {
