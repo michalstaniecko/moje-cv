@@ -65,7 +65,7 @@ export const pt: Dictionary = {
     }
   },
   common: {
-    back: '← Biblioteca de currículos',
+    back: '← Currículos',
     save: 'Salvar',
     cancel: 'Cancelar',
     delete: 'Apagar',

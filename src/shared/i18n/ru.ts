@@ -65,7 +65,7 @@ export const ru: Dictionary = {
     }
   },
   common: {
-    back: '← Библиотека резюме',
+    back: '← Резюме',
     save: 'Сохранить',
     cancel: 'Отменить',
     delete: 'Удалить',
