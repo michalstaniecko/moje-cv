@@ -772,6 +772,102 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
 - **Niestabilny test (sprzed S3):** „the handle of a section title shows on hover…” w `canvas.spec.ts` czasem nie
   otwiera menu Enterem po ⌥⇧↓ na końcu (na commicie S2 4 z 20 powtórzeń, po S3 podobnie) – do naprawy osobno.
 
+### S4 – nagłówek i klauzula: kontakty, zdjęcie, klauzula zgody (zrobione)
+
+- **Wspólny `FieldPopover`** (`canvas/FieldPopover.tsx`), wydzielony z `DatePopover.tsx`: pokazanie przy kotwicy na
+  stronie (`anchor`, `anchored`), położenie z `anchoredPosition` po każdym renderze, przewinięciu i zmianie okna (nowa
+  opcja `prefer: 'above'`), klik obok – `onClose(false)`, Escape – `onClose(true)`, Tab z ostatniej i Shift+Tab
+  z pierwszej kontrolki – `onTabOut`, `focusOnShow`, `data-field-popover` (dla `blurred`); `focusAfter` – fokus na
+  następnym elemencie za kotwicą. Popover daty, zdjęcia, podpowiedzi etykiet i pasek klauzuli to jego użycia.
+- **Kontakty:** sloty `contactLabel` / `contactValue` (`part` – id kontaktu; `useShown(…, part)`). W Classic
+  „etykieta: wartość” to `ContactLine` – linia złączona przez `Joined` (fragment `contacts` w
+  `fragmentHasJoinedFields`), w Modern i Bold etykieta i wartość to zwykłe `CvText` (komponent `Contact` w szablonie).
+  Złoty markup i złote strony (też w Edit mode) bez zmian. Klucze `contact:<id>:label|value` (= klucze łączenia CV
+  form, test czyta źródła), fragment `contacts`; `reveal` `contacts` daje blok nagłówka ze wszystkimi kontaktami, także
+  pustymi (`domain/blocks.ts`). `fragmentHasEmptyField('contacts')` – pusta etykieta albo wartość któregokolwiek
+  kontaktu, więc wejście w kontakty z kontaktem bez etykiety kosztuje ponowny podział stron (W23). Nazwy pól – teksty
+  CV form („Contact label 1”, „Contact value 1”), placeholdery „Label” / „Value”, bez sprawdzania pisowni (W24).
+- **Klawiatura w kontaktach (W11):** Enter w niepustej wartości – nowy kontakt za bieżącym (`insertContactAfter`),
+  kursor w jego etykiecie; w pustej wartości – nic (spec tego nie rozstrzygał; jak Enter w pustym punkcie). Enter
+  w etykiecie – do wartości (pole jednowierszowe). Backspace na początku pustego kontaktu (etykieta i wartość puste) –
+  usuwa go, kursor na końcu poprzedniej wartości; pierwszy kontakt zostaje (jak pierwszy punkt). Każde to osobny krok
+  cofania (`splitField`, `mergeBackward`, `splitsOnEnter` w `pageFields.ts`).
+- **Podpowiedzi etykiet** (`ContactLabelSuggestions.tsx`, W14): pole etykiety to `role="combobox"`
+  z `aria-autocomplete="list"` i `aria-controls`; lista `role="listbox"` w Field popover pod polem, dopóki pole ma
+  fokus. Filtr – etykiety z `defaultContent.contactLabels` (jak `datalist` w CV form) zaczynające się od wpisanego
+  tekstu, bez wielkości liter, bez etykiety równej wpisanej (`labelSuggestions`). ↑/↓ wybierają
+  (`aria-activedescendant`), Enter wstawia (osobny krok cofania), klik wstawia bez zabierania fokusu polu, Escape
+  i klik obok chowają listę do kolejnej zmiany tekstu; Enter bez wybranej podpowiedzi – do wartości. Klawisze łapie
+  nasłuch w fazie przechwytywania (przed obsługą pola), a `aria-expanded` / `aria-activedescendant` pola ustawia lista
+  – jedyna, która wie, czy jest otwarta.
+- **Zdjęcie (W13):** przezroczysty przycisk „Photo” nad `img.cv-photo` w warstwie edycji (`.edit-photo`,
+  `usePhotoEditing` w `PhotoPopover.tsx`, w kolejności fragmentów – czytania strony), a przy nim Field popover „Photo”:
+  „Change photo”, „Crop photo” (ponowne kadrowanie zdjęcia z CV – kadruje zapisany już kadr) i „Remove photo” (styl
+  `danger`, „Removed. Undo”; „Undo” stawia fokus na przycisku zdjęcia, gdy zdjęcie wróci na stronę). Wybór i kadrowanie
+  – `usePhotoPicker` wydzielony z `PhotoField` (CV form, karta, popover); okno kadrowania zostaje modalnym `dialog`
+  (w DOM popovera, więc klik w nim nie zamyka popovera, a Escape zamyka tylko okno). Fokus po kadrowaniu wraca na
+  przycisk, który je otworzył – dopiero po zamknięciu okna (fokus poza otwartym modalnym oknem jest zablokowany). Bez
+  nowych tekstów („Crop photo” to tytuł okna kadrowania).
+- **Klauzula zgody (W15):** slot `ConsentText` w `template/editable.tsx` – poza `CvBlockView`, rysowany przez `CvPages`
+  w kopii pomiarowej i na ostatniej stronie; `PageEditing.consentField` (null przy wyłączonej klauzuli). Pole
+  `consent:text`, fragment `consent`, nazwa i placeholder „Consent clause”, wielowierszowe (`pre-line` we wszystkich
+  szablonach). `reveal` `consent` – `CvPages` rysuje włączoną klauzulę mimo pustego tekstu (W10); bez niego –
+  `consentText` jak dotąd.
+- **Pasek klauzuli** (`ConsentToolbar.tsx`): Field popover `role="toolbar"` nad klauzulą (`prefer: 'above'`), bez
+  zabierania fokusu, widoczny, dopóki aktywnym fragmentem jest klauzula (fokus w tekście albo w pasku).
+  **Odstępstwo (W15):** „Clause from the library” to natywny `select` jak w CV form, nie menu „Z biblioteki ▾” – ten sam
+  wybór, kontrolka znana czytnikowi ekranu, mniej kodu. „Restore from library” (gdy tekst różni się od klauzuli
+  z biblioteki), „Save as new clause” (`SaveAsNewClause` z `ConsentFields` – pyta o nazwę w pasku) – po obu kursor wraca
+  do tekstu (przycisk przywracania znika razem z różnicą i gubiłby fokus); „Hide clause” (`enabled: false`, fokus –
+  `onFocusLost`). Tab z tekstu klauzuli wchodzi do paska, Shift+Tab z pierwszej kontrolki i Escape wracają do tekstu,
+  Tab z ostatniej – dalej za klauzulą; klik obok chowa pasek (`active.blurred`). Nowy tekst: `editor.consent.hide`
+  („Hide clause”) w 16 słownikach.
+- **Karty:** żadna część strony nie otwiera już Edit card. Usunięte: przyciski fragmentów (`FragmentButton`, `onOpen`,
+  `targetAt`, `contractHit`, Tab z przycisku do karty, `hasCard`), karty kontaktów i klauzuli, tekst `canvas.edit`
+  („Edit: …”) z 16 słowników. Karta otwiera się jeszcze tylko dla: nowego, pustego wpisu, sekcji ukrytej albo pustej
+  (Outline, dodawanie) i zdjęcia z „Add to CV”, gdy zdjęcia nie ma – wszystko to dodawanie (S5). `hitTarget`
+  / `ContractHit` w `editTargets.ts` (z testami) nie mają już użyć – do usunięcia w S6.
+- **Wejścia „otwierające” kontakty i klauzulę** stawiają kursor na stronie: „Add to CV: Contact” – w pierwszym pustym
+  polu kontaktu (w nowym CV – w wartości pierwszego, bo etykiety są wypełnione), „Add to CV: Consent clause” – w jej
+  odsłoniętym, pustym tekście, Outline „Consent clause” – w tekście, a przy wyłączonej klauzuli – fokus na przełączniku
+  „Show on CV” (zamiast karty z „Pokaż”, jak W21 dla ukrytej sekcji). `useEditSession` dostał `current` (bieżący dokument
+  edytora): część CV dodana tuż przed „otwarciem” (nowy kontakt, włączona klauzula) była szukana w dokumencie
+  z ostatniego renderu i nie miała pola.
+- **Poprawka do S1 (znaleziona przy klauzuli):** Enter na końcu pola wielowierszowego (klauzula, podsumowanie w Modern
+  i Bold) – Chromium nie daje końcowej nowej linii własnej linii, więc pisanie trafiało przed nią. Na czas fokusu za
+  końcową nową linią stoi pomocniczy `<br>` (poza tekstem pola – `textContent` go nie liczy; znika na `blur`;
+  `textNodes` / `flatten` w `PageField.tsx`). Strony bez fokusu bez zmian.
+- **Testy:** Vitest – `blocks.test.ts` (odsłonięte kontakty), `documentEdits.test.ts` (`insertContactAfter`),
+  `editable.test.tsx` (kontakt w Classic jako linia złączona i jako pola z „: ”, w Modern i Bold osobne pola, odsłonięte
+  puste z placeholderami; tekst klauzuli w `CvPages`, pusty tylko odsłonięty), `pageFields.test.ts` (pola kontaktów
+  i klauzuli, klucze = klucze CV form, mapa w obie strony, `fragmentHasEmptyField`, Enter / Backspace w kontaktach),
+  `ContactLabelSuggestions.test.ts`, `anchoredPosition.test.ts` (`prefer`). e2e (`canvas.spec.ts`) – nowe: kontakty na
+  stronie, podpowiedzi etykiet, zdjęcie z popovera (zmiana, kadrowanie, ponowne kadrowanie, usunięcie i „Undo”, PDF),
+  klauzula i jej pasek (pisanie i Enter, PDF, Tab / Shift+Tab, zapis jako nowa, przywrócenie, wybór z biblioteki,
+  ukrycie, cofanie), pasek nad klauzulą przy podziale stron i skali, Enter na końcu podsumowania; przepisane: Tab przez
+  kontakty i przycisk zdjęcia, test pól w trzech szablonach (kontakty, klauzula, przycisk zdjęcia), Preview mode i panel
+  CV design zamykają popover, nowe CV i Outline bez kart kontaktów i klauzuli; `export.spec.ts` – test czytnika ekranu
+  (linia kontaktu w Classic) i lokator etykiety kontaktu w formularzu; usunięty test „cards still open for the parts
+  without page fields”.
+
+#### Przekazanie dla S5–S7
+
+- **S5:** karta zostaje tylko dla dodawania: nowy wpis (`pageFieldKey` bez pola → null), sekcja ukryta / pusta, zdjęcie
+  z „Add to CV” (`CardFields` – `photo`). Dla zdjęcia W21 chce od razu wyboru pliku: `usePhotoPicker().pick()` z hosta
+  zawsze zamontowanego w warstwie, a błąd wyboru – np. w Field popover przy przycisku paska. `useEditSession({ current })`
+  rozwiązuje cel w bieżącym dokumencie, więc „otwarcie” tuż po `addExperienceItem` itp. znajdzie nowy element. „Add
+  contact” w menu uchwytu nagłówka (W14) – nagłówek nie ma jeszcze uchwytu.
+- **S6:** do usunięcia: `EditCard.tsx` (i `cardLabel`, `CardHeading`, `onPage` / `anchorElement` / `removeInCard`
+  w `EditLayer.tsx`), `hitTarget` / `ContractHit` w `editTargets.ts`. Escape w polu (dziś nic) – Escape w etykiecie
+  kontaktu z otwartą listą chowa listę (przechwytywanie przed polem), a w pasku klauzuli wraca do tekstu. `aria-live`:
+  dodanie kontaktu Enterem i usunięcie Backspace'em są bez komunikatu. Sprawdzić z VoiceOver: etykieta kontaktu jako
+  edytowalny `combobox`, pasek klauzuli (`toolbar` bez strzałek – Tab między kontrolkami), linia kontaktu w Classic jako
+  jedno pole „Contact label 2, Contact value 2”.
+- **Pułapki:** kontrolka popovera, która znika po kliknięciu (np. „Restore from library”), gubi fokus – oddawaj go polu.
+  Fokus poza otwartym modalnym oknem – dopiero po jego zamknięciu. W e2e `pageField(name)` szuka `textbox`, a etykiety
+  kontaktów to `combobox` (`labelField`); przycisk zdjęcia w warstwie i „Add to CV: Photo” mają tę samą nazwę
+  (`photoButton` łączy klasę `.edit-photo` z rolą).
+
 ## Ryzyka
 
 - **Styl edytowalnego elementu w Chromium** może zmienić zawijanie (`overflow-wrap`, `line-break` dla edytowalnych
