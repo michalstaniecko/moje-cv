@@ -1,50 +1,35 @@
-import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { useStore } from 'zustand'
 import { cvFontFamilies } from '../../../shared/cvFonts'
-import type { Dictionary } from '../../../shared/i18n/en'
 import { interfaceLanguages } from '../../../shared/i18n/languages'
-import { isEndBeforeStart } from '../domain/dates'
-import { clauseName, cvLanguageCodes, type Clause, type ClauseContent, type CvDocument, type CvLanguage, type EducationItem, type ExperienceItem, type Section, type TextItem } from '../domain/schema'
+import { cvLanguageCodes, type Clause, type ClauseContent, type CvDocument, type CvLanguage, type Section } from '../domain/schema'
 import { useDictionary } from '../i18n'
 import type { Font } from '../template/fonts'
 import type { CvEditor } from './cvEditor'
 import {
-  addBullet,
   addContact,
   addEducationItem,
   addExperienceItem,
-  addListItem,
-  applyClause,
-  moveBullet,
   moveItem,
   moveSection,
-  removeBullet,
   removeContact,
-  removeEducationItem,
-  removeExperienceItem,
-  removeListItem,
-  splitBullet,
-  splitListItem,
-  updateBullet,
-  updateConsent,
   updateContact,
-  updateEducationItem,
-  updateExperienceItem,
-  updateListItem,
   updateSection,
   updateSettings
 } from './documentEdits'
+import { Checkbox } from './fields/Checkbox'
+import { ConsentFields } from './fields/ConsentFields'
+import { EducationItemFields } from './fields/EducationItemFields'
+import { educationName, entryName } from './fields/entryNames'
+import { ExperienceItemFields } from './fields/ExperienceItemFields'
 import { FullNameField } from './fields/FullNameField'
+import { ListItemsFields } from './fields/ListItemsFields'
 import { SectionTitleField, sectionName } from './fields/SectionTitleField'
 import { SummaryField } from './fields/SummaryField'
-import { handleListFieldKeyDown } from './listFieldKeys'
-import { MonthField } from './MonthField'
 import { PhotoField } from './PhotoField'
 import { RemoveProvider, useRemove, type RemoveWithUndo } from './removalUndo'
 import { SortableList } from './SortableList'
 import { TemplatePicker } from './TemplatePicker'
-
-type EditorText = Dictionary['editor']
 
 // Formularz edycji CV: nagłówek, sekcje w kolejności z CV i klauzula zgody. Każda zmiana trafia do edytora (historia + autozapis).
 // `clauses` – biblioteka klauzul; `onSaveClause` dodaje do niej nową klauzulę; `onRemove` wykonuje usunięcia z formularza
@@ -190,26 +175,6 @@ function HeaderFields({ editor, header }: { editor: CvEditor; header: CvDocument
   )
 }
 
-// Ostrzeżenie (nie blokada) pod datami, gdy koniec jest wcześniej niż początek. Bez `role="alert"`, żeby nie przerywać
-// pisania; pole daty końca wskazuje je przez `aria-describedby`.
-function DateOrderWarning({ id }: { id: string }) {
-  const t = useDictionary().editor
-  return (
-    <p id={id} className="form-warning">
-      {t.endBeforeStart}
-    </p>
-  )
-}
-
-function Checkbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  return (
-    <label className="form-checkbox">
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
-      {label}
-    </label>
-  )
-}
-
 // Sekcja w formularzu: tytuł, kolejność, ukrycie i nowa strona, a pod nimi wpisy zależne od typu sekcji.
 // Ukryta sekcja zostaje w formularzu, ale znika z podglądu i PDF.
 function SectionFields({ editor, section, handle }: { editor: CvEditor; section: Section; handle: ReactNode }) {
@@ -283,365 +248,6 @@ function SectionItems({ editor, section }: { editor: CvEditor; section: Section 
     case 'list':
       return <ListItemsFields editor={editor} sectionId={section.id} items={section.items} />
   }
-}
-
-const entryName = (text: string, fallback: string) => text.trim() || fallback
-
-const educationName = (item: EducationItem, t: EditorText) =>
-  entryName([item.level, item.field].filter((part) => part.trim()).join(', '), t.newEducation)
-
-function ExperienceItemFields({
-  editor,
-  sectionId,
-  item,
-  handle
-}: {
-  editor: CvEditor
-  sectionId: string
-  item: ExperienceItem
-  handle: ReactNode
-}) {
-  const t = useDictionary().editor
-  const remove = useRemove()
-  const warningId = useId()
-  const reversedDates = isEndBeforeStart(item.start, item.end)
-  const mergeKey = (field: string) => `experience:${item.id}:${field}`
-  const patchItem = (patch: Partial<ExperienceItem>, field?: string) =>
-    editor.edit(
-      updateExperienceItem(sectionId, item.id, (current) => ({ ...current, ...patch })),
-      field ? mergeKey(field) : undefined
-    )
-  const textField = (label: string, field: 'role' | 'company' | 'location') => (
-    <label className="form-field">
-      <span>{label}</span>
-      <input value={item[field]} onChange={(event) => patchItem({ [field]: event.target.value }, field)} />
-    </label>
-  )
-  // Data końca sprzed zaznaczenia „obecnie” – wraca po odznaczeniu.
-  const endBeforePresent = useRef<ExperienceItem['end']>(null)
-  const togglePresent = (present: boolean) => {
-    if (present) endBeforePresent.current = item.end
-    editor.edit(
-      updateExperienceItem(sectionId, item.id, (current) => ({
-        ...current,
-        end: present ? 'present' : endBeforePresent.current
-      }))
-    )
-  }
-
-  return (
-    <fieldset className="form-group" data-entry-id={item.id}>
-      <legend>
-        {handle}
-        {entryName(item.role, t.newPosition)}
-      </legend>
-      {textField(t.role, 'role')}
-      <div className="form-row">
-        {textField(t.company, 'company')}
-        {textField(t.location, 'location')}
-      </div>
-      <div className="form-row">
-        <MonthField label={t.from} value={item.start} onChange={(start) => patchItem({ start }, 'start')} />
-        <MonthField
-          label={t.to}
-          value={item.end === 'present' ? null : item.end}
-          disabled={item.end === 'present'}
-          describedBy={reversedDates ? warningId : undefined}
-          onChange={(end) => patchItem({ end }, 'end')}
-        />
-        <Checkbox label={t.currentlyWorkHere} checked={item.end === 'present'} onChange={togglePresent} />
-      </div>
-      {reversedDates && <DateOrderWarning id={warningId} />}
-
-      <div className="form-bullets">
-        <span>{t.bullets}</span>
-        <SortableList
-          items={item.bullets}
-          label={(_bullet, index) => t.order.bullet(index + 1)}
-          handleLabel={(_bullet, index) => t.order.handle.bullet(index + 1)}
-          onMove={(bulletId, toIndex) => editor.edit(moveBullet(sectionId, item.id, bulletId, toIndex))}
-          onRemove={(bullet) =>
-            remove(removeBullet(sectionId, item.id, bullet.id), { entryId: bullet.id, listId: `bullets:${item.id}` })
-          }
-        >
-          {(bullet, row, index) => (
-            <div className="form-row" data-entry-id={bullet.id}>
-              {row.handle}
-              <textarea
-                rows={2}
-                aria-label={t.bullet(index + 1)}
-                value={bullet.text}
-                onChange={(event) =>
-                  editor.edit(
-                    updateBullet(sectionId, item.id, bullet.id, event.target.value),
-                    mergeKey(`bullet:${bullet.id}`)
-                  )
-                }
-                onKeyDown={(event) =>
-                  handleListFieldKeyDown(event, {
-                    multiline: true,
-                    previousId: item.bullets[index - 1]?.id,
-                    split: (at) => editor.edit(splitBullet(sectionId, item.id, bullet.id, at)),
-                    remove: () => editor.edit(removeBullet(sectionId, item.id, bullet.id)),
-                    moveBy: row.moveBy
-                  })
-                }
-              />
-            </div>
-          )}
-        </SortableList>
-        <button type="button" data-add-for={`bullets:${item.id}`} onClick={() => editor.edit(addBullet(sectionId, item.id))}>
-          {t.addBullet}
-        </button>
-      </div>
-
-      <div className="form-row form-row--spread">
-        <Checkbox
-          label={t.pageBreakBeforeEntry}
-          checked={item.pageBreakBefore}
-          onChange={(pageBreakBefore) => patchItem({ pageBreakBefore })}
-        />
-        <button
-          type="button"
-          className="danger"
-          onClick={() => remove(removeExperienceItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
-        >
-          {t.removePosition}
-        </button>
-      </div>
-    </fieldset>
-  )
-}
-
-function EducationItemFields({
-  editor,
-  sectionId,
-  item,
-  handle
-}: {
-  editor: CvEditor
-  sectionId: string
-  item: EducationItem
-  handle: ReactNode
-}) {
-  const t = useDictionary().editor
-  const remove = useRemove()
-  const warningId = useId()
-  const reversedDates = isEndBeforeStart(item.start, item.end)
-  const patchItem = (patch: Partial<Omit<EducationItem, 'id'>>, field?: string) =>
-    editor.edit(updateEducationItem(sectionId, item.id, patch), field ? `education:${item.id}:${field}` : undefined)
-  const textField = (label: string, field: 'level' | 'field' | 'institution', placeholder: string) => (
-    <label className="form-field">
-      <span>{label}</span>
-      <input
-        placeholder={placeholder}
-        value={item[field]}
-        onChange={(event) => patchItem({ [field]: event.target.value }, field)}
-      />
-    </label>
-  )
-
-  return (
-    <fieldset className="form-group" data-entry-id={item.id}>
-      <legend>
-        {handle}
-        {educationName(item, t)}
-      </legend>
-      {textField(t.level, 'level', t.levelPlaceholder)}
-      {textField(t.field, 'field', t.fieldPlaceholder)}
-      {textField(t.institution, 'institution', t.institutionPlaceholder)}
-      <div className="form-row">
-        <MonthField label={t.startOptional} value={item.start} onChange={(start) => patchItem({ start }, 'start')} />
-        <MonthField
-          label={t.graduation}
-          value={item.end}
-          describedBy={reversedDates ? warningId : undefined}
-          onChange={(end) => patchItem({ end }, 'end')}
-        />
-      </div>
-      {reversedDates && <DateOrderWarning id={warningId} />}
-      <div className="form-row form-row--spread">
-        <Checkbox
-          label={t.pageBreakBeforeEntry}
-          checked={item.pageBreakBefore}
-          onChange={(pageBreakBefore) => patchItem({ pageBreakBefore })}
-        />
-        <button
-          type="button"
-          className="danger"
-          onClick={() => remove(removeEducationItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
-        >
-          {t.removeEducation}
-        </button>
-      </div>
-    </fieldset>
-  )
-}
-
-function ListItemsFields({ editor, sectionId, items }: { editor: CvEditor; sectionId: string; items: TextItem[] }) {
-  const t = useDictionary().editor
-  const remove = useRemove()
-  return (
-    <div className="form-bullets">
-      <SortableList
-        items={items}
-        label={(_item, index) => t.order.listItem(index + 1)}
-        handleLabel={(_item, index) => t.order.handle.listItem(index + 1)}
-        onMove={(id, toIndex) => editor.edit(moveItem(sectionId, id, toIndex))}
-        onRemove={(item) => remove(removeListItem(sectionId, item.id), { entryId: item.id, listId: sectionId })}
-      >
-        {(item, row, index) => (
-          <div className="form-row" data-entry-id={item.id}>
-            {row.handle}
-            <input
-              aria-label={t.listItem(index + 1)}
-              value={item.text}
-              onChange={(event) =>
-                editor.edit(updateListItem(sectionId, item.id, event.target.value), `list:${item.id}:text`)
-              }
-              onKeyDown={(event) =>
-                handleListFieldKeyDown(event, {
-                  multiline: false,
-                  previousId: items[index - 1]?.id,
-                  split: (at) => editor.edit(splitListItem(sectionId, item.id, at)),
-                  remove: () => editor.edit(removeListItem(sectionId, item.id)),
-                  moveBy: row.moveBy
-                })
-              }
-            />
-          </div>
-        )}
-      </SortableList>
-      <button type="button" data-add-for={sectionId} onClick={() => editor.edit(addListItem(sectionId))}>
-        {t.addListItem}
-      </button>
-    </div>
-  )
-}
-
-// Klauzula zgody tego CV: włączenie, wybór z biblioteki i edycja lokalnej kopii treści.
-// Edycja w CV nie zmienia biblioteki; poprawioną treść można zapisać jako nową klauzulę albo przywrócić wersję z biblioteki.
-function ConsentFields({
-  editor,
-  consent,
-  clauses,
-  onSaveClause
-}: {
-  editor: CvEditor
-  consent: CvDocument['consent']
-  clauses: Clause[]
-  onSaveClause: (content: ClauseContent) => Promise<Clause>
-}) {
-  const dictionary = useDictionary()
-  const t = dictionary.editor.consent
-  const libraryClause = clauses.find((clause) => clause.id === consent.clauseId) ?? null
-  const modified = libraryClause !== null && libraryClause.text !== consent.text
-
-  return (
-    <section className="form-section" aria-label={t.title}>
-      <h2 className="form-section-title">{t.title}</h2>
-      <Checkbox
-        label={t.show}
-        checked={consent.enabled}
-        onChange={(enabled) => editor.edit(updateConsent({ enabled }))}
-      />
-      {consent.enabled && (
-        <>
-          <label className="form-field">
-            <span>{t.fromLibrary}</span>
-            <select
-              value={libraryClause?.id ?? ''}
-              onChange={(event) => {
-                const clause = clauses.find((clause) => clause.id === event.target.value)
-                if (clause) editor.edit(applyClause(clause))
-              }}
-            >
-              <option value="" disabled>
-                {consent.clauseId !== null ? t.deleted : clauses.length ? t.choose : t.emptyLibrary}
-              </option>
-              {clauses.map((clause) => (
-                <option key={clause.id} value={clause.id}>
-                  {clauseName(clause, dictionary.clauses.untitled)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="form-field">
-            <span>{t.text}</span>
-            <textarea
-              rows={5}
-              value={consent.text}
-              onChange={(event) => editor.edit(updateConsent({ text: event.target.value }), 'consent:text')}
-            />
-          </label>
-          <div className="consent-actions">
-            {modified && (
-              <>
-                <span className="consent-modified">{t.modified}</span>
-                <button type="button" onClick={() => editor.edit(applyClause(libraryClause))}>
-                  {t.restore}
-                </button>
-              </>
-            )}
-            <SaveAsNewClause
-              text={consent.text}
-              onSave={async (name) => editor.edit(applyClause(await onSaveClause({ name, text: consent.text })))}
-            />
-          </div>
-        </>
-      )}
-    </section>
-  )
-}
-
-// „Zapisz jako nową klauzulę”: pyta o nazwę w miejscu przycisku, żeby nie przerywać edycji CV oknem dialogowym.
-function SaveAsNewClause({ text, onSave }: { text: string; onSave: (name: string) => Promise<void> }) {
-  const [name, setName] = useState<string | null>(null)
-  const [failed, setFailed] = useState(false)
-  const { common, editor } = useDictionary()
-  const t = editor.consent
-  const submit = async (event: FormEvent) => {
-    event.preventDefault()
-    if (!name?.trim()) return
-    try {
-      await onSave(name.trim())
-      setName(null)
-      setFailed(false)
-    } catch {
-      setFailed(true)
-    }
-  }
-
-  if (name === null) {
-    return (
-      <button type="button" disabled={!text.trim()} onClick={() => setName('')}>
-        {t.saveAsNew}
-      </button>
-    )
-  }
-  return (
-    <form className="form-row" onSubmit={submit}>
-      <input
-        aria-label={t.newName}
-        placeholder={t.newNamePlaceholder}
-        value={name}
-        autoFocus
-        onChange={(event) => setName(event.target.value)}
-        onKeyDown={(event) => event.key === 'Escape' && setName(null)}
-      />
-      <button type="submit" className="button-primary" disabled={!name.trim()}>
-        {common.save}
-      </button>
-      <button type="button" onClick={() => setName(null)}>
-        {common.cancel}
-      </button>
-      {failed && (
-        <span className="toolbar-status--error" role="alert">
-          {t.saveFailed}
-        </span>
-      )}
-    </form>
-  )
 }
 
 // Usunięcie kontaktu: kompaktowa ikona ✕ z podpowiedzią, która powtarza etykietę dostępności (np. „Usuń kontakt 3”).
