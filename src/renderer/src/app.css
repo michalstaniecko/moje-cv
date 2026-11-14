@@ -331,6 +331,11 @@ textarea:focus-visible {
   flex-wrap: nowrap;
 }
 
+/* Kontakt w karcie: etykieta, wartość i ✕ w jednej linii, jak w CV form. */
+.edit-card .form-row:has(> .form-contact-label) {
+  flex-wrap: nowrap;
+}
+
 .edit-card .form-bullets > div {
   align-self: stretch;
 }

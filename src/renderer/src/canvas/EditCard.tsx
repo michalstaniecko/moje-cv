@@ -3,11 +3,13 @@ import type { Dictionary } from '../../../shared/i18n/en'
 import type { Clause, ClauseContent, CvDocument, EducationItem, ExperienceItem } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
 import { ConsentFields } from '../editor/fields/ConsentFields'
+import { ContactsFields } from '../editor/fields/ContactsFields'
 import { EducationItemFields } from '../editor/fields/EducationItemFields'
 import { educationName, entryName } from '../editor/fields/entryNames'
 import { ExperienceItemFields } from '../editor/fields/ExperienceItemFields'
 import { FullNameField } from '../editor/fields/FullNameField'
 import { ListItemsFields } from '../editor/fields/ListItemsFields'
+import { PhotoField } from '../editor/fields/PhotoField'
 import { SectionTitleField, sectionName } from '../editor/fields/SectionTitleField'
 import { SummaryField } from '../editor/fields/SummaryField'
 import { RemoveProvider, type RemoveWithUndo } from '../editor/removalUndo'
@@ -16,10 +18,12 @@ import { markInput } from '../preview/keystrokeTiming'
 import { anchoredPosition, type Box } from './anchoredPosition'
 import type { EditTarget } from './editTargets'
 
-// Części CV, które mają już swoją Edit card. Warstwa edycji pokazuje przyciski tylko ich fragmentów; karty zdjęcia
-// i kontaktów (T4) dopisują się tutaj, w `cardLabel` i w `CardFields`.
+// Części CV, które mają już swoją Edit card. Warstwa edycji pokazuje przyciski tylko ich fragmentów; nowe karty
+// dopisują się tutaj, w `cardLabel` i w `CardFields`.
 const cardKinds: ReadonlySet<EditTarget['kind']> = new Set([
   'fullName',
+  'photo',
+  'contacts',
   'summary',
   'sectionTitle',
   'experienceItem',
@@ -47,6 +51,10 @@ export function cardLabel(target: EditTarget, document: CvDocument, t: Dictionar
   switch (target.kind) {
     case 'fullName':
       return t.fullName
+    case 'photo':
+      return t.photo.legend
+    case 'contacts':
+      return t.contact
     case 'summary':
       return t.summary
     case 'sectionTitle': {
@@ -90,6 +98,20 @@ function CardFields({
   switch (target.kind) {
     case 'fullName':
       return <FullNameField editor={editor} header={document.header} />
+    case 'photo':
+      return (
+        <>
+          <CardHeading>{t.photo.legend}</CardHeading>
+          <PhotoField editor={editor} photo={document.header.photo} inCard />
+        </>
+      )
+    case 'contacts':
+      return (
+        <>
+          <CardHeading>{t.contact}</CardHeading>
+          <ContactsFields editor={editor} contacts={document.header.contacts} inCard />
+        </>
+      )
     case 'summary':
       return <SummaryField editor={editor} header={document.header} />
     case 'sectionTitle': {
@@ -132,7 +154,7 @@ function CardFields({
   }
 }
 
-// Nagłówek karty bez etykiety pola na górze (lista, klauzula): mówi, co się edytuje, i robi miejsce na „×”. Dla
+// Nagłówek karty bez etykiety pola na górze (zdjęcie, kontakty, lista, klauzula): mówi, co się edytuje, i robi miejsce na „×”. Dla
 // czytnika ekranu to samo mówi już nazwa karty.
 function CardHeading({ children }: { children: string }) {
   return (
@@ -161,6 +183,10 @@ function focusKey(target: EditTarget): string | undefined {
   }
 }
 
+// Pierwsze pole karty, a w karcie bez pól tekstowych (zdjęcie) – jej pierwszy przycisk poza „×”.
+const firstField = (card: HTMLElement) =>
+  card.querySelector<HTMLElement>('input, textarea, select') ?? card.querySelector<HTMLElement>('.form button')
+
 const tabbable = (root: HTMLElement) =>
   [...root.querySelectorAll<HTMLElement>('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(
     (element) => !(element as HTMLButtonElement).disabled
@@ -177,7 +203,7 @@ export type CardAnchor = { anchor: Box; beside: { edge: number; limit: number } 
 // - Escape zamyka kartę (warstwa przenosi fokus na fragment). Karta nie więzi fokusu: Tab z ostatniego pola idzie do
 //   kolejnego fragmentu, Shift+Tab z pierwszego – na fragment karty (`onTabOut`).
 // - `markInput` w `onInput` (jak formularz), żeby `cv:keystroke-to-preview` mierzył też pisanie w karcie.
-// - Usunięcia w karcie (wpis, punkt, element listy) idą przez `onRemove` – „Usunięto. Cofnij” jak w CV form.
+// - Usunięcia w karcie (wpis, punkt, element listy, kontakt, zdjęcie) idą przez `onRemove` – „Usunięto. Cofnij” jak w CV form.
 // - `data-entry-root`: Enter/Backspace w punktach i „Cofnij” szukają pól najpierw w karcie (ta sama lista jest w CV form).
 export function EditCard({
   ref,
@@ -245,7 +271,7 @@ export function EditCard({
     const field =
       (key !== undefined
         ? [...card.current.querySelectorAll<HTMLElement>('[data-edit-focus]')].find((element) => element.dataset['editFocus'] === key)
-        : undefined) ?? card.current.querySelector<HTMLElement>('input, textarea, select')
+        : undefined) ?? firstField(card.current)
     if (!field) return
     field.focus({ preventScroll: true })
     // Kursor na końcu tekstu: kliknięcie tekstu na stronie zwykle znaczy „dopisz” albo „popraw końcówkę”.
@@ -256,6 +282,8 @@ export function EditCard({
   }, [targetSignature])
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    // Okno modalne otwarte z karty (kadrowanie zdjęcia) samo obsługuje Escape i Tab – karta zostaje otwarta pod nim.
+    if ((event.target as Element).closest('dialog')) return
     if (event.key === 'Escape') {
       event.preventDefault()
       event.stopPropagation()

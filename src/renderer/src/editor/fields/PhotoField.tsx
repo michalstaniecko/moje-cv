@@ -22,7 +22,17 @@ const ARROW_DIRECTIONS: Record<string, [number, number]> = {
 }
 
 // Zdjęcie w nagłówku: wybór z dysku, kadrowanie przed zapisem i usunięcie (nagłówek bez kolumny na zdjęcie).
-export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocument['header']['photo'] }) {
+// W CV form – grupa z legendą; w Edit card zdjęcia (`inCard`) – same pola, bo nazwą jest nazwa karty.
+// `data-entry-id="photo"`: tu wraca fokus po „Cofnij” usunięcia zdjęcia.
+export function PhotoField({
+  editor,
+  photo,
+  inCard = false
+}: {
+  editor: CvEditor
+  photo: CvDocument['header']['photo']
+  inCard?: boolean
+}) {
   const [source, setSource] = useState<HTMLImageElement | null>(null)
   const [error, setError] = useState<PickError | null>(null)
   const t = useDictionary().editor.photo
@@ -47,9 +57,8 @@ export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocum
     }
   }
 
-  return (
-    <fieldset className="form-group" data-entry-id="photo">
-      <legend>{t.legend}</legend>
+  const fields = (
+    <>
       <div className="form-row photo-field">
         {photo && <img className="photo-thumbnail" src={photo.dataUrl} alt={t.thumbnail} />}
         <button type="button" onClick={() => void pick()}>
@@ -76,6 +85,14 @@ export function PhotoField({ editor, photo }: { editor: CvEditor; photo: CvDocum
           onCancel={() => setSource(null)}
         />
       )}
+    </>
+  )
+
+  if (inCard) return <div data-entry-id="photo">{fields}</div>
+  return (
+    <fieldset className="form-group" data-entry-id="photo">
+      <legend>{t.legend}</legend>
+      {fields}
     </fieldset>
   )
 }
