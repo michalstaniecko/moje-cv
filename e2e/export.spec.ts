@@ -327,7 +327,7 @@ test('the Language menu switches the menu and the window immediately, the choice
 
   // Cofnij z przebudowanego menu nadal działa na historii CV.
   await window.getByRole('list', { name: 'Lista CV' }).getByRole('button', { name: 'Otwórz' }).click()
-  const fullName = window.getByLabel('Imię i nazwisko')
+  const fullName = window.locator('.editor-form').getByLabel('Imię i nazwisko')
   await fullName.fill('Ewa Nowak')
   await clickMenuItem('Edycja', 'Cofnij')
   await expect(fullName).toHaveValue('Jane Example')
@@ -528,7 +528,7 @@ test('the CV editor is in English, including the save status, photo cropping and
   // Formularz: CV design, nagłówek, sekcje z kolejnością, wpisy i klauzula zgody.
   await expect(window.getByRole('heading', { name: 'CV design', exact: true })).toBeVisible()
   for (const label of ['Accent color', 'Full name', 'Contact label 1', 'Contact value 1', 'Summary']) {
-    await expect(window.getByLabel(label)).toBeVisible()
+    await expect(window.locator('.editor-form').getByLabel(label)).toBeVisible()
   }
   await expect(window.getByLabel('Font')).toHaveValue('lato')
   await expect(window.getByRole('button', { name: 'Remove contact 1' })).toBeVisible()
@@ -616,7 +616,7 @@ test('the CV editor is in English, including the save status, photo cropping and
 
   // Nieudany autozapis (plik CV zniknął z dysku).
   await rm(join(outputDir, 'user-data', 'cvs'), { recursive: true })
-  await window.getByLabel('Full name').fill('Jane Doe')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Jane Doe')
   await expect(window.getByRole('alert').filter({ hasText: 'Couldn’t save changes' })).toHaveText(
     'Couldn’t save changes. Your latest edits are only in this window for now.Try again'
   )
@@ -628,11 +628,11 @@ test('switching the language in the menu translates the open editor without losi
   await launch({ language: null })
   await stubSystemLanguages(['en-US'])
   await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
-  const original = await window.getByLabel('Full name').inputValue()
-  await window.getByLabel('Full name').fill('Ewa Nowak')
+  const original = await window.locator('.editor-form').getByLabel('Full name').inputValue()
+  await window.locator('.editor-form').getByLabel('Full name').fill('Ewa Nowak')
 
   await chooseLanguage('Polski')
-  const fullName = window.getByLabel('Imię i nazwisko')
+  const fullName = window.locator('.editor-form').getByLabel('Imię i nazwisko')
   await expect(fullName).toHaveValue('Ewa Nowak')
   await expect(window.getByRole('button', { name: 'Eksportuj do PDF' })).toBeVisible()
   await expect(window.getByText('Zmiany zapisane')).toBeVisible()
@@ -641,7 +641,7 @@ test('switching the language in the menu translates the open editor without losi
   await expect(fullName).toHaveValue(original)
   await chooseLanguage('English')
   await window.keyboard.press('Meta+Shift+z')
-  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
 test('Default content follows the interface language at creation and never changes existing CVs afterwards', async () => {
@@ -820,7 +820,7 @@ test('in a Polish run the sample CV, the editor, the menu, the exported PDF and 
   await expect(window.getByRole('radiogroup', { name: 'Szablon' }).getByRole('radio', { name: 'Klasyczny' })).toBeChecked()
   await expect(window.getByRole('heading', { name: 'Projekt CV', exact: true })).toBeVisible()
   await expect(window.getByLabel('Nadal tu pracuję').first()).toBeChecked()
-  const fullName = window.getByLabel('Imię i nazwisko')
+  const fullName = window.locator('.editor-form').getByLabel('Imię i nazwisko')
   await fullName.fill('Ewa Nowak')
   await expect(window.getByText('Zmiany zapisane')).toBeVisible()
 
@@ -868,7 +868,7 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   await expect(window.locator('.preview .cv.cv-template-classic')).toHaveCount(1)
 
   // Edycja w formularzu od razu zmienia podgląd; Cmd+Z / Cmd+Shift+Z cofa i ponawia zmianę.
-  const fullName = window.getByLabel('Full name')
+  const fullName = window.locator('.editor-form').getByLabel('Full name')
   await fullName.fill('Ewa Nowak-Żelazna')
   await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Ewa Nowak-Żelazna')
   await window.keyboard.press('Meta+z')
@@ -908,7 +908,7 @@ test('on first run opens the sample CV, edits it and exports it to a PDF identic
   await app.close()
   await launch()
   await openFirstCv()
-  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
 // Ogłoszenia dla czytnika ekranu: regiony aria-live (dnd-kit i menu wiersza, po jednym na listę) poza widokiem,
@@ -1476,7 +1476,7 @@ test('Cyrillic text in a Lato CV is rendered with the bundled Source Sans 3, not
   await stubSaveDialog(pdfPath)
   await openFirstCv()
   await expect(window.getByLabel('Font')).toHaveValue('lato')
-  await window.getByLabel('Full name').fill('Олена Шевченко')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Олена Шевченко')
   await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Олена Шевченко')
   await expect(window.getByText('Changes saved')).toBeVisible()
 
@@ -1527,7 +1527,7 @@ test('picks the Template next to the colour and font from a thumbnail of the Sam
   const previewPageBox = await preview.locator('.cv-page').first().boundingBox()
   expect(thumbnailBox!.width).toBeLessThan(previewPageBox!.width / 2)
 
-  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Ewa Nowak')
   await expect(preview.locator('.cv-page .cv-name')).toHaveText('Ewa Nowak')
   await expect(thumbnail.locator('.cv-page .cv-name')).toHaveText('Jane Example')
   await window.getByLabel('Accent color').fill('#8a2be2')
@@ -1924,7 +1924,7 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   await expect(preview).not.toContainText('longer than 2 pages')
 
   // Podsumowanie dłuższe niż strona: nagłówek dostaje własną stronę, jest wyróżniony i CV ma ponad 2 strony.
-  await window.getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
+  await window.locator('.editor-form').getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
   const message = 'This fragment is too long to fit on a page – shorten it'
   await expect(preview.getByText(message)).toBeVisible()
   await expect(preview.locator('.cv-page').first().locator('.cv-block--oversized .cv-header')).toHaveCount(1)
@@ -1996,7 +1996,7 @@ test('the CV length warning looks like a warning, with the warning colour and ic
     await app.close()
     await launch({ appearance })
     await openFirstCv()
-    await window.getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
+    await window.locator('.editor-form').getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
     const notice = window.locator('.preview-length-notice')
     await expect(notice).toHaveText('⚠ The CV is longer than 2 pages – consider shortening it.')
     await expect(notice).toHaveCSS('color', warning)
@@ -2005,27 +2005,39 @@ test('the CV length warning looks like a warning, with the warning colour and ic
   }
 })
 
-test('screen readers read the CV from the form only: the preview pages are hidden from them, the preview bar is not', async () => {
+test('screen readers: in Edit mode the pages are the CV with labelled text fields, in Preview mode they are hidden; the preview bar is always there', async () => {
   await openFirstCv()
   const preview = window.locator('.preview')
   const pages = preview.locator('.cv-pages')
   await expect(pages.locator('.cv-page .cv-name')).toHaveText('Jane Example')
 
-  // Strony są widoczne, ale nic z nich nie trafia do drzewa dostępności: ani nagłówki, ani listy, ani zdjęcie.
-  await expect(window.getByRole('heading', { name: 'Jane Example', exact: true })).toHaveCount(0)
-  await expect(window.getByRole('heading', { name: 'Work experience', exact: true })).toHaveCount(0)
-  for (const role of ['heading', 'list', 'listitem', 'img', 'status'] as const) await expect(pages.getByRole(role)).toHaveCount(0)
+  // Edit mode: strony czytane w kolejności dokumentu – nagłówki, listy, a tekst imienia, podsumowania i tytułów sekcji
+  // to pola tekstowe z nazwą pola (docs/specs/wysiwyg-editing.md, W22). Kopia pomiarowa i stopki są ukryte.
+  await expect(pages.getByRole('heading', { name: 'Jane Example', exact: true })).toHaveCount(1)
+  await expect(pages.getByRole('heading', { name: 'Work experience', exact: true })).toHaveCount(1)
+  await expect(pages.getByRole('textbox', { name: 'Full name', exact: true })).toHaveText('Jane Example')
+  await expect(pages.getByRole('textbox', { name: 'Summary', exact: true })).toHaveCount(1)
+  await expect(pages.getByRole('textbox', { name: 'Section title “Education”', exact: true })).toHaveText('Education')
+  await expect(preview.getByRole('textbox')).toHaveCount(6)
+  await expect(pages.getByRole('listitem').first()).toBeVisible()
 
   // Pasek podglądu zostaje dostępny: licznik stron jako status i przyciski powiększenia.
   await expect(preview.getByRole('status')).toHaveText(/^[12] pages?$/)
   await expect(preview.getByRole('button', { name: 'Zoom in' })).toBeVisible()
   await expect(preview.getByRole('button', { name: 'Fit' })).toBeVisible()
 
-  // Za długi fragment jest wyróżniony tylko wizualnie: komunikat nie jest już komunikatem dla czytnika.
-  await window.getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
+  // Za długi fragment jest wyróżniony tylko wizualnie: komunikat nie jest komunikatem dla czytnika.
+  await window.locator('.editor-form').getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
   await expect(pages.getByText('This fragment is too long to fit on a page')).toBeVisible()
   await expect(pages.getByRole('status')).toHaveCount(0)
   await expect(window.getByRole('status').filter({ hasText: 'This fragment is too long' })).toHaveCount(0)
+
+  // Preview mode: strony są widoczne, ale nic z nich nie trafia do drzewa dostępności.
+  await window.getByRole('group', { name: 'Mode' }).getByRole('button', { name: 'Preview' }).click()
+  await expect(pages.locator('.cv-page .cv-name')).toHaveText('Jane Example')
+  await expect(window.getByRole('heading', { name: 'Jane Example', exact: true })).toHaveCount(0)
+  for (const role of ['heading', 'list', 'listitem', 'img', 'status', 'textbox'] as const) await expect(pages.getByRole(role)).toHaveCount(0)
+  await expect(preview.getByRole('button', { name: 'Zoom in' })).toBeVisible()
 })
 
 test('while the PDF is prepared a progress bar is shown, and a print page that never gets ready ends with its own message', async () => {
@@ -2049,7 +2061,7 @@ test('while the PDF is prepared a progress bar is shown, and a print page that n
 
 test('Edit → Undo / Redo in the menu undo and redo CV changes in the form and the preview', async () => {
   await openFirstCv()
-  const fullName = window.getByLabel('Full name')
+  const fullName = window.locator('.editor-form').getByLabel('Full name')
   const previewName = window.locator('.preview .cv-page .cv-name')
   await fullName.fill('Ewa Nowak')
   await expect(previewName).toHaveText('Ewa Nowak')
@@ -2065,8 +2077,8 @@ test('Edit → Undo / Redo in the menu undo and redo CV changes in the form and 
 
 test('one Cmd+Z / Cmd+Shift+Z press with the Edit menu in place undoes and redoes exactly one CV change', async () => {
   await openFirstCv()
-  const fullName = window.getByLabel('Full name')
-  const summary = window.getByLabel('Summary')
+  const fullName = window.locator('.editor-form').getByLabel('Full name')
+  const summary = window.locator('.editor-form').getByLabel('Summary')
   const originalSummary = await summary.inputValue()
   await fullName.fill('Ewa Nowak')
   await summary.fill('New summary.')
@@ -2086,8 +2098,8 @@ test('one Cmd+Z / Cmd+Shift+Z press with the Edit menu in place undoes and redoe
 
 test('after Edit → Undo in the menu, Cmd+Z undoes the earlier CV change and the result is saved', async () => {
   await openFirstCv()
-  const fullName = window.getByLabel('Full name')
-  const summary = window.getByLabel('Summary')
+  const fullName = window.locator('.editor-form').getByLabel('Full name')
+  const summary = window.locator('.editor-form').getByLabel('Summary')
   const originalSummary = await summary.inputValue()
   await fullName.fill('Ewa Nowak')
   await summary.fill('New summary.')
@@ -2113,14 +2125,14 @@ test('after Edit → Undo in the menu, Cmd+Z undoes the earlier CV change and th
   await expect(window.getByText('Changes saved')).toBeVisible()
   await window.getByRole('button', { name: '← CV library' }).click()
   await openFirstCv()
-  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
-  await expect(window.getByLabel('Summary')).toHaveValue(originalSummary)
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Ewa Nowak')
+  await expect(window.locator('.editor-form').getByLabel('Summary')).toHaveValue(originalSummary)
 })
 
 test('in the CV library Edit → Undo undoes typing in the rename field and never changes the closed CV', async () => {
   const library = window.getByRole('list', { name: 'CV list' })
   await library.getByRole('button', { name: 'Open' }).click()
-  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Ewa Nowak')
   await expect(window.getByText('Changes saved')).toBeVisible()
   await window.getByRole('button', { name: '← CV library' }).click()
 
@@ -2140,7 +2152,7 @@ test('in the CV library Edit → Undo undoes typing in the rename field and neve
   await library.getByRole('button', { name: 'Cancel' }).click()
 
   await library.getByRole('button', { name: 'Open' }).click()
-  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
 test('the CV name in the editor header is renamed in place: Enter or leaving the field keeps it, Escape and an empty name do not, Cmd+Z undoes it', async () => {
@@ -2183,7 +2195,7 @@ test('the CV name in the editor header is renamed in place: Enter or leaving the
   // Kliknięcie obok też zatwierdza; nazwa zapisuje się autozapisem: w bibliotece i po ponownym uruchomieniu.
   await nameButton('CV for the bank').click()
   await field.fill('CV for the bank, 2026')
-  await window.getByLabel('Full name').click()
+  await window.locator('.editor-form').getByLabel('Full name').click()
   await expect(heading).toHaveText('CV for the bank, 2026')
   await window.getByRole('button', { name: '← CV library' }).click()
   const library = window.getByRole('list', { name: 'CV list' })
@@ -2281,7 +2293,7 @@ async function expectGrowsWithContent(field: Locator) {
 
 test('summary, bullet, consent and clause text fields grow with their content instead of scrolling inside', async () => {
   await openFirstCv()
-  await expectGrowsWithContent(window.getByRole('textbox', { name: 'Summary', exact: true }))
+  await expectGrowsWithContent(window.locator('.editor-form').getByRole('textbox', { name: 'Summary', exact: true }))
   await expectGrowsWithContent(window.getByRole('textbox', { name: 'Bullet 1', exact: true }).first())
   const consent = window.getByRole('region', { name: 'Consent clause' })
   await consent.getByLabel('Show the clause at the bottom of the last page').check()
@@ -2322,7 +2334,7 @@ test('list rows have one handle and no ✕, so a bullet or a list item takes alm
   // Uchwyt ma wysokość jednowierszowego pola i stoi przy jego pierwszej linii.
   const handleBox = (await handle.boundingBox())!
   expect(Math.abs(handleBox.y - bulletBox!.y)).toBeLessThanOrEqual(1)
-  const singleLine = (await window.getByLabel('Full name').boundingBox())!.height
+  const singleLine = (await window.locator('.editor-form').getByLabel('Full name').boundingBox())!.height
   expect(Math.abs(handleBox.height - singleLine)).toBeLessThanOrEqual(1)
 
   // Pozostałe listy: sekcje, stanowiska, wykształcenie i pozycje listy.
@@ -2437,7 +2449,7 @@ test('removing a position says “Removed.” with Undo, which brings it back wi
   // Każda kolejna zmiana chowa komunikat, więc „Undo” nigdy nie cofa czegoś innego niż usunięcie.
   await removeFromRowMenu(positions.first(), 'bullet 1')
   await expect(removed).toBeVisible()
-  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Ewa Nowak')
   await expect(removed).toHaveCount(0)
   // Cmd+Z po usunięciu też je chowa.
   await removeFromRowMenu(window.getByRole('region', { name: 'Languages', exact: true }), 'item 2')
@@ -2687,7 +2699,7 @@ test('the “Removed.” message goes away by itself after a while, but not whil
   await removed.hover()
   await window.clock.runFor(20_000)
   await expect(removed).toBeVisible()
-  await window.getByLabel('Full name').hover()
+  await window.locator('.editor-form').getByLabel('Full name').hover()
   await window.clock.runFor(8500)
   await expect(removed).toHaveCount(0)
 
@@ -2696,14 +2708,14 @@ test('the “Removed.” message goes away by itself after a while, but not whil
   await removed.getByRole('button', { name: 'Undo' }).focus()
   await window.clock.runFor(20_000)
   await expect(removed).toBeVisible()
-  await window.getByLabel('Full name').focus()
+  await window.locator('.editor-form').getByLabel('Full name').focus()
   await window.clock.runFor(8500)
   await expect(removed).toHaveCount(0)
 })
 
 test('Edit → Select All, Cut, Copy and Paste in the menu work in a form field', async () => {
   await openFirstCv()
-  const fullName = window.getByLabel('Full name')
+  const fullName = window.locator('.editor-form').getByLabel('Full name')
   await fullName.focus()
 
   await clickMenuItem('Edit', 'Select All')
@@ -2764,7 +2776,7 @@ test('tags a CV from the list: chips sorted with Polish letters, invalid tags re
 
   // Tagi nie trafiają do podglądu ani do PDF, a autozapis z edytora ich nie usuwa.
   await sample.getByRole('button', { name: 'Open' }).click()
-  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Ewa Nowak')
   await expect(window.getByText('Changes saved')).toBeVisible()
   await expect(window.locator('.preview')).not.toContainText('Zakopane')
   const pdfPath = join(outputDir, 'tagged.pdf')
@@ -2973,7 +2985,7 @@ test('File → New CV, Add Sample CV and Import… work like the library buttons
 
   // Z edytora: powrót do biblioteki z nowym CV na liście.
   await rows.first().getByRole('button', { name: 'Open' }).click()
-  await expect(window.getByLabel('Full name')).toBeVisible()
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toBeVisible()
   await clickMenuItem('File', 'Add Sample CV')
   await expect(rows).toHaveCount(3)
   await expect(rows.first()).toContainText('Sample CV')
@@ -2988,7 +3000,7 @@ test('File → New CV, Add Sample CV and Import… work like the library buttons
   await expect(window.getByRole('status')).toHaveText('Imported “Sample CV”.')
   await expect(rows).toHaveCount(4)
   await rows.first().getByRole('button', { name: 'Open' }).click()
-  await expect(window.getByLabel('Full name')).toBeVisible()
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toBeVisible()
   await clickMenuItem('File', 'Import…')
   await expect(window.getByRole('status').filter({ hasText: 'Imported “Sample CV”.' })).toBeVisible()
   await expect(rows).toHaveCount(5)
@@ -3006,7 +3018,7 @@ test('File → Export JSON… after a failed autosave does not export the old ve
   const jsonPath = join(outputDir, 'stale.json')
   await stubSaveDialog(jsonPath)
 
-  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Ewa Nowak')
   await clickMenuItem('File', 'Export JSON…')
 
   await expect(window.getByRole('alert').filter({ hasText: 'Couldn’t export the CV.' })).toBeVisible()
@@ -3020,13 +3032,13 @@ test('File → Export JSON… after a failed autosave does not export the old ve
 test('File → New CV after a failed autosave asks before leaving the editor, like ← Back', async () => {
   await openFirstCv()
   await breakAutosave()
-  await window.getByLabel('Full name').fill('Jane Doe')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Jane Doe')
   await expect(window.getByRole('alert')).toContainText('Couldn’t save changes')
 
   await clickMenuItem('File', 'New CV')
   const alert = window.getByRole('alert')
   await expect(alert).toContainText('Your changes weren’t saved. Leave anyway?')
-  await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Jane Doe')
   await alert.getByRole('button', { name: 'Leave anyway' }).click()
   await expect(window.locator('.library')).toBeVisible()
 })
@@ -3034,7 +3046,7 @@ test('File → New CV after a failed autosave asks before leaving the editor, li
 test('leaving the editor after a failed autosave asks first: Stay keeps the edit and the focus, Leave anyway goes to the library', async () => {
   await openFirstCv()
   await breakAutosave()
-  await window.getByLabel('Full name').fill('Jane Doe')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Jane Doe')
   await expect(window.getByRole('alert')).toContainText('Couldn’t save changes')
 
   const back = window.getByRole('button', { name: '← CV library' })
@@ -3045,7 +3057,7 @@ test('leaving the editor after a failed autosave asks first: Stay keeps the edit
   await alert.getByRole('button', { name: 'Stay in the editor' }).click()
   await expect(alert).toContainText('Couldn’t save changes. Your latest edits are only in this window for now.')
   await expect(back).toBeFocused()
-  await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Jane Doe')
 
   // Escape działa jak „Zostań w edytorze”.
   await back.click()
@@ -3081,7 +3093,7 @@ async function leaveEditorAnyway() {
 test('a failed autosave shows an alert with Try again, which saves once the cause is gone and hides the alert', async () => {
   await openFirstCv()
   const restore = await breakAutosave()
-  await window.getByLabel('Full name').fill('Jane Doe')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Jane Doe')
   const alert = window.getByRole('alert')
   await expect(alert).toContainText('Couldn’t save changes. Your latest edits are only in this window for now.')
   // Komunikat jest raz – w alercie, a nie także w statusie paska narzędzi.
@@ -3094,7 +3106,7 @@ test('a failed autosave shows an alert with Try again, which saves once the caus
   await app.close()
   await launch()
   await openFirstCv()
-  await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Jane Doe')
 })
 
 // Autozapis trwający 1,5 s: zapis z edytora czeka, a dopiero potem trafia do pliku CV (jak w repozytorium: z tagami
@@ -3155,9 +3167,9 @@ const messageBoxCalls = () =>
 async function editDuringSave() {
   await openFirstCv()
   await slowDownAutosave()
-  await window.getByLabel('Full name').fill('Ewa')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Ewa')
   await expect.poll(updateCalls).toBe(1)
-  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Ewa Nowak')
 }
 
 test('closing the window right after an edit waits for the save in progress and the change queued behind it', async () => {
@@ -3167,7 +3179,7 @@ test('closing the window right after an edit waits for the save in progress and 
   await app.close()
   await launch()
   await openFirstCv()
-  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
 test('quitting right after an edit waits for the save in progress and the change queued behind it', async () => {
@@ -3175,13 +3187,13 @@ test('quitting right after an edit waits for the save in progress and the change
   await app.close()
   await launch()
   await openFirstCv()
-  await expect(window.getByLabel('Full name')).toHaveValue('Ewa Nowak')
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Ewa Nowak')
 })
 
 test('closing the window after a failed autosave asks natively: Back to Editor keeps it open, Close Anyway closes it', async () => {
   await openFirstCv()
   await breakAutosave()
-  await window.getByLabel('Full name').fill('Jane Doe')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Jane Doe')
   await expect(window.getByRole('alert')).toContainText('Couldn’t save changes')
 
   await stubMessageBox(1)
@@ -3197,7 +3209,7 @@ test('closing the window after a failed autosave asks natively: Back to Editor k
     cancelId: 1
   })
   expect(await appWindowCount()).toBe(1)
-  await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Jane Doe')
 
   await setMessageBoxResponse(0)
   await closeAppWindow()
@@ -3207,7 +3219,7 @@ test('closing the window after a failed autosave asks natively: Back to Editor k
 test('quitting after a failed autosave asks natively, and Back to Editor keeps the app running', async () => {
   await openFirstCv()
   await breakAutosave()
-  await window.getByLabel('Full name').fill('Jane Doe')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Jane Doe')
   await expect(window.getByRole('alert')).toContainText('Couldn’t save changes')
 
   await stubMessageBox(1)
@@ -3220,7 +3232,7 @@ test('quitting after a failed autosave asks natively, and Back to Editor keeps t
     buttons: ['Quit Anyway', 'Back to Editor']
   })
   expect(await appWindowCount()).toBe(1)
-  await expect(window.getByLabel('Full name')).toHaveValue('Jane Doe')
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Jane Doe')
 
   // Zamknięcie okna po „Wróć do edytora” to już nie zakończenie aplikacji.
   await closeAppWindow()
@@ -3234,7 +3246,7 @@ test('quitting after a failed autosave asks natively, and Back to Editor keeps t
 test('closing the window from the CV library or with saved changes asks nothing', async () => {
   await openFirstCv()
   await stubMessageBox(1)
-  await window.getByLabel('Full name').fill('Jane Doe')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Jane Doe')
   await expect(window.getByRole('status').filter({ hasText: 'Changes saved' })).toBeVisible()
   await closeAppWindow()
   await expect.poll(appWindowCount).toBe(0)
@@ -3266,7 +3278,7 @@ test('in the editor File → Export to PDF… and Export JSON… export the open
   // Zmiana wpisana tuż przed komendą (autozapis jeszcze nie ruszył) trafia do pliku.
   const jsonPath = join(outputDir, 'menu.json')
   await stubSaveDialog(jsonPath)
-  await window.getByLabel('Full name').fill('Ewa Nowak')
+  await window.locator('.editor-form').getByLabel('Full name').fill('Ewa Nowak')
   await clickMenuItem('File', 'Export JSON…')
   await expect(window.getByRole('status').filter({ hasText: 'Saved file: menu.json' })).toBeVisible()
   expect(JSON.parse(await readFile(jsonPath, 'utf8'))).toMatchObject({ header: { fullName: 'Ewa Nowak' } })
@@ -3280,7 +3292,7 @@ test('in the editor File → Export to PDF… and Export JSON… export the open
 
   // Nieudany eksport JSON: komunikat błędu pod paskiem narzędzi, do zamknięcia.
   await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).first().click()
-  await expect(window.getByLabel('Full name')).toBeVisible()
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toBeVisible()
   await app.evaluate(({ dialog }) => {
     dialog.showSaveDialog = (async () => {
       throw new Error('disk full')

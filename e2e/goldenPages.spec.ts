@@ -6,7 +6,7 @@ import { _electron as electron, expect, test, type ElectronApplication, type Pag
 // „Złote strony” (docs/specs/inline-editing-redesign.md, Q24): wygląd dokumentu nie może się zmienić. Sample CV `en`
 // w każdym szablonie – zrzut każdej strony w skali 100% oraz tekst i liczba stron eksportowanego PDF – porównane
 // ze wzorcami zapisanymi z `main` przed przeprojektowaniem edytora. Wzorców nie aktualizujemy, żeby test przeszedł:
-// różnica oznacza zmianę wyglądu dokumentu.
+// różnica oznacza zmianę wyglądu dokumentu. Te same wzorce zrzutów obowiązują strony w Edit mode bez fokusu w polu.
 
 let app: ElectronApplication
 let window: Page
@@ -81,6 +81,24 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     const pages = preview.locator('.cv-page')
     await expect(pages.first()).toBeVisible()
     const pageCount = await pages.count()
+    for (let index = 0; index < pageCount; index++) {
+      await pages.nth(index).evaluate((page) => page.scrollIntoView({ block: 'center' }))
+      await expect(pages.nth(index)).toHaveScreenshot(`${slug}-page-${index + 1}.png`, { animations: 'disabled', caret: 'hide' })
+    }
+    const blocksOnPages = () =>
+      pages.evaluateAll((elements) =>
+        elements.map((page) => [...page.querySelectorAll('[data-block-id]')].map((block) => block.getAttribute('data-block-id')))
+      )
+    const previewBlocks = await blocksOnPages()
+
+    // Edit mode w spoczynku (docs/specs/wysiwyg-editing.md, W3.3): tekst stron to Page fields, ale bez fokusu w polu
+    // i z myszą poza stronami strony są piksel w piksel jak w Preview mode – te same wzorce, ten sam podział stron.
+    await window.getByRole('group', { name: 'Mode' }).getByRole('button', { name: 'Edit', exact: true }).click()
+    await expect(preview.locator('.cv.cv-editing')).toHaveCount(1)
+    await expect(preview.locator('.cv-pages [data-field-key]').first()).toBeVisible()
+    await window.mouse.move(1, 1)
+    await expect(pages).toHaveCount(pageCount)
+    await expect.poll(blocksOnPages).toEqual(previewBlocks)
     for (let index = 0; index < pageCount; index++) {
       await pages.nth(index).evaluate((page) => page.scrollIntoView({ block: 'center' }))
       await expect(pages.nth(index)).toHaveScreenshot(`${slug}-page-${index + 1}.png`, { animations: 'disabled', caret: 'hide' })

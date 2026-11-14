@@ -31,8 +31,8 @@ export const unionRect = (a: Rect, b: Rect): Rect => ({
   bottom: Math.max(a.bottom, b.bottom)
 })
 
-// Kawałki jednego bloku: nagłówek dzielony po klasach kontraktu (bez nich – w całości imię i nazwisko), pierwszy wiersz
-// listy z tytułem obok – tytuł sekcji i elementy osobno; pozostałe bloki w całości.
+// Kawałki jednego bloku: nagłówek dzielony po klasach kontraktu (bez nich – w całości imię i nazwisko), wiersz listy –
+// jego elementy (pierwszy wiersz z tytułem obok – też tytuł sekcji osobno); pozostałe bloki w całości.
 function blockPieces(block: MeasuredBlock, target: EditTarget): { target: EditTarget; rect: Rect }[] {
   const partRect = (name: BlockPart) => block.parts.find(({ part }) => part === name)?.rect
   if (block.blockId === 'header') {
@@ -41,10 +41,12 @@ function blockPieces(block: MeasuredBlock, target: EditTarget): { target: EditTa
     )
     return pieces.length > 0 ? pieces : [{ target, rect: block.rect }]
   }
-  const title = partRect('sectionTitle')
-  if (target.kind === 'listSection' && title) {
+  // Wiersz listy: same elementy (`li`) – kolumna tytułu obok listy należy do tytułu sekcji (Page field), więc przycisk
+  // listy nie może jej zasłaniać, także w kolejnych wierszach.
+  if (target.kind === 'listSection') {
+    const title = partRect('sectionTitle')
     return [
-      { target: { kind: 'sectionTitle', sectionId: target.sectionId }, rect: title },
+      ...(title ? [{ target: { kind: 'sectionTitle', sectionId: target.sectionId } as EditTarget, rect: title }] : []),
       { target, rect: partRect('items') ?? block.rect }
     ]
   }

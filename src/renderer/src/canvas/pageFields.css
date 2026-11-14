@@ -1,0 +1,34 @@
+/* ---------- Page fields (Edit mode, ADR-0010) ----------
+   Tekst pól CV edytowany na stronie, w elementach szablonu (.cv-editing jest na .cv tylko w Edit mode). Bez marginesów,
+   paddingów i ramek – nic, co zmienia geometrię strony; obrys (outline) nie zajmuje miejsca. Białe znaki i zawijanie
+   dziedziczone od elementu szablonu: styl przeglądarki dla edytowalnych elementów (white-space: pre-wrap dla
+   plaintext-only, overflow-wrap: break-word, line-break: after-white-space) pokazywałby nowe linie i podwójne spacje
+   i zawijał inaczej niż PDF. Kartka jest biała w obu wyglądach (ADR-0004), więc kolory z tokenów kartki. */
+.cv-editing .cv-page-field {
+  white-space: inherit;
+  overflow-wrap: inherit;
+  line-break: inherit;
+  outline: none;
+  caret-color: var(--ui-fragment-outline);
+}
+
+/* Puste pole odsłoniętego fragmentu: nazwa pola w miejscu tekstu, fontem szablonu – zajmuje miejsce jak tekst (także
+   w kontenerze pomiarowym, więc podział stron się z nim liczy). */
+.cv-editing .cv-page-field:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ui-page-placeholder);
+}
+
+.cv-editing .cv-pages .cv-page-field[contenteditable] {
+  cursor: text;
+}
+
+.cv-editing .cv-pages .cv-page-field[contenteditable]:hover {
+  outline: 1px solid var(--ui-fragment-outline);
+  outline-offset: 2px;
+}
+
+.cv-editing .cv-pages .cv-page-field[contenteditable]:focus {
+  outline: 2px solid var(--ui-fragment-outline);
+  outline-offset: 2px;
+}

@@ -18,14 +18,12 @@ import { markInput } from '../preview/keystrokeTiming'
 import { anchoredPosition, type Box } from './anchoredPosition'
 import type { EditTarget } from './editTargets'
 
-// Części CV, które mają już swoją Edit card. Warstwa edycji pokazuje przyciski tylko ich fragmentów; nowe karty
-// dopisują się tutaj, w `cardLabel` i w `CardFields`.
+// Części CV, które na stronie otwierają Edit card (przycisk fragmentu warstwy edycji). Imię i nazwisko, podsumowanie
+// i tytuły sekcji edytuje się już wprost na stronie (Page fields, pageFields.ts) – karta tytułu otwiera się jeszcze
+// tylko z Outline dla sekcji, której nie ma na stronach (useEditSession.ts).
 const cardKinds: ReadonlySet<EditTarget['kind']> = new Set([
-  'fullName',
   'photo',
   'contacts',
-  'summary',
-  'sectionTitle',
   'experienceItem',
   'educationItem',
   'listSection',

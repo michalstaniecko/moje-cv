@@ -104,3 +104,19 @@ describe('fragmentHasEmptyField', () => {
     expect(fragmentHasEmptyField('item:e1', empty)).toBe(false)
   })
 })
+
+describe('revealing', () => {
+  it('uses the fragment keys of the editing layer, which generateBlocks understands', () => {
+    const empty: CvDocument = {
+      ...sample,
+      header: { fullName: '', photo: null, contacts: [], summary: '' },
+      sections: sample.sections.map((section) => ({ ...section, title: '' }))
+    }
+    const geometry = templates.modern.geometry
+    const header = generateBlocks(empty, geometry, { reveal: new Set([pageFieldOf(generateBlocks(sample, geometry)[0]!, 'fullName', sample, t)!.fragment]) })
+    expect(header[0]).toEqual(expect.objectContaining({ kind: 'header', fullName: '' }))
+    const title = generateBlocks(sample, geometry).find((block) => block.id === 'education:title')!
+    const revealed = generateBlocks(empty, geometry, { reveal: new Set([pageFieldOf(title, 'title', sample, t)!.fragment]) })
+    expect(revealed.map((block) => block.id)).toContain('education:title')
+  })
+})

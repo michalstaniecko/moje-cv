@@ -23,6 +23,8 @@
      (ADR-0004), więc nie mają wartości ciemnych – akcent jasnego wyglądu ma na bieli kontrast 4.9:1. */
   --ui-fragment-outline: #1f6fcf;
   --ui-fragment-fill: rgb(31 111 207 / 0.07);
+  /* Placeholder pustego Page field na kartce (też tylko jedna wartość): neutralna szarość, 4.1:1 na bieli. */
+  --ui-page-placeholder: #75808c;
 }
 
 /* Ciemna paleta: te same tokeny z innymi wartościami. Proces główny ustawia `nativeTheme.themeSource`, a Electron
@@ -297,7 +299,8 @@ textarea:focus-visible {
 
 /* Uchwyt menu fragmentu (tytuł sekcji, wpis) w marginesie kartki, tuż przed przyciskiem fragmentu w DOM. Niewidoczny,
    dopóki nie najedzie się na fragment albo uchwyt, uchwyt nie dostanie fokusu albo menu nie jest otwarte; fragmentu
-   z otwartą kartą – widoczny. Bez przeciągania – kursor jak przy przycisku. */
+   z otwartą kartą – widoczny. Fragment edytowany na stronie (tytuł sekcji – Page field, bez przycisku) zaznacza uchwyt
+   atrybutami data-hovered / data-focused (EditLayer.tsx). Bez przeciągania – kursor jak przy przycisku. */
 .edit-layer .edit-handle {
   position: absolute;
   z-index: 1;
@@ -308,6 +311,8 @@ textarea:focus-visible {
 
 .edit-layer .edit-handle:hover,
 .edit-layer .edit-handle:focus-within,
+.edit-layer .edit-handle[data-hovered],
+.edit-layer .edit-handle[data-focused],
 .edit-layer .edit-handle:has(.row-handle[aria-expanded='true']),
 .edit-layer .edit-handle:has(+ .edit-fragment:hover),
 .edit-layer .edit-handle:has(+ .edit-fragment:focus-visible),

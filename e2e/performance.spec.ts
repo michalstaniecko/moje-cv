@@ -5,8 +5,8 @@ import { sampleCvs } from '../src/renderer/src/domain/sampleCv'
 import type { CvDocument, ExperienceItem } from '../src/renderer/src/domain/schema'
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
 
-// Pomiar wydajności dużego CV (ticket #72, próg 100 ms – zob. .docs/spec.md, sekcja „Pomiar”): pisanie w CV form i w Edit card
-// (docs/specs/inline-editing-redesign.md, Q23, AC 7).
+// Pomiar wydajności dużego CV (ticket #72, próg 100 ms – zob. .docs/spec.md, sekcja „Pomiar”): pisanie w CV form i na
+// stronach w Page fields (docs/specs/wysiwyg-editing.md, W23, AC 10).
 // Opcjonalny: pomijany bez `MOJE_CV_PERF=1`, bo czasy zależą od sprzętu i w CI byłyby niestabilne. Asercje sprawdzają
 // tylko poprawność fixture'a; progi ocenia człowiek na M1. Uruchamiać na zbudowanej aplikacji, nigdy na serwerze
 // deweloperskim:
@@ -113,8 +113,9 @@ function stats(values: number[]): Stats {
   return { count: sorted.length, median: round(at(0.5)), p95: round(at(0.95)), max: round(sorted.at(-1) ?? NaN) }
 }
 
-// Gdzie się pisze: CV form (przebieg z ticketu #72) albo Edit card na stronach (T9 redesignu, spec Q23 i AC 7).
-// `type` pisze `typed` w podsumowaniu i w punkcie 1 ostatniego stanowiska, potem `paused` w tym samym punkcie.
+// Gdzie się pisze: CV form (przebieg z ticketu #72) albo Page fields na stronach (docs/specs/wysiwyg-editing.md, W23).
+// `type` pisze `typed` w podsumowaniu i w polu na ostatniej stronie (CV form: punkt 1 ostatniego stanowiska, strony:
+// tytuł ostatniej sekcji), potem `paused` w tym samym polu.
 type TypingPath = { label: string; prepare: () => Promise<void>; type: (typed: string, paused: string) => Promise<void> }
 
 const typingInForm: TypingPath = {
@@ -122,7 +123,7 @@ const typingInForm: TypingPath = {
   // Pisanie w CV form (domyślny pasek boczny to Outline).
   prepare: () => window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click(),
   type: async (typed, paused) => {
-    const summary = window.getByLabel('Summary')
+    const summary = window.locator('.editor-form').getByLabel('Summary')
     await summary.click()
     await summary.pressSequentially(typed, { delay: 150 })
     const lastBullet = window
@@ -135,29 +136,27 @@ const typingInForm: TypingPath = {
   }
 }
 
-// Edit card: klik w podsumowanie na stronie, potem w ostatnie stanowisko (na ostatniej stronie). Domyślny pasek boczny
-// (Outline), czyli strony szersze niż obok CV form; warstwa edycji przelicza prostokąty fragmentów po każdym podziale.
-const typingInCard: TypingPath = {
-  label: 'Edit card',
+// Na stronach (Page fields, kawałek S1): podsumowanie na pierwszej stronie, potem tytuł ostatniej sekcji (na ostatniej
+// stronie). Domyślny pasek boczny (Outline), czyli strony szersze niż obok CV form; `cv:keystroke-to-preview` mierzy
+// pisanie na stronie (`markInput` z `input` pól, PreviewPane).
+const typingOnPage: TypingPath = {
+  label: 'pages',
   prepare: async () => {},
   type: async (typed, paused) => {
-    const fragment = (what: string) => window.locator('.edit-layer').getByRole('button', { name: `Edit: ${what}`, exact: true })
-    const card = (name: string) => window.getByRole('dialog', { name, exact: true })
-    await fragment('Summary').click()
-    const summary = card('Summary').getByLabel('Summary')
-    await expect(summary).toBeFocused()
-    await summary.pressSequentially(typed, { delay: 150 })
-    await window.keyboard.press('Escape')
-    const position = `Position “${LAST_ROLE}”`
-    await fragment(position).first().click()
-    const lastBullet = card(position).getByRole('textbox', { name: 'Bullet 1', exact: true })
-    await lastBullet.click()
-    await lastBullet.pressSequentially(typed, { delay: 150 })
-    await lastBullet.pressSequentially(paused, { delay: 800 })
+    const field = (name: string) => window.locator('.preview .cv-pages').getByRole('textbox', { name, exact: true })
+    await field('Summary').click()
+    await window.keyboard.press('Meta+ArrowDown')
+    await window.keyboard.type(typed, { delay: 150 })
+    const title = field('Section title “Languages”')
+    await title.scrollIntoViewIfNeeded()
+    await title.click()
+    await window.keyboard.press('Meta+ArrowRight')
+    await window.keyboard.type(typed, { delay: 150 })
+    await window.keyboard.type(paused, { delay: 800 })
   }
 }
 
-for (const path of [typingInForm, typingInCard]) {
+for (const path of [typingInForm, typingOnPage]) {
   test(`a 4+ page CV with a photo, typing in the ${path.label}: keystroke-to-preview time, autosave time in the main process and long tasks`, async () => {
     test.setTimeout(180_000)
     const photo = await photoDataUrl()
@@ -232,7 +231,7 @@ for (const path of [typingInForm, typingInCard]) {
     )
     console.table(table)
 
-    // Pomiar się odbył (bez progów czasowych): w karcie też – karta wywołuje `markInput`.
+    // Pomiar się odbył (bez progów czasowych): na stronach też – pola wywołują `markInput`.
     expect(renderer.keystrokes.length).toBeGreaterThan(0)
     expect(byName('cv:update').length).toBeGreaterThanOrEqual(10)
   })

@@ -1,21 +1,24 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { EditLayer, type EditingContext } from '../canvas/EditLayer'
+import { PageFieldsProvider } from '../canvas/PageField'
 import type { EditorMode } from '../canvas/useEditSession'
+import { usePageEditing } from '../canvas/usePageEditing'
 import type { PaginateResult } from '../domain/paginate'
 import type { CvDocument } from '../domain/schema'
 import { useDictionary, useInterfaceLanguage } from '../i18n'
 import { CvPages } from '../template/CvPages'
-import { afterNextPaint, markPreviewPainted } from './keystrokeTiming'
+import { afterNextPaint, markInput, markPreviewPainted } from './keystrokeTiming'
 import { pageCountLabel, RECOMMENDED_MAX_PAGES } from './pageCount'
 import { fitScale, PREVIEW_MARGIN_PX, zoomIn, zoomOut } from './zoom'
 
-// Podgląd stron CV z licznikiem stron i powiększeniem; same strony są ukryte przed czytnikiem ekranu.
+// Podgląd stron CV z licznikiem stron i powiększeniem.
 // Domyślnie strony dopasowane są do szerokości panelu; po użyciu +, − lub 100% obowiązuje wybrana skala,
 // a „Dopasuj” wraca do dopasowania.
 // `onLayout` dostaje każdy nowy podział stron (np. edytor sprawdza przed eksportem, czy są za długie bloki).
 // Bloki wyższe niż strona są wyróżnione na kartkach w Edit mode; w Preview mode kartki są jak w PDF, a w pasku
 // podglądu jest ostrzeżenie z „Pokaż” (`onShowOversized` – przejście do Edit mode).
-// `editing` – w Edit mode nad stronami leży warstwa edycji z Edit card (canvas/EditLayer.tsx); w Preview mode jej nie ma.
+// `editing` – w Edit mode tekst na stronach to Page fields (ADR-0010, canvas/usePageEditing.ts), a nad stronami leży
+// warstwa edycji z uchwytami i Edit card (canvas/EditLayer.tsx); w Preview mode nie ma ani jednego, ani drugiego.
 export function PreviewPane({
   document,
   onLayout: onLayoutChange,
@@ -49,11 +52,23 @@ export function PreviewPane({
   const t = useDictionary().preview
   const language = useInterfaceLanguage()
   const oversizedMessage = mode === 'edit' ? t.oversized : undefined
-  // Element stron zapamiętany: przerysowanie panelu (np. nowy podział stron dla warstwy edycji) nie renderuje stron
-  // ponownie, dopóki nie zmieni się dokument.
+  const pageEditing = usePageEditing({ document, editor: editing?.editor, active: editing?.session.activeField, panel })
+  const editable = mode === 'edit' && pageEditing !== null
+  // Element stron zapamiętany: przerysowanie panelu (np. nowy podział stron dla warstwy edycji, zmiana pola z fokusem
+  // bez odsłaniania) nie renderuje stron ponownie, dopóki nie zmieni się dokument albo odsłonięty fragment.
+  // To samo drzewo w obu trybach: zmiana trybu nie montuje stron od nowa (przewinięcie i podział stron zostają).
   const pages = useMemo(
-    () => <CvPages document={document} onLayout={onLayout} oversizedMessage={oversizedMessage} />,
-    [document, onLayout, oversizedMessage]
+    () => (
+      <PageFieldsProvider value={pageEditing?.fields ?? null}>
+        <CvPages
+          document={document}
+          onLayout={onLayout}
+          oversizedMessage={oversizedMessage}
+          editing={editable ? pageEditing?.editing : undefined}
+        />
+      </PageFieldsProvider>
+    ),
+    [document, onLayout, oversizedMessage, editable, pageEditing?.fields, pageEditing?.editing]
   )
 
   return (
@@ -79,7 +94,8 @@ export function PreviewPane({
             )}
           </span>
         )}
-        <div className="preview-zoom">
+        {/* Klik w powiększenie nie zabiera fokusu z Page field: kursor zostaje w polu przy każdej skali. */}
+        <div className="preview-zoom" onMouseDown={(event) => event.preventDefault()}>
           <button type="button" aria-label={t.zoomOut} onClick={() => setChosenScale(zoomOut(scale))}>
             −
           </button>
@@ -95,10 +111,15 @@ export function PreviewPane({
           </button>
         </div>
       </div>
-      {/* Strony są dla czytnika ekranu ukryte: to druga kopia CV, którego źródłem i miejscem edycji jest formularz.
-          Pasek podglądu (licznik stron, ostrzeżenie o długości, powiększenie) zostaje dostępny, a w Edit mode także
-          warstwa edycji obok stron (przycisk „Edit: …” dla każdego fragmentu). */}
-      <div className="preview-pages" aria-hidden>
+      {/* W Edit mode strony to dla czytnika ekranu CV z polami tekstowymi (Page fields, W22); w Preview mode są ukryte –
+          to kopia CV bez niczego do zrobienia. Pasek podglądu (licznik stron, ostrzeżenie o długości, powiększenie) jest
+          dostępny w obu trybach, a w Edit mode także warstwa edycji obok stron. Pisanie na stronie mierzy
+          `cv:keystroke-to-preview` jak pisanie w formularzu (W23). */}
+      <div
+        className="preview-pages"
+        aria-hidden={editable ? undefined : true}
+        onInput={editable ? (event) => markInput(event.timeStamp) : undefined}
+      >
         {pages}
       </div>
       {mode === 'edit' && editing && (

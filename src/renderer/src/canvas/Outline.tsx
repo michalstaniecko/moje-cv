@@ -15,12 +15,12 @@ import type { EditSession } from './useEditSession'
 
 // Outline (GLOSSARY.md; docs/specs/inline-editing-redesign.md, Q13): wąski pasek boczny Edit mode z konspektem CV –
 // to, czego nie widać na kartkach, i szybki skok do części CV.
-// - „Nagłówek” otwiera kartę imienia i nazwiska.
+// - „Nagłówek” stawia kursor w imieniu i nazwisku na stronie (Page field; puste jest odsłaniane).
 // - Sekcje w kolejności CV (także ukryte i puste) z liczbą wpisów (czytnik ekranu słyszy ją jako opis „3 elementy”)
 //   i oznaczeniem „ukryta” / „pusta”. Uchwyt: przeciąganie
 //   myszą i menu („Przenieś wyżej/niżej”, „Nowa strona przed”, „Ukryj sekcję” z zaznaczeniem, „Dodaj …”) – każda zmiana
-//   to jeden krok cofania. Klik w sekcję przewija strony do jej tytułu i otwiera kartę tytułu przy nim; sekcja ukryta
-//   albo pusta (bez tytułu na stronie) dostaje kartę przy swoim wierszu Outline.
+//   to jeden krok cofania. Klik w sekcję przewija strony do jej tytułu i stawia kursor na jego końcu (Page field); sekcja
+//   ukryta albo pusta (bez tytułu na stronie) dostaje kartę tytułu przy swoim wierszu Outline (useEditSession.ts).
 // - „Klauzula zgody” otwiera jej kartę; przełącznik „Pokaż na CV” włącza ją i wyłącza.
 // Karty otwierane stąd mają kotwicę w wierszu Outline (`added`); gdy część CV jest na stronie, karta stoi przy jej
 // fragmencie (warstwa edycji szuka najpierw fragmentu). Nie pokazuje treści CV poza nazwami.
@@ -98,7 +98,6 @@ export function Outline({
           className="outline-row-button outline-header"
           data-outline-row={fragmentKey({ kind: 'fullName' })}
           data-safe-focus
-          aria-haspopup="dialog"
           onClick={() => openRow({ kind: 'fullName' })}
         >
           <span className="outline-row-name">{t.header}</span>
@@ -125,7 +124,7 @@ export function Outline({
                   type="button"
                   className="outline-row-button"
                   data-outline-row={fragmentKey(target)}
-                  aria-haspopup="dialog"
+                  aria-haspopup={section.hidden || empty ? 'dialog' : undefined}
                   aria-describedby={section.items.length > 0 ? `${countId}-${section.id}` : undefined}
                   onClick={() => openRow(target)}
                 >

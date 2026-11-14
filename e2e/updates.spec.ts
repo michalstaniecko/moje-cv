@@ -266,7 +266,7 @@ test('a notice that arrives while the editor is open is shown after going back t
 
   await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
   await window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click()
-  await expect(window.getByLabel('Full name')).toBeVisible()
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toBeVisible()
   await expect.poll(() => requests.length).toBe(1)
   release()
   await expect.poll(savedUpdateCheck).toMatchObject({ latestVersion: '99.0.0' })

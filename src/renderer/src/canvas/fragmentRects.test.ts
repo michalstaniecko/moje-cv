@@ -55,9 +55,9 @@ describe('fragmentRects', () => {
     )
     expect(fragments.map(({ key, page, rect }) => ({ key, page, rect }))).toEqual([
       { key: 'sectionTitle:skills', page: 0, rect: title },
-      // Wiersz bez tytułu obok – cały blok (tytuł obok listy zostawia w nim pustą kolumnę).
-      { key: 'list:skills', page: 0, rect: rect(300, 322, 10, 200) },
-      { key: 'list:skills', page: 1, rect: rect(10, 20) }
+      // Same elementy: pusta kolumna tytułu w kolejnych wierszach nie należy do listy (tytuł to Page field).
+      { key: 'list:skills', page: 0, rect: rect(300, 322, 80, 200) },
+      { key: 'list:skills', page: 1, rect: rect(10, 20, 80, 200) }
     ])
   })
 

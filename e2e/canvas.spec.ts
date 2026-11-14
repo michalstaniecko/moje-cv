@@ -97,7 +97,7 @@ async function expectPreviewMode() {
   // Bez paska bocznego: ani formularza, ani separatora w DOM; strony na całą szerokość.
   await expect(window.locator('.editor-form')).toHaveCount(0)
   await expect(window.locator('.pane-separator')).toHaveCount(0)
-  await expect(window.getByLabel('Full name')).toHaveCount(0)
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveCount(0)
   await expect.poll(async () => (await previewMenuItem()).checked).toBe(true)
 }
 
@@ -120,7 +120,7 @@ test('the Edit | Preview toggle switches the editor between Edit mode and Previe
 
   await editButton().click()
   await expectEditMode()
-  await expect(window.getByLabel('Full name')).toBeVisible()
+  await expect(window.locator('.editor-form').getByLabel('Full name')).toBeVisible()
 
   // Tryb nie jest zapamiętywany: po wyjściu i ponownym otwarciu CV – Edit mode, a menu znów nieaktywne poza edytorem.
   await previewButton().click()
@@ -134,7 +134,7 @@ test('the Edit | Preview toggle switches the editor between Edit mode and Previe
 
 test('Cmd+Shift+P and View → Preview switch the modes, also from a text field, and move the focus to the toggle', async () => {
   await openFirstCv()
-  await window.getByLabel('Full name').focus()
+  await window.locator('.editor-form').getByLabel('Full name').focus()
   await window.keyboard.press('Meta+Shift+P')
   await expectPreviewMode()
   await expect(previewButton()).toBeFocused()
@@ -163,7 +163,7 @@ test('switching the mode is not an undo step and does not change the document; z
   await expectEditMode()
 
   // Zmiana dokumentu, potem przełączenie: Cmd+Z cofa zmianę dokumentu, a nie tryb.
-  const fullName = window.getByLabel('Full name')
+  const fullName = window.locator('.editor-form').getByLabel('Full name')
   await fullName.fill('Jane Changed')
   await expect(status).toHaveText('Changes saved')
   const preview = window.locator('.preview')
@@ -198,7 +198,7 @@ test('Preview mode does not highlight oversized fragments on the pages but warns
   await expect(warning).toHaveCount(0)
   await editButton().click()
 
-  await window.getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
+  await window.locator('.editor-form').getByLabel('Summary').fill(Array.from({ length: 200 }, (_, i) => `A very long summary, line ${i + 1}.`).join('\n'))
   const message = 'This fragment is too long to fit on a page – shorten it'
   await expect(preview.locator('.cv-block--oversized')).toHaveCount(1)
   await expect(preview.getByText(message)).toBeVisible()
@@ -281,27 +281,82 @@ async function expectCardNextTo(dialog: Locator, button: Locator) {
   expect((await dialog.boundingBox())!.width).toBe(340)
 }
 
-test('clicking the name on the page opens its Edit card with the focus in the field; typing changes the page and the PDF, and Cmd+Z undoes it in one step', async () => {
+// ---------- Page fields: imię i nazwisko, podsumowanie, tytuły sekcji (docs/specs/wysiwyg-editing.md, S1) ----------
+
+// Page field na stronach (Edit mode): pole tekstowe z nazwą pola CV (`.cv-measure` jest ukryty przed czytnikiem).
+const pageField = (name: string) => window.locator('.preview .cv-pages').getByRole('textbox', { name, exact: true })
+const titleField = (title: string) => pageField(`Section title “${title}”`)
+// Pole CV form (etykieta pola tekstowego zawiera też jego tekst – bez `exact`).
+const formField = (label: string) => window.locator('.editor-form').getByLabel(label)
+// Numer strony (od 0), na której leży element.
+const pageIndexOf = (locator: Locator) =>
+  locator.evaluate((element) => [...element.ownerDocument.querySelectorAll('.preview .cv-pages > .cv-page')].findIndex((page) => page.contains(element)))
+// Klucz pola z fokusem i kursor (przesunięcie znaków od początku pola; null – fokus poza Page field). Wyrażenie w
+// tekście: testy e2e nie mają typów DOM.
+const caret = () =>
+  window.evaluate<{ key: string; offset: number; collapsed: boolean } | null>(`(() => {
+    const field = document.activeElement
+    const selection = window.getSelection()
+    if (!field?.dataset.fieldKey || !selection?.focusNode || !field.contains(selection.focusNode)) return null
+    const range = document.createRange()
+    range.selectNodeContents(field)
+    range.setEnd(selection.focusNode, selection.focusOffset)
+    return { key: field.dataset.fieldKey, offset: range.toString().length, collapsed: selection.isCollapsed }
+  })()`)
+// Klik myszą w lewą część znaku `index` pola – kursor staje przed tym znakiem.
+async function clickAtCharacter(field: Locator, index: number) {
+  await field.scrollIntoViewIfNeeded()
+  const point = await field.evaluate((element, index) => {
+    const range = element.ownerDocument.createRange()
+    range.setStart(element.firstChild!, index)
+    range.setEnd(element.firstChild!, index + 1)
+    const rect = range.getBoundingClientRect()
+    return { x: rect.left + 1, y: rect.top + rect.height / 2 }
+  }, index)
+  await window.mouse.click(point.x, point.y)
+}
+// Placeholder pustego pola (treść `::before`).
+type ComputedStyleOf = (element: unknown, pseudo: string) => { content: string }
+const placeholderOf = (field: Locator) =>
+  field.evaluate((element) => (globalThis as unknown as { getComputedStyle: ComputedStyleOf }).getComputedStyle(element, '::before').content)
+
+test('the name is edited on the page: a click puts the caret at the clicked character, typing changes the page, the form and the PDF, and Cmd+Z undoes it in the same steps as the form', async () => {
   await openFirstCv()
-  await clickOnPage(pageName())
-  const nameCard = card('Full name')
-  await expect(nameCard).toBeVisible()
-  const field = nameCard.getByLabel('Full name')
-  await expect(field).toBeFocused()
+  const name = pageField('Full name')
+  await expect(name).toHaveText('Jane Example')
+  await expect(name).toHaveAttribute('contenteditable', 'true')
 
-  // Kursor na końcu: pisanie dopisuje do imienia, strona zmienia się od razu (tak samo jak pole formularza).
-  await window.keyboard.type(' Jr')
-  await expect(pageName()).toHaveText('Jane Example Jr')
-  await expect(window.locator('.editor-form').getByLabel('Full name')).toHaveValue('Jane Example Jr')
-  await expect(fragment('Full name')).toHaveAttribute('aria-expanded', 'true')
+  // Kursor w klikniętym miejscu, bez żadnej karty.
+  await clickAtCharacter(name, 5)
+  await expect(name).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'header:fullName', offset: 5, collapsed: true })
+  await window.keyboard.type('X ')
+  await expect(pageName()).toHaveText('Jane X Example')
+  await expect(formField('Full name')).toHaveValue('Jane X Example')
+  await expect(window.getByRole('dialog')).toHaveCount(0)
+  await expect(fragment('Full name')).toHaveCount(0)
 
-  // Seria znaków w karcie to jeden krok cofania – jak w formularzu.
+  // Seria znaków to jeden krok cofania; po cofnięciu kursor stoi na końcu zmienionego miejsca, pole ma dalej fokus.
   await window.keyboard.press('Meta+z')
   await expect(pageName()).toHaveText('Jane Example')
-  await expect(field).toHaveValue('Jane Example')
+  await expect(name).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'header:fullName', offset: 5, collapsed: true })
   await window.keyboard.press('Meta+Shift+z')
-  await expect(pageName()).toHaveText('Jane Example Jr')
-  await expect(nameCard).toBeVisible()
+  await expect(pageName()).toHaveText('Jane X Example')
+  await expect.poll(caret).toEqual({ key: 'header:fullName', offset: 7, collapsed: true })
+
+  // Ten sam klucz łączenia kroków co pole formularza: pisanie na stronie i zaraz potem w formularzu to jeden krok.
+  await window.keyboard.press('Meta+ArrowRight')
+  await window.keyboard.type(' A')
+  await formField('Full name').focus()
+  await window.keyboard.press('Meta+ArrowRight')
+  await window.keyboard.type('B')
+  await expect(pageName()).toHaveText('Jane X Example AB')
+  await window.keyboard.press('Meta+z')
+  await expect(pageName()).toHaveText('Jane X Example')
+  // Zmiana z formularza trafia do pola na stronie, które nie ma fokusu.
+  await formField('Full name').fill('Jane Example Jr')
+  await expect(name).toHaveText('Jane Example Jr')
 
   const pdfPath = join(outputDir, 'cv.pdf')
   await stubSaveDialog(pdfPath)
@@ -310,117 +365,259 @@ test('clicking the name on the page opens its Edit card with the focus in the fi
   expect(await pdfText(pdfPath)).toContain('Jane Example Jr')
 })
 
-test('Escape closes the card and returns the focus to its fragment; clicking another fragment switches the card; clicking the page background closes it', async () => {
+test('the summary and the section titles are edited on the page in every place a Template draws them, also the title beside a list; Enter goes from a one-line field to the next one', async () => {
+  await openFirstCv()
+  const summary = pageField('Summary')
+  await clickAtCharacter(summary, 0)
+  await window.keyboard.type('Hello. ')
+  await expect(formField('Summary')).toHaveValue(/^Hello\. Procurement specialist/)
+
+  // Classic nie pokazuje nowych linii w podsumowaniu (w PDF byłyby spacją), więc Enter go nie łamie – przechodzi dalej.
+  await clickAtCharacter(pageField('Full name'), 0)
+  await window.keyboard.press('Enter')
+  await expect(summary).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'header:summary', offset: 0, collapsed: true })
+  await window.keyboard.press('Enter')
+  await expect(titleField('Work experience')).toBeFocused()
+  await expect(formField('Summary')).toHaveValue(/^Hello\. Procurement specialist/)
+
+  // Tytuł obok listy (Classic) i tytuł nad listą (Modern) – to samo pole sekcji.
+  await clickAtCharacter(titleField('Skills'), 5)
+  await window.keyboard.press('Meta+ArrowRight')
+  await window.keyboard.type(' & tools')
+  await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: /^Skills & tools$/ })).toHaveCount(1)
+  await expect(window.locator('.editor-form').getByLabel('Section title “Skills & tools”')).toHaveValue('Skills & tools')
+  const picker = window.getByRole('radiogroup', { name: 'Template' })
+  await picker.locator('label', { has: window.getByRole('radio', { name: 'Modern' }) }).click()
+  await expect(window.locator('.preview .cv.cv-template-modern')).toHaveCount(1)
+  await clickAtCharacter(titleField('Skills & tools'), 0)
+  await window.keyboard.type('My ')
+  await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: /^My Skills & tools$/ })).toHaveCount(1)
+
+  // Modern pokazuje nowe linie w podsumowaniu: Enter wstawia nową linię.
+  await clickAtCharacter(pageField('Summary'), 6)
+  await window.keyboard.press('Enter')
+  await expect(formField('Summary')).toHaveValue(/^Hello\.\n Procurement specialist/)
+})
+
+test('a cleared section title keeps its field with a placeholder while it has the focus and leaves the page after it; the pages then split as in Preview mode', async () => {
+  await openFirstCv()
+  const title = titleField('Education')
+  await clickAtCharacter(title, 3)
+  await window.keyboard.press('Meta+a')
+  await window.keyboard.press('Backspace')
+  // Pole zostaje (pusty tytuł w aktywnym fragmencie), z nazwą typu sekcji jako placeholderem, i dalej ma fokus.
+  const empty = pageField('Section title “Education”')
+  await expect(empty).toBeFocused()
+  await expect(empty).toHaveText('')
+  expect(await placeholderOf(empty)).toBe('"Education"')
+  await expect(window.locator('.editor-form .form-section-title-input[placeholder="Education"]')).toHaveValue('')
+  await window.keyboard.type('Studies')
+  await expect(titleField('Studies')).toBeFocused()
+  await expect(window.locator('.editor-form').getByLabel('Section title “Studies”')).toHaveValue('Studies')
+
+  // Pusty tytuł bez fokusu znika ze strony (zostaje w danych), a strony dzielą się jak w Preview mode.
+  await window.keyboard.press('Meta+a')
+  await window.keyboard.press('Backspace')
+  await expect(window.locator('.preview .cv-page .cv-section-title')).toHaveCount(4)
+  await formField('Full name').focus()
+  await expect(window.locator('.preview .cv-page .cv-section-title')).toHaveCount(3)
+  const edit = await pageSplit()
+  await window.keyboard.press('Meta+Shift+P')
+  await expectPreviewMode()
+  await expect.poll(pageSplit).toEqual(edit)
+})
+
+test('page fields keep the white space and wrapping of the document: a Classic summary with line breaks and double spaces has the same lines in Edit mode as in Preview mode', async () => {
   await openFirstCv()
   const preview = window.locator('.preview')
-  await clickOnPage(preview.locator('.cv-page .cv-summary'))
-  await expect(card('Summary')).toBeVisible()
-  await expect(card('Summary').getByLabel('Summary')).toBeFocused()
+  await preview.getByRole('button', { name: '100%' }).click()
+  await formField('Summary').fill('First line.\nSecond  line with  double spaces and a sentence long enough to wrap onto the next line of the page.')
+  const summary = preview.locator('.cv-page .cv-summary')
+  await expect(pageField('Summary')).toHaveCount(1)
+  const inEditMode = (await summary.boundingBox())!
+  await window.keyboard.press('Meta+Shift+P')
+  await expectPreviewMode()
+  const inPreviewMode = (await summary.boundingBox())!
+  expect(inEditMode.height).toBeCloseTo(inPreviewMode.height, 1)
+  expect(inEditMode.width).toBeCloseTo(inPreviewMode.width, 1)
+})
 
-  // Jedna karta naraz: klik innego fragmentu przełącza kartę (imię jest nad podsumowaniem, więc karta go nie zasłania).
-  await clickOnPage(pageName())
-  await expect(card('Full name')).toBeVisible()
-  await expect(card('Summary')).toHaveCount(0)
-  await expect(card('Full name').getByLabel('Full name')).toBeFocused()
+test('the caret in a section title survives the title moving to another page, and the field follows the zoom', async () => {
+  await openFirstCv()
+  await window.setViewportSize({ width: 1600, height: 1500 })
+  const preview = window.locator('.preview')
+  await preview.getByRole('button', { name: '100%' }).click()
+  await preview.getByRole('button', { name: 'Zoom out' }).click()
+  await preview.getByRole('button', { name: 'Zoom out' }).click()
+  await expect(preview.locator('.preview-zoom-value')).toHaveText('50%')
+
+  // Długie podsumowanie przenosi pierwszą sekcję na drugą stronę.
+  await formField('Summary').fill('Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(70))
+  const title = titleField('Work experience')
+  await expect.poll(() => pageIndexOf(title)).toBe(1)
+  await clickAtCharacter(title, 4)
+  await expect.poll(caret).toEqual({ key: 'section:experience:title', offset: 4, collapsed: true })
+
+  // Cofnięcie (z kursorem w tytule) zmienia podział stron: tytuł jest nowym węzłem na pierwszej stronie, a kursor
+  // zostaje w tym samym miejscu tytułu.
+  await window.keyboard.press('Meta+z')
+  await expect(formField('Summary')).not.toHaveValue(/Lorem/)
+  await expect.poll(() => pageIndexOf(title)).toBe(0)
+  await expect(title).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'section:experience:title', offset: 4, collapsed: true })
+  await window.keyboard.press('Meta+Shift+z')
+  await expect.poll(() => pageIndexOf(title)).toBe(1)
+  await expect(title).toBeFocused()
+  await window.keyboard.type('X')
+  await expect(titleField('WorkX experience')).toBeFocused()
+
+  // Zmiana skali: pole rośnie razem ze stroną i dalej ma fokus.
+  const small = (await titleField('WorkX experience').boundingBox())!
+  await preview.getByRole('button', { name: 'Zoom in' }).click()
+  await expect(preview.locator('.preview-zoom-value')).toHaveText('75%')
+  await expect.poll(async () => (await titleField('WorkX experience').boundingBox())!.width).toBeGreaterThan(small.width * 1.4)
+  await expect(titleField('WorkX experience')).toBeFocused()
+})
+
+test('a page field takes only plain text: pasting rich text pastes its text, one line in a one-line field; formatting never applies and undo is the editor’s', async () => {
+  await openFirstCv()
+  await app.evaluate(({ clipboard, ClipboardItem }) =>
+    clipboard.write([new ClipboardItem({ 'text/plain': 'Anna\r\nMaria\tNowak', 'text/html': '<b>Anna</b><br>Maria Nowak' })])
+  )
+  const name = pageField('Full name')
+  await clickAtCharacter(name, 0)
+  await window.keyboard.press('Meta+a')
+  await window.keyboard.press('Meta+v')
+  await expect(name).toHaveText('Anna Maria Nowak')
+  await expect(name.locator('*')).toHaveCount(0)
+  await expect(formField('Full name')).toHaveValue('Anna Maria Nowak')
+  await expect.poll(caret).toEqual({ key: 'header:fullName', offset: 16, collapsed: true })
+
+  // ⌘B nie formatuje; Edit → Undo z menu cofa w historii edytora (jeden krok wklejenia).
+  await window.keyboard.press('Meta+a')
+  await window.keyboard.press('Meta+b')
+  await expect(name.locator('*')).toHaveCount(0)
+  await clickMenuItem('Edit', 'Undo')
+  await expect(name).toHaveText('Jane Example')
+  await expect(formField('Full name')).toHaveValue('Jane Example')
+})
+
+test('composing text with an input method changes the document only when the composition ends', async () => {
+  await openFirstCv()
+  const name = pageField('Full name')
+  await clickAtCharacter(name, 4)
+  const cdp = await window.context().newCDPSession(window)
+  await cdp.send('Input.imeSetComposition', { text: 'é', selectionStart: 1, selectionEnd: 1 })
+  await expect(name).toHaveText('Janeé Example')
+  await cdp.send('Input.imeSetComposition', { text: 'éè', selectionStart: 2, selectionEnd: 2 })
+  await expect(name).toHaveText('Janeéè Example')
+  await expect(formField('Full name')).toHaveValue('Jane Example')
+  await cdp.send('Input.insertText', { text: 'éè' })
+  await expect(formField('Full name')).toHaveValue('Janeéè Example')
+  await expect(name).toHaveText('Janeéè Example')
+  await expect.poll(caret).toEqual({ key: 'header:fullName', offset: 6, collapsed: true })
+})
+
+test('cards still open for the parts without page fields: one card at a time, Escape returns the focus to its fragment, a click on a page field or the page background closes it', async () => {
+  await openFirstCv()
+  const preview = window.locator('.preview')
+  const firstContact = preview.locator('.cv-page .cv-contact > *').first()
+  await clickOnPage(preview.locator('.cv-page .cv-role', { hasText: positions[0] }))
+  await expect(card(`Position “${positions[0]}”`)).toBeVisible()
+
+  // Jedna karta naraz: klik innego fragmentu (kontakt jest nad stanowiskiem, więc karta go nie zasłania) przełącza kartę.
+  await clickOnPage(firstContact)
+  await expect(card('Contact')).toBeVisible()
+  await expect(card(`Position “${positions[0]}”`)).toHaveCount(0)
   await window.keyboard.press('Escape')
   await expect(window.getByRole('dialog')).toHaveCount(0)
-  await expect(fragment('Full name')).toBeFocused()
+  await expect(fragment('Contact')).toBeFocused()
 
-  await clickOnPage(preview.locator('.cv-page .cv-section-title', { hasText: 'Education' }))
-  const titleCard = card('Section title “Education”')
-  await expect(titleCard).toBeVisible()
-  await expect(titleCard.getByLabel('Section title')).toBeFocused()
-  await titleCard.getByLabel('Section title').fill('Studies')
-  await expect(preview.locator('.cv-page .cv-section-title', { hasText: 'Studies' })).toBeVisible()
-  await expect(card('Section title “Studies”')).toBeVisible()
-
-  await window.keyboard.press('Escape')
+  // Klik w Page field zamyka kartę i stawia kursor w polu.
+  await clickOnPage(firstContact)
+  await expect(card('Contact')).toBeVisible()
+  await clickAtCharacter(pageField('Full name'), 2)
   await expect(window.getByRole('dialog')).toHaveCount(0)
-  await expect(fragment('Section title “Studies”')).toBeFocused()
+  await expect(pageField('Full name')).toBeFocused()
 
   // Klik w tło strony (margines kartki) albo obok strony zamyka kartę.
   const firstPage = preview.locator('.cv-page').first()
-  await clickOnPage(pageName())
-  await expect(card('Full name')).toBeVisible()
+  await clickOnPage(firstContact)
+  await expect(card('Contact')).toBeVisible()
   let page = (await firstPage.boundingBox())!
   await window.mouse.click(page.x + 4, page.y + 4)
   await expect(window.getByRole('dialog')).toHaveCount(0)
-  await clickOnPage(pageName())
-  await expect(card('Full name')).toBeVisible()
+  await clickOnPage(firstContact)
+  await expect(card('Contact')).toBeVisible()
   page = (await firstPage.boundingBox())!
   await window.mouse.click(page.x - 8, page.y + 40)
   await expect(window.getByRole('dialog')).toHaveCount(0)
 
   // Pasek podglądu nie zamyka karty (powiększenie przy otwartej karcie).
-  await clickOnPage(pageName())
+  await clickOnPage(firstContact)
   await preview.getByRole('button', { name: 'Zoom out' }).click()
-  await expect(card('Full name')).toBeVisible()
+  await expect(card('Contact')).toBeVisible()
 })
 
-test('the editing layer works from the keyboard alone: Tab goes through the fragments in document order, Enter opens a card, Tab leaves it to the next fragment', async () => {
+test('the pages work from the keyboard alone: Tab goes through the page fields and then the editing layer in document order, Enter opens a card, Tab leaves it', async () => {
   await openFirstCv()
-  // Classic: tytuł listy obok niej, więc przed jej elementami. Wpis rozdzielony podziałem stron ma fragment na każdej
-  // stronie (ta sama nazwa dwa razy z rzędu).
-  const names = [
-    'Photo',
+  // Page fields w kolejności czytania stron (Classic: tytuł listy obok niej).
+  const fields = window.locator('.preview .cv-pages [data-field-key]')
+  await expect(fields).toHaveCount(6)
+  expect(await fields.evaluateAll((elements) => elements.map((element) => element.getAttribute('aria-label')))).toEqual([
     'Full name',
-    'Contact',
     'Summary',
     'Section title “Work experience”',
-    ...positions.map((role) => `Position “${role}”`),
     'Section title “Education”',
-    ...educations.map((name) => `Education “${name}”`),
     'Section title “Skills”',
+    'Section title “Languages”'
+  ])
+  await fields.first().focus()
+  for (let index = 1; index < 6; index++) {
+    await window.keyboard.press('Tab')
+    await expect(fields.nth(index)).toBeFocused()
+  }
+
+  // Warstwa edycji: części z Edit card, uchwyty (tytuł sekcji ma uchwyt bez przycisku karty), pigułki „+” i pasek.
+  const names = [
+    'Photo',
+    'Contact',
+    ...positions.map((role) => `Position “${role}”`),
+    ...educations.map((name) => `Education “${name}”`),
     'List “Skills”',
-    'Section title “Languages”',
     'List “Languages”'
   ]
   await expect.poll(() => fragmentNames()).toEqual(expect.arrayContaining(names))
   expect(dedupe(await fragmentNames())).toEqual(names)
-  // Tytuły sekcji i wpisy mają uchwyt menu tuż przed sobą (w marginesie kartki, jak uchwyt wiersza w CV form), sekcje –
-  // pigułkę „+” za swoim ostatnim fragmentem, a na końcu jest pasek „Add to CV”.
   const stops = window.locator(
     '.edit-layer .edit-fragment, .edit-layer .edit-handle .row-handle, .edit-layer .edit-pill, .edit-layer .add-to-cv button'
   )
   const stopNames = await stops.evaluateAll((elements) => elements.map((element) => element.textContent || element.getAttribute('aria-label')))
-  expect(stopNames).toEqual(expect.arrayContaining(['Actions for section “Work experience”', 'Edit: Section title “Work experience”']))
-  expect(stopNames.slice(-4)).toEqual(['Edit: Section title “Languages”', 'Edit: List “Languages”', '+ Item', 'Consent clause'])
+  expect(stopNames.slice(2, 4)).toEqual(['Actions for section “Work experience”', 'Actions for position “Senior Procurement Specialist”'])
+  expect(stopNames.slice(-3)).toEqual(['Edit: List “Languages”', '+ Item', 'Consent clause'])
   const educationHandle = stopNames.indexOf('Actions for section “Education”')
   expect(stopNames.slice(educationHandle - 2, educationHandle)).toEqual([`Edit: Position “${positions[3]}”`, '+ Position'])
   const count = await stops.count()
-  await stops.first().focus()
+  await window.keyboard.press('Tab')
+  await expect(stops.first()).toBeFocused()
   for (let index = 1; index < count; index++) {
     await window.keyboard.press('Tab')
     await expect(stops.nth(index)).toBeFocused()
   }
 
-  await fragment('Summary').focus()
+  await fragment('Contact').focus()
   await window.keyboard.press('Enter')
-  const summaryCard = card('Summary')
-  const summary = summaryCard.getByLabel('Summary')
-  await expect(summary).toBeFocused()
-  // Karta nie więzi fokusu: Tab z ostatniego pola – kolejny element warstwy (tu uchwyt tytułu sekcji), Shift+Tab z niego
-  // – fragment karty, a Tab z niego wraca do karty (karta jest „za” swoim fragmentem).
-  await window.keyboard.press('Tab')
-  await expect(window.locator('.edit-layer').getByRole('button', { name: 'Actions for section “Work experience”' })).toBeFocused()
-  await expect(summaryCard).toBeVisible()
-  await window.keyboard.press('Shift+Tab')
-  await expect(fragment('Summary')).toBeFocused()
-  await window.keyboard.press('Tab')
-  await expect(summaryCard.getByRole('button', { name: 'Close' })).toBeFocused()
-  await window.keyboard.press('Tab')
-  await expect(summary).toBeFocused()
-  await window.keyboard.press('Shift+Tab')
-  await window.keyboard.press('Shift+Tab')
-  await expect(fragment('Summary')).toBeFocused()
+  const contactCard = card('Contact')
+  await expect(contactCard.getByRole('combobox', { name: 'Contact label 1' })).toBeFocused()
 
-  // Spacja też otwiera; „×” zamyka.
-  await fragment('Section title “Skills”').focus()
+  // Spacja też otwiera; „×” zamyka i fokus wraca na fragment.
+  await fragment('List “Skills”').focus()
   await window.keyboard.press('Space')
-  await expect(card('Section title “Skills”').getByLabel('Section title')).toBeFocused()
-  await card('Section title “Skills”').getByRole('button', { name: 'Close' }).click()
+  await expect(card('List “Skills”').getByRole('textbox', { name: 'Item 1' })).toBeFocused()
+  await card('List “Skills”').getByRole('button', { name: 'Close' }).click()
   await expect(window.getByRole('dialog')).toHaveCount(0)
-  await expect(fragment('Section title “Skills”')).toBeFocused()
+  await expect(fragment('List “Skills”')).toBeFocused()
 })
 
 test('the Edit card follows its fragment when the page split and the zoom change, always at 100%', async () => {
@@ -432,59 +629,62 @@ test('the Edit card follows its fragment when the page split and the zoom change
   await preview.getByRole('button', { name: 'Zoom out' }).click()
   await expect(preview.locator('.preview-zoom-value')).toHaveText('50%')
 
-  // Długie podsumowanie przenosi pierwszą sekcję na drugą stronę; karta jej tytułu otwarta przy nim.
-  await window.locator('.editor-form').getByLabel('Summary').fill('Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(70))
-  const title = fragment('Section title “Work experience”')
-  await expect(title).toHaveAttribute('data-page', '1')
-  await clickOnPage(preview.locator('.cv-page .cv-section-title', { hasText: 'Work experience' }))
-  const titleCard = card('Section title “Work experience”')
-  await expect(titleCard).toBeVisible()
-  await expectCardNextTo(titleCard, title)
+  // Długie podsumowanie przenosi pierwsze stanowisko na drugą stronę; karta otwarta przy nim.
+  await formField('Summary').fill('Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(70))
+  const position = fragment(`Position “${positions[0]}”`).first()
+  await expect(position).toHaveAttribute('data-page', '1')
+  await clickOnPage(preview.locator('.cv-page .cv-role', { hasText: positions[0] }))
+  const positionCard = card(`Position “${positions[0]}”`)
+  await expect(positionCard).toBeVisible()
+  await expectCardNextTo(positionCard, position)
   // Położenie na stronach, nie w oknie: przewijanie panelu (scroll anchoring) może trzymać fragment w miejscu okna.
-  const offset = () => title.evaluate((button) => (button as unknown as { offsetTop: number }).offsetTop)
+  const offset = () => position.evaluate((button) => (button as unknown as { offsetTop: number }).offsetTop)
   const before = await offset()
 
   // Cofnięcie (z fokusem w karcie) zmienia podział stron – karta jedzie za fragmentem.
   await window.keyboard.press('Meta+z')
-  await expect(window.locator('.editor-form').getByLabel('Summary')).not.toHaveValue(/Lorem/)
-  await expect(title).toHaveAttribute('data-page', '0')
+  await expect(formField('Summary')).not.toHaveValue(/Lorem/)
+  await expect(position).toHaveAttribute('data-page', '0')
   await expect.poll(offset).not.toBeCloseTo(before, 0)
-  await expect(titleCard).toBeVisible()
-  await expectCardNextTo(titleCard, title)
+  await expect(positionCard).toBeVisible()
+  await expectCardNextTo(positionCard, position)
 
   // Zmiana skali: fragment rośnie, karta zostaje w skali 1:1 i dalej stoi przy nim.
-  const small = (await title.boundingBox())!
+  const small = (await position.boundingBox())!
   await preview.getByRole('button', { name: 'Zoom in' }).click()
   await expect(preview.locator('.preview-zoom-value')).toHaveText('75%')
-  await expect.poll(async () => (await title.boundingBox())!.width).toBeGreaterThan(small.width * 1.4)
-  await expect(titleCard).toBeVisible()
-  await expectCardNextTo(titleCard, title)
+  await expect.poll(async () => (await position.boundingBox())!.width).toBeGreaterThan(small.width * 1.4)
+  await expect(positionCard).toBeVisible()
+  await expectCardNextTo(positionCard, position)
 })
 
-test('Preview mode has no editing layer: switching closes the open card and focuses the toggle; Edit mode does not reopen it', async () => {
+test('Preview mode has no editing layer and no page fields: switching closes the open card and focuses the toggle; Edit mode does not reopen it', async () => {
   await openFirstCv()
   await expect(window.locator('.edit-layer')).toHaveCount(1)
-  await clickOnPage(pageName())
-  await expect(card('Full name')).toBeVisible()
+  await clickOnPage(window.locator('.preview .cv-page .cv-photo'))
+  await expect(card('Photo')).toBeVisible()
 
   await window.keyboard.press('Meta+Shift+P')
   await expectPreviewMode()
   await expect(previewButton()).toBeFocused()
   await expect(window.locator('.edit-layer, .edit-fragment, .edit-card')).toHaveCount(0)
+  await expect(window.locator('.preview .cv-editing, .preview [contenteditable]')).toHaveCount(0)
   await expect(window.getByRole('dialog')).toHaveCount(0)
 
   await editButton().click()
   await expectEditMode()
   await expect(window.locator('.edit-layer')).toHaveCount(1)
-  await expect(fragment('Full name')).toBeVisible()
+  await expect(fragment('Photo')).toBeVisible()
+  await expect(pageField('Full name')).toBeVisible()
   await expect(window.getByRole('dialog')).toHaveCount(0)
 })
 
-// Kontrakt znaczników edycji (ADR-0009): w każdym szablonie każdy fragment Sample CV (z włączoną klauzulą zgody), który
-// ma już Edit card, ma swój przycisk w warstwie edycji, a przycisk leży na swoim fragmencie strony. Tytuły list
-// w Classic stoją obok listy (wewnątrz wiersza listy), w Modern i Bold nad nią.
+// Kontrakt znaczników edycji (ADR-0009) i Page fields (ADR-0010): w każdym szablonie każdy fragment Sample CV
+// (z włączoną klauzulą zgody), który ma jeszcze Edit card, ma swój przycisk w warstwie edycji, a przycisk leży na swoim
+// fragmencie strony; imię i nazwisko, podsumowanie i tytuły sekcji są Page fields w swoich elementach strony. Tytuły
+// list w Classic stoją obok listy (wewnątrz wiersza listy), w Modern i Bold nad nią.
 for (const template of ['Classic', 'Modern', 'Bold'] as const) {
-  test(`markup contract: every fragment of the Sample CV in the ${template} template has its element in the editing layer`, async () => {
+  test(`markup contract: every fragment of the Sample CV in the ${template} template has its element in the editing layer or a page field`, async () => {
     await openFirstCv()
     const preview = window.locator('.preview')
     const picker = window.getByRole('radiogroup', { name: 'Template' })
@@ -497,12 +697,22 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
     const titles = ['Work experience', 'Education', 'Skills', 'Languages']
     const contacts = preview.locator('.cv-page .cv-contact > *')
     await expect(contacts).toHaveCount(4)
+
+    // Page fields: każde pole leży w swoim elemencie szablonu, z jego tekstem.
+    const fields: [string, Locator, string | RegExp][] = [
+      ['Full name', page('.cv-name'), 'Jane Example'],
+      ['Summary', page('.cv-summary'), /^Procurement specialist/],
+      ...titles.map((title): [string, Locator, string] => [`Section title “${title}”`, page('.cv-section-title', title), title])
+    ]
+    for (const [name, element, text] of fields) {
+      const field = element.getByRole('textbox', { name, exact: true })
+      await expect(field, name).toHaveCount(1)
+      await expect(field, name).toHaveText(text)
+    }
+
     const expected: [string, Locator][] = [
       ['Photo', page('.cv-photo')],
-      ['Full name', page('.cv-name')],
       ...[0, 1, 2, 3].map((index): [string, Locator] => ['Contact', contacts.nth(index)]),
-      ['Summary', page('.cv-summary')],
-      ...titles.map((title): [string, Locator] => [`Section title “${title}”`, page('.cv-section-title', title)]),
       ...positions.map((role): [string, Locator] => [`Position “${role}”`, page('.cv-role', role)]),
       // Classic nie ma .cv-education-level (poziom i kierunek w jednym tekście) – wpis po jego bloku.
       ...educations.map((name, index): [string, Locator] => [`Education “${name}”`, page(`[data-block-id="ed${index + 1}"] > :first-child`)]),
@@ -920,10 +1130,10 @@ test('CV design in the toolbar opens a panel with the colour, font, Template and
   await expect(designButton()).toHaveAttribute('aria-expanded', 'false')
 
   // Otwarcie panelu zamyka otwartą Edit card; fokus na pierwszym polu panelu.
-  await clickOnPage(pageName())
-  await expect(card('Full name')).toBeVisible()
+  await clickOnPage(window.locator('.preview .cv-page .cv-photo'))
+  await expect(card('Photo')).toBeVisible()
   await designButton().click()
-  await expect(card('Full name')).toHaveCount(0)
+  await expect(card('Photo')).toHaveCount(0)
   const panel = designPanel()
   await expect(panel).toBeVisible()
   await expect(designButton()).toHaveAttribute('aria-expanded', 'true')
@@ -1022,8 +1232,8 @@ test('changing the Template and the accent colour in the CV design panel changes
 const handle = (name: string) => window.locator('.edit-layer').getByRole('button', { name: `Actions for ${name}`, exact: true })
 const blockMenu = (name: string) => window.getByRole('menu', { name: `Actions for ${name}`, exact: true })
 const announcement = () => window.locator('.edit-layer [aria-live]')
-const sectionTitles = async () =>
-  dedupe(await fragmentNames()).flatMap((name) => name.match(/^Section title “(.*)”$/)?.slice(1) ?? [])
+// Tytuły sekcji na stronach (Page fields) w kolejności dokumentu.
+const sectionTitles = () => window.locator('.preview .cv-pages [data-fragment^="sectionTitle:"]').allTextContents()
 const positionNames = async () =>
   dedupe(await fragmentNames()).flatMap((name) => name.match(/^Position “(.*)”$/)?.slice(1) ?? [])
 // Uchwyt jest zawsze w DOM, a widać go (nieprzezroczysty) tylko przy najechaniu, fokusie i otwartym menu.
@@ -1035,10 +1245,16 @@ test('the handle of a section title shows on hover and moves the section from it
   const education = handle('section “Education”')
   await expect(education).toHaveCount(1)
   // Uchwyt jest w marginesie kartki, przed lewą krawędzią fragmentu, i pokazuje się dopiero przy najechaniu.
-  const titleBox = (await fragment('Section title “Education”').boundingBox())!
+  const titleBox = (await titleField('Education').boundingBox())!
   expect((await education.boundingBox())!.x + 24).toBeLessThanOrEqual(titleBox.x)
   await expect(handleBox('section “Education”')).toHaveCSS('opacity', '0')
-  await fragment('Section title “Education”').hover()
+  // Tytuł sekcji to Page field (bez przycisku karty) – uchwyt pokazuje się przy najechaniu na pole i przy jego fokusie.
+  await titleField('Education').hover()
+  await expect(handleBox('section “Education”')).toHaveCSS('opacity', '1')
+  await window.mouse.move(1, 1)
+  await expect(handleBox('section “Education”')).toHaveCSS('opacity', '0')
+  await clickAtCharacter(titleField('Education'), 0)
+  await window.mouse.move(1, 1)
   await expect(handleBox('section “Education”')).toHaveCSS('opacity', '1')
 
   await education.click()
@@ -1117,12 +1333,14 @@ test('“New page before” and “Hide section” in the menu on the page work 
   await openFirstCv()
   const form = window.locator('.editor-form')
   const skills = handle('section “Skills”')
-  const skillsTitle = fragment('Section title “Skills”')
-  const page = Number(await skillsTitle.getAttribute('data-page'))
+  const skillsTitle = titleField('Skills')
+  const page = await pageIndexOf(skillsTitle)
 
   await skills.click()
   await blockMenu('section “Skills”').getByRole('menuitemcheckbox', { name: 'New page before this section' }).click()
-  await expect(skillsTitle).toHaveAttribute('data-page', String(page + 1))
+  await expect.poll(() => pageIndexOf(skillsTitle)).toBe(page + 1)
+  // Uchwyt stoi już przy tytule na nowej stronie (warstwa mierzy strony klatkę po ich podziale).
+  await expect(handleBox('section “Skills”')).toHaveAttribute('data-page', String(page + 1))
   await expect(form.getByRole('region', { name: 'Skills' }).getByLabel('New page before this section')).toBeChecked()
   await expect(skills).toBeFocused()
   await window.keyboard.press('Enter')
@@ -1132,7 +1350,7 @@ test('“New page before” and “Hide section” in the menu on the page work 
   )
   await window.keyboard.press('Escape')
   await window.keyboard.press('Meta+z')
-  await expect(skillsTitle).toHaveAttribute('data-page', String(page))
+  await expect.poll(() => pageIndexOf(skillsTitle)).toBe(page)
   await expect(form.getByRole('region', { name: 'Skills' }).getByLabel('New page before this section')).not.toBeChecked()
 
   // Wpis: nowa strona przed stanowiskiem, jak pole w jego karcie.
@@ -1153,7 +1371,7 @@ test('“New page before” and “Hide section” in the menu on the page work 
   await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: 'Skills' })).toHaveCount(0)
   await expect(form.getByRole('region', { name: 'Skills' }).getByLabel('Hide section')).toBeChecked()
   await expect(handle('section “Languages”')).toHaveCount(1)
-  await expect(fragment('Section title “Languages”')).toBeFocused()
+  await expect(titleField('Languages')).toBeFocused()
   await window.keyboard.press('Meta+z')
   await expect(skillsTitle).toHaveCount(1)
 })
@@ -1187,10 +1405,8 @@ test('“Add …” in the menu of a section title adds an element and opens its
 
 test('the menu works from the keyboard alone, and there are no handles below 50% zoom', async () => {
   await openFirstCv()
-  await fragment('Section title “Education”').focus()
-  await window.keyboard.press('Shift+Tab')
   const education = handle('section “Education”')
-  await expect(education).toBeFocused()
+  await education.focus()
   await expect(handleBox('section “Education”')).toHaveCSS('opacity', '1')
   await window.keyboard.press('Space')
   const menu = blockMenu('section “Education”')
@@ -1218,8 +1434,9 @@ test('the menu works from the keyboard alone, and there are no handles below 50%
   await preview.getByRole('button', { name: 'Zoom out' }).click()
   await expect(window.locator('.edit-layer')).toHaveAttribute('data-compact', 'true')
   await expect(window.locator('.edit-layer .edit-handle')).toHaveCount(0)
-  // Edycja dalej działa przez klik we fragment.
-  await expect(fragment('Section title “Education”')).toHaveCount(1)
+  // Edycja dalej działa: tytuł jest Page field, a pozostałe części mają przyciski fragmentów.
+  await expect(titleField('Education')).toHaveCount(1)
+  await expect(fragment(`Education “${educations[0]}”`)).toHaveCount(1)
 })
 
 // ---------- Dodawanie na stronach: pigułki „+”, pasek „Add to CV”, puste CV ----------
@@ -1271,19 +1488,25 @@ test('a new CV shows the start hint on its empty first page and an “Add to CV�
   expect(Math.abs(hint.x + hint.width / 2 - (page.x + page.width / 2))).toBeLessThan(2)
   expect(Math.abs(hint.y + hint.height / 2 - (page.y + page.height / 2))).toBeLessThan(2)
 
-  // Podpowiedź otwiera kartę imienia przy sobie; po pierwszym znaku karta przeskakuje do imienia na stronie.
+  // Podpowiedź stawia kursor w pustym imieniu na stronie: pole z placeholderem w nagłówku pierwszej strony.
   await startHint().click()
-  const nameCard = card('Full name')
-  await expect(nameCard.getByLabel('Full name')).toBeFocused()
-  await expectCardNextTo(nameCard, startHint())
+  const name = pageField('Full name')
+  await expect(name).toBeFocused()
+  await expect(name).toHaveText('')
+  expect(await placeholderOf(name)).toBe('"Full name"')
   await window.keyboard.type('J')
   await expect(pageName()).toHaveText('J')
   await expect(startHint()).toHaveCount(0)
-  await expectCardNextTo(nameCard, fragment('Full name'))
   await window.keyboard.type('ane Doe')
   await expect(addBarButtons()).toHaveText(['Photo', 'Contact', 'Summary', 'Work experience', 'Education', 'Skills', 'Languages', 'Consent clause'])
-  await window.keyboard.press('Escape')
-  await expect(fragment('Full name')).toBeFocused()
+  await expect(name).toBeFocused()
+
+  // „Summary” w pasku odsłania puste podsumowanie z kursorem; bez wpisania niczego znika po wyjściu z pola.
+  await addBar().getByRole('button', { name: 'Summary' }).click()
+  await expect(pageField('Summary')).toBeFocused()
+  expect(await placeholderOf(pageField('Summary'))).toBe('"Summary"')
+  await clickAtCharacter(name, 0)
+  await expect(pageField('Summary')).toHaveCount(0)
 
   // Pusta sekcja z paska: element na końcu sekcji, karta przy przycisku paska, z fokusem na nowym elemencie.
   await addBar().getByRole('button', { name: 'Languages' }).click()
@@ -1316,7 +1539,7 @@ test('the “+” pill under a section adds an entry: its card opens at the pill
   await expect(position).toHaveCSS('opacity', '0')
   await fragment(`Position “${positions[1]}”`).first().hover()
   await expect(position).toHaveCSS('opacity', '1')
-  await fragment('Full name').hover()
+  await pageName().hover()
   await expect(position).toHaveCSS('opacity', '0')
 
   // Pigułka stoi pod ostatnim wpisem sekcji.
@@ -1386,7 +1609,7 @@ test('a full CV can be built from a new CV with the editing layer and cards alon
   await expect(window.locator('.preview .cv-page .cv-contact')).toContainText('+48 600 000 000')
 
   await bar('Summary').click()
-  await expect(card('Summary').getByLabel('Summary')).toBeFocused()
+  await expect(pageField('Summary')).toBeFocused()
   await window.keyboard.type('Buyer with ten years in procurement.')
 
   // Stanowisko z punktami.
@@ -1489,7 +1712,7 @@ const savedSidebar = async () =>
   (JSON.parse(await readFile(join(outputDir, 'user-data', 'settings.json'), 'utf8').catch(() => '{}')) as { editorSidebar?: string })
     .editorSidebar
 
-test('by default the sidebar is the Outline, about 240 px wide: the header, every section in CV order with its marks and entry count, and the consent clause; a click on a section scrolls to it and opens its title card', async () => {
+test('by default the sidebar is the Outline, about 240 px wide: the header, every section in CV order with its marks and entry count, and the consent clause; a click on a section scrolls to it and puts the caret at the end of its title', async () => {
   await window.setViewportSize({ width: 1600, height: 1000 })
   await openFirstCvWithOutline()
   const nav = outline()
@@ -1511,26 +1734,26 @@ test('by default the sidebar is the Outline, about 240 px wide: the header, ever
   await expect(nav.getByRole('button', { name: 'Consent clause' })).toBeVisible()
   await expect(nav.getByRole('switch', { name: 'Show on CV' })).not.toBeChecked()
 
-  // Klik w sekcję na drugiej stronie: strony przewijają się do jej tytułu, a karta tytułu stoi przy nim.
+  // Klik w sekcję na drugiej stronie: strony przewijają się do jej tytułu, a kursor staje na końcu tytułu (bez karty).
   const preview = window.locator('.preview')
   expect(await preview.evaluate((element) => element.scrollTop)).toBe(0)
   await outlineRow('Languages').locator('.outline-row-button').click()
-  const titleCard = card('Section title “Languages”')
-  await expect(titleCard.getByLabel('Section title')).toBeFocused()
+  const title = titleField('Languages')
+  await expect(title).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'section:languages:title', offset: 9, collapsed: true })
   expect(await preview.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
-  const title = fragment('Section title “Languages”')
   await expect(title).toBeInViewport()
-  await expectCardNextTo(titleCard, title)
-  await titleCard.getByLabel('Section title').fill('Language skills')
+  await expect(window.getByRole('dialog')).toHaveCount(0)
+  await window.keyboard.press('Meta+a')
+  await window.keyboard.type('Language skills')
   await expect(outlineRow('Language skills')).toHaveText(/^Language skills2$/)
   await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: 'Language skills' })).toHaveCount(1)
 
-  // „Header” – karta imienia i nazwiska przy imieniu na stronie.
+  // „Header” – kursor w imieniu i nazwisku na stronie.
   await nav.getByRole('button', { name: 'Header' }).click()
-  await expect(card('Full name').getByLabel('Full name')).toBeFocused()
-  await expect(titleCard).toHaveCount(0)
-  await expect(fragment('Full name')).toBeInViewport()
-  await expectCardNextTo(card('Full name'), fragment('Full name'))
+  await expect(pageField('Full name')).toBeFocused()
+  await expect(pageField('Full name')).toBeInViewport()
+  await expect(window.getByRole('dialog')).toHaveCount(0)
 })
 
 test('a section hidden from the Outline leaves the pages but stays in the Outline: its card opens at its Outline row, “Hide section” again shows it, and each change is one undo step', async () => {

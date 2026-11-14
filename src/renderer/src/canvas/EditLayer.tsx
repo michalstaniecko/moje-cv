@@ -179,16 +179,17 @@ export function EditLayer({
     return () => window.document.removeEventListener('pointerdown', onPointerDown)
   }, [open, closeCard, fragmentButtons])
 
+  useHandlesOfPageFields(panel, layer)
+
   return (
     <div ref={layer} className="edit-layer" data-compact={compact || undefined} {...addOnPage.layerEvents}>
       {addOnPage.hint}
-      {fragments
-        .filter((fragment) => hasCard(fragment.target))
-        .map((fragment) => {
-          const handle = compact ? undefined : blockMenu.handles.find((candidate) => candidate.fragment === fragment)
-          return (
-            <Group key={`${fragment.key}@${fragment.page}`}>
-              {handle && <BlockHandle fragment={fragment} menu={handle.menu} />}
+      {fragments.map((fragment) => {
+        const handle = compact ? undefined : blockMenu.handles.find((candidate) => candidate.fragment === fragment)
+        return (
+          <Group key={`${fragment.key}@${fragment.page}`}>
+            {handle && <BlockHandle fragment={fragment} menu={handle.menu} />}
+            {hasCard(fragment.target) && (
               <FragmentButton
                 fragment={fragment}
                 label={t.canvas.edit(cardLabel(fragment.target, document, t))}
@@ -196,10 +197,11 @@ export function EditLayer({
                 onOpen={onOpen}
                 onKeyDown={onFragmentKeyDown}
               />
-              {addOnPage.pillAfter(fragment)}
-            </Group>
-          )
-        })}
+            )}
+            {addOnPage.pillAfter(fragment)}
+          </Group>
+        )
+      })}
       {addOnPage.bar}
       {blockMenu.liveRegion}
       {open && (
@@ -279,6 +281,35 @@ const FragmentButton = memo(
     previous.fragment.rect.right === next.fragment.rect.right &&
     previous.fragment.rect.bottom === next.fragment.rect.bottom
 )
+
+// Uchwyt menu fragmentu edytowanego na stronie (Page fields – bez przycisku fragmentu, nad którym CSS pokazuje uchwyt)
+// pokazuje się, gdy kursor myszy jest nad polem fragmentu (`data-hovered`) albo pole ma fokus (`data-focused`).
+function useHandlesOfPageFields(panel: RefObject<HTMLElement | null>, layer: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const element = panel.current
+    if (!element) return
+    const fragmentOf = (target: EventTarget | null) =>
+      target instanceof Element ? target.closest<HTMLElement>('.cv-pages [data-fragment]')?.dataset['fragment'] : undefined
+    const mark = (target: EventTarget | null, attribute: string, on: boolean) => {
+      const key = fragmentOf(target)
+      if (key === undefined) return
+      layer.current?.querySelectorAll(`.edit-handle[data-fragment="${CSS.escape(key)}"]`).forEach((handle) => {
+        if (on) handle.setAttribute(attribute, '')
+        else handle.removeAttribute(attribute)
+      })
+    }
+    const listeners: [string, (event: Event) => void][] = [
+      ['pointerover', (event) => mark(event.target, 'data-hovered', true)],
+      ['pointerout', (event) => mark(event.target, 'data-hovered', false)],
+      ['focusin', (event) => mark(event.target, 'data-focused', true)],
+      ['focusout', (event) => mark(event.target, 'data-focused', false)]
+    ]
+    for (const [type, listener] of listeners) element.addEventListener(type, listener)
+    return () => {
+      for (const [type, listener] of listeners) element.removeEventListener(type, listener)
+    }
+  }, [panel, layer])
+}
 
 // Przyciski warstwy w kolejności Tab (poza uchwytami menu): fragmenty, pigułki „+”, pasek „Add to CV” i podpowiedź
 // w pustym CV.

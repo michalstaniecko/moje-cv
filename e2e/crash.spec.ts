@@ -143,7 +143,7 @@ test('a change made in the editor right before a rendering error is kept after R
   await cvList().getByRole('button', { name: 'Open' }).click()
   // Pole w CV form (domyślny pasek boczny to Outline); wybór zostaje po Wczytaj ponownie.
   await window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click()
-  const fullName = window.getByLabel('Full name')
+  const fullName = window.locator('.editor-form').getByLabel('Full name')
   await expect(fullName).toBeVisible()
 
   // Zmiana w polu, a zaraz potem – przed autozapisem (~500 ms) – błąd przy przerysowaniu po zmianie języka:

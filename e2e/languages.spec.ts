@@ -205,7 +205,7 @@ for (const language of interfaceLanguageCodes) {
     ).toEqual([])
     // Pasek edytora ze statusem „Zmiany zapisane” (najdłuższy stan): przyciski i status się nie zawijają; przy minimalnym
     // oknie ucina się najwyżej nazwa CV, ale zostaje jej czytelny początek.
-    const fullName = window.getByLabel(t.editor.fullName)
+    const fullName = window.locator('.editor-form').getByLabel(t.editor.fullName)
     await fullName.fill(`${sample.header.fullName} `)
     await fullName.fill(sample.header.fullName)
     await expect(window.locator('.toolbar-status')).toHaveText(t.editor.saveStatus.saved)
