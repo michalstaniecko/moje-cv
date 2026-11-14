@@ -183,7 +183,9 @@ export const de: Dictionary = {
       form: 'Formular',
       collapse: 'Einklappen',
       expand: 'Ausklappen',
-      showOnCv: 'Im Lebenslauf zeigen'
+      showOnCv: 'Im Lebenslauf zeigen',
+      items: { one: (count) => `${count} Eintrag`, other: (count) => `${count} Einträge` },
+      sidebar: 'Seitenleiste'
     },
     canvas: {
       edit: (what) => `Bearbeiten: ${what}`,

@@ -3,6 +3,7 @@ import type { PluralForms } from './plural'
 
 // Odmiana „page” – zmienna z typem, a nie rzutowanie, żeby brak formy `other` był błędem kompilacji.
 const pages: PluralForms = { one: (count) => `${count} page`, other: (count) => `${count} pages` }
+const outlineItems: PluralForms = { one: (count) => `${count} item`, other: (count) => `${count} items` }
 
 // Słownik angielski – źródło prawdy: każdy inny język musi spełniać jego typ (ADR-0001).
 export const en = {
@@ -199,7 +200,11 @@ export const en = {
       form: 'Form',
       collapse: 'Collapse',
       expand: 'Expand',
-      showOnCv: 'Show on CV'
+      showOnCv: 'Show on CV',
+      // Liczba wpisów sekcji w Outline – dla czytnika ekranu (na ekranie sama liczba).
+      items: outlineItems,
+      // Nazwa zwiniętego paska bocznego (szyny) dla czytnika ekranu.
+      sidebar: 'Sidebar'
     },
     // Edycja na stronach CV w Edit mode: przycisk fragmentu strony („Edit: <co>”) i Edit card.
     canvas: {

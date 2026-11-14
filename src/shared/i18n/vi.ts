@@ -176,7 +176,9 @@ export const vi: Dictionary = {
       form: 'Biểu mẫu',
       collapse: 'Thu gọn',
       expand: 'Mở rộng',
-      showOnCv: 'Hiện trên CV'
+      showOnCv: 'Hiện trên CV',
+      items: { other: (count) => `${count} mục` },
+      sidebar: 'Thanh bên'
     },
     canvas: {
       edit: (what) => `Sửa: ${what}`,

@@ -176,7 +176,9 @@ export const id: Dictionary = {
       form: 'Formulir',
       collapse: 'Ciutkan',
       expand: 'Bentangkan',
-      showOnCv: 'Tampilkan di CV'
+      showOnCv: 'Tampilkan di CV',
+      items: { other: (count) => `${count} item` },
+      sidebar: 'Bilah samping'
     },
     canvas: {
       edit: (what) => `Edit: ${what}`,

@@ -1,11 +1,12 @@
-import { useRef, type ReactNode } from 'react'
+import { useId, useRef, type ReactNode } from 'react'
+import { plural } from '../../../shared/i18n/plural'
 import type { CvDocument, Section } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
 import { moveSection, updateConsent, updateSection } from '../editor/documentEdits'
 import { sectionName } from '../editor/fields/SectionTitleField'
 import type { RowMenuAction } from '../editor/RowMenu'
 import { SortableList } from '../editor/SortableList'
-import { useDictionary } from '../i18n'
+import { useDictionary, useInterfaceLanguage } from '../i18n'
 import { addSectionElement, type AddedAnchor } from './AddControls'
 import { sectionShown } from './addOnPage'
 import { sectionFragmentKeys } from './blockMoves'
@@ -15,7 +16,8 @@ import type { EditSession } from './useEditSession'
 // Outline (GLOSSARY.md; docs/specs/inline-editing-redesign.md, Q13): wąski pasek boczny Edit mode z konspektem CV –
 // to, czego nie widać na kartkach, i szybki skok do części CV.
 // - „Nagłówek” otwiera kartę imienia i nazwiska.
-// - Sekcje w kolejności CV (także ukryte i puste) z liczbą wpisów i oznaczeniem „ukryta” / „pusta”. Uchwyt: przeciąganie
+// - Sekcje w kolejności CV (także ukryte i puste) z liczbą wpisów (czytnik ekranu słyszy ją jako opis „3 elementy”)
+//   i oznaczeniem „ukryta” / „pusta”. Uchwyt: przeciąganie
 //   myszą i menu („Przenieś wyżej/niżej”, „Nowa strona przed”, „Ukryj sekcję” z zaznaczeniem, „Dodaj …”) – każda zmiana
 //   to jeden krok cofania. Klik w sekcję przewija strony do jej tytułu i otwiera kartę tytułu przy nim; sekcja ukryta
 //   albo pusta (bez tytułu na stronie) dostaje kartę przy swoim wierszu Outline.
@@ -36,6 +38,8 @@ export function Outline({
   footer: ReactNode
 }) {
   const t = useDictionary().editor
+  const language = useInterfaceLanguage()
+  const countId = useId()
   const outline = useRef<HTMLElement>(null)
   const find = (selector: string) => () => outline.current?.querySelector<HTMLElement>(selector) ?? null
   const rowSelector = (key: string) => `[data-outline-row="${CSS.escape(key)}"]`
@@ -122,6 +126,7 @@ export function Outline({
                   className="outline-row-button"
                   data-outline-row={fragmentKey(target)}
                   aria-haspopup="dialog"
+                  aria-describedby={section.items.length > 0 ? `${countId}-${section.id}` : undefined}
                   onClick={() => openRow(target)}
                 >
                   <span className="outline-row-name">{sectionName(section, t)}</span>
@@ -160,6 +165,18 @@ export function Outline({
             <span>{t.outline.showOnCv}</span>
           </label>
         </div>
+      </div>
+      {/* Liczba wpisów dla czytnika ekranu („3 elementy”) jako opis wiersza sekcji – na ekranie sama liczba. Poza
+          wierszami, żeby ich tekst został nazwą sekcji z oznaczeniem i liczbą. */}
+      <div hidden>
+        {document.sections.map(
+          (section) =>
+            section.items.length > 0 && (
+              <span key={section.id} id={`${countId}-${section.id}`}>
+                {plural(language, t.outline.items, section.items.length)}
+              </span>
+            )
+        )}
       </div>
       {footer}
     </nav>

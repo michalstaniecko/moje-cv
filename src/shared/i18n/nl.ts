@@ -183,7 +183,9 @@ export const nl: Dictionary = {
       form: 'Formulier',
       collapse: 'Inklappen',
       expand: 'Uitklappen',
-      showOnCv: 'Tonen op cv'
+      showOnCv: 'Tonen op cv',
+      items: { one: (count) => `${count} item`, other: (count) => `${count} items` },
+      sidebar: 'Zijbalk'
     },
     canvas: {
       edit: (what) => `Bewerken: ${what}`,

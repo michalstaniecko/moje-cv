@@ -181,7 +181,9 @@ export const sv: Dictionary = {
       form: 'Formulär',
       collapse: 'Fäll ihop',
       expand: 'Fäll ut',
-      showOnCv: 'Visa i cv:t'
+      showOnCv: 'Visa i cv:t',
+      items: { one: (count) => `${count} post`, other: (count) => `${count} poster` },
+      sidebar: 'Sidofält'
     },
     canvas: {
       edit: (what) => `Redigera: ${what}`,

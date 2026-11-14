@@ -176,7 +176,13 @@ export const ro: Dictionary = {
       form: 'Formular',
       collapse: 'Restrânge',
       expand: 'Extinde',
-      showOnCv: 'Arată în CV'
+      showOnCv: 'Arată în CV',
+      items: {
+        one: (count) => `${count} element`,
+        few: (count) => `${count} elemente`,
+        other: (count) => `${count} de elemente`
+      },
+      sidebar: 'Bară laterală'
     },
     canvas: {
       edit: (what) => `Editează: ${what}`,

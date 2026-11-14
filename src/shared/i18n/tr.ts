@@ -176,7 +176,9 @@ export const tr: Dictionary = {
       form: 'Form',
       collapse: 'Daralt',
       expand: 'Genişlet',
-      showOnCv: 'CV’de göster'
+      showOnCv: 'CV’de göster',
+      items: { one: (count) => `${count} öğe`, other: (count) => `${count} öğe` },
+      sidebar: 'Kenar çubuğu'
     },
     canvas: {
       edit: (what) => `Düzenle: ${what}`,

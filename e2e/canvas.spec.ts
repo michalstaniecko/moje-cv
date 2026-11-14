@@ -1504,6 +1504,10 @@ test('by default the sidebar is the Outline, about 240 px wide: the header, ever
     /^Languages2$/,
     /^Interestshidden1$/
   ])
+  // Liczba wpisów dla czytnika ekranu: opis wiersza, nie część nazwy.
+  await expect(outlineRow('Work experience').locator('.outline-row-button')).toHaveAccessibleName('Work experience')
+  await expect(outlineRow('Work experience').locator('.outline-row-button')).toHaveAccessibleDescription('4 items')
+  await expect(outlineRow('Interests').locator('.outline-row-button')).toHaveAccessibleDescription('1 item')
   await expect(nav.getByRole('button', { name: 'Consent clause' })).toBeVisible()
   await expect(nav.getByRole('switch', { name: 'Show on CV' })).not.toBeChecked()
 
@@ -1634,6 +1638,7 @@ test('the sidebar collapses to a rail and expands back to the panel it came from
   const form = () => window.locator('.editor-form')
   await panes().getByRole('button', { name: 'Collapse' }).click()
   await expect(rail()).toBeVisible()
+  await expect(window.getByRole('complementary', { name: 'Sidebar' })).toBeVisible()
   expect((await rail().boundingBox())!.width).toBeCloseTo(44, 0)
   await expect(outline()).toHaveCount(0)
   await expect(panes().getByRole('button', { name: 'Expand' })).toBeFocused()

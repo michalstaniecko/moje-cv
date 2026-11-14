@@ -176,7 +176,14 @@ export const cs: Dictionary = {
       form: 'Formulář',
       collapse: 'Sbalit',
       expand: 'Rozbalit',
-      showOnCv: 'Zobrazit v CV'
+      showOnCv: 'Zobrazit v CV',
+      items: {
+        one: (count) => `${count} položka`,
+        few: (count) => `${count} položky`,
+        many: (count) => `${count} položky`,
+        other: (count) => `${count} položek`
+      },
+      sidebar: 'Postranní panel'
     },
     canvas: {
       edit: (what) => `Upravit: ${what}`,

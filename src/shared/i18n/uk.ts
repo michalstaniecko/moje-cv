@@ -176,7 +176,14 @@ export const uk: Dictionary = {
       form: 'Форма',
       collapse: 'Згорнути',
       expand: 'Розгорнути',
-      showOnCv: 'Показати в резюме'
+      showOnCv: 'Показати в резюме',
+      items: {
+        one: (count) => `${count} елемент`,
+        few: (count) => `${count} елементи`,
+        many: (count) => `${count} елементів`,
+        other: (count) => `${count} елемента`
+      },
+      sidebar: 'Бічна панель'
     },
     canvas: {
       edit: (what) => `Редагувати: ${what}`,

@@ -126,11 +126,12 @@ function SidebarFooter({ sidebar, onChoose }: { sidebar: Sidebar; onChoose: (nex
   )
 }
 
-// Zwinięty pasek boczny: ikony Outline i CV form (rozwijają do swojego widoku) oraz „Rozwiń” na dole.
+// Zwinięty pasek boczny: ikony Outline i CV form (rozwijają do swojego widoku) oraz „Rozwiń” na dole. Dla czytnika
+// ekranu to nazwany punkt orientacyjny „Pasek boczny” (rozwinięty Outline jest nawigacją „Konspekt”).
 function SidebarRail({ onChoose, onExpand }: { onChoose: (next: Sidebar, focus: string) => void; onExpand: () => void }) {
   const t = useDictionary().editor.outline
   return (
-    <div className="editor-rail">
+    <aside className="editor-rail" aria-label={t.sidebar}>
       <button
         type="button"
         className="sidebar-icon-button"
@@ -162,7 +163,7 @@ function SidebarRail({ onChoose, onExpand }: { onChoose: (next: Sidebar, focus: 
       >
         <ChevronIcon direction="right" />
       </button>
-    </div>
+    </aside>
   )
 }
 

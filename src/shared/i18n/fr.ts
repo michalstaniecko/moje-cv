@@ -176,7 +176,13 @@ export const fr: Dictionary = {
       form: 'Formulaire',
       collapse: 'Réduire',
       expand: 'Développer',
-      showOnCv: 'Afficher dans le CV'
+      showOnCv: 'Afficher dans le CV',
+      items: {
+        one: (count) => `${count} élément`,
+        many: (count) => `${count} d’éléments`,
+        other: (count) => `${count} éléments`
+      },
+      sidebar: 'Barre latérale'
     },
     canvas: {
       edit: (what) => `Modifier : ${what}`,
