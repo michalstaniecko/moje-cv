@@ -1,5 +1,6 @@
 import type { useSortable } from '@dnd-kit/sortable'
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { anchoredPosition } from '../canvas/anchoredPosition'
 import { moveShortcutOffset, type MoveOffset } from './moveShortcut'
 
 // Pozycja menu wiersza. `run` wykonuje się po zamknięciu menu i sam decyduje o fokusie (np. przeniesienie wraca na
@@ -50,11 +51,11 @@ export function RowMenu({
     if (!open || !element || !handle.current) return
     element.showPopover()
     const place = () => {
-      const anchor = handle.current!.getBoundingClientRect()
-      const height = element.offsetHeight
-      const below = anchor.bottom + 4
-      const top = below + height <= window.innerHeight || anchor.top - 4 - height < 0 ? below : anchor.top - 4 - height
-      const left = Math.max(4, Math.min(anchor.left, window.innerWidth - element.offsetWidth - 4))
+      const { top, left } = anchoredPosition({
+        anchor: handle.current!.getBoundingClientRect(),
+        panel: { width: element.offsetWidth, height: element.offsetHeight },
+        viewport: { width: window.innerWidth, height: window.innerHeight }
+      })
       element.style.top = `${top}px`
       element.style.left = `${left}px`
     }
