@@ -72,8 +72,8 @@ dokumentu (Tab). Przed T4 ręczna weryfikacja z VoiceOver (ticket T4, `ready-for
 
 ## Tickety
 
-- **T1** – Ukrywanie zdjęcia bez kasowania (D2). `ready-for-agent`.
-- **T2** – Usuwanie kontaktu z menu uchwytu kontaktów (D5). `ready-for-agent`.
-- **T3** – Widoczne przenoszenie punktów, elementów listy i kontaktów (D6). `ready-for-agent`.
-- **T4** – Usunięcie CV form (D1, D7), zależne od T1–T3. `ready-for-human` (weryfikacja z czytnikiem ekranu i decyzja
+- **T1** (#132) – Ukrywanie zdjęcia bez kasowania (D2). `ready-for-agent`.
+- **T2** (#133) – Usuwanie kontaktu z menu uchwytu kontaktów (D5). `ready-for-agent`.
+- **T3** (#134) – Widoczne przenoszenie punktów, elementów listy i kontaktów (D6). `ready-for-agent`.
+- **T4** (#135) – Usunięcie CV form (D1, D7), zależne od T1–T3. `ready-for-human` (weryfikacja z czytnikiem ekranu i decyzja
   o terminie).
