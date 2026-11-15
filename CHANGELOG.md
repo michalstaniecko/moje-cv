@@ -11,6 +11,7 @@
 - An Edit | Preview switch in the toolbar and View → Preview (⇧⌘P): Preview mode hides the sidebar and all editing controls, so the pages look exactly like the PDF. Every opened CV starts in Edit mode.
 - "CV design" in the toolbar opens the accent colour, font, Template and CV language in a panel, in both modes.
 - The sidebar of the CV editor is now a narrow Outline: the header, every section in CV order (drag to reorder, with a menu to hide, add and start a new page; hidden and empty sections are marked) and the consent clause with a "Show on CV" switch (hidden sections have one too); a click puts the caret in that part of the CV on the pages. The full form is still one click away ("Form"), and the sidebar can collapse to a thin rail; the choice is kept after a restart.
+- The photo can be hidden without deleting it: "Hide photo" in the photo popover on the page, or the "Show on CV" switch in the new Photo row of the Outline, takes it off the pages, the PDF and the DOCX, and the same switch brings back the same image. Each change is one undo step. Without a photo, the Outline's Photo row picks one, like "Add to CV". CVs saved with an older version open with their photo shown.
 
 ### Changed
 - First release in the Mac App Store, alongside the `.dmg` on GitHub Releases. Both versions are free and share the same CV library on your Mac.
