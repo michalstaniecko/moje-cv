@@ -6,13 +6,14 @@ import {
   addContact,
   moveItem,
   moveSection,
+  removeContact,
   removeEducationItem,
   removeExperienceItem,
   updateEducationItem,
   updateExperienceItem,
   updateSection
 } from '../editor/documentEdits'
-import { educationName, entryName } from '../editor/fields/entryNames'
+import { educationName, entryName, removeContactLabel } from '../editor/fields/entryNames'
 import { sectionName } from '../editor/fields/SectionTitleField'
 import type { MoveOffset } from '../editor/moveShortcut'
 import type { RemoveWithUndo } from '../editor/removalUndo'
@@ -33,8 +34,8 @@ const FIRST_LINE_OFFSET = 4
 
 // Menu fragmentu strony (docs/specs/inline-editing-redesign.md, Q11, Q25): uchwyt `RowMenu` (bez przeciągania) przy
 // tytułach sekcji i wpisach w Edit mode – „Przenieś wyżej/niżej” (także ⌥⇧↑/↓ na uchwycie), „Nowa strona przed”, a przy
-// tytule sekcji też „Ukryj sekcję” i „Dodaj …”; przy kontaktach w nagłówku – „Dodaj kontakt”. Każda zmiana to jeden
-// krok cofania.
+// tytule sekcji też „Ukryj sekcję” i „Dodaj …”; przy kontaktach w nagłówku – „Dodaj kontakt” i „Usuń kontakt: …”.
+// Każda zmiana to jeden krok cofania.
 // - Uchwyty są poza kolejnością Tab (docs/specs/wysiwyg-editing.md, W22): mysz klika uchwyt, klawiatura otwiera menu
 //   Shift+F10 / klawiszem menu w polu fragmentu (PageField.tsx); Escape wraca wtedy do pola.
 // - Przeniesienie przeskakuje to, czego na stronach nie ma (ukryte i puste sekcje, puste wpisy), ogłasza nową pozycję
@@ -261,8 +262,12 @@ export function useBlockMenu({
     }
   }
 
-  // Kontakty w nagłówku (W14): tylko „Dodaj kontakt” – nowy kontakt na końcu, kursor w jego etykiecie na stronie.
-  // Kolejność kontaktów zmienia się tylko w CV form.
+  // Kontakty w nagłówku (W14, docs/specs/outline-instead-of-cv-form.md, D5): „Dodaj kontakt” – nowy kontakt na końcu,
+  // kursor w jego etykiecie na stronie; za kreską po jednym „Usuń kontakt: <etykieta / wartość>” na kontakt, z „Usunięto.
+  // Cofnij”. Kolejność kontaktów zmienia się ⌥⇧↑/↓ w kontakcie na stronie (pageFields.ts), nie z tego menu.
+  // - Po usunięciu kursor w następnym kontakcie, a bez niego – w poprzednim; po ostatnim kontakcie fokus na uchwycie
+  //   kontaktów, a gdy nagłówek kontaktów zniknął ze strony – `onFocusLost`.
+  // - „Cofnij” stawia kursor w przywróconym kontakcie.
   const contactsMenu = (): BlockMenu => ({
     label: t.order.handle.contacts,
     onMoveShortcut: () => {},
@@ -274,7 +279,26 @@ export function useBlockMenu({
           const added = current().header.contacts.at(-1)
           if (added) session.focusPart({ kind: 'contacts', contactId: added.id })
         }
-      }
+      },
+      ...document.header.contacts.map(
+        (contact, index): RowMenuAction => ({
+          label: removeContactLabel(contact, index, t),
+          danger: true,
+          run: () => {
+            const contacts = current().header.contacts
+            const at = contacts.findIndex((candidate) => candidate.id === contact.id)
+            if (at === -1) return
+            const next = contacts[at + 1] ?? contacts[at - 1]
+            onRemove(removeContact(contact.id), {
+              entryId: contact.id,
+              listId: 'contacts',
+              restore: () => session.focusPart({ kind: 'contacts', contactId: contact.id })
+            })
+            if (next) session.focusPart({ kind: 'contacts', contactId: next.id })
+            else focusAfterChange('contacts', 'handle')
+          }
+        })
+      )
     ]
   })
 

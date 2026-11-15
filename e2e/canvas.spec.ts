@@ -1544,6 +1544,50 @@ test('contacts are edited on the page: a Classic contact is one “label: value�
   await expect(formValues).toHaveCount(5)
 })
 
+test('the contacts handle menu removes a contact, named by its label or else its value: “Removed.” with Undo, the caret goes to the next contact or else the previous one; each removal is one undo step', async () => {
+  await openFirstCv()
+  const contacts = window.locator('.preview .cv-page .cv-contact > *')
+  const formValues = window.locator('.editor-form').getByLabel(/^Contact value \d$/)
+  const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+  const menu = blockMenu('contacts')
+
+  // Pod „Add contact”, za kreską, po jednej pozycji usuwania na kontakt.
+  await handle('contacts').click()
+  await expect(menu.getByRole('menuitem')).toHaveText([
+    'Add contact',
+    'Remove contact: Phone',
+    'Remove contact: Email',
+    'Remove contact: LinkedIn',
+    'Remove contact: City'
+  ])
+  await expect(menu.getByRole('separator')).toHaveCount(1)
+
+  // Środkowy kontakt znika ze strony i z formularza, kursor w następnym kontakcie.
+  await menu.getByRole('menuitem', { name: 'Remove contact: Email' }).click()
+  await expect(contacts).toHaveText(['Phone: +44 7700 900000', 'LinkedIn: linkedin.com/in/jane-example', 'City: Manchester'])
+  await expect(formValues).toHaveCount(3)
+  await expect(removed).toBeVisible()
+  await expect.poll(async () => (await caret())?.key).toBe('contact:c3:value')
+
+  // „Undo” przywraca kontakt na jego miejscu z kursorem w nim.
+  await removed.getByRole('button', { name: 'Undo' }).click()
+  await expect(formValues).toHaveCount(4)
+  await expect(contacts.nth(1)).toHaveText('Email: jane.example@example.com')
+  await expect.poll(async () => (await caret())?.key).toBe('contact:c2:value')
+  await expect(removed).toHaveCount(0)
+
+  // Kontakt bez etykiety ma w menu swoją wartość; usunięcie ostatniego – kursor w poprzednim; Cmd+Z cofa jednym krokiem.
+  await formField('Contact label 4').fill('')
+  await handle('contacts').click()
+  await expect(menu.getByRole('menuitem').last()).toHaveText('Remove contact: Manchester')
+  await menu.getByRole('menuitem', { name: 'Remove contact: Manchester' }).click()
+  await expect(formValues).toHaveCount(3)
+  await expect.poll(async () => (await caret())?.key).toBe('contact:c3:value')
+  await window.keyboard.press('Meta+z')
+  await expect(formValues).toHaveCount(4)
+  await expect(formField('Contact value 4')).toHaveValue('Manchester')
+})
+
 test('Alt+Shift+arrows in a contact label or value move the contact; the caret stays in the field, at the end the keys do nothing; each move is one undo step', async () => {
   await openFirstCv()
   const contacts = window.locator('.preview .cv-page .cv-contact > *')
@@ -2071,11 +2115,11 @@ test('the menu works from the keyboard alone: Shift+F10 in a field opens the men
   await window.keyboard.press('Enter')
   await expect(pageField('Level – Education “New education”')).toBeFocused()
 
-  // Kontakty w nagłówku: Shift+F10 w kontakcie – menu z „Add contact”; nowy kontakt z kursorem w jego etykiecie.
+  // Kontakty w nagłówku: Shift+F10 w kontakcie – menu zaczyna „Add contact”; nowy kontakt z kursorem w jego etykiecie.
   await clickAtCharacter(window.locator('.preview .cv-pages [data-joined*="contact:c2:value"]'), 'Email: jane'.length)
   await window.keyboard.press('Shift+F10')
   const contactsMenu = blockMenu('contacts')
-  await expect(contactsMenu.getByRole('menuitem')).toHaveText(['Add contact'])
+  await expect(contactsMenu.getByRole('menuitem').first()).toHaveText('Add contact')
   await expect(contactsMenu.getByRole('menuitem', { name: 'Add contact' })).toBeFocused()
   await window.keyboard.press('Enter')
   await expect(labelField(5)).toBeFocused()
