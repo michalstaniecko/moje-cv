@@ -264,6 +264,8 @@ export const en = {
     contactValue: (number: number) => `Contact value ${number}`,
     contactValuePlaceholder: 'Value',
     removeContact: (number: number) => `Remove contact ${number}`,
+    // Pozycja menu uchwytu kontaktów na stronie: kontakt nazwany etykietą, a bez niej – wartością.
+    removeContactNamed: (name: string) => `Remove contact: ${name}`,
     addContact: 'Add contact',
     summary: 'Summary',
     // Nazwa sekcji bez tytułu – według jej typu.

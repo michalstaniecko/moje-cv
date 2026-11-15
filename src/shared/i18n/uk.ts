@@ -236,6 +236,7 @@ export const uk: Dictionary = {
     contactValue: (number) => `Значення контакту ${number}`,
     contactValuePlaceholder: 'Значення',
     removeContact: (number) => `Видалити контакт ${number}`,
+    removeContactNamed: (name) => `Видалити контакт: ${name}`,
     addContact: 'Додати контакт',
     summary: 'Про себе',
     sectionTypes: { experience: 'Досвід роботи', education: 'Освіта', list: 'Список' },

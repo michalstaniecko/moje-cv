@@ -238,6 +238,7 @@ export const de: Dictionary = {
     contactValue: (number) => `Kontaktangabe ${number}`,
     contactValuePlaceholder: 'Angabe',
     removeContact: (number) => `Kontakt ${number} entfernen`,
+    removeContactNamed: (name) => `Kontakt entfernen: ${name}`,
     addContact: 'Kontakt hinzufügen',
     summary: 'Kurzprofil',
     sectionTypes: { experience: 'Berufserfahrung', education: 'Ausbildung', list: 'Liste' },

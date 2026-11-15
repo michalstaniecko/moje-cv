@@ -236,6 +236,7 @@ export const ru: Dictionary = {
     contactValue: (number) => `Значение контакта ${number}`,
     contactValuePlaceholder: 'Значение',
     removeContact: (number) => `Удалить контакт ${number}`,
+    removeContactNamed: (name) => `Удалить контакт: ${name}`,
     addContact: 'Добавить контакт',
     summary: 'О себе',
     sectionTypes: { experience: 'Опыт работы', education: 'Образование', list: 'Список' },

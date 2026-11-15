@@ -238,6 +238,7 @@ export const nl: Dictionary = {
     contactValue: (number) => `Contactgegeven ${number}`,
     contactValuePlaceholder: 'Waarde',
     removeContact: (number) => `Verwijder contact ${number}`,
+    removeContactNamed: (name) => `Verwijder contact: ${name}`,
     addContact: 'Voeg contact toe',
     summary: 'Profiel',
     sectionTypes: { experience: 'Werkervaring', education: 'Opleiding', list: 'Lijst' },

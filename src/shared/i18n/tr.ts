@@ -231,6 +231,7 @@ export const tr: Dictionary = {
     contactValue: (number) => `İletişim değeri ${number}`,
     contactValuePlaceholder: 'Değer',
     removeContact: (number) => `${number}. iletişimi kaldır`,
+    removeContactNamed: (name) => `İletişimi kaldır: ${name}`,
     addContact: 'İletişim ekle',
     summary: 'Özet',
     sectionTypes: { experience: 'İş deneyimi', education: 'Eğitim', list: 'Liste' },

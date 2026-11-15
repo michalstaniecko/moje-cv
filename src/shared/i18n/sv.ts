@@ -236,6 +236,7 @@ export const sv: Dictionary = {
     contactValue: (number) => `Kontaktuppgift ${number}`,
     contactValuePlaceholder: 'Uppgift',
     removeContact: (number) => `Ta bort kontakt ${number}`,
+    removeContactNamed: (name) => `Ta bort kontakt: ${name}`,
     addContact: 'Lägg till kontakt',
     summary: 'Profil',
     sectionTypes: { experience: 'Arbetslivserfarenhet', education: 'Utbildning', list: 'Lista' },

@@ -235,6 +235,7 @@ export const es: Dictionary = {
     contactValue: (number) => `Valor del contacto ${number}`,
     contactValuePlaceholder: 'Valor',
     removeContact: (number) => `Quitar el contacto ${number}`,
+    removeContactNamed: (name) => `Quitar el contacto: ${name}`,
     addContact: 'Añadir contacto',
     summary: 'Resumen',
     sectionTypes: { experience: 'Experiencia laboral', education: 'Formación', list: 'Lista' },

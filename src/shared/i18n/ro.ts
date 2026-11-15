@@ -235,6 +235,7 @@ export const ro: Dictionary = {
     contactValue: (number) => `Valoarea contactului ${number}`,
     contactValuePlaceholder: 'Valoare',
     removeContact: (number) => `Elimină contactul ${number}`,
+    removeContactNamed: (name) => `Elimină contactul: ${name}`,
     addContact: 'Adaugă contact',
     summary: 'Profil',
     sectionTypes: { experience: 'Experiență profesională', education: 'Educație', list: 'Listă' },

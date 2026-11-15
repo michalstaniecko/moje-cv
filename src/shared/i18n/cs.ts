@@ -236,6 +236,7 @@ export const cs: Dictionary = {
     contactValue: (number) => `Hodnota kontaktu ${number}`,
     contactValuePlaceholder: 'Hodnota',
     removeContact: (number) => `Odstranit kontakt ${number}`,
+    removeContactNamed: (name) => `Odstranit kontakt: ${name}`,
     addContact: 'Přidat kontakt',
     summary: 'Shrnutí',
     sectionTypes: { experience: 'Pracovní zkušenosti', education: 'Vzdělání', list: 'Seznam' },

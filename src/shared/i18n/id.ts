@@ -231,6 +231,7 @@ export const id: Dictionary = {
     contactValue: (number) => `Isi kontak ${number}`,
     contactValuePlaceholder: 'Isi',
     removeContact: (number) => `Hapus kontak ${number}`,
+    removeContactNamed: (name) => `Hapus kontak: ${name}`,
     addContact: 'Tambah kontak',
     summary: 'Ringkasan',
     sectionTypes: { experience: 'Pengalaman kerja', education: 'Pendidikan', list: 'Daftar' },

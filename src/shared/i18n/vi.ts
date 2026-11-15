@@ -231,6 +231,7 @@ export const vi: Dictionary = {
     contactValue: (number) => `Giá trị liên hệ ${number}`,
     contactValuePlaceholder: 'Giá trị',
     removeContact: (number) => `Xóa liên hệ ${number}`,
+    removeContactNamed: (name) => `Xóa liên hệ: ${name}`,
     addContact: 'Thêm liên hệ',
     summary: 'Giới thiệu',
     sectionTypes: { experience: 'Kinh nghiệm làm việc', education: 'Học vấn', list: 'Danh sách' },
