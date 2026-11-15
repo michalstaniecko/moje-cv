@@ -223,8 +223,8 @@ Odrzucone: placeholdery zawsze w Edit mode (strony w Edit mode stale inne niż P
 formularza); placeholdery bez zajmowania miejsca (nie ma gdzie postawić kursora dla pustej firmy).
 Dlaczego: kompromis znany z edytorów blokowych (placeholder tylko w bieżącym bloku); rozjazd z PDF jest ograniczony do
 miejsca, w którym użytkownik właśnie pisze, i znika po wyjściu z pola. Pozostałe ostrzeżenia (np. „Część treści nie
-mieści się na stronie”) liczą się zawsze z podziału Preview mode – `PreviewPane` dostaje oba podziały tylko wtedy, gdy się
-różnią (potwierdzone 2026-11-15, pytanie 3; wdrożenie – odstępstwo 10).
+mieści się na stronie”) liczą się zawsze z podziału Preview mode – `CvPages` podaje w `onLayout` oba podziały, a drugi
+liczy osobno tylko przy niepustym zbiorze `reveal` (potwierdzone 2026-11-15, pytanie 3; wdrożone – punkt 10 odstępstw).
 
 ### B. Klawiatura i struktura
 
@@ -1105,14 +1105,19 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
 8. **Bez komunikatu `aria-live` po dodaniu z pigułki, menu, paska i Outline** (W22; S6) – nazwa nowego pola z fokusem mówi
    to samo; usunięcie wpisu z menu – samo „Removed.”.
 9. **Przycisk zdjęcia zostaje w kolejności Tab** (W22; S6) – jedyne wejście w zdjęcie z klawiatury.
-10. **Ostrzeżenia paska podglądu i sprawdzenie przed eksportem liczą się z bieżącego podziału stron** (W10; do usunięcia
-    po wdrożeniu) – po S7 w Edit mode to podział z placeholderami aktywnego fragmentu, bez drugiego podziału Preview mode,
-    o którym mówił W10. Różnica jest możliwa tylko wtedy, gdy placeholdery aktywnej części przesuwają blok ponad wysokość
-    strony. **Decyzja (2026-11-15, rozstrzygnięte pytanie 3):** ostrzeżenia zawsze z podziału Preview mode, jak chciał
-    W10; wdrożenie idzie dalej na gałęzi. Gdy zbiór `reveal` nie jest pusty, `CvPages` mierzy dodatkowo tylko bloki
-    odsłoniętego fragmentu bez placeholderów (wersja Preview mode) i drugi raz uruchamia czysty `paginate`; `onLayout`
-    zwraca `previewLayout`, z którego korzystają `PreviewPane` i `CvScreen`. Koszt: 1–3 dodatkowe bloki w pomiarze i jeden
-    czysty `paginate` – w budżecie 100 ms (wejście we wpis z pustym polem dziś 32–37 ms, S7).
+10. **Wdrożone – już nie odstępstwo: ostrzeżenia paska podglądu i sprawdzenie przed eksportem liczą się z podziału
+    Preview mode** (W10; rozstrzygnięte pytanie 3). Po S7 liczyły się z bieżącego podziału stron – w Edit mode z
+    placeholderami aktywnego fragmentu. Teraz, gdy zbiór `reveal` nie jest pusty, `CvPages` generuje też bloki bez
+    odsłonięcia i w drugim kontenerze pomiarowym (bez Page fields i placeholderów) mierzy tylko te, których wysokości nie
+    daje pomiar Edit mode: bloki odsłoniętego fragmentu i bloki, które odsłonięcie zmienia (np. pozycja w sekcji wpisu
+    przed pustym nowym wpisem) – `blocksToMeasureForPreview` w `domain/previewSplit.ts` (z testami). Reszta bloków ma
+    wysokości z pomiaru Edit mode; czysty `paginate` liczy drugi podział, a `onLayout` podaje go jako `previewLayout`.
+    Z niego biorą licznik stron, ostrzeżenie o długości i o za długich blokach `PreviewPane` oraz sprawdzenie przed
+    eksportem w `CvScreen`; z podziału Edit mode – tylko strony (z wyróżnieniem za długiego bloku tak, jak jest
+    narysowany) i warstwa edycji. Bez odsłonięcia drugiego podziału nie ma (`previewLayout` to ten sam podział). Test:
+    `export.spec.ts` „the page count, the length warning and the check before export follow the Preview mode split
+    while an entry or the contacts with empty fields are revealed in Edit mode”. Pomiar (`performance.spec.ts`, `out/`,
+    CPU ×1): wejście we wpis z pustym polem – mediana 32,2 ms, p95 33,8 ms (wcześniej 32–37 ms).
 11. **Pliki** – bez osobnych `canvas/reveal.ts` (odsłonięcie liczy `usePageEditing.ts`) i `FieldPopover` wydzielony dopiero
     w S4; nazwa `openCard` zastąpiona przez `focusPart`.
 
@@ -1163,7 +1168,7 @@ właściciela na żywo (jak sesja z 2026-11-14, uwaga na początku speca).
    **Decyzja (2026-11-15):** zawsze z podziału Preview mode, jak zakładał W10. Gdy zbiór `reveal` nie jest pusty,
    `CvPages` mierzy dodatkowo tylko bloki odsłoniętego fragmentu bez placeholderów i drugi raz uruchamia czysty
    `paginate`; `onLayout` zwraca `previewLayout` dla `PreviewPane` i `CvScreen`. Koszt: 1–3 bloki i jeden `paginate`,
-   w budżecie 100 ms. Wdrożenie idzie dalej na gałęzi; po nim odstępstwo 10 znika.
+   w budżecie 100 ms. Wdrożone na gałęzi (punkt 10 odstępstw – już nie odstępstwo).
 4. Czy CV form zostaje na stałe (W20), skoro strony w Edit mode są edytowalne i dostępne dla czytnika ekranu?
    **Decyzja (2026-11-15):** zostaje na stałe, bez planu usunięcia: liniowa droga edycji i droga dostępności, treść
    ukrytych sekcji, zmiana kolejności przeciąganiem. Poprawka faktów: pytanie mówiło, że CV form to „jedyne miejsce
