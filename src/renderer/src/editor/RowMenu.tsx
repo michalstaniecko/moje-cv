@@ -7,7 +7,7 @@ import { moveShortcutOffset, type MoveOffset } from './moveShortcut'
 // uchwyt przeniesionego wiersza); `opener` – element z fokusem, z którego otwarto menu bez fokusu na uchwycie (Page field
 // ze Shift+F10), null – uchwyt. Wyłączona pozycja jest widoczna, ale pomijana przez strzałki. `checked` robi z pozycji
 // przełącznik (`menuitemcheckbox` z zaznaczeniem, np. „Nowa strona przed”); `danger` – pozycja destrukcyjna (np. „Usuń
-// stanowisko”), oddzielona od pozostałych kreską i w kolorze błędu.
+// stanowisko”), w kolorze błędu; kolejne takie pozycje (np. „Usuń kontakt: …”) oddziela od pozostałych jedna kreska.
 export type RowMenuAction = {
   label: string
   disabled?: boolean
@@ -175,9 +175,9 @@ export function RowMenu({
             if (!menu.current?.contains(next) && next !== handle.current) close(false)
           }}
         >
-          {actions.map((action) => [
-            action.danger && <li key={`${action.label}:separator`} role="separator" />,
-            <li key={action.label} role="none">
+          {actions.map((action, index) => [
+            action.danger && !actions[index - 1]?.danger && <li key={`${index}:separator`} role="separator" />,
+            <li key={`${index}:${action.label}`} role="none">
               <button
                 type="button"
                 className={action.danger ? 'danger' : undefined}
