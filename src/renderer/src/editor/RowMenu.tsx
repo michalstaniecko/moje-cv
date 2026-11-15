@@ -1,6 +1,6 @@
 import type { useSortable } from '@dnd-kit/sortable'
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { anchoredPosition } from '../canvas/anchoredPosition'
+import { anchoredPosition, type Box } from '../canvas/anchoredPosition'
 import { moveShortcutOffset, type MoveOffset } from './moveShortcut'
 
 // Pozycja menu wiersza. `run` wykonuje się po zamknięciu menu i sam decyduje o fokusie (np. przeniesienie wraca na
@@ -8,11 +8,15 @@ import { moveShortcutOffset, type MoveOffset } from './moveShortcut'
 // ze Shift+F10), null – uchwyt. Wyłączona pozycja jest widoczna, ale pomijana przez strzałki. `checked` robi z pozycji
 // przełącznik (`menuitemcheckbox` z zaznaczeniem, np. „Nowa strona przed”); `danger` – pozycja destrukcyjna (np. „Usuń
 // stanowisko”), w kolorze błędu; kolejne takie pozycje (np. „Usuń kontakt: …”) oddziela od pozostałych jedna kreska.
+// `separator` – kreska przed pozycją (nowa grupa, np. pozycje menu uchwytu za przeniesieniami w menu pola);
+// `shortcut` – podpowiedź skrótu po prawej (`text`, poza nazwą pozycji) i `aria-keyshortcuts` (`keys`).
 export type RowMenuAction = {
   label: string
   disabled?: boolean
   checked?: boolean
   danger?: boolean
+  separator?: boolean
+  shortcut?: { text: string; keys: string }
   run: (context: { opener: HTMLElement | null }) => void
 }
 
@@ -61,7 +65,6 @@ export function RowMenu({
 }) {
   const [open, setOpen] = useState(false)
   const handle = useRef<HTMLButtonElement | null>(null)
-  const menu = useRef<HTMLUListElement>(null)
   const opener = useRef<HTMLElement | null>(null)
 
   // Zamknięcie z powrotem fokusu: do elementu, z którego otwarto menu (jeśli nadal jest), inaczej na uchwyt.
@@ -79,53 +82,6 @@ export function RowMenu({
       opener.current = active instanceof HTMLElement && active !== handle.current && active !== document.body ? active : null
     }
     setOpen(!open)
-  }
-
-  useLayoutEffect(() => {
-    const element = menu.current
-    if (!open || !element || !handle.current) return
-    element.showPopover()
-    const place = () => {
-      const { top, left } = anchoredPosition({
-        anchor: handle.current!.getBoundingClientRect(),
-        panel: { width: element.offsetWidth, height: element.offsetHeight },
-        viewport: { width: window.innerWidth, height: window.innerHeight }
-      })
-      element.style.top = `${top}px`
-      element.style.left = `${left}px`
-    }
-    place()
-    element.querySelector<HTMLButtonElement>(ITEMS)?.focus()
-    window.addEventListener('scroll', place, true)
-    window.addEventListener('resize', place)
-    return () => {
-      window.removeEventListener('scroll', place, true)
-      window.removeEventListener('resize', place)
-    }
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    const closeOnOutsidePointer = (event: PointerEvent) => {
-      const target = event.target as Node
-      if (!menu.current?.contains(target) && !handle.current?.contains(target)) close(true)
-    }
-    document.addEventListener('pointerdown', closeOnOutsidePointer)
-    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer)
-  }, [open])
-
-  const onMenuKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
-    const items = [...event.currentTarget.querySelectorAll<HTMLButtonElement>(ITEMS)]
-    const current = items.indexOf(document.activeElement as HTMLButtonElement)
-    const focus = (index: number) => items[(index + items.length) % items.length]?.focus()
-    if (event.key === 'Escape') close(true)
-    else if (event.key === 'ArrowDown') focus(current + 1)
-    else if (event.key === 'ArrowUp') focus(current - 1)
-    else if (event.key === 'Home') focus(0)
-    else if (event.key === 'End') focus(items.length - 1)
-    else return
-    event.preventDefault()
-    event.stopPropagation()
   }
 
   return (
@@ -161,42 +117,140 @@ export function RowMenu({
         </svg>
       </button>
       {open && (
-        <ul
-          ref={menu}
-          popover="manual"
-          className="row-menu"
-          role="menu"
-          aria-label={label}
-          data-field-popover={keepsFieldActive || undefined}
-          onKeyDown={onMenuKeyDown}
-          onBlur={(event) => {
-            const next = event.relatedTarget as Node | null
-            // Kliknięcie uchwytu przy otwartym menu zamyka je w `onClick` (inaczej menu zamknęłoby się i od razu otworzyło).
-            if (!menu.current?.contains(next) && next !== handle.current) close(false)
-          }}
-        >
-          {actions.map((action, index) => [
-            action.danger && !actions[index - 1]?.danger && <li key={`${index}:separator`} role="separator" />,
-            <li key={`${index}:${action.label}`} role="none">
-              <button
-                type="button"
-                className={action.danger ? 'danger' : undefined}
-                role={action.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
-                aria-checked={action.checked}
-                // Pozycje menu nie są w kolejności Tab (przechodzi się po nich strzałkami), więc Tab wychodzi z menu.
-                tabIndex={-1}
-                disabled={action.disabled}
-                onClick={() => {
-                  close(false)
-                  action.run({ opener: opener.current?.isConnected ? opener.current : null })
-                }}
-              >
-                {action.label}
-              </button>
-            </li>
-          ])}
-        </ul>
+        <Menu
+          label={label}
+          actions={actions}
+          anchor={() => handle.current?.getBoundingClientRect() ?? null}
+          owner={handle}
+          opener={() => (opener.current?.isConnected ? opener.current : null)}
+          keepsFieldActive={keepsFieldActive}
+          onClose={close}
+        />
       )}
     </>
+  )
+}
+
+// Lista pozycji menu w warstwie górnej (`popover`), przy prostokącie `anchor` (pod nim, a bez miejsca – nad nim; liczony
+// na nowo przy przewijaniu i zmianie rozmiaru okna): menu wiersza (uchwyt) i menu pola na stronie (canvas/FieldMenu.tsx).
+// - Fokus przy otwarciu na pierwszej dostępnej pozycji, strzałki ↑/↓ (oraz Home/End) między dostępnymi pozycjami,
+//   Enter/spacja wybiera (`onClose(false)`, potem `run` z `opener()`).
+// - Escape i kliknięcie poza menu – `onClose(true)` (fokus wraca tam, skąd otwarto menu); przejście fokusu poza menu
+//   (Tab) – `onClose(false)`. Kliknięcie i fokus w `owner` (uchwyt) nie są „poza menu” – uchwyt sam zamyka menu.
+export function Menu({
+  label,
+  actions,
+  anchor,
+  owner,
+  opener,
+  keepsFieldActive = false,
+  onClose
+}: {
+  label: string
+  actions: RowMenuAction[]
+  anchor: () => Box | null
+  owner?: { current: HTMLElement | null }
+  opener: () => HTMLElement | null
+  keepsFieldActive?: boolean
+  onClose: (returnFocus: boolean) => void
+}) {
+  const menu = useRef<HTMLUListElement>(null)
+  const latest = useRef({ anchor, onClose })
+  useEffect(() => {
+    latest.current = { anchor, onClose }
+  })
+
+  useLayoutEffect(() => {
+    const element = menu.current
+    if (!element) return
+    element.showPopover()
+    const place = () => {
+      const box = latest.current.anchor()
+      if (!box) return
+      const { top, left } = anchoredPosition({
+        anchor: box,
+        panel: { width: element.offsetWidth, height: element.offsetHeight },
+        viewport: { width: window.innerWidth, height: window.innerHeight }
+      })
+      element.style.top = `${top}px`
+      element.style.left = `${left}px`
+    }
+    place()
+    element.querySelector<HTMLButtonElement>(ITEMS)?.focus()
+    window.addEventListener('scroll', place, true)
+    window.addEventListener('resize', place)
+    return () => {
+      window.removeEventListener('scroll', place, true)
+      window.removeEventListener('resize', place)
+    }
+  }, [])
+
+  useEffect(() => {
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (!menu.current?.contains(target) && !owner?.current?.contains(target)) latest.current.onClose(true)
+    }
+    document.addEventListener('pointerdown', closeOnOutsidePointer)
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer)
+  }, [owner])
+
+  const onMenuKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
+    const items = [...event.currentTarget.querySelectorAll<HTMLButtonElement>(ITEMS)]
+    const current = items.indexOf(document.activeElement as HTMLButtonElement)
+    const focus = (index: number) => items[(index + items.length) % items.length]?.focus()
+    if (event.key === 'Escape') onClose(true)
+    else if (event.key === 'ArrowDown') focus(current + 1)
+    else if (event.key === 'ArrowUp') focus(current - 1)
+    else if (event.key === 'Home') focus(0)
+    else if (event.key === 'End') focus(items.length - 1)
+    else return
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
+  return (
+    <ul
+      ref={menu}
+      popover="manual"
+      className="row-menu"
+      role="menu"
+      aria-label={label}
+      data-field-popover={keepsFieldActive || undefined}
+      onKeyDown={onMenuKeyDown}
+      onBlur={(event) => {
+        const next = event.relatedTarget as Node | null
+        // Kliknięcie uchwytu przy otwartym menu zamyka je w `onClick` uchwytu (inaczej menu zamknęłoby się i od razu otworzyło).
+        if (!menu.current?.contains(next) && (!owner?.current || next !== owner.current)) onClose(false)
+      }}
+    >
+      {actions.map((action, index) => [
+        ((action.danger && !actions[index - 1]?.danger) || (action.separator && index > 0)) && (
+          <li key={`${index}:separator`} role="separator" />
+        ),
+        <li key={`${index}:${action.label}`} role="none">
+          <button
+            type="button"
+            className={action.danger ? 'danger' : undefined}
+            role={action.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+            aria-checked={action.checked}
+            aria-keyshortcuts={action.shortcut?.keys}
+            // Pozycje menu nie są w kolejności Tab (przechodzi się po nich strzałkami), więc Tab wychodzi z menu.
+            tabIndex={-1}
+            disabled={action.disabled}
+            onClick={() => {
+              onClose(false)
+              action.run({ opener: opener() })
+            }}
+          >
+            {action.label}
+            {action.shortcut && (
+              <kbd className="row-menu-shortcut" aria-hidden="true">
+                {action.shortcut.text}
+              </kbd>
+            )}
+          </button>
+        </li>
+      ])}
+    </ul>
   )
 }

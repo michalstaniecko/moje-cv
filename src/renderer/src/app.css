@@ -780,6 +780,14 @@ textarea:focus-visible {
   background: var(--ui-border);
 }
 
+/* Podpowiedź skrótu (np. ⌥⇧↓ przy „Move bullet 3 down” w menu pola na stronie): po prawej, przygaszona. */
+.row-menu-shortcut {
+  float: right;
+  margin-left: 24px;
+  font: inherit;
+  color: var(--ui-text-muted);
+}
+
 .row-menu button.danger:hover:not(:disabled) {
   border-color: transparent;
 }
