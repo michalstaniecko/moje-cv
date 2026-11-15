@@ -67,6 +67,25 @@ Odrzucone: przycisk ✕ przy każdym kontakcie na stronie (nowa kontrolka w tre�
 Zalecane: menu kontekstowe Page field (prawy przycisk myszy i Shift+F10 w polu) z „Move up” / „Move down”
 (z podpowiedzią skrótu) dla punktu, elementu listy i kontaktu. Przeciągania na stronie nie dodajemy. Ticket T3.
 
+Wdrożenie (T3, `canvas/FieldMenu.tsx`, `fieldMoves` w `canvas/pageFields.ts`):
+- **Menu pola** punktu, elementu listy i kontaktu otwiera prawy przycisk myszy w polu (także w linii złączonej kontaktu
+  poza aktywnym fragmentem – kontakt pod kursorem) oraz Shift+F10 / klawisz menu w polu. Nazwa menu jak uchwytu
+  wiersza w CV form („Actions for bullet 3”, nowa „Actions for contact 2”).
+- Pozycje: „Move bullet 3 up” / „Move bullet 3 down” (element w nazwie, bo dalej mogą stać „Move up” / „Move down”
+  wpisu) z podpowiedzią skrótu po prawej (⌥⇧↑/↓ na Macu, Alt+Shift+↑/↓ gdzie indziej; `aria-keyshortcuts`),
+  wyłączone na krańcu listy. Przeniesienie to `moveField` – to samo co skrót: jeden krok cofania, ten sam komunikat
+  („Moved bullet 3 to position 4 of 8.”), kursor zostaje w polu w tym samym miejscu.
+- Za kreską – pozycje menu uchwytu fragmentu pola: wpisu (przy punkcie) albo kontaktów („Add contact”, „Remove
+  contact: …”). Dotąd Shift+F10 w punkcie i kontakcie otwierał właśnie menu uchwytu, więc nic nie ginie. Elementy listy
+  uchwytu nie mają – ich menu ma tylko przeniesienia. Menu pola działa też przy skali stron poniżej 50% (bez uchwytów).
+- W pozostałych polach (i żetonach dat) Shift+F10 bez zmian otwiera menu uchwytu fragmentu, a prawy przycisk myszy –
+  dla spójności – to samo; bez uchwytu (imię i nazwisko, podsumowanie, klauzula) prawy przycisk zostaje przeglądarce.
+- **Pisownia:** aplikacja nie obsługuje `context-menu` w procesie głównym, więc prawy przycisk w Electronie nie
+  pokazywał dotąd żadnego menu (ani podpowiedzi pisowni) – przejęcie go niczego nie zabiera. Gdyby kiedyś doszło
+  natywne menu z podpowiedziami pisowni, menu pola trzeba będzie z nim pogodzić (np. pozycje pisowni na początku).
+- Widoczna droga dla myszy to prawy przycisk (D6 nie dodaje kontrolki w treści strony); dla klawiatury – Shift+F10,
+  jak przy innych menu na stronie (W22).
+
 **D7. Dostępność po usunięciu formularza.** Liniową drogą edycji stają się Outline i Page fields w kolejności
 dokumentu (Tab). Przed T4 ręczna weryfikacja z VoiceOver (ticket T4, `ready-for-human`).
 
@@ -74,6 +93,6 @@ dokumentu (Tab). Przed T4 ręczna weryfikacja z VoiceOver (ticket T4, `ready-for
 
 - **T1** (#132) – Ukrywanie zdjęcia bez kasowania (D2). `ready-for-agent`.
 - **T2** (#133) – Usuwanie kontaktu z menu uchwytu kontaktów (D5). `ready-for-agent`.
-- **T3** (#134) – Widoczne przenoszenie punktów, elementów listy i kontaktów (D6). `ready-for-agent`.
+- **T3** (#134) – Widoczne przenoszenie punktów, elementów listy i kontaktów (D6). Zrobione (zob. „Wdrożenie” w D6).
 - **T4** (#135) – Usunięcie CV form (D1, D7), zależne od T1–T3. `ready-for-human` (weryfikacja z czytnikiem ekranu i decyzja
   o terminie).
