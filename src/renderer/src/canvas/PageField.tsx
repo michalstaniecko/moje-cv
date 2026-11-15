@@ -3,7 +3,7 @@ import type { CvEditor } from '../editor/cvEditor'
 import { useDictionary } from '../i18n'
 import type { JoinedFieldsProps, PageFieldProps } from '../template/editable'
 import { caretAfterChange, fieldValue, normalizePastedText, pastedLines, replaceSelection, type TextSelection } from './pageFieldInput'
-import { fieldChange, isListField, mergeBackward, mergeForward, moveField, pasteLines, splitField, splitsOnEnter, type FieldEdit } from './pageFields'
+import { fieldChange, fieldMoves, isListField, mergeBackward, mergeForward, moveField, pasteLines, splitField, splitsOnEnter, type FieldEdit } from './pageFields'
 import { isContactLabel, suggestionsId } from './ContactLabelSuggestions'
 import type { DatePopoverStore } from './DatePopover'
 import { offsetOf, readSelection, writeSelection, type ActiveFieldStore } from './useActiveField'
@@ -30,7 +30,8 @@ import { offsetOf, readSelection, writeSelection, type ActiveFieldStore } from '
 //   jak po przeniesieniu z menu wiersza.
 // - Strzałki: ←/→ na początku/końcu pola, ↑/↓ w jego pierwszej/ostatniej linii przechodzą do poprzedniego/następnego
 //   Page field w kolejności stron (też przez granicę stron, W8). Shift+F10 / klawisz menu otwiera menu uchwytu
-//   fragmentu pola (jeśli fragment ma uchwyt, W22).
+//   fragmentu pola (jeśli fragment ma uchwyt, W22), a w punkcie, elemencie listy i kontakcie – menu pola z „Move … up/
+//   down” i pozycjami menu uchwytu (FieldMenu.tsx; tam też prawy przycisk myszy).
 // - Escape wychodzi z pola na panel stron (`leaveToPages`, W11); otwartą listę podpowiedzi etykiety kontaktu Escape
 //   najpierw chowa (ContactLabelSuggestions.tsx).
 // - Kompozycja (IME): w trakcie nic nie trafia do edytora i nikt nie przepisuje pola; po niej jedna zmiana.
@@ -293,6 +294,8 @@ function LiveField({ field, text }: Omit<PageFieldProps, 'measuring'>) {
         return
       }
       if ((event.key === 'F10' && event.shiftKey) || event.key === 'ContextMenu') {
+        // Punkt, element listy i kontakt mają własne menu pola (FieldMenu.tsx, nasłuch na panelu stron).
+        if (fieldMoves(key, documentNow())) return
         const handle = fragmentHandle(span, latest.current.fragment)
         if (handle) {
           event.preventDefault()

@@ -10,6 +10,7 @@ import { LiveRegion } from './announcer'
 import { BlockHandle, useBlockMenu } from './BlockMenu'
 import { ContactLabelSuggestions } from './ContactLabelSuggestions'
 import { DatePopover, openDatesAt, type DatePopoverStore } from './DatePopover'
+import { useFieldMenu } from './FieldMenu'
 import { ConsentToolbar, type ClauseLibrary } from './ConsentToolbar'
 import { blockTarget, editMarkupContract, sectionOf } from './editTargets'
 import type { Fragment, Rect } from './fragmentRects'
@@ -28,7 +29,8 @@ const CONTROLS_MIN_SCALE = 0.5
 // nie zmienia ani piksela stron. Tekst CV edytuje się na stronach (Page fields); w warstwie jest to, co nie jest
 // tekstem: przycisk zdjęcia (Field popover zdjęcia, PhotoPopover.tsx), Field popovers dat, podpowiedzi etykiet kontaktu
 // i pasek klauzuli zgody, ⚠ odwróconych dat. Istnieje tylko w Edit mode.
-// Tytuły sekcji i wpisy mają uchwyt menu w marginesie kartki (BlockMenu.tsx); przy skali
+// Tytuły sekcji i wpisy mają uchwyt menu w marginesie kartki (BlockMenu.tsx), a punkty, elementy list i kontakty – menu
+// pola z prawego przycisku myszy i Shift+F10 (FieldMenu.tsx); przy skali
 // poniżej CONTROLS_MIN_SCALE uchwytów nie ma. Dodawanie (AddControls.tsx): pigułki „+” pod sekcjami (też tylko od
 // CONTROLS_MIN_SCALE), pasek „Add to CV” pod ostatnią stroną i podpowiedź w pustym CV – wszystko poza treścią kartek.
 // `onFocusLost` – fokus nie ma dokąd wrócić (fragment zniknął).
@@ -52,6 +54,13 @@ export function EditLayer({
   const { fragments, pages } = useFragmentRects({ layer, panel, document, layout, scale })
 
   const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, onFocusLost, onRemove })
+  const fieldMenu = useFieldMenu({
+    panel,
+    editor,
+    session,
+    handleActions: (fragment) => blockMenu.handles.find((handle) => handle.fragment.key === fragment)?.menu.actions ?? [],
+    onClosed: blockMenu.onClosed
+  })
   const compact = scale < CONTROLS_MIN_SCALE
   const photo = usePhotoEditing({ editor, photo: document.header.photo, onRemove, onFocusLost })
   // Wiersz „Photo” w Outline wybiera zdjęcie i przenosi fokus na nie tak jak warstwa (bieżące obsługi).
@@ -88,6 +97,7 @@ export function EditLayer({
         )
       })}
       {addOnPage.bar}
+      {fieldMenu}
       <LiveRegion announcer={session.announcer} />
       <DateWarnings document={document} panel={panel} layer={layer} fragments={fragments} hidden={compact} />
       {photo.popover}

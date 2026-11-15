@@ -264,7 +264,8 @@ export function useBlockMenu({
 
   // Kontakty w nagłówku (W14, docs/specs/outline-instead-of-cv-form.md, D5): „Dodaj kontakt” – nowy kontakt na końcu,
   // kursor w jego etykiecie na stronie; za kreską po jednym „Usuń kontakt: <etykieta / wartość>” na kontakt, z „Usunięto.
-  // Cofnij”. Kolejność kontaktów zmienia się ⌥⇧↑/↓ w kontakcie na stronie (pageFields.ts), nie z tego menu.
+  // Cofnij”. Kolejność kontaktów zmienia się ⌥⇧↑/↓ w kontakcie na stronie (pageFields.ts) i z menu pola kontaktu
+// (FieldMenu.tsx, D6), które pod „Move contact … up/down” ma też pozycje tego menu.
   // - Po usunięciu kursor w następnym kontakcie, a bez niego – w poprzednim; po ostatnim kontakcie fokus na uchwycie
   //   kontaktów, a gdy nagłówek kontaktów zniknął ze strony – `onFocusLost`.
   // - „Cofnij” stawia kursor w przywróconym kontakcie.

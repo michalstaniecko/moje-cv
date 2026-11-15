@@ -2115,12 +2115,15 @@ test('the menu works from the keyboard alone: Shift+F10 in a field opens the men
   await window.keyboard.press('Enter')
   await expect(pageField('Level – Education “New education”')).toBeFocused()
 
-  // Kontakty w nagłówku: Shift+F10 w kontakcie – menu zaczyna „Add contact”; nowy kontakt z kursorem w jego etykiecie.
+  // Kontakty w nagłówku: Shift+F10 w kontakcie – menu pola kontaktu: „Move contact … up/down”, za kreską pozycje menu
+  // uchwytu kontaktów od „Add contact”; nowy kontakt z kursorem w jego etykiecie.
   await clickAtCharacter(window.locator('.preview .cv-pages [data-joined*="contact:c2:value"]'), 'Email: jane'.length)
   await window.keyboard.press('Shift+F10')
-  const contactsMenu = blockMenu('contacts')
-  await expect(contactsMenu.getByRole('menuitem').first()).toHaveText('Add contact')
-  await expect(contactsMenu.getByRole('menuitem', { name: 'Add contact' })).toBeFocused()
+  const contactMenu = window.getByRole('menu', { name: 'Actions for contact 2', exact: true })
+  await expect(contactMenu.getByRole('menuitem').nth(2)).toHaveText('Add contact')
+  await window.keyboard.press('ArrowDown')
+  await window.keyboard.press('ArrowDown')
+  await expect(contactMenu.getByRole('menuitem', { name: 'Add contact' })).toBeFocused()
   await window.keyboard.press('Enter')
   await expect(labelField(5)).toBeFocused()
   await expect(window.locator('.editor-form').getByLabel(/^Contact value \d$/)).toHaveCount(5)
@@ -2139,6 +2142,91 @@ test('the menu works from the keyboard alone: Shift+F10 in a field opens the men
   // Edycja dalej działa: tytuł jest Page field, a zdjęcie ma swój przycisk.
   await expect(titleField('Education')).toHaveCount(1)
   await expect(photoButton()).toHaveCount(1)
+})
+
+// Menu pola punktu, elementu listy i kontaktu (docs/specs/outline-instead-of-cv-form.md, D6).
+const fieldMenu = (name: string) => window.getByRole('menu', { name: `Actions for ${name}`, exact: true })
+
+test('a right-click or Shift+F10 in a bullet, a list item or a contact opens its menu: “Move … up/down” with the shortcut moves it like Alt+Shift+arrows, disabled at the end of the list; the caret stays in the field and each move is one undo step', async () => {
+  await openFirstCvWithOutline()
+  const bullets = window.locator('.preview .cv-pages [data-field-key^="experience:e1:bullet:"]')
+  const before = await bullets.allTextContents()
+  const third = before[2]!
+
+  // Prawy przycisk myszy w środkowym punkcie: jego przeniesienia ze skrótem, za kreską menu uchwytu wpisu.
+  await bulletField(3).click({ button: 'right' })
+  const menu = fieldMenu('bullet 3')
+  await expect(menu).toBeVisible()
+  await expect(menu.getByRole('menuitem', { name: 'Move bullet 3 up', exact: true })).toBeFocused()
+  await expect(menu.getByRole('menuitem', { name: 'Move bullet 3 down', exact: true })).toHaveAttribute('aria-keyshortcuts', 'Alt+Shift+ArrowDown')
+  await expect(menu.getByRole('menuitem', { name: 'Move bullet 3 down', exact: true })).toContainText('⌥⇧↓')
+  await expect(menu.getByRole('menuitem', { name: 'Move up', exact: true })).toBeVisible()
+  await expect(menu.getByRole('menuitemcheckbox', { name: 'New page before this entry' })).toBeVisible()
+  await menu.getByRole('menuitem', { name: 'Move bullet 3 down', exact: true }).click()
+  await expect(menu).toHaveCount(0)
+  await expect(bullets).toHaveText([...before.slice(0, 2), before[3]!, third, ...before.slice(4)])
+  await expect(bulletField(4)).toBeFocused()
+  await expect.poll(async () => (await caret())?.key).toBe('experience:e1:bullet:e1-b3')
+  await expect(announcement()).toHaveText('Moved bullet 3 to position 4 of 8.')
+  await window.keyboard.press('Meta+z')
+  await expect(bullets).toHaveText(before)
+
+  // Shift+F10 w pierwszym punkcie: „Move … up” wyłączone, fokus na „Move … down”; Escape wraca do pola w to samo miejsce.
+  await clickAtCharacter(bulletField(1), 4)
+  await window.keyboard.press('Shift+F10')
+  const first = fieldMenu('bullet 1')
+  await expect(first.getByRole('menuitem', { name: 'Move bullet 1 up', exact: true })).toBeDisabled()
+  await expect(first.getByRole('menuitem', { name: 'Move bullet 1 down', exact: true })).toBeFocused()
+  await window.keyboard.press('Escape')
+  await expect(first).toHaveCount(0)
+  await expect.poll(caret).toEqual({ key: 'experience:e1:bullet:e1-b1', offset: 4, collapsed: true })
+  // Enter na „Move … down”: punkt niżej, kursor w nim w tym samym miejscu.
+  await window.keyboard.press('Shift+F10')
+  await window.keyboard.press('Enter')
+  await expect(bullets).toHaveText([before[1]!, before[0]!, ...before.slice(2)])
+  await expect.poll(caret).toEqual({ key: 'experience:e1:bullet:e1-b1', offset: 4, collapsed: true })
+  await expect(announcement()).toHaveText('Moved bullet 1 to position 2 of 8.')
+  await window.keyboard.press('Meta+z')
+  await expect(bullets).toHaveText(before)
+
+  // Element listy: ostatni ma wyłączone „Move … down”; lista nie ma uchwytu, więc w menu są tylko przeniesienia.
+  await clickAtCharacter(itemField(2), 2)
+  await window.keyboard.press('Shift+F10')
+  const item = fieldMenu('item 2')
+  await expect(item.getByRole('menuitem')).toHaveCount(2)
+  await expect(item.getByRole('menuitem', { name: 'Move item 2 down', exact: true })).toBeDisabled()
+  await window.keyboard.press('Enter')
+  await expect(itemField(1)).toHaveText('German – B2')
+  await expect(itemField(1)).toBeFocused()
+  await expect.poll(caret).toEqual({ key: 'list:l2:text', offset: 2, collapsed: true })
+  await expect(announcement()).toHaveText('Moved item 2 to position 1 of 2.')
+
+  // Kontakt: za przeniesieniami menu uchwytu kontaktów; przeniesienie z menu otwartego prawym przyciskiem.
+  await clickAtCharacter(window.locator('.preview .cv-pages [data-joined*="contact:c2:value"]'), 'Email: jane'.length)
+  await expect.poll(caret).toEqual({ key: 'contact:c2:value', offset: 'jane'.length, collapsed: true })
+  await pageField('Contact value 2').click({ button: 'right' })
+  const contact = fieldMenu('contact 2')
+  await expect(contact.getByRole('menuitem', { name: 'Add contact' })).toBeVisible()
+  await contact.getByRole('menuitem', { name: 'Move contact 2 down', exact: true }).click()
+  await expect(labelField(3)).toHaveText('Email')
+  await expect(pageField('Contact value 3')).toBeFocused()
+  await expect(announcement()).toHaveText('Moved contact 2 to position 3 of 4.')
+  await window.keyboard.press('Meta+z')
+  await expect(labelField(2)).toHaveText('Email')
+
+  // W polu bez menu pola (stanowisko) prawy przycisk otwiera menu uchwytu wpisu, jak Shift+F10.
+  await roleField(positions[0]).click({ button: 'right' })
+  await expect(blockMenu(`position “${positions[0]}”`)).toBeVisible()
+  await window.keyboard.press('Escape')
+  await expect(roleField(positions[0])).toBeFocused()
+
+  // Kontakt poza aktywnym fragmentem (w Classic jedna linia „etykieta: wartość”): prawy przycisk – menu tego kontaktu.
+  await window.locator('.preview .cv-pages [data-joined*="contact:c3:value"]').click({ button: 'right' })
+  const linkedIn = fieldMenu('contact 3')
+  await linkedIn.getByRole('menuitem', { name: 'Move contact 3 up', exact: true }).click()
+  await expect(labelField(2)).toHaveText('LinkedIn')
+  await expect.poll(async () => (await caret())?.key).toMatch(/^contact:c3:/)
+  await expect(announcement()).toHaveText('Moved contact 3 to position 2 of 4.')
 })
 
 // ---------- Dodawanie na stronach: pigułki „+”, pasek „Add to CV”, puste CV ----------
