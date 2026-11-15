@@ -47,6 +47,11 @@ ostatni ticket: przepisanie ok. 190 testów e2e, które dziś przełączają si�
 
 Odrzucone: zapamiętywanie ostatnio usuniętego zdjęcia poza dokumentem (niewidoczny stan, ginie po zamknięciu CV).
 
+Wdrożenie (T1): przełącznik „Show on CV” jest też przy widocznym zdjęciu (zaznaczony), więc ukryć je można także z
+Outline; przy ukrytym zdjęciu przycisk wiersza przenosi fokus na przełącznik, a włącza je przełącznik (wzorzec ukrytej
+sekcji). Po „Hide” w popoverze fokus trafia na ten przełącznik. Outline sięga po przepływ „Add to CV: Photo” przez
+`canvas/photoRequests.ts` (`session.photo`). Bez komunikatu na żywo – ukrycie sekcji też go nie ma.
+
 **D3. CV design zostaje na pasku narzędzi, nie wchodzi do Outline.** Kolor, font, Template i CV language są już
 osiągalne bez formularza (Q18 z `docs/specs/inline-editing-redesign.md`): popover działa w obu trybach, a Outline
 istnieje tylko w Edit mode. Duplikat w Outline dałby dwa miejsca dla tych samych ustawień. Ustawień, których nie ma
@@ -62,6 +67,11 @@ Fokus po usunięciu: następny kontakt, a gdy go nie ma – poprzedni, a gdy nie
 komentarz w `canvas/BlockMenu.tsx` („kolejność kontaktów zmienia się tylko w CV form”) do poprawy.
 
 Odrzucone: przycisk ✕ przy każdym kontakcie na stronie (nowa kontrolka w treści strony, łatwo kliknąć przypadkiem).
+
+Wdrożenie (T2): kontakt bez etykiety i wartości ma pozycję „Remove contact N” (istniejący napis CV form – `order.contact`
+ma w kilku językach rodzajnik). `RowMenu` stawia jeden separator przed ciągiem pozycji `danger`. Funkcja nazwy
+`removeContactLabel` leży w `editor/fields/entryNames.ts` – przy T4 do przeniesienia razem z innymi rzeczami z
+`editor/fields`, których używają strony.
 
 **D6. Przenoszenie punktów, elementów listy i kontaktów musi mieć widoczną drogę.** Dziś jest tylko skrót ⌥⇧↑/↓.
 Zalecane: menu kontekstowe Page field (prawy przycisk myszy i Shift+F10 w polu) z „Move up” / „Move down”
@@ -91,8 +101,8 @@ dokumentu (Tab). Przed T4 ręczna weryfikacja z VoiceOver (ticket T4, `ready-for
 
 ## Tickety
 
-- **T1** (#132) – Ukrywanie zdjęcia bez kasowania (D2). `ready-for-agent`.
-- **T2** (#133) – Usuwanie kontaktu z menu uchwytu kontaktów (D5). `ready-for-agent`.
+- **T1** (#132) – Ukrywanie zdjęcia bez kasowania (D2). Zrobione.
+- **T2** (#133) – Usuwanie kontaktu z menu uchwytu kontaktów (D5). Zrobione.
 - **T3** (#134) – Widoczne przenoszenie punktów, elementów listy i kontaktów (D6). Zrobione (zob. „Wdrożenie” w D6).
 - **T4** (#135) – Usunięcie CV form (D1, D7), zależne od T1–T3. `ready-for-human` (weryfikacja z czytnikiem ekranu i decyzja
   o terminie).
