@@ -4,8 +4,12 @@ Sesja „grilling” nad kolejnym krokiem eksperymentu z `docs/specs/inline-edit
 Stan na 2026-11-14, gałąź `experiment/inline-editing-redesign`.
 
 **Uwaga:** sesja odbyła się bez właściciela. Agent zadawał pytania i sam na nie odpowiadał, za każdym razem wybierając
-rekomendowaną opcję; każda decyzja jest decyzją roboczą. Decyzje produktowe, które warto potwierdzić, mają oznaczenie
-**[do potwierdzenia]** i są zebrane w „Otwartych pytaniach”.
+rekomendowaną opcję; każda decyzja jest decyzją roboczą. Decyzje produktowe, które warto było potwierdzić, są zebrane
+w „Rozstrzygniętych pytaniach” na końcu.
+
+**Uwaga (2026-11-15):** pięć otwartych pytań rozstrzygnęła druga sesja „grilling”, prowadzona przez agenta na polecenie
+właściciela – bez odpowiedzi właściciela na żywo. Decyzje są w „Rozstrzygniętych pytaniach”; działania na GitHubie
+czekają na wyraźną zgodę właściciela („Do decyzji właściciela”).
 
 **Wymaganie właściciela (punkt wyjścia, bez dyskusji):** „Dobry kierunek. Dalej: w trybie Outline nie ma być żadnych
 formularzy do edycji treści – treść edytuje się bezpośrednio na podglądzie, czyli WYSIWYG.” To świadomie odwraca
@@ -55,7 +59,7 @@ Karta to nadal formularz – tylko bliżej tekstu. Właściciel chce, żeby teks
   kursywy), poziomów umiejętności.
 - Formatowanie „rich text”: edycja wyłącznie tekstu bez formatowania (W5).
 - Przeciąganie fragmentów myszą po stronach (bez zmian względem Q11 poprzedniego speca).
-- Usunięcie CV form – zostaje jako drugi widok paska bocznego (W20).
+- Usunięcie CV form – zostaje na stałe jako drugi widok paska bocznego (W20; rozstrzygnięte pytanie 4).
 - Menu kontekstowe z podpowiedziami pisowni (W24) – osobne zadanie.
 - Zmiany w DOCX builderze, w `paginate.ts` i w arkuszach szablonów.
 
@@ -142,7 +146,7 @@ twarde spacje zostają. Potem:
 - pole wielowierszowe: nowe linie zostają;
 - punkt stanowiska i element listy: tekst wielowierszowy dzieli się na kolejne punkty/elementy (pierwsza linia w miejsce
   kursora, reszta jako nowe elementy za bieżącym, puste linie pomijane), kursor na końcu ostatniego wklejonego – jeden
-  krok cofania (`pasteIntoList` w `documentEdits.ts`) **[do potwierdzenia]**;
+  krok cofania (`pasteIntoList` w `documentEdits.ts`; potwierdzone 2026-11-15, pytanie 1);
 - upuszczenie tekstu (także przeciągnięcie z innego pola) działa jak wklejenie; upuszczenie pliku na stronę – nic.
 Dlaczego: wklejanie z LinkedIn/Worda to główne źródło treści CV; podział na punkty oszczędza ręcznego dzielenia,
 a normalizacja chroni przed niewidocznymi znakami w PDF.
@@ -219,8 +223,8 @@ Odrzucone: placeholdery zawsze w Edit mode (strony w Edit mode stale inne niż P
 formularza); placeholdery bez zajmowania miejsca (nie ma gdzie postawić kursora dla pustej firmy).
 Dlaczego: kompromis znany z edytorów blokowych (placeholder tylko w bieżącym bloku); rozjazd z PDF jest ograniczony do
 miejsca, w którym użytkownik właśnie pisze, i znika po wyjściu z pola. Pozostałe ostrzeżenia (np. „Część treści nie
-mieści się na stronie”) liczą się z podziału Preview mode – `PreviewPane` dostaje oba podziały tylko wtedy, gdy się
-różnią **[do potwierdzenia: czy wystarczy podział Edit mode]**.
+mieści się na stronie”) liczą się zawsze z podziału Preview mode – `PreviewPane` dostaje oba podziały tylko wtedy, gdy się
+różnią (potwierdzone 2026-11-15, pytanie 3; wdrożenie – odstępstwo 10).
 
 ### B. Klawiatura i struktura
 
@@ -268,8 +272,12 @@ Dlaczego: zdjęcie nie jest tekstem; kadrowanie to narzędzie obrazu, nie formul
 **Decyzja:** etykieta i wartość to osobne Page fields (W9). Podpowiedzi etykiet (`defaultContent.contactLabels`, dziś
 `datalist`) – lista `role="listbox"` w Field popover pod polem etykiety (combobox, `aria-autocomplete="list"`), filtrowana
 tym, co wpisano; ↑/↓ i Enter wybierają. Dodawanie: Enter w wartości (W11), „Kontakt” w „Dodaj do CV”, „Dodaj kontakt” w
-menu uchwytu nagłówka. Usuwanie: Backspace w pustym kontakcie; kolejność kontaktów – bez zmian (tylko CV form).
-Dlaczego: kontakty to mała lista – zachowują się jak elementy listy, a podpowiedzi to pomoc przy polu, nie formularz.
+menu uchwytu nagłówka. Usuwanie: Backspace w pustym kontakcie. Kolejność kontaktów: ⌥⇧↑/↓ w etykiecie albo wartości
+kontaktu przenosi go o jedno miejsce (`moveContact` w `documentEdits.ts`, gałąź `contact` w `moveField`, komunikat
+„kontakt n”, jeden krok cofania; decyzja 2026-11-15, pytanie 4). Wcześniej było tu „bez zmian (tylko CV form)” – to był
+błąd: CV form też nie zmienia kolejności kontaktów (`ContactsFields.tsx` ma tylko edycję, dodawanie i ✕).
+Dlaczego: kontakty to mała lista – zachowują się jak elementy listy (także przy przenoszeniu), a podpowiedzi to pomoc
+przy polu, nie formularz.
 
 **W15. Klauzula zgody.**
 **Decyzja:** tekst klauzuli to wielowierszowe Page field `consent:text`. Gdy ma fokus, nad klauzulą pojawia się **pasek
@@ -313,8 +321,8 @@ Dlaczego: zero nowej semantyki historii; użytkownik CV form i stron dostaje te 
 **W20. Co z Edit card?**
 **Decyzja:** **znika** – po ostatnim kawałku (S6) nie ma jej kodu w `canvas/` (`EditCard.tsx`, `cardLabel`, `targetAt`,
 `contractHit`, przyciski fragmentów „Edit: …”). W trakcie przejścia (S1–S4) karta otwiera się już tylko dla części, które
-jeszcze nie mają Page fields. CV form zostaje (widok „Formularz” paska bocznego) jako pełna, liniowa droga edycji i
-siatka bezpieczeństwa; strony obok CV form też są WYSIWYG. Komponenty `editor/fields/*` służą odtąd tylko CV form (i
+jeszcze nie mają Page fields. CV form zostaje na stałe (widok „Formularz” paska bocznego; rozstrzygnięte pytanie 4) jako
+pełna, liniowa droga edycji i siatka bezpieczeństwa; strony obok CV form też są WYSIWYG. Komponenty `editor/fields/*` służą odtąd tylko CV form (i
 `MonthField` w popoverze daty).
 Odrzucone: karta w trybie CV form (dwa sposoby edycji tej samej strony zależnie od paska); karta jako zapasowa droga
 dostępności (CV form robi to lepiej i już jest).
@@ -327,9 +335,10 @@ interakcji na tej samej kartce.
   (`pointer-events: none` – klik trafia w Page field pod spodem), uchwyty menu, pigułki „+”, pasek „Dodaj do CV”,
   podpowiedź w pustym CV, znaczki ⚠ dat, przycisk zdjęcia. Przyciski fragmentów znikają.
 - **Menu uchwytu**: dzisiejsze pozycje + **„Usuń stanowisko” / „Usuń wykształcenie”** (oddzielone, w stylu `danger`, z
-  „Usunięto. Cofnij”) – skoro nie ma karty z tekstowym przyciskiem usuwania **[do potwierdzenia: odstępstwo od reguły z
-  #111 „wpisy usuwa się tekstowym przyciskiem, nie z menu wiersza”]**. „Dodaj …” odsłania nowy element i stawia w nim
-  kursor.
+  „Usunięto. Cofnij”) – skoro nie ma karty z tekstowym przyciskiem usuwania. Reguła z #111 (historia 14: „wpisy usuwa
+  się tekstowym przyciskiem, nie z menu wiersza”, żeby nie usunąć przypadkiem dużego fragmentu) dotyczy wierszy CV form;
+  na stronach menu jest jedynym widocznym miejscem, a ochronę dają kreska, styl `danger` i „Usunięto. Cofnij”
+  (potwierdzone 2026-11-15, pytanie 2; ADR-0010). „Dodaj …” odsłania nowy element i stawia w nim kursor.
 - **Pigułki „+”, „Dodaj do CV”, podpowiedź w pustym CV, „Dodaj” w Outline**: dodają (albo odsłaniają istniejący pusty
   element sekcji – reguła `reuseEmpty` z T5 dla wszystkich wejść) i stawiają kursor w pierwszym polu z placeholderami
   (W10). Części nagłówka: „Imię i nazwisko”, „Kontakt”, „Podsumowanie” odsłaniają pole; „Zdjęcie” – wybór pliku.
@@ -379,7 +388,7 @@ podział przy zmianie fragmentu.
 poziom, punkty, elementy list, tytuły sekcji, klauzula), wyłączony w imieniu, kontaktach i żetonach dat. Słownik – ten
 Electrona/macOS (bez konfiguracji, jak dziś w formularzu); `lang` = CV language jest już na `.cv`. Podkreślenia są tylko
 w Edit mode (PDF i Preview mode nie mają pól edytowalnych). Menu kontekstowe z podpowiedziami – poza zakresem (dziś
-formularz też go nie ma).
+formularz też go nie ma); osobny ticket po zgodzie właściciela (rozstrzygnięte pytanie 5).
 
 ### E. Kod
 
@@ -731,8 +740,8 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
   (`RowMenuAction.danger`, `role="separator"`), z „Removed. Undo” (`useRemovalUndo`). Fokus po usunięciu – na pierwszym
   polu tekstu następnego fragmentu (`neighbourAfterHiding`, jak „Ukryj sekcję”), a bez niego `onFocusLost`; „Undo”
   stawia kursor na końcu pierwszego pola przywróconego wpisu (`activeField.request` – stanowisko/poziom, pusty
-  odsłaniany). Usunięcie i przywrócenie to po jednym kroku cofania. Otwarte pytanie 2 (odstępstwo od #111) nadal do
-  potwierdzenia przez właściciela.
+  odsłaniany). Usunięcie i przywrócenie to po jednym kroku cofania. Reguła z #111 dotyczy CV form – potwierdzone
+  2026-11-15 (rozstrzygnięte pytanie 2).
 - **Karty:** wpisy nie mają już przycisków fragmentów ani kart ze stron (`cardKinds`: zdjęcie, kontakty, klauzula;
   usunięte `edit-fragment--keys`, `keysOnly`, `pageFieldKinds` i gałąź karty w `usePointerOnPages` – klik w `.cv-date`
   obok żetonu otwiera teraz popover najbliższej daty, więc kursor `pointer` na `.cv-date` zostaje). Karta wpisu otwiera
@@ -979,7 +988,9 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
 - **Uchwyt kontaktów (W14 – zrobione):** fragment `contacts` ma uchwyt (`handleFragments`) z jedną pozycją „Add
   contact” – nowy kontakt na końcu, kursor w jego etykiecie, jeden krok cofania; nazwa „Actions for contacts” (nowy
   tekst `editor.order.handle.contacts`). Shift+F10 w polu kontaktu otwiera to menu. W trzech szablonach stoi w marginesie
-  przed `.cv-contact` (sprawdzone zrzutami); ⌥⇧↑/↓ na nim nic nie robi (kolejność kontaktów – tylko CV form, W14).
+  przed `.cv-contact` (sprawdzone zrzutami); ⌥⇧↑/↓ na nim nic nie robi. (Stan po S6. Dopisek „kolejność kontaktów –
+  tylko CV form” był błędny: CV form też jej nie zmienia. Od 2026-11-15 kontakt przenosi ⌥⇧↑/↓ w jego polu – W14,
+  rozstrzygnięte pytanie 4.)
 - **Obrysy:** nad tekstem nie ma już żadnych elementów warstwy (przycisków fragmentów nie ma od S4), obrys pola rysuje
   samo Page field (`pageFields.css`), więc wymaganie „obrysy `pointer-events: none`” jest spełnione bez zmian.
 - **Kontrakt nowego szablonu:** krok 5 checklisty „Nowy szablon” (`domain/schema.ts`) i komentarz `BlockViewOverrides`
@@ -1094,10 +1105,14 @@ Kolejność: S1 → (S2 → S3) ∥ S4 → S5 → S6 → S7.
 8. **Bez komunikatu `aria-live` po dodaniu z pigułki, menu, paska i Outline** (W22; S6) – nazwa nowego pola z fokusem mówi
    to samo; usunięcie wpisu z menu – samo „Removed.”.
 9. **Przycisk zdjęcia zostaje w kolejności Tab** (W22; S6) – jedyne wejście w zdjęcie z klawiatury.
-10. **Ostrzeżenia paska podglądu i sprawdzenie przed eksportem liczą się z bieżącego podziału stron** (W10) – w Edit mode
-    to podział z placeholderami aktywnego fragmentu; `PreviewPane` nie dostaje drugiego podziału Preview mode, o którym
-    mówił W10. Różnica jest możliwa tylko wtedy, gdy placeholdery aktywnej części przesuwają blok ponad wysokość strony
-    (otwarte pytanie 3).
+10. **Ostrzeżenia paska podglądu i sprawdzenie przed eksportem liczą się z bieżącego podziału stron** (W10; do usunięcia
+    po wdrożeniu) – po S7 w Edit mode to podział z placeholderami aktywnego fragmentu, bez drugiego podziału Preview mode,
+    o którym mówił W10. Różnica jest możliwa tylko wtedy, gdy placeholdery aktywnej części przesuwają blok ponad wysokość
+    strony. **Decyzja (2026-11-15, rozstrzygnięte pytanie 3):** ostrzeżenia zawsze z podziału Preview mode, jak chciał
+    W10; wdrożenie idzie dalej na gałęzi. Gdy zbiór `reveal` nie jest pusty, `CvPages` mierzy dodatkowo tylko bloki
+    odsłoniętego fragmentu bez placeholderów (wersja Preview mode) i drugi raz uruchamia czysty `paginate`; `onLayout`
+    zwraca `previewLayout`, z którego korzystają `PreviewPane` i `CvScreen`. Koszt: 1–3 dodatkowe bloki w pomiarze i jeden
+    czysty `paginate` – w budżecie 100 ms (wejście we wpis z pustym polem dziś 32–37 ms, S7).
 11. **Pliki** – bez osobnych `canvas/reveal.ts` (odsłonięcie liczy `usePageEditing.ts`) i `FieldPopover` wydzielony dopiero
     w S4; nazwa `openCard` zastąpiona przez `focusPart`.
 
@@ -1127,19 +1142,51 @@ oraz pomiar na M1 w spakowanej aplikacji.
   (placeholder: stały neutralny szary na białej kartce). **ADR-0008** – DOCX bez zmian; `reveal` nigdy w main.
 - **ADR-0001** – nowe teksty w 16 słownikach.
 
-## Otwarte pytania (do właściciela)
+## Rozstrzygnięte pytania
 
-Stan po S7 – wszystkie zrealizowane według decyzji roboczej; każde da się zmienić bez zmiany dokumentu.
+Stan po S7 – wszystkie były zrealizowane według decyzji roboczej; każde da się zmienić bez zmiany dokumentu.
+Rozstrzygnęła je sesja „grilling” z 2026-11-15, prowadzona przez agenta na polecenie właściciela, bez odpowiedzi
+właściciela na żywo (jak sesja z 2026-11-14, uwaga na początku speca).
 
-1. **[do potwierdzenia]** Wklejenie wielu linii w punkt albo element listy dzieli je na osobne punkty/elementy (W6;
-   zrobione, jeden krok cofania) – czy tak, czy zawsze jeden punkt ze spacjami?
-2. **[do potwierdzenia]** „Usuń stanowisko” / „Usuń wykształcenie” w menu uchwytu wpisu (W21; zrobione, w stylu
-   `danger`, za kreską, z „Usunięto. Cofnij”) – odstępstwo od reguły z #111 „wpisy usuwa się tekstowym przyciskiem, nie
-   z menu wiersza”. Bez karty to jedyne miejsce usuwania wpisu na stronach (CV form ma dalej tekstowy przycisk).
-3. **[do potwierdzenia]** Ostrzeżenia w pasku podglądu (liczba stron, „za długie”, sprawdzenie przed eksportem) liczą
-   się dziś z bieżącego podziału stron – w Edit mode z placeholderami aktywnej części (odstępstwo 10). Czy to wystarcza,
-   czy liczyć je zawsze z podziału Preview mode (drugi pomiar przy aktywnym polu z pustymi polami)?
-4. Czy CV form zostaje na stałe (W20), skoro strony w Edit mode są edytowalne i dostępne dla czytnika ekranu? Dziś to
-   drugi widok paska bocznego (Outline | Formularz) i jedyne miejsce zmiany kolejności kontaktów.
+1. Wklejenie wielu linii w punkt albo element listy dzieli je na osobne punkty/elementy (W6; zrobione, jeden krok
+   cofania) – czy tak, czy zawsze jeden punkt ze spacjami?
+   **Decyzja (2026-11-15):** zostaje jak jest – podział na punkty/elementy w jednym kroku cofania.
+2. „Usuń stanowisko” / „Usuń wykształcenie” w menu uchwytu wpisu (W21; zrobione, w stylu `danger`, za kreską,
+   z „Usunięto. Cofnij”) – odstępstwo od reguły z #111 „wpisy usuwa się tekstowym przyciskiem, nie z menu wiersza”?
+   **Decyzja (2026-11-15):** zostaje. Reguła z #111 (historia 14, ochrona przed przypadkowym usunięciem dużego
+   fragmentu) dotyczy wierszy CV form, który dalej ma tekstowy przycisk. Na stronach nie ma karty, więc menu uchwytu jest
+   jedynym widocznym miejscem usuwania wpisu; ochronę dają kreska, styl `danger` i „Usunięto. Cofnij”. Zapisane
+   w ADR-0010.
+3. Ostrzeżenia w pasku podglądu (liczba stron, „za długie”, sprawdzenie przed eksportem) liczyły się z bieżącego podziału
+   stron – w Edit mode z placeholderami aktywnej części (odstępstwo 10). Wystarcza to, czy liczyć je zawsze z podziału
+   Preview mode?
+   **Decyzja (2026-11-15):** zawsze z podziału Preview mode, jak zakładał W10. Gdy zbiór `reveal` nie jest pusty,
+   `CvPages` mierzy dodatkowo tylko bloki odsłoniętego fragmentu bez placeholderów i drugi raz uruchamia czysty
+   `paginate`; `onLayout` zwraca `previewLayout` dla `PreviewPane` i `CvScreen`. Koszt: 1–3 bloki i jeden `paginate`,
+   w budżecie 100 ms. Wdrożenie idzie dalej na gałęzi; po nim odstępstwo 10 znika.
+4. Czy CV form zostaje na stałe (W20), skoro strony w Edit mode są edytowalne i dostępne dla czytnika ekranu?
+   **Decyzja (2026-11-15):** zostaje na stałe, bez planu usunięcia: liniowa droga edycji i droga dostępności, treść
+   ukrytych sekcji, zmiana kolejności przeciąganiem. Poprawka faktów: pytanie mówiło, że CV form to „jedyne miejsce
+   zmiany kolejności kontaktów” (tak samo W14 i notatka S6) – to nieprawda, `ContactsFields.tsx` ma tylko edycję,
+   dodawanie i ✕. Dlatego kolejność kontaktów zmienia się teraz na stronach: ⌥⇧↑/↓ w etykiecie albo wartości kontaktu
+   (`moveContact` w `documentEdits.ts`, gałąź `contact` w `moveField`, komunikat „kontakt n”; wdrażane równolegle,
+   W14).
 5. Menu kontekstowe z podpowiedziami pisowni (W24) – osobny ticket? Dziś podkreślenia są, podpowiedzi nie ma (jak
    w formularzu).
+   **Decyzja (2026-11-15):** tak, osobny ticket – założony na GitHubie dopiero po wyraźnej zgodzie właściciela.
+
+### Na później (bez zmian teraz)
+
+- „Przenieś kontakt w górę / w dół” w menu uchwytu kontaktów (dziś tylko „Dodaj kontakt”).
+- Przeciąganie kontaktów w CV form.
+- Pole miesiąca w popoverze daty idzie za locale systemu („marzec 2023” w angielskim interfejsie) – tak samo jak
+  w formularzu (obserwacja z S7).
+- „Zainteresowania” z etykietą „ukryta” łamią się w środku słowa w polskim Outline (obserwacja z S7).
+
+### Do decyzji właściciela
+
+Działania na GitHubie czekają na wyraźną zgodę właściciela:
+
+- push gałęzi `experiment/inline-editing-redesign` i PR;
+- zamknięcie #122–#131;
+- założenie ticketów etapu 2, w tym ticketu na podpowiedzi pisowni (pytanie 5).
