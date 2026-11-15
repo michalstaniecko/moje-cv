@@ -15,3 +15,10 @@ export function moveShortcutOffset(event: KeyboardEvent): MoveOffset | undefined
   if (!event.altKey || !event.shiftKey || event.metaKey || event.ctrlKey) return undefined
   return event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : undefined
 }
+
+// Podpowiedź skrótu przy pozycji menu „Przenieś …” (menu pola na stronie): `text` – do pokazania (na Macu symbole
+// klawiszy), `keys` – wartość `aria-keyshortcuts`.
+export function moveShortcutHint(offset: MoveOffset, mac: boolean): { text: string; keys: string } {
+  const arrow = offset === -1 ? '↑' : '↓'
+  return { text: mac ? `⌥⇧${arrow}` : `Alt+Shift+${arrow}`, keys: `Alt+Shift+${offset === -1 ? 'ArrowUp' : 'ArrowDown'}` }
+}
