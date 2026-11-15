@@ -287,6 +287,7 @@ export const de: Dictionary = {
       education: (name) => `Eintrag „${name}“`,
       bullet: (number) => `Punkt ${number}`,
       listItem: (number) => `Eintrag ${number}`,
+      contact: (number) => `Kontakt ${number}`,
       pickedUp: (item) => `${item} aufgenommen.`,
       movedOver: (item, position, total) => `${item} wird verschoben: Position ${position} von ${total}.`,
       dropped: (item, position, total) => `${item} an Position ${position} von ${total} abgelegt.`,

@@ -285,6 +285,7 @@ export const cs: Dictionary = {
       education: (name) => `položku „${name}“`,
       bullet: (number) => `bod ${number}`,
       listItem: (number) => `položku ${number}`,
+      contact: (number) => `kontakt ${number}`,
       pickedUp: (item) => `Zvedli jste ${item}.`,
       movedOver: (item, position, total) => `Přesouváte ${item}: pozice ${position} z ${total}.`,
       dropped: (item, position, total) => `Položili jste ${item} na pozici ${position} z ${total}.`,

@@ -284,6 +284,7 @@ export const pt: Dictionary = {
       education: (name) => `o item “${name}”`,
       bullet: (number) => `o tópico ${number}`,
       listItem: (number) => `o item ${number}`,
+      contact: (number) => `o contato ${number}`,
       pickedUp: (item) => `Você pegou ${item}.`,
       movedOver: (item, position, total) => `Movendo ${item}: posição ${position} de ${total}.`,
       dropped: (item, position, total) => `Você soltou ${item} na posição ${position} de ${total}.`,

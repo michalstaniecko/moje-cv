@@ -284,6 +284,7 @@ export const fr: Dictionary = {
       education: (name) => `l’entrée « ${name} »`,
       bullet: (number) => `la puce ${number}`,
       listItem: (number) => `l’élément ${number}`,
+      contact: (number) => `le contact ${number}`,
       pickedUp: (item) => `Vous avez saisi ${item}.`,
       movedOver: (item, position, total) => `Vous déplacez ${item} : position ${position} sur ${total}.`,
       dropped: (item, position, total) => `Vous avez déposé ${item} en position ${position} sur ${total}.`,

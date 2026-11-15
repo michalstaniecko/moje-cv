@@ -280,6 +280,7 @@ export const id: Dictionary = {
       education: (name) => `entri “${name}”`,
       bullet: (number) => `poin ${number}`,
       listItem: (number) => `item ${number}`,
+      contact: (number) => `kontak ${number}`,
       pickedUp: (item) => `Mengambil ${item}.`,
       movedOver: (item, position, total) => `Memindahkan ${item}: posisi ${position} dari ${total}.`,
       dropped: (item, position, total) => `Meletakkan ${item} di posisi ${position} dari ${total}.`,

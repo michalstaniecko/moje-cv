@@ -285,6 +285,7 @@ export const sv: Dictionary = {
       education: (name) => `posten ”${name}”`,
       bullet: (number) => `punkt ${number}`,
       listItem: (number) => `post ${number}`,
+      contact: (number) => `kontakt ${number}`,
       pickedUp: (item) => `Du har lyft ${item}.`,
       movedOver: (item, position, total) => `Du flyttar ${item}: position ${position} av ${total}.`,
       dropped: (item, position, total) => `Du har släppt ${item} på position ${position} av ${total}.`,

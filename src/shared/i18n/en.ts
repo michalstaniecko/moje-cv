@@ -319,6 +319,7 @@ export const en = {
       education: (name: string) => `entry “${name}”`,
       bullet: (number: number) => `bullet ${number}`,
       listItem: (number: number) => `item ${number}`,
+      contact: (number: number) => `contact ${number}`,
       // Ogłoszenia przeciągania dla czytnika ekranu (dnd-kit); `item` to nazwa z `section`, `position` itd.
       pickedUp: (item: string) => `Picked up ${item}.`,
       movedOver: (item: string, position: number, total: number) => `Moving ${item}: position ${position} of ${total}.`,

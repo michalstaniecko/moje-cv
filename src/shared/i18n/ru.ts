@@ -285,6 +285,7 @@ export const ru: Dictionary = {
       education: (name) => `запись «${name}»`,
       bullet: (number) => `пункт ${number}`,
       listItem: (number) => `элемент ${number}`,
+      contact: (number) => `контакт ${number}`,
       pickedUp: (item) => `Вы взяли ${item}.`,
       movedOver: (item, position, total) => `Вы перемещаете ${item}: позиция ${position} из ${total}.`,
       dropped: (item, position, total) => `Вы поставили ${item} на позицию ${position} из ${total}.`,

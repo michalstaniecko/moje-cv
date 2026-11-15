@@ -280,6 +280,7 @@ export const tr: Dictionary = {
       education: (name) => `“${name}” kaydı`,
       bullet: (number) => `${number}. madde`,
       listItem: (number) => `${number}. öğe`,
+      contact: (number) => `${number}. iletişim`,
       pickedUp: (item) => `${item} alındı.`,
       movedOver: (item, position, total) => `${item} taşınıyor: konum ${position} / ${total}.`,
       dropped: (item, position, total) => `${item} bırakıldı: konum ${position} / ${total}.`,

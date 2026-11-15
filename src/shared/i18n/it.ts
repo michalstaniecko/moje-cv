@@ -284,6 +284,7 @@ export const it: Dictionary = {
       education: (name) => `la voce «${name}»`,
       bullet: (number) => `il punto ${number}`,
       listItem: (number) => `la voce ${number}`,
+      contact: (number) => `il contatto ${number}`,
       pickedUp: (item) => `Hai preso ${item}.`,
       movedOver: (item, position, total) => `Stai spostando ${item}: posizione ${position} di ${total}.`,
       dropped: (item, position, total) => `Hai rilasciato ${item} in posizione ${position} di ${total}.`,

@@ -4,6 +4,7 @@ import { formatYearMonth, isEndBeforeStart } from '../domain/dates'
 import type { CvDocument, EducationItem, ExperienceItem, Section, TextItem, YearMonth } from '../domain/schema'
 import {
   insertContactAfter,
+  moveContact,
   mergeBulletIntoPrevious,
   mergeListItemIntoPrevious,
   moveBullet,
@@ -631,7 +632,7 @@ export function pasteLines(
   }
 }
 
-// ⌥⇧↑/↓ w polu: punkt i element listy – o jedną pozycję w swojej liście; pole albo żeton daty wpisu – cały wpis wśród wpisów sekcji na
+// ⌥⇧↑/↓ w polu: punkt, element listy i kontakt (z etykiety albo wartości) – o jedną pozycję w swojej liście; pole albo żeton daty wpisu – cały wpis wśród wpisów sekcji na
 // stronach (jak „Przenieś wyżej/niżej” w menu uchwytu). Na krańcu albo w innym polu – null. Kursor zostaje w polu.
 // Komunikat – ten sam co po przeniesieniu z menu wiersza („Moved bullet 2 to position 1 of 4.”).
 export function moveField(
@@ -650,6 +651,13 @@ export function moveField(
       change: ref.kind === 'bullet' ? moveBullet(ref.sectionId, ref.item.id, id, to) : moveItem(ref.section.id, id, to),
       announce: (t) => t.order.moved(ref.kind === 'bullet' ? t.order.bullet(number) : t.order.listItem(number), to + 1, total)
     }
+  }
+  if (ref?.kind === 'contact') {
+    const to = ref.index + offset
+    const total = document.header.contacts.length
+    if (to < 0 || to >= total) return null
+    const number = ref.index + 1
+    return { change: moveContact(ref.contact.id, to), announce: (t) => t.order.moved(t.order.contact(number), to + 1, total) }
   }
   if (ref?.kind !== 'experience' && ref?.kind !== 'education' && ref?.kind !== 'date') return null
   const itemId = ref.kind === 'date' ? ref.entry.item.id : ref.item.id

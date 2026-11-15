@@ -284,6 +284,7 @@ export const ro: Dictionary = {
       education: (name) => `intrarea „${name}”`,
       bullet: (number) => `punctul ${number}`,
       listItem: (number) => `elementul ${number}`,
+      contact: (number) => `contactul ${number}`,
       pickedUp: (item) => `Ai ridicat ${item}.`,
       movedOver: (item, position, total) => `Muți ${item}: poziția ${position} din ${total}.`,
       dropped: (item, position, total) => `Ai plasat ${item} pe poziția ${position} din ${total}.`,

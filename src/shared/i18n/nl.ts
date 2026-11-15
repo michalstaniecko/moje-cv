@@ -287,6 +287,7 @@ export const nl: Dictionary = {
       education: (name) => `item “${name}”`,
       bullet: (number) => `punt ${number}`,
       listItem: (number) => `item ${number}`,
+      contact: (number) => `contact ${number}`,
       pickedUp: (item) => `Je hebt ${item} opgepakt.`,
       movedOver: (item, position, total) => `Je verplaatst ${item}: positie ${position} van ${total}.`,
       dropped: (item, position, total) => `Je hebt ${item} neergezet op positie ${position} van ${total}.`,

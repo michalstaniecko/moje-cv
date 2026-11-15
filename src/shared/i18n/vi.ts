@@ -280,6 +280,7 @@ export const vi: Dictionary = {
       education: (name) => `mục nhập “${name}”`,
       bullet: (number) => `ý ${number}`,
       listItem: (number) => `mục ${number}`,
+      contact: (number) => `liên hệ ${number}`,
       pickedUp: (item) => `Đã nhấc ${item}.`,
       movedOver: (item, position, total) => `Đang di chuyển ${item}: vị trí ${position} trên ${total}.`,
       dropped: (item, position, total) => `Đã thả ${item} tại vị trí ${position} trên ${total}.`,

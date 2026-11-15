@@ -418,6 +418,14 @@ describe('the structure of bullets and list items from the keyboard', () => {
     expect(sectionOf(moveField('experience:e3:start', sample, -1)!.change(sample), 'experience').items.map((item) => item.id)).toEqual(['e1', 'e3', 'e2', 'e4'])
     expect(moveField('header:fullName', sample, 1)).toBeNull()
   })
+
+  it('moves a contact by one place from its label or its value, and does nothing at the ends', () => {
+    const contactIds = (document: CvDocument) => document.header.contacts.map((contact) => contact.id)
+    expect(contactIds(moveField('contact:c2:value', sample, 1)!.change(sample))).toEqual(['c1', 'c3', 'c2', 'c4'])
+    expect(contactIds(moveField('contact:c2:label', sample, -1)!.change(sample))).toEqual(['c2', 'c1', 'c3', 'c4'])
+    expect(moveField('contact:c1:label', sample, -1)).toBeNull()
+    expect(moveField('contact:c4:value', sample, 1)).toBeNull()
+  })
 })
 
 describe('announcing changes of structure from the keyboard', () => {
@@ -445,5 +453,6 @@ describe('announcing changes of structure from the keyboard', () => {
     expect(moveField('education:ed1:level', sample, 1)!.announce(t)).toBe(
       'Moved entry “Postgraduate diploma, Procurement Management” to position 2 of 2.'
     )
+    expect(moveField('contact:c2:value', sample, 1)!.announce(t)).toBe('Moved contact 2 to position 3 of 4.')
   })
 })
