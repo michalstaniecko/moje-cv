@@ -65,11 +65,11 @@ The small panel opened next to a Page field or another part of a page in Edit mo
 _Avoid_: Edit card, form, dialog (except the modal photo crop), tooltip
 
 **Outline**:
-The narrow side panel of the CV editor listing the header, every section in CV order (also the hidden and empty ones) and the consent clause, for jumping to a part of the CV, reordering sections and hiding them. Never shows CV content beyond names.
+The narrow side panel of the CV editor listing the header, the photo, every section in CV order (also the hidden and empty ones) and the consent clause, for jumping to a part of the CV, reordering sections and showing or hiding the photo, sections and the clause. Never shows CV content beyond names.
 _Avoid_: Navigator, table of contents, sidebar (as the name of the panel)
 
 **CV form**:
-The complete form with every field of the CV, one under another, kept in the CV editor as an alternative view of the sidebar beside the editable pages and as a complete linear way to edit a CV.
+The complete form with every field of the CV, one under another, an alternative view of the sidebar beside the editable pages. To be removed once the Outline, the pages and the toolbar cover everything it does (ADR-0011).
 _Avoid_: Editor (that is the whole screen), sidebar
 
 **Sponsor bar**:

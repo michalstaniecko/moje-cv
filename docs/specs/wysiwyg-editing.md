@@ -1176,6 +1176,8 @@ właściciela na żywo (jak sesja z 2026-11-14, uwaga na początku speca).
    dodawanie i ✕. Dlatego kolejność kontaktów zmienia się teraz na stronach: ⌥⇧↑/↓ w etykiecie albo wartości kontaktu
    (`moveContact` w `documentEdits.ts`, gałąź `contact` w `moveField`, komunikat „kontakt n”; wdrażane równolegle,
    W14).
+   **Zmienione (2026-11-15, prośba właściciela):** CV form zostanie usunięty, gdy Outline, strony i pasek narzędzi
+   pokryją wszystko, co robi – `docs/specs/outline-instead-of-cv-form.md`, ADR-0011.
 5. Menu kontekstowe z podpowiedziami pisowni (W24) – osobny ticket? Dziś podkreślenia są, podpowiedzi nie ma (jak
    w formularzu).
    **Decyzja (2026-11-15):** tak, osobny ticket – założony na GitHubie dopiero po wyraźnej zgodzie właściciela.
