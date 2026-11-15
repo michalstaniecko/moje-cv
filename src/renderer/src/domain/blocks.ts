@@ -71,10 +71,11 @@ export type GenerateBlocksOptions = { reveal?: Reveal }
 
 const headerParts = ['fullName', 'summary', 'contacts']
 
-// Kontakty na stronie: z niepustą wartością; odsłonięte (`contacts`) – wszystkie, także puste.
+// Kontakty na stronie: z niepustą wartością; odsłonięte (`contacts`) – wszystkie, także puste. Zdjęcie – widoczne.
 function headerBlocks(header: CvDocument['header'], spacing: BlockSpacingMm, reveal: Reveal): DraftBlock[] {
   const contacts = reveal.has('contacts') ? header.contacts : header.contacts.filter((contact) => isFilled(contact.value))
-  const photoUrl = header.photo?.dataUrl ?? null
+  // Ukryte zdjęcie (jak ukryta sekcja) nie trafia na strony, do PDF ani do DOCX – jedyne miejsce tej reguły.
+  const photoUrl = header.photo && !header.photo.hidden ? header.photo.dataUrl : null
   const revealed = headerParts.some((part) => reveal.has(part))
   if (!isFilled(header.fullName) && contacts.length === 0 && !isFilled(header.summary) && !photoUrl && !revealed) return []
   return [

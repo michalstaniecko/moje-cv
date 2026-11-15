@@ -267,6 +267,14 @@ describe('buildDocx', () => {
       expect(withStyle(parts['word/document.xml']!, 'Title').map(text)).toEqual(['Jane Example'])
     })
 
+    test('a hidden photo is left out: plain paragraphs, no image', async () => {
+      const shown = withPhoto(dataUrl('image/jpeg', jpeg))
+      const parts = await docxParts({ ...shown, header: { ...shown.header, photo: { ...shown.header.photo!, hidden: true } } })
+      expect(parts['word/document.xml']).not.toContain('<w:tbl')
+      expect(media(parts)).toEqual([])
+      expect(withStyle(parts['word/document.xml']!, 'Title').map(text)).toEqual(['Jane Example'])
+    })
+
     test.each([
       ['damaged base64', 'data:image/jpeg;base64,@@not base64@@'],
       ['bytes that are not a JPEG', dataUrl('image/jpeg', Buffer.from('hello, world'))],

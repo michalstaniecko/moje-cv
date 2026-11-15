@@ -146,6 +146,26 @@ describe('generateBlocks', () => {
     })
   })
 
+  describe('a hidden photo', () => {
+    const withPhoto = (photo: CvDocument['header']['photo'], header: Partial<CvDocument['header']> = {}): CvDocument => ({
+      ...sampleCvs.en,
+      header: { ...sampleCvs.en.header, ...header, photo }
+    })
+    const photoUrl = 'data:image/png;base64,iVBORw0KGgo='
+
+    it('is left out of the header, while a shown photo is in it', () => {
+      expect(generateBlocks(withPhoto({ dataUrl: photoUrl, hidden: false }), geometry())[0]).toMatchObject({ kind: 'header', photoUrl })
+      expect(generateBlocks(withPhoto({ dataUrl: photoUrl, hidden: true }), geometry())[0]).toMatchObject({ kind: 'header', photoUrl: null })
+    })
+
+    it('alone gives no header block, like no photo at all', () => {
+      const onlyPhoto = (hidden: boolean) => withPhoto({ dataUrl: photoUrl, hidden }, { fullName: '', contacts: [], summary: '' })
+
+      expect(generateBlocks(onlyPhoto(false), geometry())[0]).toMatchObject({ kind: 'header' })
+      expect(generateBlocks(onlyPhoto(true), geometry()).some((block) => block.kind === 'header')).toBe(false)
+    })
+  })
+
   it('writes the end of an ongoing entry in the CV language, leaving the section titles as they are', () => {
     const inLanguage = (language: CvDocument['settings']['language']) =>
       generateBlocks({ ...sampleCvs.en, settings: { ...sampleCvs.en.settings, language } }, geometry())
