@@ -83,6 +83,14 @@ export const updateHeader =
   (patch: Partial<CvDocument['header']>): Change<CvDocument> =>
   (document) => ({ ...document, header: { ...document.header, ...patch } })
 
+// Ukrywa albo pokazuje zdjęcie, zachowując obraz (docs/specs/outline-instead-of-cv-form.md, D2). Bez zdjęcia – bez zmian.
+export const setPhotoHidden =
+  (hidden: boolean): Change<CvDocument> =>
+  (document) => {
+    const { photo } = document.header
+    return photo ? updateHeader({ photo: { ...photo, hidden } })(document) : document
+  }
+
 export const updateConsent =
   (patch: Partial<Pick<CvDocument['consent'], 'enabled' | 'text'>>): Change<CvDocument> =>
   (document) => ({ ...document, consent: { ...document.consent, ...patch } })

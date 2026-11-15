@@ -12,6 +12,7 @@ import {
   moveSection,
   removeEducationItem,
   removeListItem,
+  setPhotoHidden,
   mergeBulletIntoPrevious,
   mergeListItemIntoPrevious,
   pasteIntoBullet,
@@ -249,6 +250,23 @@ describe('contacts', () => {
 
   it('removes a contact', () => {
     expect(contacts(removeContact('c1')(sampleCv))).toEqual(['c2', 'c3', 'c4'])
+  })
+})
+
+describe('setPhotoHidden', () => {
+  const photo = sampleCv.header.photo!
+
+  it('hides the photo keeping its image, and shows it again', () => {
+    const hidden = setPhotoHidden(true)(sampleCv)
+
+    expect(hidden.header.photo).toEqual({ dataUrl: photo.dataUrl, hidden: true })
+    expect(setPhotoHidden(false)(hidden).header).toEqual(sampleCv.header)
+  })
+
+  it('leaves a CV without a photo unchanged', () => {
+    const noPhoto = { ...sampleCv, header: { ...sampleCv.header, photo: null } }
+
+    expect(setPhotoHidden(true)(noPhoto)).toBe(noPhoto)
   })
 })
 
