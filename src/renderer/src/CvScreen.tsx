@@ -64,7 +64,8 @@ export function CvScreen({
   const [leaving, setLeaving] = useState<{ command?: MenuCommand } | null>(null)
   const backButton = useRef<HTMLButtonElement>(null)
   const exportButton = useRef<HTMLButtonElement>(null)
-  // Liczba bloków wyższych niż strona z ostatniego podziału stron podglądu (liczonego po każdej zmianie dokumentu).
+  // Liczba bloków wyższych niż strona z ostatniego podziału stron podglądu (liczonego po każdej zmianie dokumentu) – jak
+  // w Preview mode i w PDF, także przy fragmencie odsłoniętym w Edit mode (W10).
   const oversizedCount = useRef(0)
   const onLayout = useCallback((layout: PaginateResult) => {
     oversizedCount.current = layout.oversizedIds.length

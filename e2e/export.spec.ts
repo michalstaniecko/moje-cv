@@ -1987,6 +1987,54 @@ test('shows the page count, warns about long CVs and oversized fragments only in
   await expect(pageCount).toHaveText(`${longPageCount} pages`)
 })
 
+test('the page count, the length warning and the check before export follow the Preview mode split while an entry or the contacts with empty fields are revealed in Edit mode', async () => {
+  // CV z pustymi punktami pierwszego stanowiska i pustymi kontaktami: w Preview mode ich nie ma, a odsłonięte w Edit mode
+  // (fragment z kursorem) dokładają stron i robią nagłówek wyższy niż strona.
+  const library = window.getByRole('list', { name: 'CV list' })
+  const cvPath = join(outputDir, 'revealed.json')
+  await stubSaveDialog(cvPath)
+  await library.getByRole('button', { name: 'Export to file' }).click()
+  await expect(window.getByRole('status')).toBeVisible()
+  const cv = JSON.parse(await readFile(cvPath, 'utf8'))
+  cv.name = 'Revealed CV'
+  cv.header.contacts.push(...Array.from({ length: 150 }, (_, i) => ({ id: `empty-c${i}`, label: '', value: '' })))
+  cv.sections[0].items[0].bullets.push(...Array.from({ length: 100 }, (_, i) => ({ id: `empty-b${i}`, text: '' })))
+  await writeFile(cvPath, JSON.stringify(cv))
+  await stubOpenDialog(cvPath)
+  await window.getByRole('button', { name: 'Import from file' }).click()
+  await expect(window.getByRole('status')).toHaveText('Imported “Revealed CV”.')
+  await library.getByRole('listitem').filter({ hasText: 'Revealed CV' }).getByRole('button', { name: 'Open' }).click()
+
+  const preview = window.locator('.preview')
+  const pageCount = preview.locator('.preview-page-count')
+  const editPages = preview.locator('.cv-pages > .cv-page')
+  await expect(pageCount).toHaveText(/^[12] pages?$/)
+  const previewCount = await editPages.count()
+  await expect(pageCount).toHaveText(previewCount === 1 ? '1 page' : `${previewCount} pages`)
+  const pdfPath = join(outputDir, 'revealed.pdf')
+  await stubSaveDialog(pdfPath)
+
+  // Kursor w pierwszym stanowisku: jego puste punkty są na stronach Edit mode, ale licznik stron i ostrzeżenie o długości
+  // liczą strony jak w Preview mode.
+  await preview.locator('.cv-pages [data-field-key="experience:e1:role"]').click()
+  await expect(preview.locator('.cv-pages [data-field-key="experience:e1:bullet:empty-b99"]')).toHaveCount(1)
+  await expect.poll(() => editPages.count()).toBeGreaterThan(previewCount + 1)
+  await expect(pageCount).toHaveText(previewCount === 1 ? '1 page' : `${previewCount} pages`)
+  await expect(preview).not.toContainText('longer than 2 pages')
+
+  // Kursor w kontakcie: nagłówek z pustymi kontaktami jest wyższy niż strona w Edit mode, ale w PDF (Preview mode) nie –
+  // eksport nie pyta o uciętą treść.
+  await preview.locator('.cv-pages [data-fragment="contacts"]').first().click()
+  await expect(preview.locator('.cv-pages [data-field-key="contact:empty-c149:value"]')).toHaveCount(1)
+  await expect(preview.locator('.cv-pages .cv-block--oversized')).toHaveCount(1)
+  await expect(pageCount).toHaveText(previewCount === 1 ? '1 page' : `${previewCount} pages`)
+  await expect(preview).not.toContainText('longer than 2 pages')
+  await clickMenuItem('File', 'Export to PDF…')
+  await expect(window.getByText('Saved PDF')).toBeVisible()
+  await expect(window.getByRole('dialog')).toHaveCount(0)
+  expect((await readPdf(await readFile(pdfPath))).pages).toHaveLength(previewCount)
+})
+
 test('the CV length warning looks like a warning, with the warning colour and icon, in the light and the dark appearance', async () => {
   // Kolory tokenu --ui-warning z app.css: #8a5a00 w jasnym, #e3b341 w ciemnym wyglądzie (oba ≥ 4.5:1 na tle paska).
   for (const [appearance, warning] of [

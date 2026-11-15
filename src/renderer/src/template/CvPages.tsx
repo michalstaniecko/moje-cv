@@ -3,6 +3,7 @@ import { onAccentColor } from '../domain/accentColor'
 import { generateBlocks, type CvBlock } from '../domain/blocks'
 import { consentText } from '../domain/consent'
 import { paginate, type PaginateResult } from '../domain/paginate'
+import { blocksToMeasureForPreview } from '../domain/previewSplit'
 import type { CvDocument } from '../domain/schema'
 import { contentAreaMm, pageMetricsPx, type TemplateGeometry } from '../domain/templateGeometry'
 import { CvBlockView } from './CvBlockView'
@@ -12,17 +13,24 @@ import './pages.css'
 import type { TemplateDefinition } from './templateDefinition'
 import { templates } from './templates'
 
-// Mierzy bloki w ukrytym kontenerze (po załadowaniu fontów) i dzieli je na strony.
+// Podział stron Preview mode przy odsłoniętym fragmencie w Edit mode (W10): bloki i klauzula bez odsłonięcia oraz te z
+// bloków, które trzeba zmierzyć osobno (domain/previewSplit.ts) – reszta ma wysokości z pomiaru bloków Edit mode.
+type PreviewSplit = { blocks: CvBlock[]; toMeasure: CvBlock[]; consent: string | null }
+
+// Mierzy bloki w ukrytym kontenerze (po załadowaniu fontów) i dzieli je na strony; z `preview` – także jak w Preview mode.
 function usePagination(
   blocks: CvBlock[],
   font: CvDocument['settings']['font'],
   consent: string | null,
-  geometry: TemplateGeometry
+  geometry: TemplateGeometry,
+  preview: PreviewSplit | null
 ) {
   const blockElements = useRef(new Map<string, HTMLDivElement>())
+  const previewElements = useRef(new Map<string, HTMLDivElement>())
   const consentElement = useRef<HTMLParagraphElement>(null)
-  // Podział stron razem z blokami, z których go policzono (do czasu ponownego podziału bloki mogą być już nowsze).
-  const [state, setState] = useState<{ layout: PaginateResult; blocks: CvBlock[] } | null>(null)
+  // Podział stron (i ten jak w Preview mode) razem z blokami, z których go policzono (do czasu ponownego podziału bloki
+  // mogą być już nowsze).
+  const [state, setState] = useState<{ layout: PaginateResult; previewLayout: PaginateResult; blocks: CvBlock[] } | null>(null)
 
   useLayoutEffect(() => {
     let cancelled = false
@@ -30,29 +38,46 @@ function usePagination(
       if (cancelled) return
       const metrics = pageMetricsPx(geometry)
       const height = (element: Element | null | undefined) => element?.getBoundingClientRect().height ?? 0
-      const layout = paginate({
+      const split = (blocks: CvBlock[], heightOf: (id: string) => number, consent: string | null) =>
+        paginate({
           blocks: blocks.map((block) => ({
             id: block.id,
-            height: height(blockElements.current.get(block.id)),
+            height: heightOf(block.id),
             keepWithNext: block.keepWithNext,
             breakBefore: block.breakBefore
           })),
           pageHeight: metrics.contentHeight,
           consent: consent === null ? null : { height: height(consentElement.current), gap: metrics.consentGap }
         })
-      setState({ layout, blocks })
+      const editHeight = (id: string) => height(blockElements.current.get(id))
+      const layout = split(blocks, editHeight, consent)
+      // Klauzula jak w Preview mode jest tą z Edit mode (odsłonięta pusta klauzula w Preview mode znika – `null`).
+      const measured = new Set(preview?.toMeasure.map((block) => block.id))
+      const previewLayout = preview
+        ? split(preview.blocks, (id) => (measured.has(id) ? height(previewElements.current.get(id)) : editHeight(id)), preview.consent)
+        : layout
+      setState({ layout, previewLayout, blocks })
     })
     return () => {
       cancelled = true
     }
-  }, [blocks, font, consent, geometry])
+  }, [blocks, font, consent, geometry, preview])
 
-  const measureRef = (id: string) => (element: HTMLDivElement | null) => {
-    if (element) blockElements.current.set(id, element)
-    else blockElements.current.delete(id)
+  const refInto = (elements: Map<string, HTMLDivElement>, id: string) => (element: HTMLDivElement | null) => {
+    if (element) elements.set(id, element)
+    else elements.delete(id)
   }
+  const measureRef = (id: string) => refInto(blockElements.current, id)
+  const previewMeasureRef = (id: string) => refInto(previewElements.current, id)
 
-  return { layout: state?.layout ?? null, layoutBlocks: state?.blocks ?? null, measureRef, consentElement }
+  return {
+    layout: state?.layout ?? null,
+    previewLayout: state?.previewLayout ?? null,
+    layoutBlocks: state?.blocks ?? null,
+    measureRef,
+    previewMeasureRef,
+    consentElement
+  }
 }
 
 // Zgłasza gotowość, gdy strony są ułożone, a wszystkie obrazki (zdjęcie) wczytane.
@@ -79,7 +104,8 @@ function useReadySignal(
 // `firstPageOnly` – renderuje tylko pierwszą stronę (miniatura); podział stron i liczba stron w stopce są liczone
 // jak dla całego dokumentu.
 // `onReady` – wywoływane, gdy fonty są załadowane, podział policzony, a zdjęcie wczytane.
-// `onLayout` – wywoływane po każdym podziale stron; `oversizedMessage` wyróżnia bloki wyższe niż strona i podpisuje je
+// `onLayout` – wywoływane po każdym podziale stron, z podziałem stron jak w Preview mode (`previewLayout`: w Edit mode z
+// odsłoniętym fragmentem liczony osobno, bez odsłonięcia – W10; poza tym ten sam); `oversizedMessage` wyróżnia bloki wyższe niż strona i podpisuje je
 // tym komunikatem (tylko podgląd – okno wydruku nie zna języka interfejsu i niczego nie wyróżnia).
 // `editing` – tylko Edit mode (ADR-0010): sloty szablonu i tekst klauzuli zgody rysują tekst pól jako Page fields
 // (editable.tsx), fragmenty z `editing.reveal` mają bloki (a odsłonięta klauzula – miejsce) mimo pustych pól, a stopki
@@ -98,7 +124,7 @@ export function CvPages({
   template?: TemplateDefinition
   firstPageOnly?: boolean
   onReady?: () => void
-  onLayout?: (layout: PaginateResult) => void
+  onLayout?: (layout: PaginateResult, previewLayout: PaginateResult) => void
   oversizedMessage?: string
   editing?: PageEditing
 }) {
@@ -107,13 +133,25 @@ export function CvPages({
   const blocks = useMemo(() => generateBlocks(document, geometry, { reveal }), [document, geometry, reveal])
   // Klauzula odsłonięta w Edit mode (aktywna, pusta) jest na stronie mimo pustego tekstu – jest gdzie postawić kursor.
   const consent = consentText(document) ?? (reveal?.has('consent') && document.consent.enabled ? document.consent.text : null)
-  const { layout, layoutBlocks, measureRef, consentElement } = usePagination(blocks, document.settings.font, consent, geometry)
+  // Z odsłoniętym fragmentem – także bloki bez odsłonięcia, do podziału stron jak w Preview mode (W10).
+  const preview = useMemo((): PreviewSplit | null => {
+    if (!reveal || reveal.size === 0) return null
+    const previewBlocks = generateBlocks(document, geometry)
+    return { blocks: previewBlocks, toMeasure: blocksToMeasureForPreview(previewBlocks, blocks, reveal), consent: consentText(document) }
+  }, [document, geometry, reveal, blocks])
+  const { layout, previewLayout, layoutBlocks, measureRef, previewMeasureRef, consentElement } = usePagination(
+    blocks,
+    document.settings.font,
+    consent,
+    geometry,
+    preview
+  )
   const blocksById = useMemo(() => new Map(blocks.map((block) => [block.id, block])), [blocks])
   const pagesElement = useRef<HTMLDivElement>(null)
   useReadySignal(layout, pagesElement, onReady)
   useEffect(() => {
-    if (layout) onLayout?.(layout)
-  }, [layout, onLayout])
+    if (layout) onLayout?.(layout, previewLayout ?? layout)
+  }, [layout, previewLayout, onLayout])
   // Po każdym renderze z podziałem stron policzonym z bieżących bloków, przed malowaniem: blok przeniesiony na inną
   // stronę jest nowym węzłem, więc edycja przywraca w nim kursor (W8).
   useLayoutEffect(() => {
@@ -161,6 +199,14 @@ export function CvPages({
           )}
         </EditingProvider>
       </div>
+      {preview && preview.toMeasure.length > 0 && (
+        // Bloki Preview mode, których wysokości nie daje pomiar Edit mode – bez Page fields i placeholderów.
+        <div className="cv-measure" aria-hidden>
+          {preview.toMeasure.map((block) => (
+            <CvBlockView key={block.id} block={block} views={views} ref={previewMeasureRef(block.id)} />
+          ))}
+        </div>
+      )}
 
       {/* Ramka i warstwa stron pozwalają podglądowi skalować same strony, bez wpływu na pomiar bloków. */}
       <div className="cv-pages-frame" style={{ '--pages': pages?.length ?? 0 } as CSSProperties}>

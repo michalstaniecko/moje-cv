@@ -14,7 +14,9 @@ import { fitScale, PREVIEW_MARGIN_PX, zoomIn, zoomOut } from './zoom'
 // Podgląd stron CV z licznikiem stron i powiększeniem.
 // Domyślnie strony dopasowane są do szerokości panelu; po użyciu +, − lub 100% obowiązuje wybrana skala,
 // a „Dopasuj” wraca do dopasowania.
-// `onLayout` dostaje każdy nowy podział stron (np. edytor sprawdza przed eksportem, czy są za długie bloki).
+// `onLayout` dostaje każdy nowy podział stron jak w Preview mode (np. edytor sprawdza przed eksportem, czy są za długie
+// bloki). Licznik stron i ostrzeżenia paska podglądu też liczą strony jak w Preview mode, także w Edit mode
+// z odsłoniętym fragmentem (W10, ADR-0010); z podziału stron Edit mode korzysta tylko warstwa edycji.
 // Bloki wyższe niż strona są wyróżnione na kartkach w Edit mode; w Preview mode kartki są jak w PDF, a w pasku
 // podglądu jest ostrzeżenie z „Pokaż” (`onShowOversized` – przejście do Edit mode).
 // `editing` – w Edit mode tekst na stronach to Page fields (ADR-0010, canvas/usePageEditing.ts), a nad stronami leży
@@ -40,11 +42,11 @@ export function PreviewPane({
   const [oversizedCount, setOversizedCount] = useState(0)
   const [layout, setLayout] = useState<PaginateResult | null>(null)
   const onLayout = useCallback(
-    (layout: PaginateResult) => {
+    (layout: PaginateResult, previewLayout: PaginateResult) => {
       setLayout(layout)
-      setPageCount(layout.pages.length)
-      setOversizedCount(layout.oversizedIds.length)
-      onLayoutChange?.(layout)
+      setPageCount(previewLayout.pages.length)
+      setOversizedCount(previewLayout.oversizedIds.length)
+      onLayoutChange?.(previewLayout)
       afterNextPaint(markPreviewPainted)
     },
     [onLayoutChange]
