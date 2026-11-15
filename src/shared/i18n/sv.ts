@@ -184,6 +184,8 @@ export const sv: Dictionary = {
       showOnCv: 'Visa i cv:t',
       showSection: (name) => `Visa ”${name}” i cv:t`,
       showToEdit: 'Visa avsnittet i cv:t för att redigera det',
+      showPhoto: 'Visa fotot i cv:t',
+      showPhotoToEdit: 'Visa fotot i cv:t för att redigera det',
       items: { one: (count) => `${count} post`, other: (count) => `${count} poster` },
       sidebar: 'Sidofält'
     },
@@ -315,6 +317,7 @@ export const sv: Dictionary = {
       change: 'Byt foto',
       choose: 'Välj foto',
       remove: 'Ta bort foto',
+      hide: 'Göm foto',
       errors: {
         unsupported: 'Det gick inte att läsa in fotot – välj en JPEG-, PNG- eller WebP-fil.',
         'too-large': 'Det gick inte att läsa in fotot – filen är för stor (max. 30 MB).',

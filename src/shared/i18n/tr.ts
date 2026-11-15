@@ -179,6 +179,8 @@ export const tr: Dictionary = {
       showOnCv: 'CV’de göster',
       showSection: (name) => `“${name}” bölümünü CV’de göster`,
       showToEdit: 'Düzenlemek için bölümü CV’de gösterin',
+      showPhoto: 'Fotoğrafı CV’de göster',
+      showPhotoToEdit: 'Düzenlemek için fotoğrafı CV’de gösterin',
       items: { one: (count) => `${count} öğe`, other: (count) => `${count} öğe` },
       sidebar: 'Kenar çubuğu'
     },
@@ -310,6 +312,7 @@ export const tr: Dictionary = {
       change: 'Fotoğrafı değiştir',
       choose: 'Fotoğraf seç',
       remove: 'Fotoğrafı kaldır',
+      hide: 'Fotoğrafı gizle',
       errors: {
         unsupported: 'Fotoğraf yüklenemedi – JPEG, PNG veya WebP dosyası seçin.',
         'too-large': 'Fotoğraf yüklenemedi – dosya çok büyük (en fazla 30 MB).',

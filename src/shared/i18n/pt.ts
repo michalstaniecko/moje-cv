@@ -179,6 +179,8 @@ export const pt: Dictionary = {
       showOnCv: 'Mostrar no CV',
       showSection: (name) => `Mostrar “${name}” no CV`,
       showToEdit: 'Mostre a seção no CV para editá-la',
+      showPhoto: 'Mostrar a foto no CV',
+      showPhotoToEdit: 'Mostre a foto no CV para editá-la',
       items: {
         one: (count) => `${count} item`,
         many: (count) => `${count} de itens`,
@@ -314,6 +316,7 @@ export const pt: Dictionary = {
       change: 'Alterar foto',
       choose: 'Escolher foto',
       remove: 'Remover foto',
+      hide: 'Ocultar foto',
       errors: {
         unsupported: 'Não foi possível carregar a foto – escolha um arquivo JPEG, PNG ou WebP.',
         'too-large': 'Não foi possível carregar a foto – o arquivo é grande demais (máx. 30 MB).',

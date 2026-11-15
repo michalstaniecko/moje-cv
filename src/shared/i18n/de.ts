@@ -186,6 +186,8 @@ export const de: Dictionary = {
       showOnCv: 'Im Lebenslauf zeigen',
       showSection: (name) => `„${name}“ im Lebenslauf zeigen`,
       showToEdit: 'Zeige den Abschnitt im Lebenslauf, um ihn zu bearbeiten',
+      showPhoto: 'Foto im Lebenslauf zeigen',
+      showPhotoToEdit: 'Zeige das Foto im Lebenslauf, um es zu bearbeiten',
       items: { one: (count) => `${count} Eintrag`, other: (count) => `${count} Einträge` },
       sidebar: 'Seitenleiste'
     },
@@ -317,6 +319,7 @@ export const de: Dictionary = {
       change: 'Foto ändern',
       choose: 'Foto auswählen',
       remove: 'Foto entfernen',
+      hide: 'Foto ausblenden',
       errors: {
         unsupported: 'Das Foto konnte nicht geladen werden – wähle eine JPEG-, PNG- oder WebP-Datei.',
         'too-large': 'Das Foto konnte nicht geladen werden – die Datei ist zu groß (max. 30 MB).',

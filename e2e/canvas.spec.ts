@@ -1389,7 +1389,7 @@ test('clicking the photo opens its Field popover: changing and cropping the phot
   const before = await photo.getAttribute('src')
   await clickOnPage(photo)
   const popover = photoPopover()
-  await expect(popover.getByRole('button')).toHaveText(['Change photo', 'Crop photo', 'Remove photo'])
+  await expect(popover.getByRole('button')).toHaveText(['Change photo', 'Crop photo', 'Hide photo', 'Remove photo'])
   await expect(popover.getByRole('button', { name: 'Change photo' })).toBeFocused()
   await expect(photoButton()).toHaveAttribute('aria-expanded', 'true')
   // Popover stoi przy zdjęciu, w skali 1:1.
@@ -2651,6 +2651,83 @@ test('a section hidden from the Outline leaves the pages but stays in the Outlin
   await expect(window.getByRole('dialog')).toHaveCount(0)
   await window.keyboard.press('Space')
   await expect(titleField('Skills')).toBeFocused()
+})
+
+const outlinePhoto = () => outline().locator('.outline-photo')
+const outlinePhotoButton = () => outlinePhoto().locator('.outline-row-button')
+const showPhotoSwitch = () => outline().getByRole('switch', { name: 'Show photo on CV', exact: true })
+
+test('“Hide photo” in the photo popover takes the photo off the pages, the PDF and “Add to CV” but keeps it: the Outline marks it hidden and its “Show photo on CV” switch brings back the same image; each change is one undo step', async () => {
+  await window.setViewportSize({ width: 1600, height: 1000 })
+  await openFirstCvWithOutline()
+  const photo = window.locator('.preview .cv-page .cv-photo')
+  const image = await photo.getAttribute('src')
+
+  // Wiersz „Photo” pod „Header”: widoczne zdjęcie – przełącznik włączony, klik w wiersz przenosi fokus na zdjęcie.
+  await expect(outline().locator('.outline-body > *').nth(1)).toHaveClass(/outline-photo/)
+  await expect(outlinePhoto()).toHaveText(/^PhotoShow on CV$/)
+  await expect(showPhotoSwitch()).toBeChecked()
+  await outlinePhotoButton().click()
+  await expect(photoButton()).toBeFocused()
+
+  // „Hide photo” w popoverze: zdjęcia nie ma na stronie (bez „Removed. Undo”), fokus na przełączniku w Outline.
+  await photoButton().press('Enter')
+  await photoPopover().getByRole('button', { name: 'Hide photo' }).click()
+  await expect(photo).toHaveCount(0)
+  await expect(photoPopover()).toHaveCount(0)
+  await expect(photoButton()).toHaveCount(0)
+  await expect(window.getByRole('status').filter({ hasText: 'Removed.' })).toHaveCount(0)
+  await expect(showPhotoSwitch()).toBeFocused()
+  await expect(showPhotoSwitch()).not.toBeChecked()
+  await expect(outlinePhoto()).toHaveText(/^PhotohiddenShow on CV$/)
+  await expect(outlinePhotoButton()).toHaveAccessibleName('Photo hidden')
+  await expect(outlinePhotoButton()).toHaveAccessibleDescription('Show the photo on the CV to edit it')
+  // Ukryte zdjęcie jest tylko w Outline – nie w pasku „Add to CV” ani w PDF.
+  await expect(addBar().getByRole('button', { name: 'Photo', exact: true })).toHaveCount(0)
+  const pdfPath = join(outputDir, 'hidden-photo.pdf')
+  await stubSaveDialog(pdfPath)
+  await window.getByRole('button', { name: 'Export to PDF' }).click()
+  await expect(window.getByText('Saved PDF: hidden-photo.pdf')).toBeVisible()
+  expect((await pdfImagesPerPage(pdfPath)).every((count) => count === 0)).toBe(true)
+
+  // Klik w wiersz ukrytego zdjęcia przenosi fokus na przełącznik, a przełącznik pokazuje to samo zdjęcie.
+  await outlinePhotoButton().click()
+  await expect(showPhotoSwitch()).toBeFocused()
+  await window.keyboard.press('Space')
+  await expect(photo).toHaveAttribute('src', image!)
+  await expect(showPhotoSwitch()).toBeChecked()
+  await expect(outlinePhoto()).toHaveText(/^PhotoShow on CV$/)
+
+  // Wyłączenie przełącznikiem też ukrywa.
+  await showPhotoSwitch().uncheck()
+  await expect(photo).toHaveCount(0)
+
+  // Cofanie: wyłączenie, pokazanie, ukrycie – po jednym kroku.
+  for (const shown of [true, false, true]) {
+    await window.keyboard.press('Meta+z')
+    await expect(photo).toHaveCount(shown ? 1 : 0)
+  }
+  await expect(photo).toHaveAttribute('src', image!)
+})
+
+test('without a photo the Outline “Photo” row has no switch and picks a photo like “Add to CV”: a cancelled crop returns the focus to the row, an applied one focuses the photo on the page', async () => {
+  await openNewCv()
+  const cropper = window.getByRole('dialog', { name: 'Crop photo' })
+  await expect(outlinePhoto()).toHaveText(/^Photo$/)
+  await expect(showPhotoSwitch()).toHaveCount(0)
+
+  await stubOpenDialog(await writeRedBluePhoto())
+  await outlinePhotoButton().click()
+  await cropper.getByRole('button', { name: 'Cancel' }).click()
+  await expect(cropper).toHaveCount(0)
+  await expect(outlinePhotoButton()).toBeFocused()
+  await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(0)
+
+  await outlinePhotoButton().click()
+  await cropper.getByRole('button', { name: 'Apply' }).click()
+  await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(1)
+  await expect(photoButton()).toBeFocused()
+  await expect(showPhotoSwitch()).toBeChecked()
 })
 
 test('sections are reordered in the Outline by dragging and from the row menu, also the hidden ones; the pages follow and each move is one undo step', async () => {

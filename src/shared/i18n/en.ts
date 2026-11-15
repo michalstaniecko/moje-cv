@@ -204,6 +204,9 @@ export const en = {
       // Przełącznik w wierszu ukrytej sekcji (pokazuje ją na stronach) i opis wiersza: ukrytej sekcji nie ma na stronie.
       showSection: (name: string) => `Show “${name}” on CV`,
       showToEdit: 'Show the section on the CV to edit it',
+      // Przełącznik w wierszu „Photo” (zdjęcie widoczne / ukryte) i opis wiersza ukrytego zdjęcia.
+      showPhoto: 'Show photo on CV',
+      showPhotoToEdit: 'Show the photo on the CV to edit it',
       // Liczba wpisów sekcji w Outline – dla czytnika ekranu (na ekranie sama liczba).
       items: outlineItems,
       // Nazwa zwiniętego paska bocznego (szyny) dla czytnika ekranu.
@@ -352,6 +355,8 @@ export const en = {
       change: 'Change photo',
       choose: 'Choose photo',
       remove: 'Remove photo',
+      // Ukrywa zdjęcie, zachowując obraz (Outline pokazuje je z powrotem).
+      hide: 'Hide photo',
       errors: {
         unsupported: 'Couldn’t load the photo – choose a JPEG, PNG or WebP file.',
         'too-large': 'Couldn’t load the photo – the file is too large (max. 30 MB).',

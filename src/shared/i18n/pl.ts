@@ -179,6 +179,8 @@ export const pl: Dictionary = {
       showOnCv: 'Pokaż na CV',
       showSection: (name) => `Pokaż „${name}” na CV`,
       showToEdit: 'Pokaż sekcję na CV, żeby ją edytować',
+      showPhoto: 'Pokaż zdjęcie na CV',
+      showPhotoToEdit: 'Pokaż zdjęcie na CV, żeby je edytować',
       items: {
         one: (count) => `${count} element`,
         few: (count) => `${count} elementy`,
@@ -315,6 +317,7 @@ export const pl: Dictionary = {
       change: 'Zmień zdjęcie',
       choose: 'Wybierz zdjęcie',
       remove: 'Usuń zdjęcie',
+      hide: 'Ukryj zdjęcie',
       errors: {
         unsupported: 'Nie udało się wczytać zdjęcia – wybierz plik JPEG, PNG lub WebP.',
         'too-large': 'Nie udało się wczytać zdjęcia – plik jest za duży (maks. 30 MB).',

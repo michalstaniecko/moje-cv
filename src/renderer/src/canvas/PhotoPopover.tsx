@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CvDocument } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
-import { updateHeader } from '../editor/documentEdits'
+import { setPhotoHidden, updateHeader } from '../editor/documentEdits'
 import { usePhotoPicker } from '../editor/fields/PhotoField'
 import type { RemoveWithUndo } from '../editor/removalUndo'
 import { useDictionary } from '../i18n'
@@ -10,7 +10,10 @@ import type { Fragment } from './fragmentRects'
 
 // Zdjęcie na stronie w Edit mode (docs/specs/wysiwyg-editing.md, W13): nad `img.cv-photo` leży w warstwie edycji
 // przezroczysty przycisk „Photo”, a klik, Enter albo spacja otwiera przy nim Field popover zdjęcia: „Change photo”
-// (wybór pliku i kadrowanie), „Crop photo” (ponowne kadrowanie zdjęcia z CV) i „Remove photo” (z „Removed. Undo”).
+// (wybór pliku i kadrowanie), „Crop photo” (ponowne kadrowanie zdjęcia z CV), „Hide photo” (zdjęcie znika ze stron, ale
+// zostaje w CV – fokus na przełącznik „Show photo on CV” w Outline, który je przywraca; docs/specs/
+// outline-instead-of-cv-form.md, D2) i „Remove photo” (z „Removed. Undo”). Ukrytego zdjęcia nie ma na stronach, więc nie
+// ma też przycisku.
 // Okno kadrowania zostaje modalnym `dialog` jak w CV form (`usePhotoPicker`); po nim fokus wraca na przycisk, który je
 // otworzył. Escape zamyka popover i wraca na przycisk zdjęcia; „Undo” po usunięciu – też na niego, gdy wróci na stronę.
 // `button(fragment)` – przycisk zdjęcia na jego fragmencie (warstwa rysuje go w kolejności fragmentów, czyli czytania
@@ -19,6 +22,8 @@ import type { Fragment } from './fragmentRects'
 // zatwierdzeniu kadru fokus przechodzi na przycisk nowego zdjęcia na stronie, po anulowaniu wraca na przycisk paska
 // (`from`). Pliku, którego nie da się wczytać, dotyczy Field popover przy przycisku paska: komunikat i „Choose photo”
 // (ponowny wybór); Escape wraca na przycisk paska. `adding` – okno kadrowania i ten popover (warstwa rysuje je zawsze).
+// Tak samo dodaje zdjęcie wiersz „Photo” w Outline (photoRequests.ts). `focus()` – fokus na przycisku zdjęcia na stronie
+// (strony przewinięte do niego), a gdy go jeszcze nie ma – zaraz po jego pojawieniu się.
 export function usePhotoEditing({
   editor,
   photo,
@@ -33,7 +38,8 @@ export function usePhotoEditing({
   const t = useDictionary().editor.photo
   const [open, setOpen] = useState(false)
   const button = useRef<HTMLButtonElement | null>(null)
-  const shown = open && photo !== null
+  const visible = photo !== null && !photo.hidden
+  const shown = open && visible
 
   // Po „Undo” usunięcia fokus na przycisku zdjęcia, gdy zdjęcie znów jest na stronie (po pomiarze fragmentów).
   const focusWhenBack = useRef(false)
@@ -45,8 +51,8 @@ export function usePhotoEditing({
     }
   }
   useEffect(() => {
-    if (open && !photo) setOpen(false)
-  }, [open, photo])
+    if (open && !visible) setOpen(false)
+  }, [open, visible])
 
   const close = (returnFocus: boolean) => {
     setOpen(false)
@@ -62,6 +68,22 @@ export function usePhotoEditing({
       }
     })
     onFocusLost()
+  }
+  // Ukrycie: fokus na przełączniku „Show photo on CV” w Outline (przywraca zdjęcie), a bez Outline – w bezpieczne miejsce.
+  const hide = () => {
+    setOpen(false)
+    editor.edit(setPhotoHidden(true))
+    const showSwitch = window.document.querySelector<HTMLElement>('.outline-photo [role="switch"]')
+    if (showSwitch) showSwitch.focus()
+    else onFocusLost()
+  }
+  const focus = () => {
+    if (!button.current) {
+      focusWhenBack.current = true
+      return
+    }
+    button.current.scrollIntoView({ block: 'center' })
+    button.current.focus()
   }
 
   // Dodawanie zdjęcia z paska „Add to CV”.
@@ -118,8 +140,10 @@ export function usePhotoEditing({
       <span className="visually-hidden">{t.legend}</span>
     </button>
   )
-  const popover = shown && <PhotoPanel editor={editor} dataUrl={photo.dataUrl} anchor={() => button.current} onClose={close} onRemove={remove} />
-  return { button: photoButton, popover, add, adding: addingPanels }
+  const popover = shown && (
+    <PhotoPanel editor={editor} dataUrl={photo.dataUrl} anchor={() => button.current} onClose={close} onHide={hide} onRemove={remove} />
+  )
+  return { button: photoButton, popover, add, focus, adding: addingPanels }
 }
 
 function PhotoPanel({
@@ -127,12 +151,14 @@ function PhotoPanel({
   dataUrl,
   anchor,
   onClose,
+  onHide,
   onRemove
 }: {
   editor: CvEditor
   dataUrl: string
   anchor: () => HTMLElement | null
   onClose: (returnFocus: boolean) => void
+  onHide: () => void
   onRemove: () => void
 }) {
   const t = useDictionary().editor.photo
@@ -164,6 +190,9 @@ function PhotoPanel({
         }}
       >
         {t.crop}
+      </button>
+      <button type="button" onClick={onHide}>
+        {t.hide}
       </button>
       <button type="button" className="danger" onClick={onRemove}>
         {t.remove}

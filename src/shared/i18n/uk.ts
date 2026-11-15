@@ -179,6 +179,8 @@ export const uk: Dictionary = {
       showOnCv: 'Показати в резюме',
       showSection: (name) => `Показати «${name}» в резюме`,
       showToEdit: 'Покажіть розділ у резюме, щоб його редагувати',
+      showPhoto: 'Показати фото в резюме',
+      showPhotoToEdit: 'Покажіть фото в резюме, щоб його редагувати',
       items: {
         one: (count) => `${count} елемент`,
         few: (count) => `${count} елементи`,
@@ -315,6 +317,7 @@ export const uk: Dictionary = {
       change: 'Змінити фото',
       choose: 'Вибрати фото',
       remove: 'Видалити фото',
+      hide: 'Сховати фото',
       errors: {
         unsupported: 'Не вдалося завантажити фото – виберіть файл JPEG, PNG або WebP.',
         'too-large': 'Не вдалося завантажити фото – файл завеликий (макс. 30 МБ).',

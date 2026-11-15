@@ -2,7 +2,7 @@ import { useId, useRef, type ReactNode } from 'react'
 import { plural } from '../../../shared/i18n/plural'
 import type { CvDocument, Section } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
-import { moveSection, updateConsent, updateSection } from '../editor/documentEdits'
+import { moveSection, setPhotoHidden, updateConsent, updateSection } from '../editor/documentEdits'
 import { sectionName } from '../editor/fields/SectionTitleField'
 import type { RowMenuAction } from '../editor/RowMenu'
 import { SortableList } from '../editor/SortableList'
@@ -15,6 +15,10 @@ import type { EditSession } from './useEditSession'
 // Outline (GLOSSARY.md; docs/specs/inline-editing-redesign.md, Q13): wąski pasek boczny Edit mode z konspektem CV –
 // to, czego nie widać na kartkach, i szybki skok do części CV.
 // - „Nagłówek” stawia kursor w imieniu i nazwisku na stronie (Page field; puste jest odsłaniane).
+// - „Zdjęcie” (docs/specs/outline-instead-of-cv-form.md, D2) – wzorzec klauzuli zgody: bez zdjęcia przycisk wiersza
+//   wybiera je (wybór pliku i kadrowanie jak w pasku „Add to CV”), a przełącznika nie ma; ze zdjęciem przełącznik
+//   „Pokaż na CV” je ukrywa i pokazuje (obraz zostaje w CV), przycisk wiersza przenosi fokus na zdjęcie na stronie,
+//   a ukryte – oznaczone „ukryte” – na przełącznik (opis wiersza mówi, że trzeba je pokazać).
 // - Sekcje w kolejności CV (także ukryte i puste) z liczbą wpisów (czytnik ekranu słyszy ją jako opis „3 elementy”)
 //   i oznaczeniem „ukryta” / „pusta”. Uchwyt: przeciąganie
 //   myszą i menu („Przenieś wyżej/niżej”, „Nowa strona przed”, „Ukryj sekcję” z zaznaczeniem, „Dodaj …”) – każda zmiana
@@ -41,6 +45,9 @@ export function Outline({
   const language = useInterfaceLanguage()
   const countId = useId()
   const consentSwitch = useRef<HTMLInputElement>(null)
+  const photoRow = useRef<HTMLButtonElement>(null)
+  const photoSwitch = useRef<HTMLInputElement>(null)
+  const { photo } = document.header
 
   // Kursor w części CV na stronie (strony przewinięte do jej fragmentu, jeśli już tam jest).
   const focusPart = (target: EditTarget) => {
@@ -117,6 +124,35 @@ export function Outline({
         >
           <span className="outline-row-name">{t.header}</span>
         </button>
+        <div className="outline-photo" data-hidden={photo?.hidden || undefined}>
+          <button
+            ref={photoRow}
+            type="button"
+            className="outline-row-button"
+            aria-describedby={photo?.hidden ? `${countId}-show-photo` : undefined}
+            onClick={() => {
+              if (!photo) session.photo.add(() => photoRow.current)
+              else if (photo.hidden) photoSwitch.current?.focus()
+              else session.photo.focus()
+            }}
+          >
+            <span className="outline-row-name">{t.photo.legend}</span>
+            {photo?.hidden && <span className="outline-badge">{t.outline.hidden}</span>}
+          </button>
+          {photo && (
+            <label className="outline-switch">
+              <input
+                ref={photoSwitch}
+                type="checkbox"
+                role="switch"
+                checked={!photo.hidden}
+                aria-label={t.outline.showPhoto}
+                onChange={(event) => editor.edit(setPhotoHidden(!event.target.checked))}
+              />
+              <span aria-hidden="true">{t.outline.showOnCv}</span>
+            </label>
+          )}
+        </div>
         <SortableList
           items={document.sections}
           label={(section) => t.order.section(sectionName(section, t))}
@@ -208,6 +244,7 @@ export function Outline({
             )
         )}
         <span id={`${countId}-show-to-edit`}>{t.outline.showToEdit}</span>
+        <span id={`${countId}-show-photo`}>{t.outline.showPhotoToEdit}</span>
       </div>
       {footer}
     </nav>

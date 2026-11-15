@@ -179,6 +179,8 @@ export const id: Dictionary = {
       showOnCv: 'Tampilkan di CV',
       showSection: (name) => `Tampilkan “${name}” di CV`,
       showToEdit: 'Tampilkan bagian di CV untuk mengeditnya',
+      showPhoto: 'Tampilkan foto di CV',
+      showPhotoToEdit: 'Tampilkan foto di CV untuk mengeditnya',
       items: { other: (count) => `${count} item` },
       sidebar: 'Bilah samping'
     },
@@ -310,6 +312,7 @@ export const id: Dictionary = {
       change: 'Ganti foto',
       choose: 'Pilih foto',
       remove: 'Hapus foto',
+      hide: 'Sembunyikan foto',
       errors: {
         unsupported: 'Tidak dapat memuat foto – pilih file JPEG, PNG, atau WebP.',
         'too-large': 'Tidak dapat memuat foto – file terlalu besar (maks. 30 MB).',

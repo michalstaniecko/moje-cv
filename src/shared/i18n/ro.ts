@@ -179,6 +179,8 @@ export const ro: Dictionary = {
       showOnCv: 'Arată în CV',
       showSection: (name) => `Arată „${name}” în CV`,
       showToEdit: 'Arată secțiunea în CV pentru a o edita',
+      showPhoto: 'Arată fotografia în CV',
+      showPhotoToEdit: 'Arată fotografia în CV pentru a o edita',
       items: {
         one: (count) => `${count} element`,
         few: (count) => `${count} elemente`,
@@ -314,6 +316,7 @@ export const ro: Dictionary = {
       change: 'Schimbă fotografia',
       choose: 'Alege fotografia',
       remove: 'Elimină fotografia',
+      hide: 'Ascunde fotografia',
       errors: {
         unsupported: 'Fotografia nu a putut fi încărcată – alege un fișier JPEG, PNG sau WebP.',
         'too-large': 'Fotografia nu a putut fi încărcată – fișierul este prea mare (max. 30 MB).',

@@ -179,6 +179,8 @@ export const vi: Dictionary = {
       showOnCv: 'Hiện trên CV',
       showSection: (name) => `Hiện “${name}” trên CV`,
       showToEdit: 'Hiện mục trên CV để chỉnh sửa',
+      showPhoto: 'Hiện ảnh trên CV',
+      showPhotoToEdit: 'Hiện ảnh trên CV để chỉnh sửa',
       items: { other: (count) => `${count} mục` },
       sidebar: 'Thanh bên'
     },
@@ -310,6 +312,7 @@ export const vi: Dictionary = {
       change: 'Đổi ảnh',
       choose: 'Chọn ảnh',
       remove: 'Xóa ảnh',
+      hide: 'Ẩn ảnh',
       errors: {
         unsupported: 'Không thể tải ảnh – hãy chọn tệp JPEG, PNG hoặc WebP.',
         'too-large': 'Không thể tải ảnh – tệp quá lớn (tối đa 30 MB).',

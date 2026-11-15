@@ -186,6 +186,8 @@ export const nl: Dictionary = {
       showOnCv: 'Tonen op cv',
       showSection: (name) => `“${name}” tonen op cv`,
       showToEdit: 'Toon de sectie op het cv om hem te bewerken',
+      showPhoto: 'Foto tonen op cv',
+      showPhotoToEdit: 'Toon de foto op het cv om deze te bewerken',
       items: { one: (count) => `${count} item`, other: (count) => `${count} items` },
       sidebar: 'Zijbalk'
     },
@@ -317,6 +319,7 @@ export const nl: Dictionary = {
       change: 'Wijzig foto',
       choose: 'Kies foto',
       remove: 'Verwijder foto',
+      hide: 'Verberg foto',
       errors: {
         unsupported: 'Kan de foto niet laden – kies een JPEG-, PNG- of WebP-bestand.',
         'too-large': 'Kan de foto niet laden – het bestand is te groot (max. 30 MB).',

@@ -179,6 +179,8 @@ export const cs: Dictionary = {
       showOnCv: 'Zobrazit v CV',
       showSection: (name) => `Zobrazit „${name}“ v CV`,
       showToEdit: 'Zobrazte sekci v CV, abyste ji mohli upravit',
+      showPhoto: 'Zobrazit fotku v CV',
+      showPhotoToEdit: 'Zobrazte fotku v CV, abyste ji mohli upravit',
       items: {
         one: (count) => `${count} položka`,
         few: (count) => `${count} položky`,
@@ -315,6 +317,7 @@ export const cs: Dictionary = {
       change: 'Změnit fotku',
       choose: 'Vybrat fotku',
       remove: 'Odstranit fotku',
+      hide: 'Skrýt fotku',
       errors: {
         unsupported: 'Fotku se nepodařilo načíst – vyberte soubor JPEG, PNG nebo WebP.',
         'too-large': 'Fotku se nepodařilo načíst – soubor je příliš velký (max. 30 MB).',

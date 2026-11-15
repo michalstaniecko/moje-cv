@@ -1050,7 +1050,8 @@ textarea:focus-visible {
   padding-left: 4px;
 }
 
-.outline-section[data-hidden] .outline-row-name {
+.outline-section[data-hidden] .outline-row-name,
+.outline-photo[data-hidden] .outline-row-name {
   color: var(--ui-text-muted);
   text-decoration: line-through;
 }
@@ -1080,6 +1081,8 @@ textarea:focus-visible {
   border-top: 1px solid var(--ui-border);
 }
 
+/* Wiersz „Zdjęcie” pod „Nagłówkiem”: jak klauzula zgody (przełącznik pod nazwą), ukryte – przekreślone jak sekcja. */
+.outline-photo .outline-row-button,
 .outline-consent .outline-row-button {
   width: 100%;
   padding-left: 36px;

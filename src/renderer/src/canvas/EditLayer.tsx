@@ -54,6 +54,15 @@ export function EditLayer({
   const blockMenu = useBlockMenu({ editor, document, fragments, layout, layer, session, onFocusLost, onRemove })
   const compact = scale < CONTROLS_MIN_SCALE
   const photo = usePhotoEditing({ editor, photo: document.header.photo, onRemove, onFocusLost })
+  // Wiersz „Photo” w Outline wybiera zdjęcie i przenosi fokus na nie tak jak warstwa (bieżące obsługi).
+  const latestPhoto = useRef(photo)
+  useEffect(() => {
+    latestPhoto.current = photo
+  })
+  useEffect(
+    () => session.photo.bind({ add: (from) => latestPhoto.current.add(from), focus: () => latestPhoto.current.focus() }),
+    [session.photo]
+  )
   const addOnPage = useAddControls({ editor, document, session, fragments, pages, layer, compact, addPhoto: photo.add })
   // Bieżący dokument dla obsługi kliknięcia – bez niego w zależnościach przyciski nie przerysowują się przy każdym klawiszu.
   const latestDocument = useRef(document)
