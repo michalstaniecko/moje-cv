@@ -3484,7 +3484,7 @@ test('exports a CV to a JSON file and imports it back as a new CV; an invalid fi
   expect(basename(saveDialogOptions![0]!.defaultPath!)).toBe('CV – Talent Partners.json')
   const exported = JSON.parse(await readFile(jsonPath, 'utf8'))
   expect(exported).toMatchObject({
-    schemaVersion: 6,
+    schemaVersion: 7,
     name: 'CV – Talent Partners',
     settings: { template: 'classic', language: 'en' },
     header: { fullName: 'Jane Example' }

@@ -80,7 +80,7 @@ export function usePhotoPicker(editor: CvEditor, { onCropEnd }: { onCropEnd?: ()
     <PhotoCropper
       source={source}
       onApply={(dataUrl) => {
-        editor.edit(updateHeader({ photo: { dataUrl } }))
+        editor.edit(updateHeader({ photo: { dataUrl, hidden: false } }))
         end()
       }}
       onCancel={end}

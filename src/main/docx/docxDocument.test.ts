@@ -220,7 +220,7 @@ describe('buildDocx', () => {
     const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0xff, 0xd9])
     const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52])
     const dataUrl = (mime: string, bytes: Buffer) => `data:${mime};base64,${bytes.toString('base64')}`
-    const withPhoto = (url: string | null): CvDocument => cv({ header: { ...sample.header, photo: url === null ? null : { dataUrl: url } } })
+    const withPhoto = (url: string | null): CvDocument => cv({ header: { ...sample.header, photo: url === null ? null : { dataUrl: url, hidden: false } } })
     const media = (parts: Record<string, string>) => Object.keys(parts).filter((path) => path.startsWith('word/media/'))
 
     test('a JPEG photo sits next to the name, contacts and summary in a borderless two-column table', async () => {

@@ -18,7 +18,12 @@ export const cvMigrations: CvMigrations = {
   4: (document) => document,
   // 5 → 6: CV dostaje CV language – istniejące i importowane stare CV są po polsku, więc drukują to samo co dotąd
   // („obecnie”). Migracje działają przy każdym odczycie, więc nie zależą od języka interfejsu.
-  5: (document) => ({ ...document, settings: { ...(document.settings as object), language: 'pl' } })
+  5: (document) => ({ ...document, settings: { ...(document.settings as object), language: 'pl' } }),
+  // 6 → 7: zdjęcie dostaje stan „ukryte” – istniejące zdjęcie zostaje widoczne.
+  6: (document) => {
+    const header = document.header as JsonObject
+    return header.photo ? { ...document, header: { ...header, photo: { ...(header.photo as object), hidden: false } } } : document
+  }
 }
 
 // Dokument z nowszej wersji aplikacji – tej wersji nie da się go odczytać.

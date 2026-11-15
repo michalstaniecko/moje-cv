@@ -86,7 +86,7 @@ function sampleCv(language: CvLanguage, text: SampleCvText): CvDocument {
     settings: defaultCvSettings(language),
     header: {
       fullName: text.fullName,
-      photo: { dataUrl: placeholderPhoto },
+      photo: { dataUrl: placeholderPhoto, hidden: false },
       contacts: [text.contacts.phone, text.contacts.email, text.contacts.linkedin, text.contacts.city].map((contact, index) => ({
         id: `c${index + 1}`,
         ...contact

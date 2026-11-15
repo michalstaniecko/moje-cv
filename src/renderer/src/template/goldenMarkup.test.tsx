@@ -23,7 +23,7 @@ const edgeCases: CvDocument = {
   ...en,
   header: {
     fullName: 'Jane Example',
-    photo: { dataUrl: 'data:image/png;base64,iVBORw0KGgo=' },
+    photo: { dataUrl: 'data:image/png;base64,iVBORw0KGgo=', hidden: false },
     contacts: [
       { id: 'c1', label: '', value: 'jane@example.com' },
       { id: 'c2', label: 'Phone', value: '+1 555 0100' },

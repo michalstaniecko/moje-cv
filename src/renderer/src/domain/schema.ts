@@ -76,7 +76,7 @@ export const cvLanguageCodes = interfaceLanguageCodes
 export type CvLanguage = (typeof cvLanguageCodes)[number]
 
 // Bieżąca wersja schematu CV. Zmiana schematu = podbicie wersji i migracja ze starej (patrz migrations.ts).
-export const CV_SCHEMA_VERSION = 6
+export const CV_SCHEMA_VERSION = 7
 
 export const cvDocumentSchema = z.object({
   schemaVersion: z.literal(CV_SCHEMA_VERSION),
@@ -98,7 +98,8 @@ export const cvDocumentSchema = z.object({
   }),
   header: z.object({
     fullName: z.string(),
-    photo: z.object({ dataUrl: z.string() }).nullable(),
+    // Zdjęcie ukryte (`hidden`) zachowuje obraz, ale – jak ukryta sekcja – nie trafia na strony, do PDF ani do DOCX.
+    photo: z.object({ dataUrl: z.string(), hidden: z.boolean() }).nullable(),
     contacts: z.array(z.object({ id: idSchema, label: z.string(), value: z.string() })),
     summary: z.string()
   }),

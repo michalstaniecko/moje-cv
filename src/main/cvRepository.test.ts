@@ -36,7 +36,7 @@ describe('save and get', () => {
 describe('atomic save', () => {
   test('a reader never sees a half-written file while the CV is being overwritten', async () => {
     const large = (index: number) =>
-      cv({ name: `Wersja ${index}`, header: { ...sampleCv.header, photo: { dataUrl: 'x'.repeat(4_000_000 + index) } } })
+      cv({ name: `Wersja ${index}`, header: { ...sampleCv.header, photo: { dataUrl: 'x'.repeat(4_000_000 + index), hidden: false } } })
     await repository.save(large(0))
 
     let saving = true
@@ -750,10 +750,12 @@ describe('schema migrations', () => {
       return { ...rest, header: { ...headerRest, fullName: name } }
     }
   }
-  const { fullName, ...headerWithoutName } = sampleCv.header
+  // Wersja 6: zdjęcie bez stanu „ukryte” (sampleCv ma zdjęcie).
+  const version6 = { ...sampleCv, schemaVersion: 6, header: { ...sampleCv.header, photo: { dataUrl: sampleCv.header.photo!.dataUrl } } }
+  const { fullName, ...headerWithoutName } = version6.header
   const { language: _language, ...settingsWithoutLanguage } = sampleCv.settings
   const { template: _template, ...settingsWithoutTemplate } = settingsWithoutLanguage
-  const version5 = { ...sampleCv, schemaVersion: 5, settings: settingsWithoutLanguage }
+  const version5 = { ...version6, schemaVersion: 5, settings: settingsWithoutLanguage }
   const version3 = { ...version5, schemaVersion: 3 }
   const version2 = { ...version3, schemaVersion: 2, settings: settingsWithoutTemplate }
   const { tags: _tags, ...version1 } = { ...version2, schemaVersion: 1 }
@@ -792,7 +794,7 @@ describe('schema migrations', () => {
 
     expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
     expect(stored.settings).toEqual({ ...settingsWithoutTemplate, template: 'classic', language: 'pl' })
-    expect({ ...stored, schemaVersion: 2, settings: settingsWithoutTemplate }).toEqual(version2)
+    expect({ ...stored, schemaVersion: 2, settings: settingsWithoutTemplate, header: version6.header }).toEqual(version2)
   })
 
   test('a CV saved before the Modern template existed (version 3) opens unchanged, with its template', async () => {
@@ -802,19 +804,19 @@ describe('schema migrations', () => {
     const stored = await repository.get(sampleCv.id)
 
     expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
-    expect({ ...stored, schemaVersion: 3, settings: settingsWithoutLanguage }).toEqual(version3)
+    expect({ ...stored, schemaVersion: 3, settings: settingsWithoutLanguage, header: version6.header }).toEqual(version3)
   })
 
   test('a CV saved before the Bold template existed (version 4) opens unchanged, with its template', async () => {
     const settings4 = { ...settingsWithoutLanguage, template: 'modern' }
-    const version4 = { ...sampleCv, schemaVersion: 4, settings: settings4 }
+    const version4 = { ...version6, schemaVersion: 4, settings: settings4 }
     await mkdir(cvDir, { recursive: true })
     await writeFile(join(cvDir, `${sampleCv.id}.json`), JSON.stringify(version4))
 
     const stored = await repository.get(sampleCv.id)
 
     expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
-    expect({ ...stored, schemaVersion: 4, settings: settings4 }).toEqual(version4)
+    expect({ ...stored, schemaVersion: 4, settings: settings4, header: version6.header }).toEqual(version4)
     expect(stored.settings.template).toBe('modern')
   })
 
@@ -828,7 +830,7 @@ describe('schema migrations', () => {
     expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
     expect(stored.settings.language).toBe('pl')
     const { language: _storedLanguage, ...storedSettings } = stored.settings
-    expect({ ...stored, schemaVersion: 5, settings: storedSettings }).toEqual(englishVersion5)
+    expect({ ...stored, schemaVersion: 5, settings: storedSettings, header: version6.header }).toEqual(englishVersion5)
   })
 
   test('an imported file from before CV language existed (version 5) is in Polish', async () => {
@@ -838,8 +840,25 @@ describe('schema migrations', () => {
     expect(await repository.get(imported.id)).toEqual(imported)
   })
 
-  test('a file from the version after CV language (version 7) comes from a newer version of the app', async () => {
-    const error = await repository.importJson(JSON.stringify({ ...sampleCv, schemaVersion: 7 })).catch((error: unknown) => error)
+  test('a CV saved before photos could be hidden (version 6) opens with its photo shown, otherwise unchanged', async () => {
+    await mkdir(cvDir, { recursive: true })
+    await writeFile(join(cvDir, `${sampleCv.id}.json`), JSON.stringify(version6))
+
+    const stored = await repository.get(sampleCv.id)
+
+    expect(stored.schemaVersion).toBe(CV_SCHEMA_VERSION)
+    expect(stored.header.photo).toEqual({ dataUrl: version6.header.photo.dataUrl, hidden: false })
+    expect(stored).toEqual(sampleCv)
+  })
+
+  test('a CV without a photo from version 6 stays without a photo', async () => {
+    const imported = await repository.importJson(JSON.stringify({ ...version6, header: { ...version6.header, photo: null } }))
+
+    expect(imported.header.photo).toBeNull()
+  })
+
+  test('a file from the version after hidden photos (version 8) comes from a newer version of the app', async () => {
+    const error = await repository.importJson(JSON.stringify({ ...sampleCv, schemaVersion: 8 })).catch((error: unknown) => error)
 
     expect((error as InvalidCvFileError).reason).toBe('newer-version')
   })

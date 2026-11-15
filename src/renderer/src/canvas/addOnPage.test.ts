@@ -42,7 +42,9 @@ describe('addToCvItems', () => {
     const kinds = (items: ReturnType<typeof addToCvItems>) => items.map((item) => item.kind)
     expect(kinds(header({ fullName: 'Jane' }))).not.toContain('fullName')
     expect(kinds(header({ fullName: '   ' }))).toContain('fullName')
-    expect(kinds(header({ photo: { dataUrl: 'data:image/png;base64,' } }))).not.toContain('photo')
+    expect(kinds(header({ photo: { dataUrl: 'data:image/png;base64,', hidden: false } }))).not.toContain('photo')
+    // Ukryte zdjęcie jest tylko w Outline – „Add to CV” dodaje zdjęcie, gdy go nie ma.
+    expect(kinds(header({ photo: { dataUrl: 'data:image/png;base64,', hidden: true } }))).not.toContain('photo')
     expect(kinds(header({ summary: 'Buyer' }))).not.toContain('summary')
     // Kontakt z samą etykietą albo pusty nowy kontakt nie jest na stronie.
     expect(kinds(header({ contacts: [{ id: 'c1', label: 'Email', value: '' }] }))).toContain('contacts')

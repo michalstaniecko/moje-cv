@@ -74,7 +74,7 @@ function longCv(photoDataUrl: string): CvDocument {
   return {
     ...sample,
     name: LONG_CV_NAME,
-    header: { ...sample.header, photo: { dataUrl: photoDataUrl }, summary: Array(5).fill(sample.header.summary).join(' ') },
+    header: { ...sample.header, photo: { dataUrl: photoDataUrl, hidden: false }, summary: Array(5).fill(sample.header.summary).join(' ') },
     sections
   }
 }
