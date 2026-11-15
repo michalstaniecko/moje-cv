@@ -1544,6 +1544,47 @@ test('contacts are edited on the page: a Classic contact is one “label: value�
   await expect(formValues).toHaveCount(5)
 })
 
+test('Alt+Shift+arrows in a contact label or value move the contact; the caret stays in the field, at the end the keys do nothing; each move is one undo step', async () => {
+  await openFirstCv()
+  const contacts = window.locator('.preview .cv-page .cv-contact > *')
+  const email = contacts.nth(1)
+  await clickAtCharacter(email.locator('[data-joined]'), 'Email: jane'.length)
+  await expect.poll(caret).toEqual({ key: 'contact:c2:value', offset: 'jane'.length, collapsed: true })
+  await window.keyboard.type('x')
+
+  // ⌥⇧↓ w wartości: kontakt o jedną pozycję niżej, kursor zostaje w tym samym miejscu tego samego pola.
+  await window.keyboard.press('Alt+Shift+ArrowDown')
+  await expect(pageField('Contact value 3')).toHaveText('janex.example@example.com')
+  await expect(pageField('Contact value 3')).toBeFocused()
+  await expect(labelField(2)).toHaveText('LinkedIn')
+  await expect(announcement()).toHaveText('Moved contact 2 to position 3 of 4.')
+  await expect.poll(caret).toEqual({ key: 'contact:c2:value', offset: 'janex'.length, collapsed: true })
+  await expect(formField('Contact value 3')).toHaveValue('janex.example@example.com')
+
+  // ⌥⇧↑ w etykiecie – wyżej; na górze listy – nic.
+  await window.keyboard.press('Meta+ArrowLeft')
+  await window.keyboard.press('ArrowLeft')
+  await expect.poll(caret).toEqual({ key: 'contact:c2:label', offset: 'Email'.length, collapsed: true })
+  await window.keyboard.press('Alt+Shift+ArrowUp')
+  await window.keyboard.press('Alt+Shift+ArrowUp')
+  await expect(labelField(1)).toHaveText('Email')
+  await expect(announcement()).toHaveText('Moved contact 2 to position 1 of 4.')
+  await window.keyboard.press('Alt+Shift+ArrowUp')
+  await expect(labelField(1)).toHaveText('Email')
+  await expect.poll(caret).toEqual({ key: 'contact:c2:label', offset: 'Email'.length, collapsed: true })
+
+  // Cofanie: każde przeniesienie osobno, potem wpisany znak (nie łączy się z przeniesieniem).
+  await window.keyboard.press('Meta+z')
+  await expect(labelField(2)).toHaveText('Email')
+  await window.keyboard.press('Meta+z')
+  await expect(labelField(3)).toHaveText('Email')
+  await window.keyboard.press('Meta+z')
+  await expect(labelField(2)).toHaveText('Email')
+  await expect(pageField('Contact value 2')).toHaveText('janex.example@example.com')
+  await window.keyboard.press('Meta+z')
+  await expect(pageField('Contact value 2')).toHaveText('jane.example@example.com')
+})
+
 test('the label of a contact on the page suggests the usual labels in a list under it: filtered by what is typed, chosen with the arrow keys and Enter or a click; Escape hides the list', async () => {
   await openFirstCv()
   const city = window.locator('.preview .cv-page .cv-contact > *').nth(3)
