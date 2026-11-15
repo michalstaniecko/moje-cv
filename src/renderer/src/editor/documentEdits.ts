@@ -109,6 +109,10 @@ export const insertContactAfter = (id: string, newContactId: string = newId()): 
     contacts.flatMap((contact) => (contact.id === id ? [contact, { id: newContactId, label: '', value: '' }] : [contact]))
   )
 
+// Kontakt `id` na pozycji `toIndex` (⌥⇧↑/↓ w polu kontaktu na stronie). Nieznany kontakt – bez zmian.
+export const moveContact = (id: string, toIndex: number): Change<CvDocument> =>
+  updateContacts((contacts) => moveById(contacts, id, toIndex))
+
 export const removeContact = (id: string): Change<CvDocument> =>
   updateContacts((contacts) => contacts.filter((contact) => contact.id !== id))
 

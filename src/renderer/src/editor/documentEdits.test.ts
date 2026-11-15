@@ -3,6 +3,7 @@ import { sampleCvs } from '../domain/sampleCv'
 import {
   addEducationItem,
   insertContactAfter,
+  moveContact,
   removeContact,
   addListItem,
   applyClause,
@@ -238,6 +239,12 @@ describe('contacts', () => {
     expect(contacts(changed)).toEqual(['c1', 'c2', 'new', 'c3', 'c4'])
     expect(changed.header.contacts[2]).toEqual({ id: 'new', label: '', value: '' })
     expect(insertContactAfter('gone', 'new')(sampleCv)).toEqual(sampleCv)
+  })
+
+  it('moves a contact to another position', () => {
+    expect(contacts(moveContact('c2', 0)(sampleCv))).toEqual(['c2', 'c1', 'c3', 'c4'])
+    expect(contacts(moveContact('c1', 3)(sampleCv))).toEqual(['c2', 'c3', 'c4', 'c1'])
+    expect(moveContact('gone', 0)(sampleCv)).toEqual(sampleCv)
   })
 
   it('removes a contact', () => {
