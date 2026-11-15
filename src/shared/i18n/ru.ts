@@ -278,10 +278,13 @@ export const ru: Dictionary = {
         education: (name) => `Действия: запись «${name}»`,
         bullet: (number) => `Действия: пункт ${number}`,
         listItem: (number) => `Действия: элемент ${number}`,
+        contact: (number) => `Действия: контакт ${number}`,
         contacts: 'Действия: контакты'
       },
       moveUp: 'Переместить вверх',
       moveDown: 'Переместить вниз',
+      moveItemUp: (item) => `Переместить ${item} вверх`,
+      moveItemDown: (item) => `Переместить ${item} вниз`,
       remove: 'Удалить',
       section: (name) => `раздел «${name}»`,
       position: (name) => `должность «${name}»`,

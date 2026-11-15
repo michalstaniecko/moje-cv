@@ -632,6 +632,33 @@ export function pasteLines(
   }
 }
 
+// Menu pola punktu, elementu listy i kontaktu na stronie (docs/specs/outline-instead-of-cv-form.md, D6): nazwa menu,
+// nazwy pozycji „Move … up/down” i czy da się przenieść wyżej (`up`) i niżej (`down`) – to samo, co robi `moveField`.
+// Inne pola – null (Shift+F10 otwiera w nich menu uchwytu fragmentu).
+export type FieldMoves = {
+  menu: Announce
+  moveUp: Announce
+  moveDown: Announce
+  up: boolean
+  down: boolean
+}
+
+export function fieldMoves(key: string, document: CvDocument): FieldMoves | null {
+  const ref = refOf(key, document)
+  if (ref?.kind !== 'bullet' && ref?.kind !== 'listItem' && ref?.kind !== 'contact') return null
+  const number = ref.index + 1
+  const item = (t: Dictionary['editor']) =>
+    ref.kind === 'bullet' ? t.order.bullet(number) : ref.kind === 'listItem' ? t.order.listItem(number) : t.order.contact(number)
+  return {
+    menu: (t) =>
+      ref.kind === 'bullet' ? t.order.handle.bullet(number) : ref.kind === 'listItem' ? t.order.handle.listItem(number) : t.order.handle.contact(number),
+    moveUp: (t) => t.order.moveItemUp(item(t)),
+    moveDown: (t) => t.order.moveItemDown(item(t)),
+    up: moveField(key, document, -1) !== null,
+    down: moveField(key, document, 1) !== null
+  }
+}
+
 // ⌥⇧↑/↓ w polu: punkt, element listy i kontakt (z etykiety albo wartości) – o jedną pozycję w swojej liście; pole albo żeton daty wpisu – cały wpis wśród wpisów sekcji na
 // stronach (jak „Przenieś wyżej/niżej” w menu uchwytu). Na krańcu albo w innym polu – null. Kursor zostaje w polu.
 // Komunikat – ten sam co po przeniesieniu z menu wiersza („Moved bullet 2 to position 1 of 4.”).

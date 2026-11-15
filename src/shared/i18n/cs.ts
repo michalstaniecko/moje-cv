@@ -278,10 +278,13 @@ export const cs: Dictionary = {
         education: (name) => `Akce pro položku „${name}“`,
         bullet: (number) => `Akce pro bod ${number}`,
         listItem: (number) => `Akce pro položku ${number}`,
+        contact: (number) => `Akce pro kontakt ${number}`,
         contacts: 'Akce pro kontakty'
       },
       moveUp: 'Posunout nahoru',
       moveDown: 'Posunout dolů',
+      moveItemUp: (item) => `Posunout ${item} nahoru`,
+      moveItemDown: (item) => `Posunout ${item} dolů`,
       remove: 'Odstranit',
       section: (name) => `sekci „${name}“`,
       position: (name) => `pozici „${name}“`,

@@ -14,6 +14,7 @@ import {
   dateWarningId,
   entryDates,
   fieldChange,
+  fieldMoves,
   fragmentHasEmptyField,
   isListField,
   mergeBackward,
@@ -454,5 +455,38 @@ describe('announcing changes of structure from the keyboard', () => {
       'Moved entry “Postgraduate diploma, Procurement Management” to position 2 of 2.'
     )
     expect(moveField('contact:c2:value', sample, 1)!.announce(t)).toBe('Moved contact 2 to position 3 of 4.')
+  })
+})
+
+describe('the field menu of a bullet, a list item or a contact', () => {
+  // Menu kontekstowe pola (docs/specs/outline-instead-of-cv-form.md, D6): „Move … up/down” jak ⌥⇧↑/↓, wyłączone na krańcu.
+  it('has both moves in a middle element and names the element by its number', () => {
+    const bullet = fieldMoves('experience:e1:bullet:e1-b3', sample)!
+    expect(bullet).toMatchObject({ up: true, down: true })
+    expect(bullet.menu(t)).toBe('Actions for bullet 3')
+    expect(bullet.moveUp(t)).toBe('Move bullet 3 up')
+    expect(bullet.moveDown(t)).toBe('Move bullet 3 down')
+    const contact = fieldMoves('contact:c2:label', sample)!
+    expect(contact).toMatchObject({ up: true, down: true })
+    expect(contact.menu(t)).toBe('Actions for contact 2')
+    expect(contact.moveDown(t)).toBe('Move contact 2 down')
+  })
+
+  it('cannot move the first element up or the last one down', () => {
+    expect(fieldMoves('experience:e1:bullet:e1-b1', sample)).toMatchObject({ up: false, down: true })
+    expect(fieldMoves('experience:e1:bullet:e1-b8', sample)).toMatchObject({ up: true, down: false })
+    const first = fieldMoves('list:l1:text', sample)!
+    expect(first).toMatchObject({ up: false, down: true })
+    expect(first.moveDown(t)).toBe('Move item 1 down')
+    expect(fieldMoves('list:l2:text', sample)).toMatchObject({ up: true, down: false })
+    expect(fieldMoves('contact:c1:value', sample)).toMatchObject({ up: false, down: true })
+    expect(fieldMoves('contact:c4:value', sample)).toMatchObject({ up: true, down: false })
+  })
+
+  it('is not there for other fields, which keep the menu of their handle', () => {
+    expect(fieldMoves('header:fullName', sample)).toBeNull()
+    expect(fieldMoves('experience:e2:role', sample)).toBeNull()
+    expect(fieldMoves('experience:e2:start', sample)).toBeNull()
+    expect(fieldMoves('section:education:title', sample)).toBeNull()
   })
 })

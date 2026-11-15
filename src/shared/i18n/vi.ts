@@ -273,10 +273,13 @@ export const vi: Dictionary = {
         education: (name) => `Thao tác cho mục nhập “${name}”`,
         bullet: (number) => `Thao tác cho ý ${number}`,
         listItem: (number) => `Thao tác cho mục ${number}`,
+        contact: (number) => `Thao tác cho liên hệ ${number}`,
         contacts: 'Thao tác cho liên hệ'
       },
       moveUp: 'Chuyển lên',
       moveDown: 'Chuyển xuống',
+      moveItemUp: (item) => `Chuyển ${item} lên`,
+      moveItemDown: (item) => `Chuyển ${item} xuống`,
       remove: 'Xóa',
       section: (name) => `mục “${name}”`,
       position: (name) => `vị trí “${name}”`,

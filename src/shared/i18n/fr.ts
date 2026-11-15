@@ -277,10 +277,13 @@ export const fr: Dictionary = {
         education: (name) => `Actions pour l’entrée « ${name} »`,
         bullet: (number) => `Actions pour la puce ${number}`,
         listItem: (number) => `Actions pour l’élément ${number}`,
+        contact: (number) => `Actions pour le contact ${number}`,
         contacts: 'Actions pour les contacts'
       },
       moveUp: 'Monter',
       moveDown: 'Descendre',
+      moveItemUp: (item) => `Monter ${item}`,
+      moveItemDown: (item) => `Descendre ${item}`,
       remove: 'Retirer',
       section: (name) => `la section « ${name} »`,
       position: (name) => `le poste « ${name} »`,

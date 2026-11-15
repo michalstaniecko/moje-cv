@@ -280,10 +280,13 @@ export const nl: Dictionary = {
         education: (name) => `Acties voor item “${name}”`,
         bullet: (number) => `Acties voor punt ${number}`,
         listItem: (number) => `Acties voor item ${number}`,
+        contact: (number) => `Acties voor contact ${number}`,
         contacts: 'Acties voor contactgegevens'
       },
       moveUp: 'Omhoog verplaatsen',
       moveDown: 'Omlaag verplaatsen',
+      moveItemUp: (item) => `Verplaats ${item} omhoog`,
+      moveItemDown: (item) => `Verplaats ${item} omlaag`,
       remove: 'Verwijderen',
       section: (name) => `sectie “${name}”`,
       position: (name) => `functie “${name}”`,

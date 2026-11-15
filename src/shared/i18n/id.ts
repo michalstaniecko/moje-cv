@@ -273,10 +273,13 @@ export const id: Dictionary = {
         education: (name) => `Tindakan untuk entri “${name}”`,
         bullet: (number) => `Tindakan untuk poin ${number}`,
         listItem: (number) => `Tindakan untuk item ${number}`,
+        contact: (number) => `Tindakan untuk kontak ${number}`,
         contacts: 'Tindakan untuk kontak'
       },
       moveUp: 'Pindahkan ke atas',
       moveDown: 'Pindahkan ke bawah',
+      moveItemUp: (item) => `Pindahkan ${item} ke atas`,
+      moveItemDown: (item) => `Pindahkan ${item} ke bawah`,
       remove: 'Hapus',
       section: (name) => `bagian “${name}”`,
       position: (name) => `posisi “${name}”`,

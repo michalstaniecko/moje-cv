@@ -280,10 +280,13 @@ export const de: Dictionary = {
         education: (name) => `Aktionen für Eintrag „${name}“`,
         bullet: (number) => `Aktionen für Punkt ${number}`,
         listItem: (number) => `Aktionen für Eintrag ${number}`,
+        contact: (number) => `Aktionen für Kontakt ${number}`,
         contacts: 'Aktionen für Kontakte'
       },
       moveUp: 'Nach oben verschieben',
       moveDown: 'Nach unten verschieben',
+      moveItemUp: (item) => `${item} nach oben verschieben`,
+      moveItemDown: (item) => `${item} nach unten verschieben`,
       remove: 'Entfernen',
       section: (name) => `Abschnitt „${name}“`,
       position: (name) => `Position „${name}“`,

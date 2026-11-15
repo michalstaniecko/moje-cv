@@ -312,11 +312,16 @@ export const en = {
         education: (name: string) => `Actions for entry “${name}”`,
         bullet: (number: number) => `Actions for bullet ${number}`,
         listItem: (number: number) => `Actions for item ${number}`,
+        // Menu pola kontaktu na stronie (prawy przycisk myszy, Shift+F10).
+        contact: (number: number) => `Actions for contact ${number}`,
         // Uchwyt kontaktów w nagłówku na stronie (menu z „Add contact”).
         contacts: 'Actions for contacts'
       },
       moveUp: 'Move up',
       moveDown: 'Move down',
+      // Menu pola punktu, elementu listy i kontaktu na stronie; `item` to nazwa z `bullet`, `listItem`, `contact`.
+      moveItemUp: (item: string) => `Move ${item} up`,
+      moveItemDown: (item: string) => `Move ${item} down`,
       remove: 'Remove',
       // Element w komunikatach (biernik: „Moved <item> to …”).
       section: (name: string) => `section “${name}”`,

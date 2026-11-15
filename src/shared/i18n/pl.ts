@@ -278,10 +278,13 @@ export const pl: Dictionary = {
         education: (name) => `Działania: wpis „${name}”`,
         bullet: (number) => `Działania: punkt ${number}`,
         listItem: (number) => `Działania: element ${number}`,
+        contact: (number) => `Działania: kontakt ${number}`,
         contacts: 'Działania: kontakty'
       },
       moveUp: 'Przenieś wyżej',
       moveDown: 'Przenieś niżej',
+      moveItemUp: (item) => `Przenieś ${item} wyżej`,
+      moveItemDown: (item) => `Przenieś ${item} niżej`,
       remove: 'Usuń',
       section: (name) => `sekcję „${name}”`,
       position: (name) => `stanowisko „${name}”`,

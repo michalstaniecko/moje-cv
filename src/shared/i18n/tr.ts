@@ -273,10 +273,13 @@ export const tr: Dictionary = {
         education: (name) => `“${name}” kaydı: işlemler`,
         bullet: (number) => `${number}. madde: işlemler`,
         listItem: (number) => `${number}. öğe: işlemler`,
+        contact: (number) => `${number}. iletişim: işlemler`,
         contacts: 'İletişim bilgileri: işlemler'
       },
       moveUp: 'Yukarı taşı',
       moveDown: 'Aşağı taşı',
+      moveItemUp: (item) => `Yukarı taşı: ${item}`,
+      moveItemDown: (item) => `Aşağı taşı: ${item}`,
       remove: 'Kaldır',
       section: (name) => `“${name}” bölümü`,
       position: (name) => `“${name}” pozisyonu`,
