@@ -70,8 +70,8 @@ export function usePhotoEditing({
     })
     onFocusLost()
   }
-  // Ukrycie: fokus na przełączniku „Show photo on CV” na liście „CV elements” Inspektora (przywraca zdjęcie), a bez niej
-  // (np. zwinięta grupa) – w bezpieczne miejsce.
+  // Ukrycie: fokus na przełączniku „Pokaż na CV” zdjęcia w Inspektorze (przywraca zdjęcie) – w panelu zdjęcia albo na
+  // liście „CV elements”, a bez niego (np. zwinięta grupa) – w bezpieczne miejsce.
   const hide = () => {
     setOpen(false)
     editor.edit(setPhotoHidden(true))

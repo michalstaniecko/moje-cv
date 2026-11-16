@@ -225,7 +225,16 @@ export const vi: Dictionary = {
       groups: { template: 'Mẫu', style: 'Kiểu', elements: 'Thành phần CV', language: 'Ngôn ngữ' },
       colors: { teal: 'Xanh mòng két', blue: 'Xanh dương', graphite: 'Than chì', violet: 'Tím', crimson: 'Đỏ thẫm', orange: 'Cam', green: 'Xanh lá', black: 'Đen' },
       customColor: 'Màu tùy chỉnh',
-      languageNote: 'Thay đổi chữ cố định trên CV, như “hiện tại”. Nội dung của bạn không được dịch.'
+      languageNote: 'Thay đổi chữ cố định trên CV, như “hiện tại”. Nội dung của bạn không được dịch.',
+      showOnCv: 'Hiện trên CV',
+      section: {
+        name: 'Tên',
+        newPage: 'Bắt đầu ở trang mới',
+        order: 'Thứ tự',
+        position: (position, total) => `${position} trên ${total}`,
+        items: 'Mục',
+        empty: 'Mục này trống'
+      }
     },
     header: 'Phần đầu',
     fullName: 'Họ và tên',

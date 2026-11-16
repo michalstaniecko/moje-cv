@@ -225,7 +225,16 @@ export const tr: Dictionary = {
       groups: { template: 'Şablon', style: 'Stil', elements: 'CV öğeleri', language: 'Dil' },
       colors: { teal: 'Petrol mavisi', blue: 'Mavi', graphite: 'Grafit', violet: 'Mor', crimson: 'Koyu kırmızı', orange: 'Turuncu', green: 'Yeşil', black: 'Siyah' },
       customColor: 'Özel renk',
-      languageNote: 'CV’deki sabit metni değiştirir, örneğin “halen”. İçeriğiniz çevrilmez.'
+      languageNote: 'CV’deki sabit metni değiştirir, örneğin “halen”. İçeriğiniz çevrilmez.',
+      showOnCv: 'CV’de göster',
+      section: {
+        name: 'Ad',
+        newPage: 'Yeni sayfada başlat',
+        order: 'Sıra',
+        position: (position, total) => `${position}/${total}`,
+        items: 'Öğeler',
+        empty: 'Bu bölüm boş'
+      }
     },
     header: 'Başlık',
     fullName: 'Ad soyad',

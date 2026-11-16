@@ -230,7 +230,16 @@ export const uk: Dictionary = {
       groups: { template: 'Шаблон', style: 'Стиль', elements: 'Елементи резюме', language: 'Мова' },
       colors: { teal: 'Морська хвиля', blue: 'Синій', graphite: 'Графітовий', violet: 'Фіолетовий', crimson: 'Малиновий', orange: 'Помаранчевий', green: 'Зелений', black: 'Чорний' },
       customColor: 'Власний колір',
-      languageNote: 'Змінює сталий текст резюме, наприклад «дотепер». Ваш вміст не перекладається.'
+      languageNote: 'Змінює сталий текст резюме, наприклад «дотепер». Ваш вміст не перекладається.',
+      showOnCv: 'Показувати в резюме',
+      section: {
+        name: 'Назва',
+        newPage: 'Починати з нової сторінки',
+        order: 'Порядок',
+        position: (position, total) => `${position} з ${total}`,
+        items: 'Пункти',
+        empty: 'Розділ порожній'
+      }
     },
     header: 'Заголовок',
     fullName: 'Ім’я та прізвище',

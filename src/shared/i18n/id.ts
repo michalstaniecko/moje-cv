@@ -225,7 +225,16 @@ export const id: Dictionary = {
       groups: { template: 'Templat', style: 'Gaya', elements: 'Elemen CV', language: 'Bahasa' },
       colors: { teal: 'Hijau toska', blue: 'Biru', graphite: 'Grafit', violet: 'Ungu', crimson: 'Merah tua', orange: 'Oranye', green: 'Hijau', black: 'Hitam' },
       customColor: 'Warna kustom',
-      languageNote: 'Mengubah teks tetap di CV, seperti “sekarang”. Konten Anda tidak diterjemahkan.'
+      languageNote: 'Mengubah teks tetap di CV, seperti “sekarang”. Konten Anda tidak diterjemahkan.',
+      showOnCv: 'Tampilkan di CV',
+      section: {
+        name: 'Nama',
+        newPage: 'Mulai di halaman baru',
+        order: 'Urutan',
+        position: (position, total) => `${position} dari ${total}`,
+        items: 'Item',
+        empty: 'Bagian ini kosong'
+      }
     },
     header: 'Kepala',
     fullName: 'Nama lengkap',

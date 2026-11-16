@@ -230,7 +230,16 @@ export const ru: Dictionary = {
       groups: { template: 'Шаблон', style: 'Стиль', elements: 'Элементы резюме', language: 'Язык' },
       colors: { teal: 'Морская волна', blue: 'Синий', graphite: 'Графитовый', violet: 'Фиолетовый', crimson: 'Малиновый', orange: 'Оранжевый', green: 'Зелёный', black: 'Чёрный' },
       customColor: 'Свой цвет',
-      languageNote: 'Меняет постоянный текст резюме, например «по настоящее время». Ваш текст не переводится.'
+      languageNote: 'Меняет постоянный текст резюме, например «по настоящее время». Ваш текст не переводится.',
+      showOnCv: 'Показывать в резюме',
+      section: {
+        name: 'Название',
+        newPage: 'Начинать с новой страницы',
+        order: 'Порядок',
+        position: (position, total) => `${position} из ${total}`,
+        items: 'Пункты',
+        empty: 'Раздел пуст'
+      }
     },
     header: 'Шапка',
     fullName: 'Имя и фамилия',

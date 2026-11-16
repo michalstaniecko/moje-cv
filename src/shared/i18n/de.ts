@@ -232,7 +232,16 @@ export const de: Dictionary = {
       groups: { template: 'Vorlage', style: 'Stil', elements: 'Lebenslauf-Elemente', language: 'Sprache' },
       colors: { teal: 'Petrol', blue: 'Blau', graphite: 'Graphit', violet: 'Violett', crimson: 'Karmesin', orange: 'Orange', green: 'Grün', black: 'Schwarz' },
       customColor: 'Eigene Farbe',
-      languageNote: 'Ändert festen Text im Lebenslauf, etwa „heute“. Deine Inhalte werden nicht übersetzt.'
+      languageNote: 'Ändert festen Text im Lebenslauf, etwa „heute“. Deine Inhalte werden nicht übersetzt.',
+      showOnCv: 'Im Lebenslauf zeigen',
+      section: {
+        name: 'Name',
+        newPage: 'Auf neuer Seite beginnen',
+        order: 'Reihenfolge',
+        position: (position, total) => `${position} von ${total}`,
+        items: 'Einträge',
+        empty: 'Dieser Abschnitt ist leer'
+      }
     },
     header: 'Kopfbereich',
     fullName: 'Vollständiger Name',

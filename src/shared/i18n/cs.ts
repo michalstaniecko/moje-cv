@@ -230,7 +230,16 @@ export const cs: Dictionary = {
       groups: { template: 'Šablona', style: 'Styl', elements: 'Prvky CV', language: 'Jazyk' },
       colors: { teal: 'Petrolejová', blue: 'Modrá', graphite: 'Grafitová', violet: 'Fialová', crimson: 'Karmínová', orange: 'Oranžová', green: 'Zelená', black: 'Černá' },
       customColor: 'Vlastní barva',
-      languageNote: 'Mění pevný text v CV, například „dosud“. Váš obsah se nepřekládá.'
+      languageNote: 'Mění pevný text v CV, například „dosud“. Váš obsah se nepřekládá.',
+      showOnCv: 'Zobrazit v CV',
+      section: {
+        name: 'Název',
+        newPage: 'Začít na nové stránce',
+        order: 'Pořadí',
+        position: (position, total) => `${position} z ${total}`,
+        items: 'Položky',
+        empty: 'Sekce je prázdná'
+      }
     },
     header: 'Záhlaví',
     fullName: 'Jméno a příjmení',
