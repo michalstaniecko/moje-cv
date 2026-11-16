@@ -1088,6 +1088,117 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--ui-border);
 }
 
+/* Nagłówek panelu elementu (inspector/ElementPanel.tsx): ścieżka „‹ Dokument / nazwa” w jednym wierszu; długa nazwa
+   sekcji kończy się wielokropkiem. */
+.inspector-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 12px var(--inspector-inset);
+  background: var(--ui-panel-bg);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.inspector-head .inspector-title {
+  position: static;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: none;
+}
+
+.inspector-head .inspector-title:focus {
+  outline: none;
+}
+
+.inspector-back {
+  flex-shrink: 0;
+  padding: 0;
+  color: var(--ui-accent);
+  font: inherit;
+  background: none;
+  border: none;
+}
+
+.inspector-back:hover {
+  text-decoration: underline;
+}
+
+.inspector-path-separator {
+  color: var(--ui-text-muted);
+}
+
+.inspector-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px var(--inspector-inset) 16px;
+}
+
+/* Przełącznik panelu elementu: napis i przełącznik w jednym wierszu (inspector/InspectorSwitch.tsx). */
+.inspector-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+}
+
+/* Kolejność sekcji: ↑ „2 z 5” ↓. */
+.inspector-order {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inspector-order button {
+  min-width: 32px;
+  padding: 4px 8px;
+}
+
+.inspector-order-position {
+  min-width: 4em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pozycje sekcji: tylko tytuły jako przyciski nawigacji, bez ramek – lista, jak „CV elements”. */
+.inspector-items {
+  display: flex;
+  flex-direction: column;
+  margin: 0 -6px;
+  padding: 0;
+  list-style: none;
+}
+
+.inspector-item {
+  width: 100%;
+  min-height: 28px;
+  padding: 4px 6px;
+  overflow: hidden;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  border-radius: 4px;
+}
+
+.inspector-item:hover:not(:disabled) {
+  background: var(--ui-accent-glow);
+}
+
+.inspector-item:disabled {
+  color: var(--ui-text-muted);
+}
+
 .inspector-group + .inspector-group {
   border-top: 1px solid var(--ui-border);
 }

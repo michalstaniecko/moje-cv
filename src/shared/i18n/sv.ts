@@ -230,7 +230,16 @@ export const sv: Dictionary = {
       groups: { template: 'Mall', style: 'Stil', elements: 'Cv-delar', language: 'Språk' },
       colors: { teal: 'Petrol', blue: 'Blå', graphite: 'Grafit', violet: 'Violett', crimson: 'Karmosin', orange: 'Orange', green: 'Grön', black: 'Svart' },
       customColor: 'Egen färg',
-      languageNote: 'Ändrar fast text på cv:t, som ”nu”. Ditt innehåll översätts inte.'
+      languageNote: 'Ändrar fast text på cv:t, som ”nu”. Ditt innehåll översätts inte.',
+      showOnCv: 'Visa på cv:t',
+      section: {
+        name: 'Namn',
+        newPage: 'Börja på en ny sida',
+        order: 'Ordning',
+        position: (position, total) => `${position} av ${total}`,
+        items: 'Poster',
+        empty: 'Avsnittet är tomt'
+      }
     },
     header: 'Sidhuvud',
     fullName: 'Fullständigt namn',

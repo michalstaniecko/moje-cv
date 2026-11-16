@@ -261,7 +261,19 @@ export const en = {
       colors: { teal: 'Teal', blue: 'Blue', graphite: 'Graphite', violet: 'Violet', crimson: 'Crimson', orange: 'Orange', green: 'Green', black: 'Black' },
       customColor: 'Custom color',
       // Notka pod CV language: zmienia tylko stały tekst na dokumencie, nie treść CV.
-      languageNote: 'Changes fixed text on the CV, such as “present”. Your content isn’t translated.'
+      languageNote: 'Changes fixed text on the CV, such as “present”. Your content isn’t translated.',
+      // Panel elementu (część CV zaznaczona na stronie albo na liście „CV elements”); ścieżka „‹ Document / nazwa”
+      // wraca przyciskiem `document` do panelu „Dokument”. Przełącznik widoczności części w jej panelu.
+      showOnCv: 'Show on CV',
+      // Panel sekcji: nazwa (tytuł sekcji), nowa strona, kolejność („2 of 5”) i lista pozycji (tylko tytuły).
+      section: {
+        name: 'Name',
+        newPage: 'Start on a new page',
+        order: 'Order',
+        position: (position: number, total: number) => `${position} of ${total}`,
+        items: 'Items',
+        empty: 'This section is empty'
+      }
     },
     header: 'Header',
     fullName: 'Full name',

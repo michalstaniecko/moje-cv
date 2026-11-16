@@ -232,7 +232,16 @@ export const nl: Dictionary = {
       groups: { template: 'Sjabloon', style: 'Stijl', elements: 'Cv-onderdelen', language: 'Taal' },
       colors: { teal: 'Petrol', blue: 'Blauw', graphite: 'Grafiet', violet: 'Violet', crimson: 'Karmijn', orange: 'Oranje', green: 'Groen', black: 'Zwart' },
       customColor: 'Eigen kleur',
-      languageNote: 'Verandert vaste tekst op het cv, zoals “heden”. Je inhoud wordt niet vertaald.'
+      languageNote: 'Verandert vaste tekst op het cv, zoals “heden”. Je inhoud wordt niet vertaald.',
+      showOnCv: 'Tonen op cv',
+      section: {
+        name: 'Naam',
+        newPage: 'Op een nieuwe pagina beginnen',
+        order: 'Volgorde',
+        position: (position, total) => `${position} van ${total}`,
+        items: 'Items',
+        empty: 'Deze sectie is leeg'
+      }
     },
     header: 'Kop',
     fullName: 'Volledige naam',

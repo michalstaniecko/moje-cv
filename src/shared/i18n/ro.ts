@@ -229,7 +229,16 @@ export const ro: Dictionary = {
       groups: { template: 'Șablon', style: 'Stil', elements: 'Elementele CV-ului', language: 'Limbă' },
       colors: { teal: 'Petrol', blue: 'Albastru', graphite: 'Grafit', violet: 'Violet', crimson: 'Carmin', orange: 'Portocaliu', green: 'Verde', black: 'Negru' },
       customColor: 'Culoare personalizată',
-      languageNote: 'Schimbă textul fix din CV, de exemplu „prezent”. Conținutul tău nu este tradus.'
+      languageNote: 'Schimbă textul fix din CV, de exemplu „prezent”. Conținutul tău nu este tradus.',
+      showOnCv: 'Afișează în CV',
+      section: {
+        name: 'Nume',
+        newPage: 'Începe pe o pagină nouă',
+        order: 'Ordine',
+        position: (position, total) => `${position} din ${total}`,
+        items: 'Elemente',
+        empty: 'Secțiunea este goală'
+      }
     },
     header: 'Antet',
     fullName: 'Nume complet',

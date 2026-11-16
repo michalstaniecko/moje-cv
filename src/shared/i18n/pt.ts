@@ -229,7 +229,16 @@ export const pt: Dictionary = {
       groups: { template: 'Modelo', style: 'Estilo', elements: 'Elementos do CV', language: 'Idioma' },
       colors: { teal: 'Verde-azulado', blue: 'Azul', graphite: 'Grafite', violet: 'Violeta', crimson: 'Carmesim', orange: 'Laranja', green: 'Verde', black: 'Preto' },
       customColor: 'Cor personalizada',
-      languageNote: 'Muda o texto fixo do currículo, como “atual”. O seu conteúdo não é traduzido.'
+      languageNote: 'Muda o texto fixo do currículo, como “atual”. O seu conteúdo não é traduzido.',
+      showOnCv: 'Mostrar no currículo',
+      section: {
+        name: 'Nome',
+        newPage: 'Começar numa nova página',
+        order: 'Ordem',
+        position: (position, total) => `${position} de ${total}`,
+        items: 'Itens',
+        empty: 'Esta secção está vazia'
+      }
     },
     header: 'Cabeçalho',
     fullName: 'Nome completo',

@@ -229,7 +229,16 @@ export const fr: Dictionary = {
       groups: { template: 'Modèle', style: 'Style', elements: 'Éléments du CV', language: 'Langue' },
       colors: { teal: 'Bleu canard', blue: 'Bleu', graphite: 'Graphite', violet: 'Violet', crimson: 'Cramoisi', orange: 'Orange', green: 'Vert', black: 'Noir' },
       customColor: 'Couleur personnalisée',
-      languageNote: 'Change le texte fixe du CV, comme « aujourd’hui ». Votre contenu n’est pas traduit.'
+      languageNote: 'Change le texte fixe du CV, comme « aujourd’hui ». Votre contenu n’est pas traduit.',
+      showOnCv: 'Afficher sur le CV',
+      section: {
+        name: 'Nom',
+        newPage: 'Commencer sur une nouvelle page',
+        order: 'Ordre',
+        position: (position, total) => `${position} sur ${total}`,
+        items: 'Éléments',
+        empty: 'Cette section est vide'
+      }
     },
     header: 'En-tête',
     fullName: 'Nom complet',
