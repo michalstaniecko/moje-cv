@@ -13,6 +13,7 @@ import {
   removeEducationItem,
   removeListItem,
   setPhotoHidden,
+  showSectionAndAddItem,
   mergeBulletIntoPrevious,
   mergeListItemIntoPrevious,
   pasteIntoBullet,
@@ -57,6 +58,65 @@ describe('updateSection', () => {
       sampleCv.sections.find((section) => section.id === 'languages')
     )
   })
+})
+
+describe('showSectionAndAddItem', () => {
+  const withSection = (sectionId: string, patch: Record<string, unknown>) => updateSectionFields(sampleCv, sectionId, patch)
+  const sectionOf = (document: typeof sampleCv, sectionId: string) =>
+    document.sections.find((section) => section.id === sectionId)!
+
+  it('adds a new empty element at the end of a non-empty section', () => {
+    const added = showSectionAndAddItem('languages', { newItemId: 'new' })(sampleCv)
+    expect(sectionOf(added, 'languages').items).toEqual([
+      ...sectionOf(sampleCv, 'languages').items,
+      { id: 'new', text: '' }
+    ])
+    expect(sectionOf(added, 'skills')).toBe(sectionOf(sampleCv, 'skills'))
+  })
+
+  it('adds an empty entry of the section type', () => {
+    const added = showSectionAndAddItem('experience', { newItemId: 'new' })(sampleCv)
+    expect(sectionOf(added, 'experience').items.at(-1)).toMatchObject({ id: 'new', role: '', company: '', start: null })
+  })
+
+  it('in an empty section reveals its existing empty element instead of adding another', () => {
+    const empty = withSection('languages', { items: [{ id: 'blank', text: '' }] })
+    expect(showSectionAndAddItem('languages', { reuseEmpty: true, newItemId: 'new' })(empty)).toBe(empty)
+  })
+
+  it('in an empty section without elements adds the first one', () => {
+    const empty = withSection('languages', { items: [] })
+    const added = showSectionAndAddItem('languages', { reuseEmpty: true, newItemId: 'new' })(empty)
+    expect(sectionOf(added, 'languages').items).toEqual([{ id: 'new', text: '' }])
+  })
+
+  it('shows a hidden section and adds the element in one change', () => {
+    const hidden = withSection('languages', { hidden: true })
+    const added = showSectionAndAddItem('languages', { newItemId: 'new' })(hidden)
+    expect(sectionOf(added, 'languages')).toMatchObject({ hidden: false })
+    expect(sectionOf(added, 'languages').items.map((item) => item.id)).toEqual(['l1', 'l2', 'new'])
+  })
+
+  it('only shows a hidden empty section, revealing its existing empty element', () => {
+    const hidden = withSection('languages', { hidden: true, items: [{ id: 'blank', text: '' }] })
+    const shown = showSectionAndAddItem('languages', { reuseEmpty: true, newItemId: 'new' })(hidden)
+    expect(sectionOf(shown, 'languages')).toEqual({ ...sectionOf(hidden, 'languages'), hidden: false })
+  })
+
+  it('leaves the document unchanged for an unknown section', () => {
+    expect(showSectionAndAddItem('missing')(sampleCv)).toBe(sampleCv)
+  })
+})
+
+const updateSectionFields = (
+  document: typeof sampleCv,
+  sectionId: string,
+  patch: Record<string, unknown>
+): typeof sampleCv => ({
+  ...document,
+  sections: document.sections.map((section) =>
+    section.id === sectionId ? ({ ...section, ...patch } as typeof section) : section
+  )
 })
 
 const educationItems = (document: typeof sampleCv) => {

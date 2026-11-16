@@ -1,10 +1,12 @@
 import { useId, useRef } from 'react'
+import { sectionEmpty } from '../canvas/addOnPage'
 import type { Section } from '../domain/schema'
-import { moveSection, updateSection } from '../editor/documentEdits'
+import { moveSection, showSectionAndAddItem, updateSection } from '../editor/documentEdits'
 import { useDictionary } from '../i18n'
 import type { PanelProps } from './ElementPanel'
 import { InspectorSwitch } from './InspectorSwitch'
-import { SectionItems } from './SectionItems'
+import { focusOnPage } from './openOnPage'
+import { SectionItems, sectionItemTarget } from './SectionItems'
 
 // Ten sam klucz łączenia kroków cofania co tytuł sekcji na stronie i w CV form: wpisanie nazwy to jeden krok.
 const titleMergeKey = (section: Section) => `section:${section.id}:title`
@@ -39,8 +41,33 @@ export function SectionPanel({ editor, document, session, section }: PanelProps 
       </div>
       <SectionOrder index={index} total={total} onMove={(toIndex) => editor.edit(moveSection(section.id, toIndex))} />
       <SectionItems document={document} section={section} session={session} />
-      {/* #140: przycisk „+ Dodaj …” (brzmienie z pigułek „+”) pod listą pozycji. */}
+      <AddToSection {...{ editor, document, session, section }} />
     </>
+  )
+}
+
+// „+ Dodaj …” (#140) – brzmienie z pigułek „+” na stronach. Dodaje element na końcu sekcji jedną zmianą dokumentu
+// („pokaż sekcję i dodaj element”): ukrytą sekcję najpierw pokazuje, a w pustej odsłania jej istniejący pusty element
+// zamiast tworzyć kolejny. Kursor staje w elemencie na stronie, a panel zostaje (zaznaczenie idzie za jego fragmentem).
+function AddToSection({
+  editor,
+  document,
+  session,
+  section
+}: Pick<PanelProps, 'editor' | 'document' | 'session'> & { section: Section }) {
+  const add = useDictionary().editor.canvas.add
+  const label = { experience: add.position, education: add.education, list: add.item }[section.type]
+  const onClick = () => {
+    const reuseEmpty = sectionEmpty(section, document)
+    const newItemId = crypto.randomUUID()
+    const itemId = (reuseEmpty ? section.items[0]?.id : undefined) ?? newItemId
+    editor.edit(showSectionAndAddItem(section.id, { reuseEmpty, newItemId }))
+    focusOnPage(session, sectionItemTarget(section, itemId))
+  }
+  return (
+    <button type="button" className="inspector-add" onClick={onClick}>
+      + {label}
+    </button>
   )
 }
 

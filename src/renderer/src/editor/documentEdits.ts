@@ -141,11 +141,11 @@ const updateSectionItems =
 const updateExperienceItems = (sectionId: string, change: Change<ExperienceItem[]>): Change<CvDocument> =>
   updateSectionItems(sectionId, 'experience', change)
 
-export const addExperienceItem = (sectionId: string): Change<CvDocument> =>
+export const addExperienceItem = (sectionId: string, itemId: string = newId()): Change<CvDocument> =>
   updateExperienceItems(sectionId, (items) => [
     ...items,
     {
-      id: newId(),
+      id: itemId,
       role: '',
       company: '',
       location: '',
@@ -204,10 +204,10 @@ export const updateSection = (sectionId: string, patch: Partial<SectionSettings>
 const updateEducationItems = (sectionId: string, change: Change<EducationItem[]>): Change<CvDocument> =>
   updateSectionItems(sectionId, 'education', change)
 
-export const addEducationItem = (sectionId: string): Change<CvDocument> =>
+export const addEducationItem = (sectionId: string, itemId: string = newId()): Change<CvDocument> =>
   updateEducationItems(sectionId, (items) => [
     ...items,
-    { id: newId(), level: '', field: '', institution: '', start: null, end: null, pageBreakBefore: false }
+    { id: itemId, level: '', field: '', institution: '', start: null, end: null, pageBreakBefore: false }
   ])
 
 export const updateEducationItem = (
@@ -223,8 +223,27 @@ export const removeEducationItem = (sectionId: string, itemId: string): Change<C
 const updateListItems = (sectionId: string, change: Change<TextItem[]>): Change<CvDocument> =>
   updateSectionItems(sectionId, 'list', change)
 
-export const addListItem = (sectionId: string): Change<CvDocument> =>
-  updateListItems(sectionId, (items) => [...items, { id: newId(), text: '' }])
+export const addListItem = (sectionId: string, itemId: string = newId()): Change<CvDocument> =>
+  updateListItems(sectionId, (items) => [...items, { id: itemId, text: '' }])
+
+// „+ Dodaj …” w panelu sekcji Inspektora (#140): pokazuje ukrytą sekcję i dodaje do niej element jako jedna zmiana
+// (jeden krok cofania). `reuseEmpty` – sekcja jest pusta (nic nie ma na stronach): jej istniejący, jeszcze pusty
+// element zostaje odsłonięty zamiast dodawania kolejnego, jak w pasku „Add to CV”; pusta sekcja bez elementów dostaje
+// pierwszy. Nowy element ma id `newItemId` – cel kursora na stronie.
+export const showSectionAndAddItem =
+  (
+    sectionId: string,
+    { reuseEmpty = false, newItemId = newId() }: { reuseEmpty?: boolean; newItemId?: string } = {}
+  ): Change<CvDocument> =>
+  (document) => {
+    const section = document.sections.find((candidate) => candidate.id === sectionId)
+    if (!section) return document
+    const shown = section.hidden ? updateSection(sectionId, { hidden: false })(document) : document
+    if (reuseEmpty && section.items.length > 0) return shown
+    const add =
+      section.type === 'experience' ? addExperienceItem : section.type === 'education' ? addEducationItem : addListItem
+    return add(sectionId, newItemId)(shown)
+  }
 
 export const updateListItem = (sectionId: string, itemId: string, text: string): Change<CvDocument> =>
   updateListItems(sectionId, (items) => replaceById(items, itemId, (item) => ({ ...item, text })))

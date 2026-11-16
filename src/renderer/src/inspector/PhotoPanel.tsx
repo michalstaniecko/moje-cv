@@ -98,7 +98,7 @@ export function AddPhotoButton({ session, autoFocus = false }: { session: EditSe
     <button
       ref={button}
       type="button"
-      className="inspector-add"
+      className="inspector-action"
       data-photo-action="add"
       autoFocus={autoFocus}
       onClick={() => session.photo.add(() => (button.current?.isConnected ? button.current : null))}

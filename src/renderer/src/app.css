@@ -1207,7 +1207,7 @@ textarea:focus-visible {
 
 /* Akcje paneli nagłówka, zdjęcia i klauzuli (#141): „+ Add contact”, „Add photo”, „Edit on the page ›” – zwykłe
    przyciski na szerokość treści; dłuższe tłumaczenie zawija się w Inspektorze, nie wychodzi poza niego. */
-.inspector-add {
+.inspector-action {
   align-self: flex-start;
   max-width: 100%;
   text-align: start;
@@ -1243,6 +1243,12 @@ textarea:focus-visible {
 .inspector-save-clause .form-row input {
   flex: 1 1 100%;
   min-width: 0;
+}
+
+/* „+ Dodaj …” pod pozycjami sekcji (#140): zwykły przycisk, nie na całą szerokość panelu. */
+.inspector-add {
+  align-self: flex-start;
+  margin-top: -8px;
 }
 
 .inspector-group + .inspector-group {

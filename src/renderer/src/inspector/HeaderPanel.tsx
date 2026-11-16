@@ -58,7 +58,7 @@ export function HeaderPanel({ editor, document, session, onSelect }: PanelProps)
             </button>
           </li>
         </ul>
-        <button type="button" className="inspector-add" onClick={() => focusOnPage(session, addContactElement(editor))}>
+        <button type="button" className="inspector-action" onClick={() => focusOnPage(session, addContactElement(editor))}>
           + {t.addContact}
         </button>
       </div>
@@ -72,7 +72,7 @@ export function HeaderPanel({ editor, document, session, onSelect }: PanelProps)
               checked={!photo.hidden}
               onChange={(shown) => editor.edit(setPhotoHidden(!shown))}
             />
-            <button type="button" className="inspector-add" onClick={() => onSelect({ kind: 'photo' })}>
+            <button type="button" className="inspector-action" onClick={() => onSelect({ kind: 'photo' })}>
               {t.inspector.header.photoOptions}
               <span aria-hidden="true"> ›</span>
             </button>

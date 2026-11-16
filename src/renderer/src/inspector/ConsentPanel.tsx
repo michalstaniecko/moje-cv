@@ -27,7 +27,7 @@ export function ConsentPanel({ editor, document, session, library }: PanelProps)
         />
         <button
           type="button"
-          className="inspector-add"
+          className="inspector-action"
           disabled={!consent.enabled}
           onClick={() => focusOnPage(session, { kind: 'consent' })}
         >
