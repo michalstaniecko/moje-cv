@@ -169,7 +169,6 @@ export const pl: Dictionary = {
     exportCutOffHint: 'Za długie fragmenty są wyróżnione w trybie edycji.',
     mode: { label: 'Tryb', edit: 'Edycja', preview: 'Podgląd' },
     history: 'Historia zmian',
-    cvDesignButton: 'Projekt CV',
     outline: {
       title: 'Konspekt',
       empty: 'pusta',
@@ -229,6 +228,14 @@ export const pl: Dictionary = {
     cvLanguage: 'Język CV',
     template: 'Szablon',
     templateNames: { classic: 'Klasyczny', modern: 'Nowoczesny', bold: 'Wyrazisty' },
+    inspector: {
+      label: 'Inspektor',
+      document: 'Dokument',
+      groups: { template: 'Szablon', style: 'Styl', language: 'Język' },
+      colors: { teal: 'Morski', blue: 'Niebieski', graphite: 'Grafitowy', violet: 'Fioletowy', crimson: 'Karmazynowy', orange: 'Pomarańczowy', green: 'Zielony', black: 'Czarny' },
+      customColor: 'Własny kolor',
+      languageNote: 'Zmienia stały tekst na CV, np. „obecnie”. Twoja treść nie jest tłumaczona.'
+    },
     header: 'Nagłówek',
     fullName: 'Imię i nazwisko',
     contact: 'Kontakt',

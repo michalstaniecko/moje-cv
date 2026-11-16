@@ -169,7 +169,6 @@ export const pt: Dictionary = {
     exportCutOffHint: 'Os trechos longos demais estão destacados no modo de edição.',
     mode: { label: 'Modo', edit: 'Edição', preview: 'Pré-visualização' },
     history: 'Histórico de alterações',
-    cvDesignButton: 'Design',
     outline: {
       title: 'Estrutura',
       empty: 'vazia',
@@ -228,6 +227,14 @@ export const pt: Dictionary = {
     cvLanguage: 'Idioma do currículo',
     template: 'Modelo',
     templateNames: { classic: 'Clássico', modern: 'Moderno', bold: 'Marcante' },
+    inspector: {
+      label: 'Inspetor',
+      document: 'Documento',
+      groups: { template: 'Modelo', style: 'Estilo', language: 'Idioma' },
+      colors: { teal: 'Verde-azulado', blue: 'Azul', graphite: 'Grafite', violet: 'Violeta', crimson: 'Carmesim', orange: 'Laranja', green: 'Verde', black: 'Preto' },
+      customColor: 'Cor personalizada',
+      languageNote: 'Muda o texto fixo do currículo, como “atual”. O seu conteúdo não é traduzido.'
+    },
     header: 'Cabeçalho',
     fullName: 'Nome completo',
     contact: 'Contato',

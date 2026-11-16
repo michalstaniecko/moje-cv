@@ -8,7 +8,7 @@ import { updateSettings } from '../documentEdits'
 import { TemplatePicker } from '../TemplatePicker'
 
 // CV design (zob. GLOSSARY.md): kolor akcentu (imię, tytuły sekcji, kropki przy datach), font, szablon i CV language –
-// w CV form i w panelu „Projekt CV” w pasku narzędzi (te same klucze łączenia kroków cofania).
+// w CV form; w Inspektorze ten sam CV design pokazuje panel „Dokument” (inspector/DocumentPanel.tsx, ten sam klucz łączenia).
 // Zmiana CV language zmienia tylko stały tekst na dokumencie, nie treść CV.
 export function CvDesignFields({ editor, document }: { editor: CvEditor; document: CvDocument }) {
   const t = useDictionary().editor

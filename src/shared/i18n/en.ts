@@ -192,8 +192,6 @@ export const en = {
     mode: { label: 'Mode', edit: 'Edit', preview: 'Preview' },
     // Grupa przycisków Cofnij / Ponów w pasku narzędzi (nazwy przycisków jak w menu Edycja: `menu.undo`, `menu.redo`).
     history: 'Change history',
-    // Przycisk „Projekt CV” w pasku narzędzi: otwiera panel CV design (krótko – pasek mieści się w oknie minimalnym).
-    cvDesignButton: 'CV design',
     // Pasek boczny w Edit mode: Outline (konspekt CV) i przełącznik Outline / CV form / szyna.
     outline: {
       title: 'Outline',
@@ -258,6 +256,17 @@ export const en = {
     cvLanguage: 'CV language',
     template: 'Template',
     templateNames: { classic: 'Classic', modern: 'Modern', bold: 'Bold' },
+    // Inspector (zob. GLOSSARY.md): stały panel opcji CV obok stron. Bez zaznaczenia – panel „Dokument” z CV design
+    // w zwijanych grupach; gotowe kolory akcentu mają nazwy dla czytnika ekranu.
+    inspector: {
+      label: 'Inspector',
+      document: 'Document',
+      groups: { template: 'Template', style: 'Style', language: 'Language' },
+      colors: { teal: 'Teal', blue: 'Blue', graphite: 'Graphite', violet: 'Violet', crimson: 'Crimson', orange: 'Orange', green: 'Green', black: 'Black' },
+      customColor: 'Custom color',
+      // Notka pod CV language: zmienia tylko stały tekst na dokumencie, nie treść CV.
+      languageNote: 'Changes fixed text on the CV, such as “present”. Your content isn’t translated.'
+    },
     header: 'Header',
     fullName: 'Full name',
     contact: 'Contact',

@@ -169,7 +169,6 @@ export const it: Dictionary = {
     exportCutOffHint: 'I frammenti troppo lunghi sono evidenziati in modalità modifica.',
     mode: { label: 'Modalità', edit: 'Modifica', preview: 'Anteprima' },
     history: 'Cronologia modifiche',
-    cvDesignButton: 'Design',
     outline: {
       title: 'Struttura',
       empty: 'vuota',
@@ -228,6 +227,14 @@ export const it: Dictionary = {
     cvLanguage: 'Lingua del CV',
     template: 'Modello',
     templateNames: { classic: 'Classico', modern: 'Moderno', bold: 'Deciso' },
+    inspector: {
+      label: 'Ispettore',
+      document: 'Documento',
+      groups: { template: 'Modello', style: 'Stile', language: 'Lingua' },
+      colors: { teal: 'Verde petrolio', blue: 'Blu', graphite: 'Grafite', violet: 'Viola', crimson: 'Cremisi', orange: 'Arancione', green: 'Verde', black: 'Nero' },
+      customColor: 'Colore personalizzato',
+      languageNote: 'Cambia il testo fisso del CV, come «oggi». I tuoi contenuti non vengono tradotti.'
+    },
     header: 'Intestazione',
     fullName: 'Nome e cognome',
     contact: 'Contatti',

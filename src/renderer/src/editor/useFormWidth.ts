@@ -58,11 +58,12 @@ const preference = () => (sessionPreference ??= createFormWidthPreference(window
 export type FormWidth = ReturnType<typeof useFormWidth>
 
 // Szerokość formularza w edytorze: preferencja (jedna dla całej aplikacji, zapisywana w ustawieniach) ograniczona do
-// tego, co mieści bieżąca szerokość obu kolumn. Zmniejszenie okna zmienia tylko wyświetlaną szerokość.
+// tego, co mieści bieżąca szerokość kolumn formularza i stron (panel edytora bez Inspektora). Zmniejszenie okna zmienia
+// tylko wyświetlaną szerokość.
 export function useFormWidth(panes: RefObject<HTMLElement | null>) {
   const store = preference()
   const preferred = useSyncExternalStore(store.subscribe, store.current)
-  const panesWidth = useElementWidth(panes)
+  const panesWidth = useWidthBesideInspector(panes)
   useEffect(() => store.load(), [store])
 
   return {
@@ -73,13 +74,15 @@ export function useFormWidth(panes: RefObject<HTMLElement | null>) {
   }
 }
 
-// Szerokość elementu, aktualizowana przy zmianie rozmiaru okna (przed pierwszym malowaniem).
-function useElementWidth(element: RefObject<HTMLElement | null>) {
+// Szerokość panelu edytora bez kolumny Inspektora (inspector/Inspector.tsx), aktualizowana przy zmianie rozmiaru okna
+// (przed pierwszym malowaniem). Inspector ma szerokość zależną od okna, więc jest mierzony razem z panelem.
+function useWidthBesideInspector(element: RefObject<HTMLElement | null>) {
   const [width, setWidth] = useState(0)
   useLayoutEffect(() => {
     const current = element.current
     if (!current) return
-    const update = () => setWidth(current.clientWidth)
+    const update = () =>
+      setWidth(current.clientWidth - (current.querySelector<HTMLElement>(':scope > .inspector')?.offsetWidth ?? 0))
     update()
     const observer = new ResizeObserver(update)
     observer.observe(current)

@@ -169,7 +169,6 @@ export const ro: Dictionary = {
     exportCutOffHint: 'Fragmentele prea lungi sunt evidențiate în modul de editare.',
     mode: { label: 'Mod', edit: 'Editare', preview: 'Previzualizare' },
     history: 'Istoricul modificărilor',
-    cvDesignButton: 'Design',
     outline: {
       title: 'Structură',
       empty: 'goală',
@@ -228,6 +227,14 @@ export const ro: Dictionary = {
     cvLanguage: 'Limba CV-ului',
     template: 'Șablon',
     templateNames: { classic: 'Clasic', modern: 'Modern', bold: 'Pregnant' },
+    inspector: {
+      label: 'Inspector',
+      document: 'Document',
+      groups: { template: 'Șablon', style: 'Stil', language: 'Limbă' },
+      colors: { teal: 'Petrol', blue: 'Albastru', graphite: 'Grafit', violet: 'Violet', crimson: 'Carmin', orange: 'Portocaliu', green: 'Verde', black: 'Negru' },
+      customColor: 'Culoare personalizată',
+      languageNote: 'Schimbă textul fix din CV, de exemplu „prezent”. Conținutul tău nu este tradus.'
+    },
     header: 'Antet',
     fullName: 'Nume complet',
     contact: 'Contact',

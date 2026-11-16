@@ -174,7 +174,6 @@ export const sv: Dictionary = {
     exportCutOffHint: 'De för långa avsnitten är markerade i redigeringsläget.',
     mode: { label: 'Läge', edit: 'Redigera', preview: 'Förhandsvisning' },
     history: 'Ändringshistorik',
-    cvDesignButton: 'Design',
     outline: {
       title: 'Disposition',
       empty: 'tomt',
@@ -229,6 +228,14 @@ export const sv: Dictionary = {
     cvLanguage: 'Cv-språk',
     template: 'Mall',
     templateNames: { classic: 'Klassisk', modern: 'Modern', bold: 'Kraftfull' },
+    inspector: {
+      label: 'Inspektör',
+      document: 'Dokument',
+      groups: { template: 'Mall', style: 'Stil', language: 'Språk' },
+      colors: { teal: 'Petrol', blue: 'Blå', graphite: 'Grafit', violet: 'Violett', crimson: 'Karmosin', orange: 'Orange', green: 'Grön', black: 'Svart' },
+      customColor: 'Egen färg',
+      languageNote: 'Ändrar fast text på cv:t, som ”nu”. Ditt innehåll översätts inte.'
+    },
     header: 'Sidhuvud',
     fullName: 'Fullständigt namn',
     contact: 'Kontakt',

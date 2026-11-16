@@ -169,7 +169,6 @@ export const id: Dictionary = {
     exportCutOffHint: 'Bagian yang terlalu panjang ditandai di mode edit.',
     mode: { label: 'Mode', edit: 'Edit', preview: 'Pratinjau' },
     history: 'Riwayat perubahan',
-    cvDesignButton: 'Desain CV',
     outline: {
       title: 'Kerangka',
       empty: 'kosong',
@@ -224,6 +223,14 @@ export const id: Dictionary = {
     cvLanguage: 'Bahasa CV',
     template: 'Templat',
     templateNames: { classic: 'Klasik', modern: 'Modern', bold: 'Tegas' },
+    inspector: {
+      label: 'Inspektor',
+      document: 'Dokumen',
+      groups: { template: 'Templat', style: 'Gaya', language: 'Bahasa' },
+      colors: { teal: 'Hijau toska', blue: 'Biru', graphite: 'Grafit', violet: 'Ungu', crimson: 'Merah tua', orange: 'Oranye', green: 'Hijau', black: 'Hitam' },
+      customColor: 'Warna kustom',
+      languageNote: 'Mengubah teks tetap di CV, seperti “sekarang”. Konten Anda tidak diterjemahkan.'
+    },
     header: 'Kepala',
     fullName: 'Nama lengkap',
     contact: 'Kontak',

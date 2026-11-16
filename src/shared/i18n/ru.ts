@@ -169,7 +169,6 @@ export const ru: Dictionary = {
     exportCutOffHint: 'Слишком длинные фрагменты выделены в режиме редактирования.',
     mode: { label: 'Режим', edit: 'Правка', preview: 'Просмотр' },
     history: 'История изменений',
-    cvDesignButton: 'Дизайн',
     outline: {
       title: 'Структура',
       empty: 'пустой',
@@ -229,6 +228,14 @@ export const ru: Dictionary = {
     cvLanguage: 'Язык резюме',
     template: 'Шаблон',
     templateNames: { classic: 'Классический', modern: 'Современный', bold: 'Выразительный' },
+    inspector: {
+      label: 'Инспектор',
+      document: 'Документ',
+      groups: { template: 'Шаблон', style: 'Стиль', language: 'Язык' },
+      colors: { teal: 'Морская волна', blue: 'Синий', graphite: 'Графитовый', violet: 'Фиолетовый', crimson: 'Малиновый', orange: 'Оранжевый', green: 'Зелёный', black: 'Чёрный' },
+      customColor: 'Свой цвет',
+      languageNote: 'Меняет постоянный текст резюме, например «по настоящее время». Ваш текст не переводится.'
+    },
     header: 'Шапка',
     fullName: 'Имя и фамилия',
     contact: 'Контакты',

@@ -176,7 +176,6 @@ export const de: Dictionary = {
     exportCutOffHint: 'Die zu langen Abschnitte sind im Bearbeitungsmodus hervorgehoben.',
     mode: { label: 'Modus', edit: 'Bearbeiten', preview: 'Vorschau' },
     history: 'Änderungsverlauf',
-    cvDesignButton: 'Design',
     outline: {
       title: 'Gliederung',
       empty: 'leer',
@@ -231,6 +230,14 @@ export const de: Dictionary = {
     cvLanguage: 'Sprache des Lebenslaufs',
     template: 'Vorlage',
     templateNames: { classic: 'Klassisch', modern: 'Modern', bold: 'Markant' },
+    inspector: {
+      label: 'Inspektor',
+      document: 'Dokument',
+      groups: { template: 'Vorlage', style: 'Stil', language: 'Sprache' },
+      colors: { teal: 'Petrol', blue: 'Blau', graphite: 'Graphit', violet: 'Violett', crimson: 'Karmesin', orange: 'Orange', green: 'Grün', black: 'Schwarz' },
+      customColor: 'Eigene Farbe',
+      languageNote: 'Ändert festen Text im Lebenslauf, etwa „heute“. Deine Inhalte werden nicht übersetzt.'
+    },
     header: 'Kopfbereich',
     fullName: 'Vollständiger Name',
     contact: 'Kontakt',
