@@ -1369,6 +1369,8 @@ textarea:focus-visible {
   appearance: none;
 }
 
+/* Wyjątek od ADR-0004 (kolory tylko z tokenów `--ui-*`): dekoracyjna tęcza jak koło barw systemowego wyboru koloru –
+   znak „własny kolor”, ten sam w jasnym i ciemnym wyglądzie, nie kolor interfejsu. */
 .inspector-custom-color {
   background: conic-gradient(#e5484d, #f5d90a, #30a46c, #0091ff, #8e4ec6, #e5484d);
 }

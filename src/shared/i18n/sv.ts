@@ -174,16 +174,10 @@ export const sv: Dictionary = {
     exportCutOffHint: 'De för långa avsnitten är markerade i redigeringsläget.',
     mode: { label: 'Läge', edit: 'Redigera', preview: 'Förhandsvisning' },
     history: 'Ändringshistorik',
-    outline: {
-      empty: 'tomt',
-      hidden: 'dolt',
+    sidebar: {
       form: 'Formulär',
       collapse: 'Fäll ihop',
-      showSection: (name) => `Visa ”${name}” i cv:t`,
-      showPhoto: 'Visa fotot i cv:t',
-      showConsent: 'Visa samtyckesklausulen i cv:t',
-      items: { one: (count) => `${count} post`, other: (count) => `${count} poster` },
-      sidebar: 'Sidofält'
+      label: 'Sidofält'
     },
     canvas: {
       addToCv: 'Lägg till i cv:',
@@ -231,7 +225,14 @@ export const sv: Dictionary = {
       colors: { teal: 'Petrol', blue: 'Blå', graphite: 'Grafit', violet: 'Violett', crimson: 'Karmosin', orange: 'Orange', green: 'Grön', black: 'Svart' },
       customColor: 'Egen färg',
       languageNote: 'Ändrar fast text på cv:t, som ”nu”. Ditt innehåll översätts inte.',
-      showOnCv: 'Visa på cv:t',
+      elements: {
+        hidden: 'dolt',
+        empty: 'tomt',
+        showSection: (name) => `Visa ”${name}” i cv:t`,
+        showPhoto: 'Visa fotot i cv:t',
+        showConsent: 'Visa samtyckesklausulen i cv:t',
+        items: { one: (count) => `${count} post`, other: (count) => `${count} poster` }
+      },
       section: {
         name: 'Namn',
         newPage: 'Börja på en ny sida',

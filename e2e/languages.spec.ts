@@ -192,7 +192,11 @@ for (const language of interfaceLanguageCodes) {
     expect(await controlsThatDoNotFitAtMinimumSize('.inspector, .preview-bar, .add-to-cv')).toEqual([])
     // „CV elements”: oznaczenie ukrytej sekcji Sample CV; nazwy w wierszach (sekcje Sample CV, „Nagłówek”,
     // „Klauzula zgody”) nie wystają – długie się zawijają – także w oknie minimalnym.
-    await expect(inspector.locator('[data-element="section"] .cv-element-badge')).toHaveText([t.editor.outline.hidden])
+    const hiddenSection = sample.sections.find((section) => section.hidden)!
+    const elements = inspector.getByRole('list', { name: t.editor.inspector.groups.elements, exact: true })
+    await expect(
+      elements.getByRole('button', { name: `${hiddenSection.title} ${t.editor.inspector.elements.hidden}`, exact: true })
+    ).toBeVisible()
     const cutOffInElements = () =>
       window
         .locator('.cv-elements, .cv-element, .cv-element-label')
@@ -200,7 +204,7 @@ for (const language of interfaceLanguageCodes) {
     expect(await cutOffInElements()).toEqual([])
     expect(await atMinimumWindowSize(cutOffInElements)).toEqual([])
     // Dalej CV form.
-    await panes.getByRole('button', { name: t.editor.outline.form, exact: true }).click()
+    await panes.getByRole('button', { name: t.editor.sidebar.form, exact: true }).click()
     await expect(window.locator('.editor-form').getByLabel(t.editor.cvLanguage)).toHaveValue(language)
     await expect(
       window.locator('label.form-field', { has: window.getByText(t.editor.font, { exact: true }) }).locator('select')

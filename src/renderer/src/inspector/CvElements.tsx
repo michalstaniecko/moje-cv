@@ -3,12 +3,13 @@ import { plural } from '../../../shared/i18n/plural'
 import { sectionEmpty } from '../canvas/addOnPage'
 import type { CvDocument, Section } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
-import { moveSection, setPhotoHidden, updateConsent, updateSection } from '../editor/documentEdits'
+import { moveSection, updateConsent, updateSection } from '../editor/documentEdits'
 import { sectionName } from '../editor/fields/SectionTitleField'
 import type { RowMenuAction } from '../editor/RowMenu'
 import { SortableList } from '../editor/SortableList'
 import { useDictionary, useInterfaceLanguage } from '../i18n'
-import type { CvElement } from './openOnPage'
+import { photoShown } from './InspectorSwitch'
+import { elementKey, type CvElement } from './selection'
 
 // Przełącznik „Pokaż na CV” zdjęcia w Inspektorze – na liście „CV elements” albo w panelu zdjęcia (InspectorSwitch.tsx):
 // tu wraca fokus po „Ukryj zdjęcie” w popoverze zdjęcia (canvas/PhotoPopover.tsx).
@@ -16,10 +17,10 @@ export const PHOTO_SWITCH_SELECTOR = '.inspector [data-switch="photo"]'
 
 // Przycisk wiersza części CV na liście (np. powrót fokusu z panelu tej części).
 export const elementRowSelector = (element: CvElement) =>
-  `.cv-elements [data-element="${element.kind}"]${element.kind === 'section' ? `[data-element-id="${CSS.escape(element.id)}"]` : ''} .cv-element-name`
+  `.cv-elements [data-element="${CSS.escape(elementKey(element))}"] .cv-element-name`
 
 // „CV elements” w panelu „Dokument” Inspektora (GLOSSARY.md, ADR-0012; zastępuje Outline): jedna lista części CV
-// w kolejności dokumentu – Nagłówek, Zdjęcie, każda sekcja (także ukryte i puste) i Klauzula zgody.
+// (dla czytnika ekranu lista „CV elements” z wierszem na część) w kolejności dokumentu – Nagłówek, Zdjęcie, każda sekcja (także ukryte i puste) i Klauzula zgody.
 // - Każda część, którą da się ukryć, ma ten sam przełącznik „Pokaż na CV” nazwany jej nazwą (zdjęcie – tylko gdy jest;
 //   ukryte zachowuje obraz). Ukryta część zostaje na liście z oznaczeniem „ukryta”, sekcja bez treści – „pusta”;
 //   oznaczenie jest częścią nazwy wiersza, liczba wpisów sekcji – jego opisem dla czytnika ekranu.
@@ -42,6 +43,7 @@ export function CvElements({
   const language = useInterfaceLanguage()
   const describedBy = useId()
   const { photo } = document.header
+  const photoSwitch = photoShown(editor, document)
   const countId = (section: Section) => `${describedBy}-${section.id}`
 
   const sectionRow = (section: Section, handle?: ReactNode) => {
@@ -50,14 +52,14 @@ export function CvElements({
       <ElementRow
         element={{ kind: 'section', id: section.id }}
         name={name}
-        badge={section.hidden ? t.outline.hidden : sectionEmpty(section, document) ? t.outline.empty : undefined}
+        badge={section.hidden ? t.inspector.elements.hidden : sectionEmpty(section, document) ? t.inspector.elements.empty : undefined}
         count={section.items.length}
         countId={section.items.length > 0 ? countId(section) : undefined}
         handle={handle}
         editable={editable}
         onOpen={onOpen}
         shown={{
-          label: t.outline.showSection(name),
+          label: t.inspector.elements.showSection(name),
           checked: !section.hidden,
           onChange: (shown) => editor.edit(updateSection(section.id, { hidden: !shown }))
         }}
@@ -77,19 +79,15 @@ export function CvElements({
   ]
 
   return (
-    <div className="cv-elements">
+    <div className="cv-elements" role="list" aria-label={t.inspector.groups.elements}>
       <ElementRow element={{ kind: 'header' }} name={t.header} editable={editable} onOpen={onOpen} />
       <ElementRow
         element={{ kind: 'photo' }}
         name={t.photo.legend}
-        badge={photo?.hidden ? t.outline.hidden : undefined}
+        badge={photo?.hidden ? t.inspector.elements.hidden : undefined}
         editable={editable}
         onOpen={onOpen}
-        shown={
-          photo
-            ? { label: t.outline.showPhoto, checked: !photo.hidden, onChange: (shown) => editor.edit(setPhotoHidden(!shown)) }
-            : undefined
-        }
+        shown={photoSwitch && { label: t.inspector.elements.showPhoto, ...photoSwitch }}
       />
       {editable ? (
         <SortableList
@@ -107,11 +105,11 @@ export function CvElements({
       <ElementRow
         element={{ kind: 'consent' }}
         name={t.consent.title}
-        badge={document.consent.enabled ? undefined : t.outline.hidden}
+        badge={document.consent.enabled ? undefined : t.inspector.elements.hidden}
         editable={editable}
         onOpen={onOpen}
         shown={{
-          label: t.outline.showConsent,
+          label: t.inspector.elements.showConsent,
           checked: document.consent.enabled,
           onChange: (shown) => editor.edit(updateConsent({ enabled: shown }))
         }}
@@ -123,7 +121,7 @@ export function CvElements({
           (section) =>
             section.items.length > 0 && (
               <span key={section.id} id={countId(section)}>
-                {plural(language, t.outline.items, section.items.length)}
+                {plural(language, t.inspector.elements.items, section.items.length)}
               </span>
             )
         )}
@@ -180,8 +178,8 @@ function ElementRow({
   return (
     <div
       className="cv-element"
-      data-element={element.kind}
-      data-element-id={element.kind === 'section' ? element.id : undefined}
+      role="listitem"
+      data-element={elementKey(element)}
       data-muted={(shown && !shown.checked) || undefined}
       onKeyDown={handle ? openMenu : undefined}
     >

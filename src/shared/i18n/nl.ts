@@ -176,16 +176,10 @@ export const nl: Dictionary = {
     exportCutOffHint: 'De te lange fragmenten zijn gemarkeerd in de bewerkingsmodus.',
     mode: { label: 'Modus', edit: 'Bewerken', preview: 'Voorbeeld' },
     history: 'Wijzigingsgeschiedenis',
-    outline: {
-      empty: 'leeg',
-      hidden: 'verborgen',
+    sidebar: {
       form: 'Formulier',
       collapse: 'Inklappen',
-      showSection: (name) => `“${name}” tonen op cv`,
-      showPhoto: 'Foto tonen op cv',
-      showConsent: 'Toestemmingsverklaring tonen op cv',
-      items: { one: (count) => `${count} item`, other: (count) => `${count} items` },
-      sidebar: 'Zijbalk'
+      label: 'Zijbalk'
     },
     canvas: {
       addToCv: 'Toevoegen aan cv:',
@@ -233,7 +227,14 @@ export const nl: Dictionary = {
       colors: { teal: 'Petrol', blue: 'Blauw', graphite: 'Grafiet', violet: 'Violet', crimson: 'Karmijn', orange: 'Oranje', green: 'Groen', black: 'Zwart' },
       customColor: 'Eigen kleur',
       languageNote: 'Verandert vaste tekst op het cv, zoals “heden”. Je inhoud wordt niet vertaald.',
-      showOnCv: 'Tonen op cv',
+      elements: {
+        hidden: 'verborgen',
+        empty: 'leeg',
+        showSection: (name) => `“${name}” tonen op cv`,
+        showPhoto: 'Foto tonen op cv',
+        showConsent: 'Toestemmingsverklaring tonen op cv',
+        items: { one: (count) => `${count} item`, other: (count) => `${count} items` }
+      },
       section: {
         name: 'Naam',
         newPage: 'Op een nieuwe pagina beginnen',

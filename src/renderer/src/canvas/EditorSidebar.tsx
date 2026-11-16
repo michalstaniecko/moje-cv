@@ -34,7 +34,7 @@ export function EditorSidebar({
   onRemove: RemoveWithUndo
 }) {
   const { sidebar } = control
-  const t = useDictionary().editor.outline
+  const t = useDictionary().editor.sidebar
   const pendingFocus = useRef<string | null>(null)
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export function EditorSidebar({
   if (sidebar === 'collapsed') {
     // Zwinięty pasek boczny: ikona CV form. Dla czytnika ekranu to nazwany punkt orientacyjny „Pasek boczny”.
     return (
-      <aside className="editor-rail" aria-label={t.sidebar}>
+      <aside className="editor-rail" aria-label={t.label}>
         <button
           type="button"
           className="sidebar-icon-button"

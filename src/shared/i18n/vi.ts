@@ -169,16 +169,10 @@ export const vi: Dictionary = {
     exportCutOffHint: 'Các đoạn quá dài được đánh dấu trong chế độ chỉnh sửa.',
     mode: { label: 'Chế độ', edit: 'Chỉnh sửa', preview: 'Xem trước' },
     history: 'Lịch sử thay đổi',
-    outline: {
-      empty: 'trống',
-      hidden: 'đã ẩn',
+    sidebar: {
       form: 'Biểu mẫu',
       collapse: 'Thu gọn',
-      showSection: (name) => `Hiện “${name}” trên CV`,
-      showPhoto: 'Hiện ảnh trên CV',
-      showConsent: 'Hiện điều khoản đồng ý trên CV',
-      items: { other: (count) => `${count} mục` },
-      sidebar: 'Thanh bên'
+      label: 'Thanh bên'
     },
     canvas: {
       addToCv: 'Thêm vào CV:',
@@ -226,7 +220,14 @@ export const vi: Dictionary = {
       colors: { teal: 'Xanh mòng két', blue: 'Xanh dương', graphite: 'Than chì', violet: 'Tím', crimson: 'Đỏ thẫm', orange: 'Cam', green: 'Xanh lá', black: 'Đen' },
       customColor: 'Màu tùy chỉnh',
       languageNote: 'Thay đổi chữ cố định trên CV, như “hiện tại”. Nội dung của bạn không được dịch.',
-      showOnCv: 'Hiện trên CV',
+      elements: {
+        hidden: 'đã ẩn',
+        empty: 'trống',
+        showSection: (name) => `Hiện “${name}” trên CV`,
+        showPhoto: 'Hiện ảnh trên CV',
+        showConsent: 'Hiện điều khoản đồng ý trên CV',
+        items: { other: (count) => `${count} mục` }
+      },
       section: {
         name: 'Tên',
         newPage: 'Bắt đầu ở trang mới',

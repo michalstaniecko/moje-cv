@@ -169,20 +169,10 @@ export const es: Dictionary = {
     exportCutOffHint: 'Los fragmentos demasiado largos están resaltados en el modo de edición.',
     mode: { label: 'Modo', edit: 'Edición', preview: 'Vista previa' },
     history: 'Historial de cambios',
-    outline: {
-      empty: 'vacía',
-      hidden: 'oculta',
+    sidebar: {
       form: 'Formulario',
       collapse: 'Contraer',
-      showSection: (name) => `Mostrar «${name}» en el CV`,
-      showPhoto: 'Mostrar la foto en el CV',
-      showConsent: 'Mostrar la cláusula de consentimiento en el CV',
-      items: {
-        one: (count) => `${count} elemento`,
-        many: (count) => `${count} de elementos`,
-        other: (count) => `${count} elementos`
-      },
-      sidebar: 'Barra lateral'
+      label: 'Barra lateral'
     },
     canvas: {
       addToCv: 'Añadir al CV:',
@@ -230,7 +220,18 @@ export const es: Dictionary = {
       colors: { teal: 'Verde azulado', blue: 'Azul', graphite: 'Grafito', violet: 'Violeta', crimson: 'Carmesí', orange: 'Naranja', green: 'Verde', black: 'Negro' },
       customColor: 'Color personalizado',
       languageNote: 'Cambia el texto fijo del CV, como «actualidad». Tu contenido no se traduce.',
-      showOnCv: 'Mostrar en el CV',
+      elements: {
+        hidden: 'oculta',
+        empty: 'vacía',
+        showSection: (name) => `Mostrar «${name}» en el CV`,
+        showPhoto: 'Mostrar la foto en el CV',
+        showConsent: 'Mostrar la cláusula de consentimiento en el CV',
+        items: {
+          one: (count) => `${count} elemento`,
+          many: (count) => `${count} de elementos`,
+          other: (count) => `${count} elementos`
+        }
+      },
       section: {
         name: 'Nombre',
         newPage: 'Empezar en una página nueva',

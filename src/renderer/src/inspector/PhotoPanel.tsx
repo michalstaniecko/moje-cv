@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { EditSession } from '../canvas/useEditSession'
-import { setPhotoHidden, updateHeader } from '../editor/documentEdits'
+import { updateHeader } from '../editor/documentEdits'
 import { usePhotoPicker } from '../editor/fields/PhotoField'
 import { useDictionary } from '../i18n'
 import type { PanelProps } from './ElementPanel'
-import { InspectorSwitch } from './InspectorSwitch'
+import { PhotoSwitch } from './InspectorSwitch'
 
 // „Remove photo” w panelu zdjęcia – tu wraca fokus po „Undo” w komunikacie „Removed.”.
 const REMOVE_SELECTOR = '.inspector [data-photo-action="remove"]'
@@ -12,7 +12,7 @@ const REMOVE_SELECTOR = '.inspector [data-photo-action="remove"]'
 // Panel zdjęcia Inspektora (#141) – te same akcje co Field popover zdjęcia na stronie (canvas/PhotoPopover.tsx):
 // - ze zdjęciem: miniatura, „Change photo” (wybór pliku i kadrowanie), „Crop photo” (ponowne kadrowanie – to samo okno
 //   co na stronie, `usePhotoPicker`; po nim fokus wraca na przycisk, który je otworzył), „Remove photo” (z „Removed.
-//   Undo” jak na stronie; fokus na „Add photo”, a po „Undo” – z powrotem na „Remove photo”) i „Show on CV” (ukrycie
+//   Undo” jak na stronie; fokus na „Add photo”, a po „Undo” – z powrotem na „Remove photo”) i „Show photo on CV” (ukrycie
 //   zachowuje obraz; tu wraca fokus po „Hide photo” w popoverze);
 // - bez zdjęcia: „Add photo” jak pasek „Add to CV”.
 export function PhotoPanel({ editor, document, session, onRemove }: PanelProps) {
@@ -76,12 +76,7 @@ export function PhotoPanel({ editor, document, session, onRemove }: PanelProps) 
           </p>
         )}
       </div>
-      <InspectorSwitch
-        label={t.inspector.showOnCv}
-        part="photo"
-        checked={!photo.hidden}
-        onChange={(shown) => editor.edit(setPhotoHidden(!shown))}
-      />
+      <PhotoSwitch editor={editor} document={document} label={t.inspector.elements.showPhoto} />
       {cropper}
     </>
   )

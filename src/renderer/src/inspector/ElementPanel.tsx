@@ -9,9 +9,9 @@ import { sectionName } from '../editor/fields/SectionTitleField'
 import { useDictionary } from '../i18n'
 import { ConsentPanel } from './ConsentPanel'
 import { HeaderPanel } from './HeaderPanel'
-import type { CvElement } from './openOnPage'
 import { PhotoPanel } from './PhotoPanel'
 import { SectionPanel } from './SectionPanel'
+import { findSection, type CvElement } from './selection'
 
 // Co dostaje panel elementu: edytor (każda zmiana przez `editor.edit` – jeden krok cofania), bieżący dokument i sesję
 // edycji (np. `focusOnPage` z openOnPage.ts – kursor w części CV na stronie). Do tego to, co mają akcje na stronach:
@@ -64,7 +64,7 @@ export function ElementPanel({ element, onBack, ...props }: PanelProps & { eleme
 function PanelBody({ element, ...props }: PanelProps & { element: CvElement }) {
   switch (element.kind) {
     case 'section': {
-      const section = props.document.sections.find((candidate) => candidate.id === element.id)
+      const section = findSection(props.document, element.id)
       return section ? <SectionPanel {...props} section={section} /> : null
     }
     case 'header':
@@ -80,7 +80,7 @@ function PanelBody({ element, ...props }: PanelProps & { element: CvElement }) {
 export function elementName(element: CvElement, document: CvDocument, t: Dictionary['editor']): string {
   switch (element.kind) {
     case 'section': {
-      const section = document.sections.find((candidate) => candidate.id === element.id)
+      const section = findSection(document, element.id)
       return section ? sectionName(section, t) : ''
     }
     case 'header':

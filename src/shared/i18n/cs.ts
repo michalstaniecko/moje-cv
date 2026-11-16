@@ -169,21 +169,10 @@ export const cs: Dictionary = {
     exportCutOffHint: 'Příliš dlouhé části jsou zvýrazněné v režimu úprav.',
     mode: { label: 'Režim', edit: 'Úpravy', preview: 'Náhled' },
     history: 'Historie změn',
-    outline: {
-      empty: 'prázdná',
-      hidden: 'skrytá',
+    sidebar: {
       form: 'Formulář',
       collapse: 'Sbalit',
-      showSection: (name) => `Zobrazit „${name}“ v CV`,
-      showPhoto: 'Zobrazit fotku v CV',
-      showConsent: 'Zobrazit souhlas se zpracováním údajů v CV',
-      items: {
-        one: (count) => `${count} položka`,
-        few: (count) => `${count} položky`,
-        many: (count) => `${count} položky`,
-        other: (count) => `${count} položek`
-      },
-      sidebar: 'Postranní panel'
+      label: 'Postranní panel'
     },
     canvas: {
       addToCv: 'Přidat do CV:',
@@ -231,7 +220,19 @@ export const cs: Dictionary = {
       colors: { teal: 'Petrolejová', blue: 'Modrá', graphite: 'Grafitová', violet: 'Fialová', crimson: 'Karmínová', orange: 'Oranžová', green: 'Zelená', black: 'Černá' },
       customColor: 'Vlastní barva',
       languageNote: 'Mění pevný text v CV, například „dosud“. Váš obsah se nepřekládá.',
-      showOnCv: 'Zobrazit v CV',
+      elements: {
+        hidden: 'skrytá',
+        empty: 'prázdná',
+        showSection: (name) => `Zobrazit „${name}“ v CV`,
+        showPhoto: 'Zobrazit fotku v CV',
+        showConsent: 'Zobrazit souhlas se zpracováním údajů v CV',
+        items: {
+          one: (count) => `${count} položka`,
+          few: (count) => `${count} položky`,
+          many: (count) => `${count} položky`,
+          other: (count) => `${count} položek`
+        }
+      },
       section: {
         name: 'Název',
         newPage: 'Začít na nové stránce',

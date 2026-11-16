@@ -73,7 +73,7 @@ Retired (ADR-0012): the narrow side panel of the CV editor that listed the parts
 _Avoid_: Navigator, table of contents, sidebar (as the name of the panel)
 
 **CV form**:
-The complete form with every field of the CV, one under another, in the sidebar to the left of the editable pages – collapsed to a rail by default. To be removed once the Outline, the pages and the toolbar cover everything it does (ADR-0011).
+The complete form with every field of the CV, one under another, in the sidebar to the left of the editable pages – collapsed to a rail by default. To be removed once the pages, the toolbar and the Inspector – with its "CV elements" list, which took over the Outline's jobs – cover everything it does (ADR-0011, ADR-0012, #135).
 _Avoid_: Editor (that is the whole screen), sidebar
 
 **Sponsor bar**:

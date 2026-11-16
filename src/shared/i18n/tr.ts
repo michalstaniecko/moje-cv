@@ -169,16 +169,10 @@ export const tr: Dictionary = {
     exportCutOffHint: 'Çok uzun bölümler düzenleme modunda vurgulanır.',
     mode: { label: 'Mod', edit: 'Düzenleme', preview: 'Önizleme' },
     history: 'Değişiklik geçmişi',
-    outline: {
-      empty: 'boş',
-      hidden: 'gizli',
+    sidebar: {
       form: 'Form',
       collapse: 'Daralt',
-      showSection: (name) => `“${name}” bölümünü CV’de göster`,
-      showPhoto: 'Fotoğrafı CV’de göster',
-      showConsent: 'Onay metnini CV’de göster',
-      items: { one: (count) => `${count} öğe`, other: (count) => `${count} öğe` },
-      sidebar: 'Kenar çubuğu'
+      label: 'Kenar çubuğu'
     },
     canvas: {
       addToCv: 'CV’ye ekle:',
@@ -226,7 +220,14 @@ export const tr: Dictionary = {
       colors: { teal: 'Petrol mavisi', blue: 'Mavi', graphite: 'Grafit', violet: 'Mor', crimson: 'Koyu kırmızı', orange: 'Turuncu', green: 'Yeşil', black: 'Siyah' },
       customColor: 'Özel renk',
       languageNote: 'CV’deki sabit metni değiştirir, örneğin “halen”. İçeriğiniz çevrilmez.',
-      showOnCv: 'CV’de göster',
+      elements: {
+        hidden: 'gizli',
+        empty: 'boş',
+        showSection: (name) => `“${name}” bölümünü CV’de göster`,
+        showPhoto: 'Fotoğrafı CV’de göster',
+        showConsent: 'Onay metnini CV’de göster',
+        items: { one: (count) => `${count} öğe`, other: (count) => `${count} öğe` }
+      },
       section: {
         name: 'Ad',
         newPage: 'Yeni sayfada başlat',

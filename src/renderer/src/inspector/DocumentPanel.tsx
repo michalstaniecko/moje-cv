@@ -9,7 +9,7 @@ import { useDictionary } from '../i18n'
 import { fontStack } from '../template/fonts'
 import { CvElements } from './CvElements'
 import { InspectorGroup } from './InspectorGroup'
-import type { CvElement } from './openOnPage'
+import type { CvElement } from './selection'
 
 // Gotowe kolory akcentu: stonowane barwy dobrze czytelne na bieli; pierwszy to domyślny akcent CV (domain/schema.ts).
 export const accentPresets = [

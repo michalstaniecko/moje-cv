@@ -1,10 +1,9 @@
 import { useId } from 'react'
 import { plural } from '../../../shared/i18n/plural'
 import { addContactElement } from '../canvas/AddControls'
-import { setPhotoHidden } from '../editor/documentEdits'
 import { useDictionary, useInterfaceLanguage } from '../i18n'
 import type { PanelProps } from './ElementPanel'
-import { InspectorSwitch } from './InspectorSwitch'
+import { PhotoSwitch } from './InspectorSwitch'
 import { focusOnPage } from './openOnPage'
 import { AddPhotoButton } from './PhotoPanel'
 
@@ -66,12 +65,7 @@ export function HeaderPanel({ editor, document, session, onSelect }: PanelProps)
         <span className="inspector-label">{t.photo.legend}</span>
         {photo ? (
           <>
-            <InspectorSwitch
-              label={t.outline.showPhoto}
-              part="photo"
-              checked={!photo.hidden}
-              onChange={(shown) => editor.edit(setPhotoHidden(!shown))}
-            />
+            <PhotoSwitch editor={editor} document={document} label={t.inspector.elements.showPhoto} />
             <button type="button" className="inspector-action" onClick={() => onSelect({ kind: 'photo' })}>
               {t.inspector.header.photoOptions}
               <span aria-hidden="true"> ›</span>

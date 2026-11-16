@@ -169,21 +169,10 @@ export const ru: Dictionary = {
     exportCutOffHint: 'Слишком длинные фрагменты выделены в режиме редактирования.',
     mode: { label: 'Режим', edit: 'Правка', preview: 'Просмотр' },
     history: 'История изменений',
-    outline: {
-      empty: 'пустой',
-      hidden: 'скрытый',
+    sidebar: {
       form: 'Форма',
       collapse: 'Свернуть',
-      showSection: (name) => `Показать «${name}» в резюме`,
-      showPhoto: 'Показать фото в резюме',
-      showConsent: 'Показать согласие на обработку данных в резюме',
-      items: {
-        one: (count) => `${count} элемент`,
-        few: (count) => `${count} элемента`,
-        many: (count) => `${count} элементов`,
-        other: (count) => `${count} элемента`
-      },
-      sidebar: 'Боковая панель'
+      label: 'Боковая панель'
     },
     canvas: {
       addToCv: 'Добавить в резюме:',
@@ -231,7 +220,19 @@ export const ru: Dictionary = {
       colors: { teal: 'Морская волна', blue: 'Синий', graphite: 'Графитовый', violet: 'Фиолетовый', crimson: 'Малиновый', orange: 'Оранжевый', green: 'Зелёный', black: 'Чёрный' },
       customColor: 'Свой цвет',
       languageNote: 'Меняет постоянный текст резюме, например «по настоящее время». Ваш текст не переводится.',
-      showOnCv: 'Показывать в резюме',
+      elements: {
+        hidden: 'скрытый',
+        empty: 'пустой',
+        showSection: (name) => `Показать «${name}» в резюме`,
+        showPhoto: 'Показать фото в резюме',
+        showConsent: 'Показать согласие на обработку данных в резюме',
+        items: {
+          one: (count) => `${count} элемент`,
+          few: (count) => `${count} элемента`,
+          many: (count) => `${count} элементов`,
+          other: (count) => `${count} элемента`
+        }
+      },
       section: {
         name: 'Название',
         newPage: 'Начинать с новой страницы',
