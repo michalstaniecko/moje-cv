@@ -233,7 +233,6 @@ export const cs: Dictionary = {
           other: (count) => `${count} položek`
         }
       },
-      showOnCv: 'Zobrazit v CV',
       section: {
         name: 'Název',
         newPage: 'Začít na nové stránce',

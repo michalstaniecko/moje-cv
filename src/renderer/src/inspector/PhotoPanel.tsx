@@ -12,7 +12,7 @@ const REMOVE_SELECTOR = '.inspector [data-photo-action="remove"]'
 // Panel zdjęcia Inspektora (#141) – te same akcje co Field popover zdjęcia na stronie (canvas/PhotoPopover.tsx):
 // - ze zdjęciem: miniatura, „Change photo” (wybór pliku i kadrowanie), „Crop photo” (ponowne kadrowanie – to samo okno
 //   co na stronie, `usePhotoPicker`; po nim fokus wraca na przycisk, który je otworzył), „Remove photo” (z „Removed.
-//   Undo” jak na stronie; fokus na „Add photo”, a po „Undo” – z powrotem na „Remove photo”) i „Show on CV” (ukrycie
+//   Undo” jak na stronie; fokus na „Add photo”, a po „Undo” – z powrotem na „Remove photo”) i „Show photo on CV” (ukrycie
 //   zachowuje obraz; tu wraca fokus po „Hide photo” w popoverze);
 // - bez zdjęcia: „Add photo” jak pasek „Add to CV”.
 export function PhotoPanel({ editor, document, session, onRemove }: PanelProps) {
@@ -76,7 +76,7 @@ export function PhotoPanel({ editor, document, session, onRemove }: PanelProps) 
           </p>
         )}
       </div>
-      <PhotoSwitch editor={editor} document={document} label={t.inspector.showOnCv} />
+      <PhotoSwitch editor={editor} document={document} label={t.inspector.elements.showPhoto} />
       {cropper}
     </>
   )

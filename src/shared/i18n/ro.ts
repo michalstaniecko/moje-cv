@@ -232,7 +232,6 @@ export const ro: Dictionary = {
           other: (count) => `${count} de elemente`
         }
       },
-      showOnCv: 'Afișează în CV',
       section: {
         name: 'Nume',
         newPage: 'Începe pe o pagină nouă',

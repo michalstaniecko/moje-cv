@@ -228,7 +228,6 @@ export const tr: Dictionary = {
         showConsent: 'Onay metnini CV’de göster',
         items: { one: (count) => `${count} öğe`, other: (count) => `${count} öğe` }
       },
-      showOnCv: 'CV’de göster',
       section: {
         name: 'Ad',
         newPage: 'Yeni sayfada başlat',

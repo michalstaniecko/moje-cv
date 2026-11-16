@@ -233,7 +233,6 @@ export const ru: Dictionary = {
           other: (count) => `${count} элемента`
         }
       },
-      showOnCv: 'Показывать в резюме',
       section: {
         name: 'Название',
         newPage: 'Начинать с новой страницы',

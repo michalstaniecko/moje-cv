@@ -228,7 +228,6 @@ export const id: Dictionary = {
         showConsent: 'Tampilkan klausul persetujuan di CV',
         items: { other: (count) => `${count} item` }
       },
-      showOnCv: 'Tampilkan di CV',
       section: {
         name: 'Nama',
         newPage: 'Mulai di halaman baru',

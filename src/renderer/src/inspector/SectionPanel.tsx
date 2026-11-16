@@ -2,6 +2,7 @@ import { useId, useRef } from 'react'
 import { sectionEmpty } from '../canvas/addOnPage'
 import type { Section } from '../domain/schema'
 import { moveSection, showSectionAndAddItem, updateSection } from '../editor/documentEdits'
+import { sectionName } from '../editor/fields/SectionTitleField'
 import { useDictionary } from '../i18n'
 import type { PanelProps } from './ElementPanel'
 import { InspectorSwitch } from './InspectorSwitch'
@@ -11,8 +12,8 @@ import { SectionItems, sectionItemTarget } from './SectionItems'
 // Ten sam klucz łączenia kroków cofania co tytuł sekcji na stronie i w CV form: wpisanie nazwy to jeden krok.
 const titleMergeKey = (section: Section) => `section:${section.id}:title`
 
-// Panel sekcji Inspektora (#139): nazwa (tytuł sekcji – jedyna treść CV edytowana w Inspektorze), „Pokaż na CV”,
-// „Zacznij od nowej strony”, kolejność ↑/↓ z pozycją („2 z 5”) i lista pozycji. Każda zmiana to jeden krok cofania.
+// Panel sekcji Inspektora (#139): nazwa (tytuł sekcji – jedyna treść CV edytowana w Inspektorze), „Pokaż na CV”
+// (przełącznik nazwany nazwą sekcji, jak na liście „CV elements”), „Zacznij od nowej strony”, kolejność ↑/↓ z pozycją („2 z 5”) i lista pozycji. Każda zmiana to jeden krok cofania.
 // Działa także dla sekcji ukrytej i pustej, których nie ma na stronach.
 export function SectionPanel({ editor, document, session, section }: PanelProps & { section: Section }) {
   const t = useDictionary().editor
@@ -32,7 +33,12 @@ export function SectionPanel({ editor, document, session, section }: PanelProps 
         />
       </label>
       <div className="inspector-field">
-        <InspectorSwitch label={t.inspector.showOnCv} part="section" checked={!section.hidden} onChange={(shown) => update({ hidden: !shown })} />
+        <InspectorSwitch
+          label={t.inspector.elements.showSection(sectionName(section, t))}
+          part="section"
+          checked={!section.hidden}
+          onChange={(shown) => update({ hidden: !shown })}
+        />
         <InspectorSwitch
           label={t.inspector.section.newPage}
           checked={section.pageBreakBefore}

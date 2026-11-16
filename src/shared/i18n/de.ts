@@ -235,7 +235,6 @@ export const de: Dictionary = {
         showConsent: 'Einwilligungserklärung im Lebenslauf zeigen',
         items: { one: (count) => `${count} Eintrag`, other: (count) => `${count} Einträge` }
       },
-      showOnCv: 'Im Lebenslauf zeigen',
       section: {
         name: 'Name',
         newPage: 'Auf neuer Seite beginnen',

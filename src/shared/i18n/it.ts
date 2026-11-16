@@ -232,7 +232,6 @@ export const it: Dictionary = {
           other: (count) => `${count} elementi`
         }
       },
-      showOnCv: 'Mostra nel CV',
       section: {
         name: 'Nome',
         newPage: 'Inizia su una nuova pagina',

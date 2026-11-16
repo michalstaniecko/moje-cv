@@ -228,7 +228,6 @@ export const vi: Dictionary = {
         showConsent: 'Hiện điều khoản đồng ý trên CV',
         items: { other: (count) => `${count} mục` }
       },
-      showOnCv: 'Hiện trên CV',
       section: {
         name: 'Tên',
         newPage: 'Bắt đầu ở trang mới',

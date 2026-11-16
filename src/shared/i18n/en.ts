@@ -267,8 +267,8 @@ export const en = {
         items: elementItems
       },
       // Panel elementu (część CV zaznaczona na stronie albo na liście „CV elements”); ścieżka „‹ Document / nazwa”
-      // wraca przyciskiem `document` do panelu „Dokument”. Przełącznik widoczności części w jej panelu.
-      showOnCv: 'Show on CV',
+      // wraca przyciskiem `document` do panelu „Dokument”. Przełącznik widoczności części w jej panelu ma nazwę jak na
+      // liście (`elements.showSection`, `showPhoto`, `showConsent`).
       // Panel sekcji: nazwa (tytuł sekcji), nowa strona, kolejność („2 of 5”) i lista pozycji (tylko tytuły).
       section: {
         name: 'Name',

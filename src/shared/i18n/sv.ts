@@ -233,7 +233,6 @@ export const sv: Dictionary = {
         showConsent: 'Visa samtyckesklausulen i cv:t',
         items: { one: (count) => `${count} post`, other: (count) => `${count} poster` }
       },
-      showOnCv: 'Visa på cv:t',
       section: {
         name: 'Namn',
         newPage: 'Börja på en ny sida',

@@ -235,7 +235,6 @@ export const nl: Dictionary = {
         showConsent: 'Toestemmingsverklaring tonen op cv',
         items: { one: (count) => `${count} item`, other: (count) => `${count} items` }
       },
-      showOnCv: 'Tonen op cv',
       section: {
         name: 'Naam',
         newPage: 'Op een nieuwe pagina beginnen',

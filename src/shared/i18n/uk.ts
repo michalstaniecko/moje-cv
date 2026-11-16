@@ -233,7 +233,6 @@ export const uk: Dictionary = {
           other: (count) => `${count} елемента`
         }
       },
-      showOnCv: 'Показувати в резюме',
       section: {
         name: 'Назва',
         newPage: 'Починати з нової сторінки',

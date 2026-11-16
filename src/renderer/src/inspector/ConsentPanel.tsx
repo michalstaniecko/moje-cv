@@ -8,7 +8,7 @@ import { focusOnPage } from './openOnPage'
 
 // Panel klauzuli zgody Inspektora (#141) – te same akcje co pasek klauzuli na stronie (canvas/ConsentToolbar.tsx), bez
 // edycji tekstu (ten jest na stronie):
-// - „Show on CV” – klauzula włączona albo wyłączona (wyłączona zostaje w CV);
+// - „Show consent clause on CV” – klauzula włączona albo wyłączona (wyłączona zostaje w CV);
 // - „Edit on the page” – kursor w tekście klauzuli na stronie; wyłączonej klauzuli nie ma na stronach, więc nieaktywny;
 // - wybór klauzuli z biblioteki (kopia jej treści w CV) – jeden krok cofania;
 // - „Save as new clause” – bieżący tekst jako nowa klauzula w bibliotece, od razu wybrana w CV.
@@ -20,7 +20,7 @@ export function ConsentPanel({ editor, document, session, library }: PanelProps)
     <>
       <div className="inspector-field">
         <InspectorSwitch
-          label={t.inspector.showOnCv}
+          label={t.inspector.elements.showConsent}
           part="consent"
           checked={consent.enabled}
           onChange={(shown) => editor.edit(updateConsent({ enabled: shown }))}

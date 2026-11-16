@@ -2918,9 +2918,9 @@ test('“Hide photo” in the photo popover takes the photo off the pages, the P
   await expect(photoButton()).toBeFocused()
   await expect(panelTitle()).toHaveText('Photo')
 
-  // „Hide photo” w popoverze: zdjęcia nie ma na stronie (bez „Removed. Undo”), fokus na przełączniku „Show on CV”
+  // „Hide photo” w popoverze: zdjęcia nie ma na stronie (bez „Removed. Undo”), fokus na przełączniku „Show photo on CV”
   // w panelu zdjęcia, a na liście zdjęcie jest oznaczone jako ukryte.
-  const panelSwitch = inspector().getByRole('switch', { name: 'Show on CV', exact: true })
+  const panelSwitch = inspector().getByRole('switch', { name: 'Show photo on CV', exact: true })
   await photoButton().press('Enter')
   await photoPopover().getByRole('button', { name: 'Hide photo' }).click()
   await expect(photo).toHaveCount(0)
@@ -2987,7 +2987,7 @@ test('without a photo the “Photo” row has no switch and picks a photo like �
   await expect(photoButton()).toBeFocused()
   // Zdjęcie z fokusem na stronie – w Inspektorze jego panel.
   await expect(panelTitle()).toHaveText('Photo')
-  await expect(inspector().getByRole('switch', { name: 'Show on CV', exact: true })).toBeChecked()
+  await expect(inspector().getByRole('switch', { name: 'Show photo on CV', exact: true })).toBeChecked()
 })
 
 test('sections are reordered in the CV elements list by dragging and from the handle menu (also with Shift+F10), also the hidden ones, and “New page before this section” is set there; the pages follow and each change is one undo step', async () => {
@@ -3079,9 +3079,9 @@ test('in a new CV the CV elements list marks the empty sections; a click on one 
   await window.keyboard.type('I agree to the processing of my data.')
   await expect(window.locator('.preview .cv-page .cv-consent')).toHaveText('I agree to the processing of my data.')
   await expect(window.getByRole('dialog')).toHaveCount(0)
-  // „Show on CV” w panelu klauzuli ją wyłącza.
+  // „Show consent clause on CV” w panelu klauzuli ją wyłącza.
   await expect(panelTitle()).toHaveText('Consent clause')
-  await inspector().getByRole('switch', { name: 'Show on CV', exact: true }).uncheck()
+  await inspector().getByRole('switch', { name: 'Show consent clause on CV', exact: true }).uncheck()
   await expect(window.locator('.preview .cv-page .cv-consent')).toHaveCount(0)
   await showDocumentPanel()
   await expect(elementSwitch('Consent clause')).not.toBeChecked()
@@ -3180,11 +3180,11 @@ test('a click on a section in the CV elements list opens its panel, also for a h
   await window.setViewportSize({ width: 1600, height: 1000 })
   await openFirstCvWithPages()
 
-  // Ukryta sekcja: panel z wyłączonym „Show on CV”; pozycji nie ma na stronach, więc są nieaktywne.
+  // Ukryta sekcja: panel z wyłączonym „Show “Interests” on CV”; pozycji nie ma na stronach, więc są nieaktywne.
   await elementButton('Interests').click()
   await expect(panelTitle()).toHaveText('Interests')
   await expect(panelTitle()).toBeFocused()
-  await expect(inspector().getByRole('switch', { name: 'Show on CV', exact: true })).not.toBeChecked()
+  await expect(inspector().getByRole('switch', { name: 'Show “Interests” on CV', exact: true })).not.toBeChecked()
   await expect(sectionItems().getByRole('button')).toHaveCount(1)
   await expect(sectionItems().getByRole('button')).toBeDisabled()
   await backToDocument().click()
@@ -3227,8 +3227,8 @@ test('the section panel renames the section, shows and hides it, starts it on a 
   await newPage.check()
   await expect.poll(() => pageOfSection('Education and courses')).toBe(2)
 
-  // „Show on CV”: ukryta sekcja znika ze stron, a jej panel zostaje.
-  const shown = inspector().getByRole('switch', { name: 'Show on CV', exact: true })
+  // „Show “Education and courses” on CV”: ukryta sekcja znika ze stron, a jej panel zostaje.
+  const shown = inspector().getByRole('switch', { name: 'Show “Education and courses” on CV', exact: true })
   await expect(shown).toBeChecked()
   await shown.uncheck()
   await expect(pageTitle('Education and courses')).toHaveCount(0)
@@ -3274,7 +3274,7 @@ test('the section panel renames the section, shows and hides it, starts it on a 
 
 test.describe('adding from the section panel', () => {
   const addButton = (label: string) => inspector().getByRole('button', { name: `+ ${label}`, exact: true })
-  const sectionShown = () => inspector().getByRole('switch', { name: 'Show on CV', exact: true })
+  const sectionShown = (name: string) => inspector().getByRole('switch', { name: `Show “${name}” on CV`, exact: true })
 
   test('in a non-empty section “+ Education” adds an entry at the end with the caret in it on the page, and one undo removes it', async () => {
     await window.setViewportSize({ width: 1600, height: 1000 })
@@ -3314,10 +3314,10 @@ test.describe('adding from the section panel', () => {
     await openFirstCvWithPages()
     await elementButton('Interests').click()
     await expect(panelTitle()).toHaveText('Interests')
-    await expect(sectionShown()).not.toBeChecked()
+    await expect(sectionShown('Interests')).not.toBeChecked()
 
     await addButton('Item').click()
-    await expect(sectionShown()).toBeChecked()
+    await expect(sectionShown('Interests')).toBeChecked()
     await expect(pageTitle('Interests')).toHaveCount(1)
     await expect.poll(focusedKey).toMatch(/^list:/)
     expect(await focusedKey()).not.toMatch(/^list:h1:/)
@@ -3326,7 +3326,7 @@ test.describe('adding from the section panel', () => {
     await window.keyboard.press('Meta+z')
     await expect(pageTitle('Interests')).toHaveCount(0)
     await expect(panelTitle()).toHaveText('Interests')
-    await expect(sectionShown()).not.toBeChecked()
+    await expect(sectionShown('Interests')).not.toBeChecked()
     await expect(sectionItems().getByRole('button')).toHaveCount(1)
     await backToDocument().click()
     await expect(elementButton('Interests')).toHaveAccessibleName('Interests hidden')
@@ -3339,15 +3339,15 @@ test.describe('adding from the section panel', () => {
     await expect(panelTitle()).toHaveText('Education')
     await expect.poll(focusedKey).toMatch(/^education:/)
     const revealed = (await focusedKey())!.split(':')[1]
-    await sectionShown().uncheck()
-    await expect(sectionShown()).not.toBeChecked()
+    await sectionShown('Education').uncheck()
+    await expect(sectionShown('Education')).not.toBeChecked()
 
     await addButton('Education').click()
-    await expect(sectionShown()).toBeChecked()
+    await expect(sectionShown('Education')).toBeChecked()
     await expect.poll(focusedKey).toMatch(new RegExp(`^education:${revealed}:`))
 
     await window.keyboard.press('Meta+z')
-    await expect(sectionShown()).not.toBeChecked()
+    await expect(sectionShown('Education')).not.toBeChecked()
     await backToDocument().click()
     await expect(elementButton('Education')).toHaveAccessibleDescription('1 item')
   })
@@ -3476,11 +3476,11 @@ test.describe('Inspector panels of the header, the photo and the consent clause'
     await expect(panelButton('Crop photo')).toBeFocused()
     const cropped = await photo.getAttribute('src')
 
-    // „Show on CV”: ukryte zdjęcie znika ze stron, a obraz zostaje (miniatura w panelu i ten sam obraz po pokazaniu).
-    await panelSwitch('Show on CV').uncheck()
+    // „Show photo on CV”: ukryte zdjęcie znika ze stron, a obraz zostaje (miniatura w panelu i ten sam obraz po pokazaniu).
+    await panelSwitch('Show photo on CV').uncheck()
     await expect(photo).toHaveCount(0)
     await expect(inspector().getByRole('img', { name: 'Photo in the CV' })).toHaveAttribute('src', cropped!)
-    await panelSwitch('Show on CV').check()
+    await panelSwitch('Show photo on CV').check()
     await expect(photo).toHaveAttribute('src', cropped!)
 
     // „Remove photo”: „Removed.” jak na stronie, fokus na „Add photo”; „Undo” przywraca zdjęcie i fokus na „Remove photo”.
@@ -3489,7 +3489,7 @@ test.describe('Inspector panels of the header, the photo and the consent clause'
     await expect(removed).toBeVisible()
     await expect(panelTitle()).toHaveText('Photo')
     await expect(panelButton('Add photo')).toBeFocused()
-    await expect(panelSwitch('Show on CV')).toHaveCount(0)
+    await expect(panelSwitch('Show photo on CV')).toHaveCount(0)
     await removed.getByRole('button', { name: 'Undo' }).click()
     await expect(photo).toHaveAttribute('src', cropped!)
     await expect(panelButton('Remove photo')).toBeFocused()
@@ -3521,16 +3521,16 @@ test.describe('Inspector panels of the header, the photo and the consent clause'
     const editOnPage = panelButton('Edit on the page')
     const saveAsNew = panelButton('Save as new clause')
 
-    // Wyłączona klauzula: panel z wyłączonym „Show on CV”, bez przejścia na stronę; pusta biblioteka – wybór nieaktywny.
+    // Wyłączona klauzula: panel z wyłączonym „Show consent clause on CV”, bez przejścia na stronę; pusta biblioteka – wybór nieaktywny.
     await elementButton('Consent clause').click()
     await expect(panelTitle()).toHaveText('Consent clause')
-    await expect(panelSwitch('Show on CV')).not.toBeChecked()
+    await expect(panelSwitch('Show consent clause on CV')).not.toBeChecked()
     await expect(editOnPage).toBeDisabled()
     await expect(library).toBeDisabled()
     await expect(pageConsent).toHaveCount(0)
 
     // Włączenie i „Edit on the page”: kursor w tekście klauzuli na stronie, panel zostaje.
-    await panelSwitch('Show on CV').check()
+    await panelSwitch('Show consent clause on CV').check()
     await expect(editOnPage).toBeEnabled()
     await editOnPage.click()
     await expect(consentField()).toBeFocused()
@@ -3564,7 +3564,7 @@ test.describe('Inspector panels of the header, the photo and the consent clause'
     await expect(library.locator('option:checked')).toHaveText('Short')
 
     // Wyłączenie: klauzula znika ze strony (zostaje w CV), „Edit on the page” nieaktywne; cofnięcie ją przywraca.
-    await panelSwitch('Show on CV').uncheck()
+    await panelSwitch('Show consent clause on CV').uncheck()
     await expect(pageConsent).toHaveCount(0)
     await expect(editOnPage).toBeDisabled()
     await undoButton().click()
