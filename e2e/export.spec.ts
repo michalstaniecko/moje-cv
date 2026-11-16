@@ -530,7 +530,7 @@ test('the CV editor is in English, including the save status, photo cropping and
   for (const label of ['Accent color', 'Full name', 'Contact label 1', 'Contact value 1', 'Summary']) {
     await expect(window.locator('.editor-form').getByLabel(label)).toBeVisible()
   }
-  await expect(window.getByLabel('Font')).toHaveValue('lato')
+  await expect(window.locator('.editor-form').getByLabel('Font')).toHaveValue('lato')
   await expect(window.getByRole('button', { name: 'Remove contact 1' })).toBeVisible()
   await expect(window.getByRole('button', { name: 'Add contact' })).toBeVisible()
   await expect(window.getByRole('button', { name: /^Actions for section “.+”$/ }).first()).toBeVisible()
@@ -668,7 +668,7 @@ test('Default content follows the interface language at creation and never chang
   await expect.poll(() => inputValues(window.locator('.form-contact-label'))).toEqual(['Phone', 'Email', 'LinkedIn', 'City'])
   await expect.poll(() => inputValues(window.getByLabel(/^Section title/))).toEqual(['Work experience', 'Education', 'Skills', 'Languages'])
   // Puste CV, a Template thumbnails i tak pokazują Sample CV w CV language (#99).
-  await expect(window.locator('.template-thumbnail .cv-page .cv-name')).toHaveText(['Jane Example', 'Jane Example', 'Jane Example'])
+  await expect(window.locator('.editor-form .template-thumbnail .cv-page .cv-name')).toHaveText(['Jane Example', 'Jane Example', 'Jane Example'])
   await window.getByRole('button', { name: '← CV library' }).click()
 
   // Po zmianie języka istniejące CV są bez zmian, a nowe treści powstają po polsku.
@@ -685,7 +685,7 @@ test('Default content follows the interface language at creation and never chang
   await polishRows.filter({ hasText: 'Nowe CV' }).getByRole('button', { name: 'Otwórz' }).click()
   await expect.poll(() => inputValues(window.locator('.form-contact-label'))).toEqual(['Tel', 'E-mail', 'LinkedIn', 'Miasto'])
   await expect.poll(() => inputValues(window.getByLabel(/^Tytuł sekcji/))).toEqual(['Doświadczenie zawodowe', 'Wykształcenie', 'Umiejętności', 'Języki'])
-  await expect(window.locator('.template-thumbnail .cv-page .cv-name')).toHaveText(['Anna Przykładowa', 'Anna Przykładowa', 'Anna Przykładowa'])
+  await expect(window.locator('.editor-form .template-thumbnail .cv-page .cv-name')).toHaveText(['Anna Przykładowa', 'Anna Przykładowa', 'Anna Przykładowa'])
 })
 
 test('the arrow next to New CV adds the Sample CV again in the interface language, clearing the tag filter', async () => {
@@ -817,7 +817,7 @@ test('in a Polish run the sample CV, the editor, the menu, the exported PDF and 
   await expect(library.getByText('Przykładowe CV')).toBeVisible()
   await library.getByRole('button', { name: 'Otwórz' }).click()
   await expect(window.locator('.preview-page-count')).toHaveText('2 strony')
-  await expect(window.getByRole('radiogroup', { name: 'Szablon' }).getByRole('radio', { name: 'Klasyczny' })).toBeChecked()
+  await expect(window.locator('.editor-form').getByRole('radiogroup', { name: 'Szablon' }).getByRole('radio', { name: 'Klasyczny' })).toBeChecked()
   await expect(window.getByRole('heading', { name: 'Projekt CV', exact: true })).toBeVisible()
   await expect(window.getByLabel('Nadal tu pracuję').first()).toBeChecked()
   const fullName = window.locator('.editor-form').getByLabel('Imię i nazwisko')
@@ -1372,7 +1372,7 @@ test('changes the accent colour and font of one CV in the preview and PDF, with 
   await expect(preview.locator('.cv-page').first()).toBeVisible()
 
   // Kolor akcentu: imię, tytuły sekcji i kropki przy datach.
-  const accent = window.getByLabel('Accent color')
+  const accent = window.locator('.editor-form').getByLabel('Accent color')
   await expect(accent).toHaveValue('#1a6e72')
   await accent.fill('#8a2be2')
   const purple = 'rgb(138, 43, 226)'
@@ -1385,7 +1385,7 @@ test('changes the accent colour and font of one CV in the preview and PDF, with 
   expect(dotColor).toBe(purple)
 
   // Każdy font: podgląd przeliczony po załadowaniu fontu, PDF z tą samą liczbą stron i osadzonym tylko tym fontem.
-  const font = window.getByLabel('Font')
+  const font = window.locator('.editor-form').getByLabel('Font')
   await expect(font).toHaveValue('lato')
   for (const { value, family, pdfName } of [
     { value: 'lato', family: 'Lato', pdfName: 'Lato' },
@@ -1413,12 +1413,12 @@ test('changes the accent colour and font of one CV in the preview and PDF, with 
   await window.getByRole('button', { name: '← CV library' }).click()
   await window.getByRole('button', { name: 'New CV' }).click()
   await library.getByRole('listitem').filter({ hasText: 'New CV' }).getByRole('button', { name: 'Open' }).click()
-  await expect(window.getByLabel('Accent color')).toHaveValue('#1a6e72')
-  await expect(window.getByLabel('Font')).toHaveValue('lato')
+  await expect(window.locator('.editor-form').getByLabel('Accent color')).toHaveValue('#1a6e72')
+  await expect(window.locator('.editor-form').getByLabel('Font')).toHaveValue('lato')
   await window.getByRole('button', { name: '← CV library' }).click()
   await library.getByRole('listitem').filter({ hasText: 'Sample CV' }).getByRole('button', { name: 'Open' }).click()
-  await expect(window.getByLabel('Accent color')).toHaveValue('#8a2be2')
-  await expect(window.getByLabel('Font')).toHaveValue('arimo')
+  await expect(window.locator('.editor-form').getByLabel('Accent color')).toHaveValue('#8a2be2')
+  await expect(window.locator('.editor-form').getByLabel('Font')).toHaveValue('arimo')
 })
 
 test('the CV language sets the fixed text and the page language of the document, never the CV content', async () => {
@@ -1429,7 +1429,7 @@ test('the CV language sets the fixed text and the page language of the document,
   await expect(firstDates).toHaveText('03.2023 – present')
 
   // Angielskie Sample CV jest w języku, w którym je napisano: „present” w podglądzie i w PDF.
-  const language = window.getByLabel('CV language')
+  const language = window.locator('.editor-form').getByLabel('CV language')
   await expect(language).toHaveValue('en')
   await expect(preview.locator('.cv')).toHaveAttribute('lang', 'en')
   const englishPdf = join(outputDir, 'english.pdf')
@@ -1457,7 +1457,7 @@ test('the CV language sets the fixed text and the page language of the document,
 
   await window.getByRole('button', { name: '← CV library' }).click()
   await openFirstCv()
-  await expect(window.getByLabel('CV language')).toHaveValue('pl')
+  await expect(window.locator('.editor-form').getByLabel('CV language')).toHaveValue('pl')
 
   // Nowe CV startuje w języku interfejsu.
   await window.getByRole('button', { name: '← CV library' }).click()
@@ -1468,14 +1468,14 @@ test('the CV language sets the fixed text and the page language of the document,
     .filter({ hasText: 'New CV' })
     .getByRole('button', { name: 'Open' })
     .click()
-  await expect(window.getByLabel('CV language')).toHaveValue('en')
+  await expect(window.locator('.editor-form').getByLabel('CV language')).toHaveValue('en')
 })
 
 test('Cyrillic text in a Lato CV is rendered with the bundled Source Sans 3, not a system font', async () => {
   const pdfPath = join(outputDir, 'cyrillic.pdf')
   await stubSaveDialog(pdfPath)
   await openFirstCv()
-  await expect(window.getByLabel('Font')).toHaveValue('lato')
+  await expect(window.locator('.editor-form').getByLabel('Font')).toHaveValue('lato')
   await window.locator('.editor-form').getByLabel('Full name').fill('Олена Шевченко')
   await expect(window.locator('.preview .cv-page .cv-name')).toHaveText('Олена Шевченко')
   await expect(window.getByText('Changes saved')).toBeVisible()
@@ -1497,11 +1497,11 @@ test('picks the Template next to the colour and font from a thumbnail of the Sam
   await expect(preview.locator('.cv-page').first()).toBeVisible()
 
   // Wybór w sekcji wyglądu, za fontem, dostępny z klawiatury; przykładowe CV ma „Klasyczny”.
-  const picker = window.getByRole('radiogroup', { name: 'Template' })
+  const picker = window.locator('.editor-form').getByRole('radiogroup', { name: 'Template' })
   await expect(picker.getByRole('radio')).toHaveCount(3)
   const classic = picker.getByRole('radio', { name: 'Classic' })
   await expect(classic).toBeChecked()
-  await window.getByLabel('Font').focus()
+  await window.locator('.editor-form').getByLabel('Font').focus()
   await window.keyboard.press('Tab')
   await expect(classic).toBeFocused()
 
@@ -1530,9 +1530,9 @@ test('picks the Template next to the colour and font from a thumbnail of the Sam
   await window.locator('.editor-form').getByLabel('Full name').fill('Ewa Nowak')
   await expect(preview.locator('.cv-page .cv-name')).toHaveText('Ewa Nowak')
   await expect(thumbnail.locator('.cv-page .cv-name')).toHaveText('Jane Example')
-  await window.getByLabel('Accent color').fill('#8a2be2')
+  await window.locator('.editor-form').getByLabel('Accent color').fill('#8a2be2')
   await expect(thumbnail.locator('.cv-page .cv-name')).toHaveCSS('color', 'rgb(138, 43, 226)')
-  await window.getByLabel('Font').selectOption('arimo')
+  await window.locator('.editor-form').getByLabel('Font').selectOption('arimo')
   await expect(thumbnail.locator('.cv-page .cv-name')).toHaveCSS('font-family', /^"?Arimo"?,/)
   await expect(window.getByText('Changes saved')).toBeVisible()
 
@@ -1561,8 +1561,8 @@ test('switches the CV to the Modern template and back: the preview and PDF follo
   }
 
   // Kolor, font i ręczny podział strony – mają przetrwać zmianę szablonu.
-  await window.getByLabel('Accent color').fill('#e9b949')
-  await window.getByLabel('Font').selectOption('arimo')
+  await window.locator('.editor-form').getByLabel('Accent color').fill('#e9b949')
+  await window.locator('.editor-form').getByLabel('Font').selectOption('arimo')
   const education = window.getByRole('region', { name: 'Education', exact: true })
   await education.getByLabel('New page before this section').check()
   const firstBlocks = preview.locator('.cv-page-content > .cv-block:first-child')
@@ -1571,7 +1571,7 @@ test('switches the CV to the Modern template and back: the preview and PDF follo
   const classicPdf = await exportPdf('classic.pdf')
 
   // „Nowoczesny” z miniatury: podgląd od razu w nowym szablonie, ze stopką „imię … n / N” na każdej stronie.
-  const picker = window.getByRole('radiogroup', { name: 'Template' })
+  const picker = window.locator('.editor-form').getByRole('radiogroup', { name: 'Template' })
   const modern = picker.getByRole('radio', { name: 'Modern' })
   const option = (name: string) => picker.locator('label', { has: window.getByRole('radio', { name }) })
   await expect(option('Modern').locator('.cv.cv-template-modern .cv-page .cv-page-footer')).toContainText('Jane Example')
@@ -1614,8 +1614,8 @@ test('switches the CV to the Modern template and back: the preview and PDF follo
   await option('Classic').click()
   await expect(preview.locator('.cv.cv-template-classic')).toHaveCount(1)
   await expect(preview.locator('.cv-page-footer')).toHaveCount(0)
-  await expect(window.getByLabel('Accent color')).toHaveValue('#e9b949')
-  await expect(window.getByLabel('Font')).toHaveValue('arimo')
+  await expect(window.locator('.editor-form').getByLabel('Accent color')).toHaveValue('#e9b949')
+  await expect(window.locator('.editor-form').getByLabel('Font')).toHaveValue('arimo')
   await expect(education.getByLabel('New page before this section')).toBeChecked()
   await expect(firstBlocks.locator('.cv-section-title')).toHaveText(['Education'])
   await expect(preview.locator('.cv-page')).toHaveCount(classicPageCount)
@@ -1636,8 +1636,8 @@ test('switches the CV to the Bold template and back: text on the accent follows 
   }
 
   // Jasny akcent, font i ręczny podział strony – mają przetrwać zmianę szablonu.
-  await window.getByLabel('Accent color').fill('#e9b949')
-  await window.getByLabel('Font').selectOption('arimo')
+  await window.locator('.editor-form').getByLabel('Accent color').fill('#e9b949')
+  await window.locator('.editor-form').getByLabel('Font').selectOption('arimo')
   const education = window.getByRole('region', { name: 'Education', exact: true })
   await education.getByLabel('New page before this section').check()
   const firstBlocks = preview.locator('.cv-page-content > .cv-block:first-child')
@@ -1645,7 +1645,7 @@ test('switches the CV to the Bold template and back: text on the accent follows 
   const classicPageCount = await preview.locator('.cv-page').count()
   const classicPdf = await exportPdf('classic.pdf')
 
-  const picker = window.getByRole('radiogroup', { name: 'Template' })
+  const picker = window.locator('.editor-form').getByRole('radiogroup', { name: 'Template' })
   const bold = picker.getByRole('radio', { name: 'Bold' })
   const option = (name: string) => picker.locator('label', { has: window.getByRole('radio', { name }) })
   await expect(option('Bold').locator('.cv.cv-template-bold .cv-page .cv-name')).toHaveText('Jane Example')
@@ -1663,9 +1663,9 @@ test('switches the CV to the Bold template and back: text on the accent follows 
   await expect(name).toHaveCSS('color', 'rgb(0, 0, 0)')
   await expect(preview.locator('.cv-page .cv-section-title').first()).toHaveCSS('color', 'rgb(0, 0, 0)')
   await expect(name).toHaveCSS('font-family', /^"?Arimo"?,/)
-  await window.getByLabel('Accent color').fill('#1a6e72')
+  await window.locator('.editor-form').getByLabel('Accent color').fill('#1a6e72')
   await expect(name).toHaveCSS('color', 'rgb(255, 255, 255)')
-  await window.getByLabel('Accent color').fill('#e9b949')
+  await window.locator('.editor-form').getByLabel('Accent color').fill('#e9b949')
   await expect(window.getByText('Changes saved')).toBeVisible()
 
   const boldPdf = await exportPdf('bold.pdf')
@@ -1679,8 +1679,8 @@ test('switches the CV to the Bold template and back: text on the accent follows 
   // Powrót do „Klasycznego” bez strat: ten sam podgląd i ten sam PDF co przed zmianą szablonu.
   await option('Classic').click()
   await expect(preview.locator('.cv.cv-template-classic')).toHaveCount(1)
-  await expect(window.getByLabel('Accent color')).toHaveValue('#e9b949')
-  await expect(window.getByLabel('Font')).toHaveValue('arimo')
+  await expect(window.locator('.editor-form').getByLabel('Accent color')).toHaveValue('#e9b949')
+  await expect(window.locator('.editor-form').getByLabel('Font')).toHaveValue('arimo')
   await expect(education.getByLabel('New page before this section')).toBeChecked()
   await expect(preview.locator('.cv-page')).toHaveCount(classicPageCount)
   const classicAgainPdf = await exportPdf('classic-again.pdf')
