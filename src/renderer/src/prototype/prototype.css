@@ -1,0 +1,51 @@
+/* PROTOTYP – style przełącznika wariantów. Celowo obce wizualnie aplikacji. */
+.prototype-switcher {
+  position: fixed;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: #ff3d7f;
+  color: #fff;
+  font: 600 12px/1 system-ui;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.35);
+}
+
+.prototype-switcher strong {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  margin-right: 4px;
+  border-radius: 999px;
+  background: #fff;
+  color: #ff3d7f;
+}
+
+.prototype-switcher button {
+  border: 0;
+  border-radius: 999px;
+  width: 26px;
+  height: 26px;
+  background: rgb(255 255 255 / 0.2);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.prototype-stub-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #ff3d7f22;
+  color: #c2185b;
+  font: 600 10px/1.4 system-ui;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}

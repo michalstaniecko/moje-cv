@@ -14,6 +14,9 @@ import { RemovalMessage, useRemovalUndo } from './editor/removalUndo'
 import { useDictionary } from './i18n'
 import { useMenuCommands } from './menuCommands'
 import { PreviewPane } from './preview/PreviewPane'
+import { GlobalOptionsPrototype } from './prototype/GlobalOptionsPrototype'
+import { PrototypeSwitcher } from './prototype/PrototypeSwitcher'
+import { usePrototypeVariant } from './prototype/prototypeVariant'
 
 // `confirming` – CV ma bloki wyższe niż strona i eksport czeka na „Eksportuj mimo to”; `timed-out` – strona wydruku
 // nie zgłosiła gotowości w czasie (osobny komunikat od innych błędów).
@@ -96,6 +99,7 @@ export function CvScreen({
   usePreviewShortcut(session.togglePreview)
   const formWidth = useFormWidth(panes)
   const sidebar = useEditorSidebar()
+  const prototypeVariant = usePrototypeVariant()
 
   // Ponowiony albo kolejny zapis kończy pytanie o wyjście; przy następnym błędzie pasek wraca do zwykłego komunikatu.
   useEffect(() => {
@@ -183,7 +187,146 @@ export function CvScreen({
     else void back(command)
   })
 
+  // PROTOTYP (prototype/global-options-ui): elementy ekranu dla wariantów `?variant=` – src/renderer/src/prototype.
+  const backButtonNode = (
+        <button type="button" ref={backButton} onClick={() => back()}>
+          {common.back}
+        </button>
+  )
+  const nameNode = <CvNameHeading name={document.name} onRename={(name) => editor.edit(updateName(name))} />
+  const modeNode = <ModeToggle ref={modeToggle} mode={session.mode} onChange={session.setMode} />
+  const exportNode = (
+    <>
+        <button type="button" onClick={() => void exportDocx()} disabled={docxExport.status === 'exporting'}>
+          {docxExport.status === 'exporting' ? t.exporting : t.exportDocx}
+        </button>
+        <button
+          type="button"
+          ref={exportButton}
+          className="button-primary"
+          onClick={() => void exportPdf()}
+          disabled={exportState.status === 'exporting'}
+        >
+          {exportState.status === 'exporting' ? t.exporting : t.exportPdf}
+        </button>
+    </>
+  )
+  const noticesNode = (
+    <>
+      {saveStatus === 'failed' && (
+        <SaveFailedAlert
+          leaving={leaving !== null}
+          onRetry={() => void editor.flush()}
+          onLeave={() => onBack(leaving?.command)}
+          onStay={stay}
+        />
+      )}
+      {exportState.status === 'exporting' && (
+        <div className="export-notice" role="status">
+          <progress aria-label={t.preparingPdf} />
+          <span>{t.preparingPdf}</span>
+        </div>
+      )}
+      {exportState.status === 'saved' && (
+        <SavedFileNotice
+          filePath={exportState.filePath}
+          message={t.savedPdf(baseName(exportState.filePath))}
+          onDismiss={() => setExportState({ status: 'idle' })}
+        />
+      )}
+      {(exportState.status === 'failed' || exportState.status === 'timed-out') && (
+        <ExportNotice error onDismiss={() => setExportState({ status: 'idle' })}>
+          <span>{exportState.status === 'failed' ? t.exportPdfFailed : t.exportTimedOut}</span>
+        </ExportNotice>
+      )}
+      {docxExport.status === 'saved' && (
+        <SavedFileNotice
+          filePath={docxExport.filePath}
+          message={t.savedDocx(baseName(docxExport.filePath))}
+          note={t.docxNote}
+          onDismiss={() => setDocxExport({ status: 'idle' })}
+        />
+      )}
+      {docxExport.status === 'failed' && (
+        <ExportNotice error onDismiss={() => setDocxExport({ status: 'idle' })}>
+          <span>{t.exportDocxFailed}</span>
+        </ExportNotice>
+      )}
+      {jsonExport.status === 'saved' && (
+        <ExportNotice onDismiss={() => setJsonExport({ status: 'idle' })}>
+          <span>{library.savedFile(jsonExport.fileName)}</span>
+        </ExportNotice>
+      )}
+      {jsonExport.status === 'failed' && (
+        <ExportNotice error onDismiss={() => setJsonExport({ status: 'idle' })}>
+          <span>{library.errors.export}</span>
+        </ExportNotice>
+      )}
+      {exportState.status === 'confirming' && (
+        <ExportCutOffDialog onExport={() => void exportPdf({ confirmed: true })} onCancel={cancelExport} />
+      )}
+    </>
+  )
+  const sidebarNode = session.mode === 'edit' ? (
+          <EditorSidebar
+            control={sidebar}
+            editor={editor}
+            document={document}
+            session={session}
+            formWidth={formWidth}
+            clauses={clauses}
+            onSaveClause={saveClause}
+            onRemove={removal.remove}
+          />
+  ) : null
+  const previewNode = (
+        <PreviewPane
+          document={document}
+          onLayout={onLayout}
+          mode={session.mode}
+          editing={{
+            editor,
+            session,
+            onFocusLost: focusSafePlace,
+            onRemove: removal.remove,
+            library: { clauses, onSaveClause: saveClause }
+          }}
+          onShowOversized={() => {
+            session.setMode('edit')
+            modeToggle.current?.focus('edit')
+          }}
+        />
+  )
+  const removalNode = <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
+  if (prototypeVariant !== 'current') {
+    return (
+      <>
+        <GlobalOptionsPrototype
+          variant={prototypeVariant}
+          editor={editor}
+          document={document}
+          session={session}
+          clauses={clauses}
+          saveClause={saveClause}
+          saveStatus={saveStatus === 'failed' ? '' : t.saveStatus[saveStatus]}
+          backButton={backButtonNode}
+          nameHeading={nameNode}
+          modeToggle={modeNode}
+          exportButtons={exportNode}
+          notices={noticesNode}
+          preview={previewNode}
+          removalMessage={removalNode}
+          currentSidebar={sidebarNode}
+          panesRef={panes}
+          exportJson={() => void exportJson()}
+        />
+        <PrototypeSwitcher />
+      </>
+    )
+  }
+
   return (
+    <>
     <div className="editor-screen">
       <header className="toolbar editor-toolbar">
         <button type="button" ref={backButton} onClick={() => back()}>
@@ -305,6 +448,8 @@ export function CvScreen({
         <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
       </div>
     </div>
+      <PrototypeSwitcher />
+    </>
   )
 }
 

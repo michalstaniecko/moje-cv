@@ -10,6 +10,7 @@
   "packageManager": "pnpm@10.34.7",
   "scripts": {
     "dev": "electron-vite dev",
+    "prototype": "electron-vite dev",
     "build": "electron-vite build",
     "dist:mac": "electron-vite build && electron-builder --mac",
     "dist:mac:local": "electron-vite build && electron-builder --mac --config electron-builder.local.yml",
