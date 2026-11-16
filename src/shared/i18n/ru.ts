@@ -168,19 +168,15 @@ export const ru: Dictionary = {
     exportCutOff: 'Часть содержимого не помещается на страницу и будет обрезана. Всё равно экспортировать?',
     exportCutOffHint: 'Слишком длинные фрагменты выделены в режиме редактирования.',
     mode: { label: 'Режим', edit: 'Правка', preview: 'Просмотр' },
-    cvDesignButton: 'Дизайн',
+    history: 'История изменений',
     outline: {
-      title: 'Структура',
       empty: 'пустой',
       hidden: 'скрытый',
       form: 'Форма',
       collapse: 'Свернуть',
-      expand: 'Развернуть',
-      showOnCv: 'Показать в резюме',
       showSection: (name) => `Показать «${name}» в резюме`,
-      showToEdit: 'Покажите раздел в резюме, чтобы его редактировать',
       showPhoto: 'Показать фото в резюме',
-      showPhotoToEdit: 'Покажите фото в резюме, чтобы его редактировать',
+      showConsent: 'Показать согласие на обработку данных в резюме',
       items: {
         one: (count) => `${count} элемент`,
         few: (count) => `${count} элемента`,
@@ -228,6 +224,36 @@ export const ru: Dictionary = {
     cvLanguage: 'Язык резюме',
     template: 'Шаблон',
     templateNames: { classic: 'Классический', modern: 'Современный', bold: 'Выразительный' },
+    inspector: {
+      label: 'Инспектор',
+      document: 'Документ',
+      groups: { template: 'Шаблон', style: 'Стиль', elements: 'Элементы резюме', language: 'Язык' },
+      colors: { teal: 'Морская волна', blue: 'Синий', graphite: 'Графитовый', violet: 'Фиолетовый', crimson: 'Малиновый', orange: 'Оранжевый', green: 'Зелёный', black: 'Чёрный' },
+      customColor: 'Свой цвет',
+      languageNote: 'Меняет постоянный текст резюме, например «по настоящее время». Ваш текст не переводится.',
+      showOnCv: 'Показывать в резюме',
+      section: {
+        name: 'Название',
+        newPage: 'Начинать с новой страницы',
+        order: 'Порядок',
+        position: (position, total) => `${position} из ${total}`,
+        items: 'Пункты',
+        empty: 'Раздел пуст'
+      },
+      header: {
+        goTo: 'Перейти к',
+        contacts: 'Контакты',
+        contactCount: {
+          one: (count) => `${count} контакт`,
+          few: (count) => `${count} контакта`,
+          many: (count) => `${count} контактов`,
+          other: (count) => `${count} контакта`
+        },
+        photoOptions: 'Изменить, обрезать или удалить фото'
+      },
+      photo: { add: 'Добавить фото' },
+      consent: { editOnPage: 'Редактировать на странице' }
+    },
     header: 'Шапка',
     fullName: 'Имя и фамилия',
     contact: 'Контакты',

@@ -36,10 +36,14 @@ test.afterEach(async () => {
   await rm(outputDir, { recursive: true, force: true })
 })
 
-// Otwiera pierwsze CV i przełącza pasek boczny na CV form – separator jest tylko przy nim (domyślny Outline ma stałą szerokość).
+// Otwiera pierwsze CV i przełącza pasek boczny na CV form – separator jest tylko przy nim (domyślna szyna ma stałą szerokość).
 async function openFirstCv() {
   await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
-  await window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click()
+  // Wybór CV form zostaje na całą sesję aplikacji – „Form” na szynie tylko wtedy, gdy pasek jest zwinięty.
+  const form = window.locator('.editor-form')
+  await expect(form.or(window.locator('.editor-rail'))).toBeVisible()
+  if (!(await form.isVisible())) await window.locator('.editor-rail').getByRole('button', { name: 'Form', exact: true }).click()
+  await expect(form).toBeVisible()
 }
 
 async function setWindowWidth(width: number) {
@@ -53,7 +57,10 @@ async function setWindowWidth(width: number) {
 const separator = () => window.getByRole('separator', { name: 'Resize the form and the preview' })
 const formWidth = async () => (await window.locator('.editor-form').boundingBox())!.width
 const previewWidth = async () => (await window.locator('.preview').boundingBox())!.width
-const panesWidth = async () => (await window.locator('.editor-panes').boundingBox())!.width
+// Miejsce na formularz i podgląd: panel edytora bez Inspektora (stała kolumna po prawej stronie stron).
+const panesWidth = async () =>
+  (await window.locator('.editor-panes').boundingBox())!.width -
+  (await window.getByRole('complementary', { name: 'Inspector', exact: true }).boundingBox())!.width
 
 test('dragging the separator resizes the form and the preview within their minimum widths', async () => {
   await setWindowWidth(1280)
@@ -115,25 +122,27 @@ test('the form width is one preference kept across CVs and restarts; a narrower 
   await setWindowWidth(1280)
   await openFirstCv()
   await separator().focus()
-  for (let i = 0; i < 3; i++) await window.keyboard.press('Shift+ArrowRight')
-  await expect.poll(formWidth).toBeCloseTo(632, 0)
+  for (let i = 0; i < 2; i++) await window.keyboard.press('Shift+ArrowRight')
+  await expect.poll(formWidth).toBeCloseTo(568, 0)
 
   // Po powrocie do biblioteki i ponownym otwarciu CV szerokość zostaje.
   await window.getByRole('button', { name: '← CV library' }).click()
   await openFirstCv()
-  await expect.poll(formWidth).toBeCloseTo(632, 0)
+  await expect.poll(formWidth).toBeCloseTo(568, 0)
 
-  // Węższe okno zmniejsza formularz tak, żeby podgląd miał 360 px, a szersze przywraca preferencję.
-  await setWindowWidth(960)
+  // Węższe okno zmniejsza formularz (obok Inspektora przy 960 px – do minimum), a szersze przywraca preferencję.
+  await setWindowWidth(1100)
   await expect.poll(previewWidth).toBeCloseTo(360, 0)
+  await setWindowWidth(960)
+  await expect.poll(formWidth).toBeCloseTo(360, 0)
   await setWindowWidth(1280)
-  await expect.poll(formWidth).toBeCloseTo(632, 0)
+  await expect.poll(formWidth).toBeCloseTo(568, 0)
 
   // Po restarcie aplikacji (stan okna też wraca, więc szerokość okna jest ta sama).
   await app.close()
   await launch()
   await openFirstCv()
-  await expect.poll(formWidth).toBeCloseTo(632, 0)
+  await expect.poll(formWidth).toBeCloseTo(568, 0)
 })
 
 test('in fit mode the preview rescales while the separator moves; a chosen zoom stays and only the view scrolls', async () => {
@@ -185,4 +194,46 @@ test('the editor screen itself never scrolls: only the form and the preview do, 
   await screen.evaluate((element) => (element.scrollTop = 10_000))
   expect(await screen.evaluate((element) => element.scrollTop)).toBe(0)
   expect(await screen.evaluate((element) => element.scrollHeight - element.clientHeight)).toBe(0)
+})
+
+test('at the minimum width of 960 px the toolbar stays on one line, the editor screen does not scroll and the pages and the Inspector scroll separately', async () => {
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setSize(960, 620))
+  await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
+  await expect(window.locator('.preview .cv-page').first()).toBeVisible()
+  const inspector = window.getByRole('complementary', { name: 'Inspector', exact: true })
+  await expect(inspector).toBeVisible()
+  const preview = window.locator('.preview')
+  const screen = window.locator('.app-screen')
+
+  for (const mode of ['Edit', 'Preview'] as const) {
+    await window.getByRole('group', { name: 'Mode' }).getByRole('button', { name: mode, exact: true }).click()
+    // Pasek narzędzi w jednej linii: środki wszystkich jego elementów na tej samej wysokości.
+    const middles = await window.locator('.editor-toolbar > *').evaluateAll((elements) =>
+      elements
+        .filter((element) => element.checkVisibility())
+        .map((element) => {
+          const box = element.getBoundingClientRect()
+          return Math.round(box.top + box.height / 2)
+        })
+    )
+    expect(new Set(middles).size, mode).toBe(1)
+    // Inspector w całości w oknie, na prawo od stron, bez przewijania w poziomie.
+    const inspectorBox = (await inspector.boundingBox())!
+    const pagesBox = (await preview.boundingBox())!
+    expect(inspectorBox.x + inspectorBox.width).toBeLessThanOrEqual(960)
+    expect(inspectorBox.x).toBeGreaterThanOrEqual(pagesBox.x + pagesBox.width - 1)
+    expect(await inspector.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
+
+    // Strony i Inspector przewijają się osobno; sam ekran edytora nigdy.
+    await preview.evaluate((element) => (element.scrollTop = 0))
+    await inspector.evaluate((element) => (element.scrollTop = element.scrollHeight))
+    expect(await inspector.evaluate((element) => element.scrollTop), mode).toBeGreaterThan(0)
+    expect(await preview.evaluate((element) => element.scrollTop)).toBe(0)
+    await preview.evaluate((element) => (element.scrollTop = element.scrollHeight))
+    expect(await preview.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+    await screen.evaluate((element) => (element.scrollTop = 10_000))
+    expect(await screen.evaluate((element) => element.scrollTop)).toBe(0)
+    expect(await screen.evaluate((element) => element.scrollHeight - element.clientHeight)).toBe(0)
+    await inspector.evaluate((element) => (element.scrollTop = 0))
+  }
 })

@@ -37,7 +37,7 @@ A short, user-chosen label attached to a CV to organise the CV library (e.g. "fr
 _Avoid_: Label (as a separate concept), keyword, skill, category
 
 **CV design**:
-The settings for how the document of a single CV looks (accent colour, font, Template), gathered in the CV editor in a section of this name together with the CV language. A property of each CV; changing it never touches the CV's content.
+The settings for how the document of a single CV looks (accent colour, font, Template), set together with the CV language in the Inspector's "Document" panel, in both Edit mode and Preview mode (and, until it is removed, in a section of this name in the CV form). A property of each CV; changing it never touches the CV's content.
 _Avoid_: Appearance (that is the app's light/dark look), look, style
 
 **Appearance**:
@@ -45,16 +45,20 @@ The light or dark look of the app's own interface (panels, forms, toolbars), cho
 _Avoid_: Theme, dark mode (as the name of the setting), skin, color scheme (as the name of the setting); for the settings of a single CV's document, say CV design
 
 **Edit mode**:
-The state of the CV editor in which the text on the CV pages is edited in place (Page fields), with Field popovers for values that are not text, editing controls around the content (handles with menus, "+" buttons, the "Add to CV" bar) and the Outline or CV form beside the pages. Everything works from the keyboard: Tab goes through the Page fields, Shift+F10 opens the menu of a field's handle and Escape leaves a field for the pages. Every opened CV starts in it. When no field is being edited its pages look and split exactly like the PDF; only the part of the CV holding the focus may show placeholders for its empty fields.
+The state of the CV editor in which the text on the CV pages is edited in place (Page fields), with Field popovers for values that are not text, editing controls around the content (handles with menus, "+" buttons, the "Add to CV" bar), the Inspector to the right of the pages and, until it is removed, the CV form to their left (collapsed to a rail by default). Everything works from the keyboard: Tab goes through the Page fields, Shift+F10 opens the menu of a field's handle and Escape leaves a field for the pages. Every opened CV starts in it. When no field is being edited its pages look and split exactly like the PDF; only the part of the CV holding the focus may show placeholders for its empty fields.
 _Avoid_: Design mode, edit view, inline mode
 
 **Preview mode**:
-The state of the CV editor in which the CV pages are shown exactly as they will be exported to PDF, with no editing controls and no side panel; CV design, export and undo still work. Switched with Edit mode by a toggle in the toolbar or View → Preview.
+The state of the CV editor in which the CV pages are shown exactly as they will be exported to PDF, with no editing controls on them; the Inspector stays beside the pages, showing only its "Document" panel, so CV design, export and undo still work. Switched with Edit mode by a toggle in the toolbar or View → Preview.
 _Avoid_: Print preview, read-only mode, live preview (that is the pages shown in either mode)
 
 **Edit card**:
 Retired (ADR-0010); the app no longer has one. The floating panel with the form fields of one part of a CV page, once opened next to it in Edit mode; replaced by Page fields, Field popovers and the menus of the handles on the pages. Use the term only about that history.
-_Avoid_: Popup, modal, inline form, tooltip, inspector
+_Avoid_: Popup, modal, inline form, tooltip, inspector (the Inspector is a different, current concept: it never holds CV content fields)
+
+**Inspector**:
+The fixed column of CV options to the right of the pages in the CV editor, in both Edit mode and Preview mode, scrolling separately from the pages. With nothing selected it shows the "Document" panel (collapsible groups: Template, Style, "CV elements" – the list that replaced the Outline – and Language); selecting a part of the CV – a click or the focus in it on the pages, or a click on its row in "CV elements", also for a hidden or empty part – shows that part's panel under the path "‹ Document / name" (for a section: its name, "Show on CV", "Start on a new page", its position with ↑/↓ and the titles of its entries, which put the caret in the entry on the page, and a "+" button with the wording of the "+" buttons on the pages that adds an entry – showing a hidden section in the same undo step, and in an empty section revealing its empty entry; for the header: jumps to the full name, the contacts and the summary on the page, "+ Add contact" and the photo's "Show on CV"; for the photo: Change, Crop, Remove with "Removed. Undo" and "Show on CV", or "Add photo" when there is none; for the consent clause: "Show on CV", "Edit on the page", a clause from the library and "Save as new clause"). These panels are a second way to the same actions as the Field popovers and handle menus on the pages. A click on the page background, "‹ Document" or the selected section disappearing returns to the "Document" panel (the photo panel stays when the photo is removed or its adding undone, offering "Add photo"); clicks in the Inspector, Field popovers, handle menus, dialogs, the preview bar, the "Add to CV" bar and the "+" buttons keep the selection. Preview mode shows only the "Document" panel. Never edits CV content (the only exception is a section title): text is edited on the pages in Page fields, and every change from the Inspector is an ordinary undoable edit of the CV (ADR-0012).
+_Avoid_: Sidebar, settings panel, properties panel, Edit card, CV design popover
 
 **Page field**:
 One editable piece of CV text on a page in Edit mode: the text of exactly one field (a name, a company, a bullet, a contact label…), drawn by the Template in its place on the page, so it wraps as in the PDF. Text only, without formatting; separators between fields (" – ", ", ") belong to no Page field.
@@ -65,11 +69,11 @@ The small panel opened next to a Page field or another part of a page in Edit mo
 _Avoid_: Edit card, form, dialog (except the modal photo crop), tooltip
 
 **Outline**:
-The narrow side panel of the CV editor listing the header, the photo, every section in CV order (also the hidden and empty ones) and the consent clause, for jumping to a part of the CV, reordering sections and showing or hiding the photo, sections and the clause. Never shows CV content beyond names.
+Retired (ADR-0012): the narrow side panel of the CV editor that listed the parts of the CV. Its jobs – jumping to a part of the CV, reordering sections, showing or hiding the photo, sections and the consent clause – belong to the "CV elements" list in the Inspector's "Document" panel: the header, the photo, every section in CV order (also the hidden and empty ones) and the consent clause, never CV content beyond names.
 _Avoid_: Navigator, table of contents, sidebar (as the name of the panel)
 
 **CV form**:
-The complete form with every field of the CV, one under another, an alternative view of the sidebar beside the editable pages. To be removed once the Outline, the pages and the toolbar cover everything it does (ADR-0011).
+The complete form with every field of the CV, one under another, in the sidebar to the left of the editable pages – collapsed to a rail by default. To be removed once the Outline, the pages and the toolbar cover everything it does (ADR-0011).
 _Avoid_: Editor (that is the whole screen), sidebar
 
 **Sponsor bar**:

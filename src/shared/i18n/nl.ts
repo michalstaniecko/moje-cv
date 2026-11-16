@@ -175,19 +175,15 @@ export const nl: Dictionary = {
     exportCutOff: 'Een deel van de inhoud past niet op een pagina en wordt afgesneden. Toch exporteren?',
     exportCutOffHint: 'De te lange fragmenten zijn gemarkeerd in de bewerkingsmodus.',
     mode: { label: 'Modus', edit: 'Bewerken', preview: 'Voorbeeld' },
-    cvDesignButton: 'Ontwerp',
+    history: 'Wijzigingsgeschiedenis',
     outline: {
-      title: 'Overzicht',
       empty: 'leeg',
       hidden: 'verborgen',
       form: 'Formulier',
       collapse: 'Inklappen',
-      expand: 'Uitklappen',
-      showOnCv: 'Tonen op cv',
       showSection: (name) => `“${name}” tonen op cv`,
-      showToEdit: 'Toon de sectie op het cv om hem te bewerken',
       showPhoto: 'Foto tonen op cv',
-      showPhotoToEdit: 'Toon de foto op het cv om deze te bewerken',
+      showConsent: 'Toestemmingsverklaring tonen op cv',
       items: { one: (count) => `${count} item`, other: (count) => `${count} items` },
       sidebar: 'Zijbalk'
     },
@@ -230,6 +226,34 @@ export const nl: Dictionary = {
     cvLanguage: 'Taal van cv',
     template: 'Sjabloon',
     templateNames: { classic: 'Klassiek', modern: 'Modern', bold: 'Krachtig' },
+    inspector: {
+      label: 'Inspector',
+      document: 'Document',
+      groups: { template: 'Sjabloon', style: 'Stijl', elements: 'Cv-onderdelen', language: 'Taal' },
+      colors: { teal: 'Petrol', blue: 'Blauw', graphite: 'Grafiet', violet: 'Violet', crimson: 'Karmijn', orange: 'Oranje', green: 'Groen', black: 'Zwart' },
+      customColor: 'Eigen kleur',
+      languageNote: 'Verandert vaste tekst op het cv, zoals “heden”. Je inhoud wordt niet vertaald.',
+      showOnCv: 'Tonen op cv',
+      section: {
+        name: 'Naam',
+        newPage: 'Op een nieuwe pagina beginnen',
+        order: 'Volgorde',
+        position: (position, total) => `${position} van ${total}`,
+        items: 'Items',
+        empty: 'Deze sectie is leeg'
+      },
+      header: {
+        goTo: 'Ga naar',
+        contacts: 'Contacten',
+        contactCount: {
+          one: (count) => `${count} contact`,
+          other: (count) => `${count} contacten`
+        },
+        photoOptions: 'Wijzig, snijd bij of verwijder foto'
+      },
+      photo: { add: 'Voeg foto toe' },
+      consent: { editOnPage: 'Bewerk op de pagina' }
+    },
     header: 'Kop',
     fullName: 'Volledige naam',
     contact: 'Contact',

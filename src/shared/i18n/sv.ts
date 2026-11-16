@@ -173,19 +173,15 @@ export const sv: Dictionary = {
     exportCutOff: 'En del av innehållet får inte plats på en sida och kommer att klippas av. Exportera ändå?',
     exportCutOffHint: 'De för långa avsnitten är markerade i redigeringsläget.',
     mode: { label: 'Läge', edit: 'Redigera', preview: 'Förhandsvisning' },
-    cvDesignButton: 'Design',
+    history: 'Ändringshistorik',
     outline: {
-      title: 'Disposition',
       empty: 'tomt',
       hidden: 'dolt',
       form: 'Formulär',
       collapse: 'Fäll ihop',
-      expand: 'Fäll ut',
-      showOnCv: 'Visa i cv:t',
       showSection: (name) => `Visa ”${name}” i cv:t`,
-      showToEdit: 'Visa avsnittet i cv:t för att redigera det',
       showPhoto: 'Visa fotot i cv:t',
-      showPhotoToEdit: 'Visa fotot i cv:t för att redigera det',
+      showConsent: 'Visa samtyckesklausulen i cv:t',
       items: { one: (count) => `${count} post`, other: (count) => `${count} poster` },
       sidebar: 'Sidofält'
     },
@@ -228,6 +224,34 @@ export const sv: Dictionary = {
     cvLanguage: 'Cv-språk',
     template: 'Mall',
     templateNames: { classic: 'Klassisk', modern: 'Modern', bold: 'Kraftfull' },
+    inspector: {
+      label: 'Inspektör',
+      document: 'Dokument',
+      groups: { template: 'Mall', style: 'Stil', elements: 'Cv-delar', language: 'Språk' },
+      colors: { teal: 'Petrol', blue: 'Blå', graphite: 'Grafit', violet: 'Violett', crimson: 'Karmosin', orange: 'Orange', green: 'Grön', black: 'Svart' },
+      customColor: 'Egen färg',
+      languageNote: 'Ändrar fast text på cv:t, som ”nu”. Ditt innehåll översätts inte.',
+      showOnCv: 'Visa på cv:t',
+      section: {
+        name: 'Namn',
+        newPage: 'Börja på en ny sida',
+        order: 'Ordning',
+        position: (position, total) => `${position} av ${total}`,
+        items: 'Poster',
+        empty: 'Avsnittet är tomt'
+      },
+      header: {
+        goTo: 'Gå till',
+        contacts: 'Kontakter',
+        contactCount: {
+          one: (count) => `${count} kontakt`,
+          other: (count) => `${count} kontakter`
+        },
+        photoOptions: 'Byt, beskär eller ta bort foto'
+      },
+      photo: { add: 'Lägg till foto' },
+      consent: { editOnPage: 'Redigera på sidan' }
+    },
     header: 'Sidhuvud',
     fullName: 'Fullständigt namn',
     contact: 'Kontakt',

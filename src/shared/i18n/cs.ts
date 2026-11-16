@@ -168,19 +168,15 @@ export const cs: Dictionary = {
     exportCutOff: 'Část obsahu se nevejde na stránku a bude oříznuta. Přesto exportovat?',
     exportCutOffHint: 'Příliš dlouhé části jsou zvýrazněné v režimu úprav.',
     mode: { label: 'Režim', edit: 'Úpravy', preview: 'Náhled' },
-    cvDesignButton: 'Design CV',
+    history: 'Historie změn',
     outline: {
-      title: 'Osnova',
       empty: 'prázdná',
       hidden: 'skrytá',
       form: 'Formulář',
       collapse: 'Sbalit',
-      expand: 'Rozbalit',
-      showOnCv: 'Zobrazit v CV',
       showSection: (name) => `Zobrazit „${name}“ v CV`,
-      showToEdit: 'Zobrazte sekci v CV, abyste ji mohli upravit',
       showPhoto: 'Zobrazit fotku v CV',
-      showPhotoToEdit: 'Zobrazte fotku v CV, abyste ji mohli upravit',
+      showConsent: 'Zobrazit souhlas se zpracováním údajů v CV',
       items: {
         one: (count) => `${count} položka`,
         few: (count) => `${count} položky`,
@@ -228,6 +224,36 @@ export const cs: Dictionary = {
     cvLanguage: 'Jazyk CV',
     template: 'Šablona',
     templateNames: { classic: 'Klasická', modern: 'Moderní', bold: 'Výrazná' },
+    inspector: {
+      label: 'Inspektor',
+      document: 'Dokument',
+      groups: { template: 'Šablona', style: 'Styl', elements: 'Prvky CV', language: 'Jazyk' },
+      colors: { teal: 'Petrolejová', blue: 'Modrá', graphite: 'Grafitová', violet: 'Fialová', crimson: 'Karmínová', orange: 'Oranžová', green: 'Zelená', black: 'Černá' },
+      customColor: 'Vlastní barva',
+      languageNote: 'Mění pevný text v CV, například „dosud“. Váš obsah se nepřekládá.',
+      showOnCv: 'Zobrazit v CV',
+      section: {
+        name: 'Název',
+        newPage: 'Začít na nové stránce',
+        order: 'Pořadí',
+        position: (position, total) => `${position} z ${total}`,
+        items: 'Položky',
+        empty: 'Sekce je prázdná'
+      },
+      header: {
+        goTo: 'Přejít na',
+        contacts: 'Kontakty',
+        contactCount: {
+          one: (count) => `${count} kontakt`,
+          few: (count) => `${count} kontakty`,
+          many: (count) => `${count} kontaktu`,
+          other: (count) => `${count} kontaktů`
+        },
+        photoOptions: 'Změnit, oříznout nebo odstranit fotku'
+      },
+      photo: { add: 'Přidat fotku' },
+      consent: { editOnPage: 'Upravit na stránce' }
+    },
     header: 'Záhlaví',
     fullName: 'Jméno a příjmení',
     contact: 'Kontakt',

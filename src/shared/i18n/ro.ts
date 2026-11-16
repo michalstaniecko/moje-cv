@@ -168,19 +168,15 @@ export const ro: Dictionary = {
     exportCutOff: 'O parte din conținut nu încape pe o pagină și va fi tăiată. Exporți totuși?',
     exportCutOffHint: 'Fragmentele prea lungi sunt evidențiate în modul de editare.',
     mode: { label: 'Mod', edit: 'Editare', preview: 'Previzualizare' },
-    cvDesignButton: 'Design',
+    history: 'Istoricul modificărilor',
     outline: {
-      title: 'Structură',
       empty: 'goală',
       hidden: 'ascunsă',
       form: 'Formular',
       collapse: 'Restrânge',
-      expand: 'Extinde',
-      showOnCv: 'Arată în CV',
       showSection: (name) => `Arată „${name}” în CV`,
-      showToEdit: 'Arată secțiunea în CV pentru a o edita',
       showPhoto: 'Arată fotografia în CV',
-      showPhotoToEdit: 'Arată fotografia în CV pentru a o edita',
+      showConsent: 'Arată clauza de acord în CV',
       items: {
         one: (count) => `${count} element`,
         few: (count) => `${count} elemente`,
@@ -227,6 +223,35 @@ export const ro: Dictionary = {
     cvLanguage: 'Limba CV-ului',
     template: 'Șablon',
     templateNames: { classic: 'Clasic', modern: 'Modern', bold: 'Pregnant' },
+    inspector: {
+      label: 'Inspector',
+      document: 'Document',
+      groups: { template: 'Șablon', style: 'Stil', elements: 'Elementele CV-ului', language: 'Limbă' },
+      colors: { teal: 'Petrol', blue: 'Albastru', graphite: 'Grafit', violet: 'Violet', crimson: 'Carmin', orange: 'Portocaliu', green: 'Verde', black: 'Negru' },
+      customColor: 'Culoare personalizată',
+      languageNote: 'Schimbă textul fix din CV, de exemplu „prezent”. Conținutul tău nu este tradus.',
+      showOnCv: 'Afișează în CV',
+      section: {
+        name: 'Nume',
+        newPage: 'Începe pe o pagină nouă',
+        order: 'Ordine',
+        position: (position, total) => `${position} din ${total}`,
+        items: 'Elemente',
+        empty: 'Secțiunea este goală'
+      },
+      header: {
+        goTo: 'Mergi la',
+        contacts: 'Contacte',
+        contactCount: {
+          one: (count) => `${count} contact`,
+          few: (count) => `${count} contacte`,
+          other: (count) => `${count} de contacte`
+        },
+        photoOptions: 'Schimbă, decupează sau elimină fotografia'
+      },
+      photo: { add: 'Adaugă fotografie' },
+      consent: { editOnPage: 'Editează pe pagină' }
+    },
     header: 'Antet',
     fullName: 'Nume complet',
     contact: 'Contact',

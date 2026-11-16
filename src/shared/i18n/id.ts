@@ -168,19 +168,15 @@ export const id: Dictionary = {
     exportCutOff: 'Sebagian konten tidak muat di satu halaman dan akan terpotong. Tetap ekspor?',
     exportCutOffHint: 'Bagian yang terlalu panjang ditandai di mode edit.',
     mode: { label: 'Mode', edit: 'Edit', preview: 'Pratinjau' },
-    cvDesignButton: 'Desain CV',
+    history: 'Riwayat perubahan',
     outline: {
-      title: 'Kerangka',
       empty: 'kosong',
       hidden: 'tersembunyi',
       form: 'Formulir',
       collapse: 'Ciutkan',
-      expand: 'Bentangkan',
-      showOnCv: 'Tampilkan di CV',
       showSection: (name) => `Tampilkan “${name}” di CV`,
-      showToEdit: 'Tampilkan bagian di CV untuk mengeditnya',
       showPhoto: 'Tampilkan foto di CV',
-      showPhotoToEdit: 'Tampilkan foto di CV untuk mengeditnya',
+      showConsent: 'Tampilkan klausul persetujuan di CV',
       items: { other: (count) => `${count} item` },
       sidebar: 'Bilah samping'
     },
@@ -223,6 +219,33 @@ export const id: Dictionary = {
     cvLanguage: 'Bahasa CV',
     template: 'Templat',
     templateNames: { classic: 'Klasik', modern: 'Modern', bold: 'Tegas' },
+    inspector: {
+      label: 'Inspektor',
+      document: 'Dokumen',
+      groups: { template: 'Templat', style: 'Gaya', elements: 'Elemen CV', language: 'Bahasa' },
+      colors: { teal: 'Hijau toska', blue: 'Biru', graphite: 'Grafit', violet: 'Ungu', crimson: 'Merah tua', orange: 'Oranye', green: 'Hijau', black: 'Hitam' },
+      customColor: 'Warna kustom',
+      languageNote: 'Mengubah teks tetap di CV, seperti “sekarang”. Konten Anda tidak diterjemahkan.',
+      showOnCv: 'Tampilkan di CV',
+      section: {
+        name: 'Nama',
+        newPage: 'Mulai di halaman baru',
+        order: 'Urutan',
+        position: (position, total) => `${position} dari ${total}`,
+        items: 'Item',
+        empty: 'Bagian ini kosong'
+      },
+      header: {
+        goTo: 'Buka',
+        contacts: 'Kontak',
+        contactCount: {
+          other: (count) => `${count} kontak`
+        },
+        photoOptions: 'Ganti, pangkas, atau hapus foto'
+      },
+      photo: { add: 'Tambah foto' },
+      consent: { editOnPage: 'Edit di halaman' }
+    },
     header: 'Kepala',
     fullName: 'Nama lengkap',
     contact: 'Kontak',

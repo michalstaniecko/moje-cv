@@ -168,19 +168,15 @@ export const it: Dictionary = {
     exportCutOff: 'Parte del contenuto non entra in una pagina e verrà tagliata. Esportare comunque?',
     exportCutOffHint: 'I frammenti troppo lunghi sono evidenziati in modalità modifica.',
     mode: { label: 'Modalità', edit: 'Modifica', preview: 'Anteprima' },
-    cvDesignButton: 'Design',
+    history: 'Cronologia modifiche',
     outline: {
-      title: 'Struttura',
       empty: 'vuota',
       hidden: 'nascosta',
       form: 'Modulo',
       collapse: 'Comprimi',
-      expand: 'Espandi',
-      showOnCv: 'Mostra nel CV',
       showSection: (name) => `Mostra «${name}» nel CV`,
-      showToEdit: 'Mostra la sezione nel CV per modificarla',
       showPhoto: 'Mostra la foto nel CV',
-      showPhotoToEdit: 'Mostra la foto nel CV per modificarla',
+      showConsent: 'Mostra la clausola di consenso nel CV',
       items: {
         one: (count) => `${count} elemento`,
         many: (count) => `${count} di elementi`,
@@ -227,6 +223,34 @@ export const it: Dictionary = {
     cvLanguage: 'Lingua del CV',
     template: 'Modello',
     templateNames: { classic: 'Classico', modern: 'Moderno', bold: 'Deciso' },
+    inspector: {
+      label: 'Ispettore',
+      document: 'Documento',
+      groups: { template: 'Modello', style: 'Stile', elements: 'Elementi del CV', language: 'Lingua' },
+      colors: { teal: 'Verde petrolio', blue: 'Blu', graphite: 'Grafite', violet: 'Viola', crimson: 'Cremisi', orange: 'Arancione', green: 'Verde', black: 'Nero' },
+      customColor: 'Colore personalizzato',
+      languageNote: 'Cambia il testo fisso del CV, come «oggi». I tuoi contenuti non vengono tradotti.',
+      showOnCv: 'Mostra nel CV',
+      section: {
+        name: 'Nome',
+        newPage: 'Inizia su una nuova pagina',
+        order: 'Ordine',
+        position: (position, total) => `${position} di ${total}`,
+        items: 'Elementi',
+        empty: 'Questa sezione è vuota'
+      },
+      header: {
+        goTo: 'Vai a',
+        contacts: 'Contatti',
+        contactCount: {
+          one: (count) => `${count} contatto`,
+          other: (count) => `${count} contatti`
+        },
+        photoOptions: 'Cambia, ritaglia o rimuovi la foto'
+      },
+      photo: { add: 'Aggiungi foto' },
+      consent: { editOnPage: 'Modifica nella pagina' }
+    },
     header: 'Intestazione',
     fullName: 'Nome e cognome',
     contact: 'Contatti',

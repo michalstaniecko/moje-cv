@@ -1,5 +1,5 @@
 // Położenie pływającego panelu w warstwie górnej (`popover`, `position: fixed`) przy elemencie, od którego go otwarto:
-// menu wiersza (RowMenu), panel CV design i Field popovers. Czysta logika na prostokątach w px okna.
+// menu wiersza (RowMenu) i Field popovers. Czysta logika na prostokątach w px okna.
 
 export type Box = { top: number; left: number; right: number; bottom: number }
 export type Size = { width: number; height: number }
@@ -13,7 +13,7 @@ export const MIN_CONTAINED_HEIGHT = 180
 // `anchor` – prostokąt kotwicy; `panel` – rozmiar panelu; `viewport` – rozmiar okna.
 // Pod kotwicą, a gdy pod nią brakuje miejsca (i jest nad nią) – nad kotwicą, wyrównany do jej lewej krawędzi.
 // W poziomie zawsze w granicach okna.
-// `contain` (panel CV design): gdy panel nie mieści się ani pod, ani nad kotwicą, nie może zasłonić
+// `contain` (wysoki panel): gdy panel nie mieści się ani pod, ani nad kotwicą, nie może zasłonić
 // kotwicy (spec Q5), więc kolejno:
 // 1. staje obok samej kotwicy w oknie – po jej prawej, a gdy tam brak miejsca, po lewej (np. nad paskiem bocznym),
 // 2. staje pod albo nad kotwicą (gdzie więcej miejsca), niższy: `maxHeight` – panel przewija się w środku – o ile

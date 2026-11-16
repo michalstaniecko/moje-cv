@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
@@ -13,9 +13,10 @@ let outputDir: string
 const packagedExecutable = process.env['MOJE_CV_APP']
 
 // Jak w export.spec.ts: tymczasowy katalog danych, angielski i jasny wygląd, okno w tle.
-async function launch() {
+async function launch({ appearance }: { appearance?: 'light' | 'dark' } = {}) {
   const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
   const env = { MOJE_CV_APPEARANCE: 'light', ...process.env } as Record<string, string>
+  if (appearance) env['MOJE_CV_APPEARANCE'] = appearance
   if (!process.env['MOJE_CV_E2E_HEADED']) env['MOJE_CV_E2E_HIDDEN'] = '1'
   env['MOJE_CV_UPDATE_URL'] = 'off'
   env['MOJE_CV_LANGUAGE'] = 'en'
@@ -37,22 +38,24 @@ test.afterEach(async () => {
   await rm(outputDir, { recursive: true, force: true })
 })
 
-// Otwiera pierwsze CV z biblioteki i przełącza pasek boczny na CV form: testy warstwy edycji sprawdzają w nim, że strony
-// i formularz zmieniają to samo. Outline (domyślny pasek) ma własne testy z `openFirstCvWithOutline`.
+// Otwiera pierwsze CV z biblioteki i rozwija pasek boczny do CV form: testy warstwy edycji sprawdzają w nim, że strony
+// i formularz zmieniają to samo. Bez formularza (domyślnie zwinięty do szyny) – `openFirstCvWithPages`.
 async function openFirstCv() {
-  await openFirstCvWithOutline()
+  await openFirstCvWithPages()
   await showCvForm()
 }
 
-async function openFirstCvWithOutline() {
+async function openFirstCvWithPages() {
   await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
   await expect(window.locator('.preview .cv-page').first()).toBeVisible()
 }
 
-// „Form” w przełączniku paska bocznego (w Outline, przy CV form i na szynie).
+// CV form w pasku bocznym: „Form” na szynie, jeśli pasek jest zwinięty (wybór zostaje na całą sesję aplikacji).
 async function showCvForm() {
-  await window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click()
-  await expect(window.locator('.editor-form')).toBeVisible()
+  const form = window.locator('.editor-form')
+  await expect(form.or(window.locator('.editor-rail'))).toBeVisible()
+  if (!(await form.isVisible())) await window.locator('.editor-rail').getByRole('button', { name: 'Form', exact: true }).click()
+  await expect(form).toBeVisible()
 }
 
 // Pozycja menu aplikacji wywołana w procesie głównym (natywnego menu Playwright nie kliknie), jak w export.spec.ts.
@@ -113,7 +116,11 @@ test('the Edit | Preview toggle switches the editor between Edit mode and Previe
   await expect(previewButton()).toBeFocused()
   const preview = window.locator('.preview')
   const panes = window.locator('.editor-panes')
-  await expect.poll(async () => (await preview.boundingBox())!.width).toBeCloseTo((await panes.boundingBox())!.width, 0)
+  // Bez paska bocznego: strony zajmują panel edytora poza Inspektorem.
+  const inspectorWidth = (await window.getByRole('complementary', { name: 'Inspector', exact: true }).boundingBox())!.width
+  await expect
+    .poll(async () => (await preview.boundingBox())!.width)
+    .toBeCloseTo((await panes.boundingBox())!.width - inspectorWidth, 0)
   // Pasek narzędzi i pasek podglądu zostają.
   await expect(window.getByRole('button', { name: 'Export to PDF' })).toBeVisible()
   await expect(preview.getByRole('button', { name: 'Zoom in' })).toBeVisible()
@@ -188,6 +195,61 @@ test('switching the mode is not an undo step and does not change the document; z
   await expectPreviewMode()
   await expect(preview.locator('.preview-zoom-value')).toHaveText('100%')
   await expect.poll(() => preview.evaluate((element) => element.scrollTop)).toBe(400)
+})
+
+const historyGroup = () => window.locator('.toolbar').getByRole('group', { name: 'Change history' })
+const undoButton = () => historyGroup().getByRole('button', { name: 'Undo', exact: true })
+const redoButton = () => historyGroup().getByRole('button', { name: 'Redo', exact: true })
+
+test('Undo and Redo in the toolbar undo and redo a change made on the page in both modes, are disabled when there is nothing to undo or redo and show their shortcuts', async () => {
+  await openFirstCvWithPages()
+  // Na świeżo otwartym CV nie ma czego cofnąć ani ponowić: oba przyciski wyłączone (także dla czytnika ekranu).
+  await expect(undoButton()).toBeDisabled()
+  await expect(redoButton()).toBeDisabled()
+  await expect(undoButton()).toHaveAttribute('title', 'Undo (⌘Z)')
+  await expect(redoButton()).toHaveAttribute('title', 'Redo (⇧⌘Z)')
+  await expect(undoButton()).toHaveAttribute('aria-keyshortcuts', 'Meta+Z')
+  await expect(redoButton()).toHaveAttribute('aria-keyshortcuts', 'Meta+Shift+Z')
+
+  // Zmiana na stronie: Cofnij ją cofa, Ponów przywraca.
+  const name = pageField('Full name')
+  await clickAtCharacter(name, 4)
+  await window.keyboard.type(' X')
+  await expect(pageName()).toHaveText('Jane X Example')
+  await expect(undoButton()).toBeEnabled()
+  await expect(redoButton()).toBeDisabled()
+  await undoButton().click()
+  await expect(pageName()).toHaveText('Jane Example')
+  await expect(undoButton()).toBeDisabled()
+  await expect(redoButton()).toBeEnabled()
+  await redoButton().click()
+  await expect(pageName()).toHaveText('Jane X Example')
+  await expect(undoButton()).toBeEnabled()
+  await expect(redoButton()).toBeDisabled()
+
+  // To samo w Preview mode.
+  await previewButton().click()
+  await undoButton().click()
+  await expect(pageName()).toHaveText('Jane Example')
+  await expect(redoButton()).toBeEnabled()
+  await redoButton().click()
+  await expect(pageName()).toHaveText('Jane X Example')
+  await expect(redoButton()).toBeDisabled()
+
+  // Przy minimalnej szerokości okna (960 px) pasek narzędzi zostaje w jednym wierszu, w obu trybach.
+  await app.evaluate(({ BrowserWindow }) => {
+    const [browserWindow] = BrowserWindow.getAllWindows()
+    browserWindow!.setSize(960, browserWindow!.getSize()[1]!)
+  })
+  // Jeden wiersz: każdy element zaczyna się wyżej, niż kończy się którykolwiek inny.
+  const inOneRow = () =>
+    window.locator('.editor-toolbar > *').evaluateAll((elements) => {
+      const boxes = elements.map((element) => element.getBoundingClientRect())
+      return Math.max(...boxes.map((box) => box.top)) < Math.min(...boxes.map((box) => box.bottom))
+    })
+  await expect.poll(inOneRow).toBe(true)
+  await editButton().click()
+  await expect.poll(inOneRow).toBe(true)
 })
 
 test('Preview mode does not highlight oversized fragments on the pages but warns in the preview bar, and “Show” switches to Edit mode', async () => {
@@ -301,8 +363,16 @@ async function clickAtCharacter(field: Locator, index: number) {
     const range = element.ownerDocument.createRange()
     range.setStart(element.firstChild!, index)
     range.setEnd(element.firstChild!, index + 1)
-    const rect = range.getBoundingClientRect()
-    return { x: rect.left + 1, y: rect.top + rect.height / 2 }
+    // W pierwszej ćwierci znaku (a nie 1 px od lewej): przy stronach pomniejszonych do szerokości panelu wąski znak
+    // (spacja) ma mniej niż 2 px i klik za jego połową stawiałby kursor za nim.
+    const at = () => {
+      const rect = range.getBoundingClientRect()
+      return { x: rect.left + rect.width / 4, y: rect.top + rect.height / 2 }
+    }
+    // Znak przykryty paskiem podglądu (pole tuż pod górną krawędzią panelu stron): pole na środek panelu.
+    const { x, y } = at()
+    if (!element.contains(element.ownerDocument.elementFromPoint(x, y))) element.scrollIntoView({ block: 'center' })
+    return at()
   }, index)
   await window.mouse.click(point.x, point.y)
 }
@@ -379,7 +449,7 @@ test('the summary and the section titles are edited on the page in every place a
   await window.keyboard.type(' & tools')
   await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: /^Skills & tools$/ })).toHaveCount(1)
   await expect(window.locator('.editor-form').getByLabel('Section title “Skills & tools”')).toHaveValue('Skills & tools')
-  const picker = window.getByRole('radiogroup', { name: 'Template' })
+  const picker = window.locator('.editor-form').getByRole('radiogroup', { name: 'Template' })
   await picker.locator('label', { has: window.getByRole('radio', { name: 'Modern' }) }).click()
   await expect(window.locator('.preview .cv.cv-template-modern')).toHaveCount(1)
   await clickAtCharacter(titleField('Skills & tools'), 0)
@@ -671,7 +741,7 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
   test(`page fields: every field of the Sample CV in the ${template} template is edited on the page (Page fields, date and photo popovers), and the contacts, section titles and entries have their handles`, async () => {
     await openFirstCv()
     const preview = window.locator('.preview')
-    const picker = window.getByRole('radiogroup', { name: 'Template' })
+    const picker = window.locator('.editor-form').getByRole('radiogroup', { name: 'Template' })
     await picker.locator('label', { has: window.getByRole('radio', { name: template }) }).click()
     await expect(preview.locator(`.cv.cv-template-${template.toLowerCase()}`)).toHaveCount(1)
     await enableConsent('I agree to the processing of my personal data.')
@@ -1315,12 +1385,13 @@ test('Cmd+Z after adding a position undoes the typing and then the adding; the f
   await window.keyboard.press('Meta+z')
   await expect(role).toHaveCount(0)
   await expect(roleField('New position')).toBeFocused()
-  // Cofnięcie dodania: wpisu nie ma, fokus przechodzi w bezpieczne miejsce – na pasek boczny (przy CV form – jego
-  // przycisk w przełączniku Outline / Form).
+  // Cofnięcie dodania: wpisu nie ma, fokus przechodzi w bezpieczne miejsce – w Inspektorze, który dalej pokazuje panel
+  // sekcji, na „‹ Document”.
   await window.keyboard.press('Meta+z')
   await expect(roleField('New position')).toHaveCount(0)
   await expect(form.getByLabel('Job title')).toHaveCount(4)
-  await expect(form.getByRole('button', { name: 'Form', exact: true })).toBeFocused()
+  await expect(panelTitle()).toHaveText('Work experience')
+  await expect(backToDocument()).toBeFocused()
   await expect(window.getByRole('dialog')).toHaveCount(0)
 })
 
@@ -1768,10 +1839,15 @@ test('the consent clause is edited on the page; its toolbar saves the text as a 
   await expect(form.getByLabel('Show the clause at the bottom of the last page')).toBeChecked()
 })
 
-// ---------- „Projekt CV” w pasku narzędzi ----------
+// ---------- Inspector: panel „Dokument” z CV design ----------
 
-const designButton = () => window.locator('.toolbar').getByRole('button', { name: 'CV design', exact: true })
-const designPanel = () => window.getByRole('dialog', { name: 'CV design', exact: true })
+const inspector = () => window.getByRole('complementary', { name: 'Inspector', exact: true })
+const inspectorGroup = (name: string) => inspector().getByRole('button', { name, exact: true })
+const accentSwatches = () => inspector().getByRole('radiogroup', { name: 'Accent color', exact: true })
+const customColor = () => inspector().getByLabel('Custom color', { exact: true })
+const fontCards = () => inspector().getByRole('radiogroup', { name: 'Font', exact: true })
+const inspectorTemplates = () => inspector().getByRole('radiogroup', { name: 'Template', exact: true })
+const inspectorLanguage = () => inspector().getByRole('combobox', { name: 'CV language', exact: true })
 
 async function pdfFillColors(path: string): Promise<string[]> {
   const { getDocument, OPS } = await import('pdfjs-dist/legacy/build/pdf.mjs')
@@ -1786,106 +1862,144 @@ async function pdfFillColors(path: string): Promise<string[]> {
   return [...colors]
 }
 
-test('CV design in the toolbar opens a panel with the colour, font, Template and CV language in both modes; Escape and a click outside close it and return the focus to the button', async () => {
-  await openFirstCv()
-  await expect(designButton()).toHaveAttribute('aria-expanded', 'false')
+test('the Inspector beside the pages shows the Document panel with the Template, Style and Language groups in both modes, and the toolbar has no CV design button', async () => {
+  await openFirstCvWithPages()
+  await expect(window.locator('.toolbar').getByRole('button', { name: 'CV design' })).toHaveCount(0)
+  await expect(window.getByRole('dialog', { name: 'CV design' })).toHaveCount(0)
 
-  // Otwarcie panelu zamyka otwarty Field popover; fokus na pierwszym polu panelu.
-  await clickOnPage(window.locator('.preview .cv-page .cv-photo'))
-  await expect(photoPopover()).toBeVisible()
-  await designButton().click()
-  await expect(photoPopover()).toHaveCount(0)
-  const panel = designPanel()
-  await expect(panel).toBeVisible()
-  await expect(designButton()).toHaveAttribute('aria-expanded', 'true')
-  await expect(panel.getByLabel('Accent color')).toBeFocused()
-  await expect(panel.getByLabel('Accent color')).toHaveValue('#1a6e72')
-  await expect(panel.getByLabel('Font')).toHaveValue('lato')
-  await expect(panel.getByRole('radiogroup', { name: 'Template' }).getByRole('radio', { name: 'Classic' })).toBeChecked()
-  await expect(panel.getByLabel('CV language')).toHaveValue('en')
-  // Panel leży pod przyciskiem, cały w oknie.
-  const buttonBox = (await designButton().boundingBox())!
-  const panelBox = (await panel.boundingBox())!
-  expect(panelBox.y).toBeGreaterThanOrEqual(buttonBox.y + buttonBox.height)
-  expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(await window.locator('html').evaluate((html) => html.clientWidth))
+  const panel = inspector()
+  await expect(panel.getByRole('heading', { name: 'Document', exact: true })).toBeVisible()
+  for (const group of ['Template', 'Style', 'Language']) await expect(inspectorGroup(group)).toHaveAttribute('aria-expanded', 'true')
+  await expect(inspectorTemplates().getByRole('radio', { name: 'Classic' })).toBeChecked()
+  await expect(accentSwatches().getByRole('radio', { name: 'Teal', exact: true })).toBeChecked()
+  await expect(accentSwatches().getByRole('radio')).toHaveCount(8)
+  await expect(customColor()).toHaveValue('#1a6e72')
+  await expect(fontCards().getByRole('radio', { name: 'Lato' })).toBeChecked()
+  // Karta fontu jest pisana swoim krojem.
+  await expect(panel.locator('label', { has: window.getByRole('radio', { name: 'Arimo' }) })).toHaveCSS('font-family', /Arimo/)
+  await expect(inspectorLanguage()).toHaveValue('en')
+  await expect(inspectorLanguage()).toHaveAccessibleDescription(/such as “present”.*isn’t translated/)
 
-  await window.keyboard.press('Escape')
-  await expect(panel).toHaveCount(0)
-  await expect(designButton()).toBeFocused()
-  await expect(designButton()).toHaveAttribute('aria-expanded', 'false')
+  // Kolumna po prawej stronie stron, na całą wysokość panelu edytora.
+  const pagesBox = (await window.locator('.preview').boundingBox())!
+  const inspectorBox = (await panel.boundingBox())!
+  expect(inspectorBox.x).toBeGreaterThanOrEqual(pagesBox.x + pagesBox.width - 1)
+  expect(Math.round(inspectorBox.height)).toBe(Math.round(pagesBox.height))
 
-  // Ponowny klik przycisku przy otwartym panelu zamyka go.
-  await designButton().click()
-  await expect(panel).toBeVisible()
-  await designButton().click()
-  await expect(panel).toHaveCount(0)
-
-  // Preview mode: ten sam panel; klik w kartkę go zamyka, fokus wraca na przycisk.
+  // Preview mode: Inspector zostaje, z tymi samymi grupami.
   await previewButton().click()
   await expectPreviewMode()
-  await designButton().click()
-  await expect(panel).toBeVisible()
-  await expect(panel.getByRole('radiogroup', { name: 'Template' })).toBeVisible()
-  await window.locator('.preview .cv-page').first().click({ position: { x: 20, y: 20 } })
-  await expect(panel).toHaveCount(0)
-  await expect(designButton()).toBeFocused()
-
-  // Klawiatura: Enter otwiera, Tab przechodzi po polach panelu.
-  await window.keyboard.press('Enter')
-  await expect(panel).toBeVisible()
-  await expect(panel.getByLabel('Accent color')).toBeFocused()
-  await window.keyboard.press('Tab')
-  await expect(panel.getByLabel('Font')).toBeFocused()
-  await window.keyboard.press('Escape')
-  await expect(panel).toHaveCount(0)
-  await expect(designButton()).toBeFocused()
+  await expect(panel.getByRole('heading', { name: 'Document', exact: true })).toBeVisible()
+  await expect(inspectorTemplates()).toBeVisible()
+  await expect(fontCards()).toBeVisible()
+  await expect(inspectorLanguage()).toBeVisible()
 })
 
-test('changing the Template and the accent colour in the CV design panel changes the pages and the PDF, and Cmd+Z undoes each change', async () => {
-  await openFirstCv()
+test('Inspector groups collapse and stay collapsed when switching modes and reopening a CV', async () => {
+  await openFirstCvWithPages()
+  await inspectorGroup('Style').click()
+  await expect(inspectorGroup('Style')).toHaveAttribute('aria-expanded', 'false')
+  await expect(fontCards()).toBeHidden()
+  await expect(accentSwatches()).toBeHidden()
+  await expect(inspectorTemplates()).toBeVisible()
+  // Klawiatura: Enter na nagłówku grupy zwija ją i rozwija.
+  await inspectorGroup('Language').focus()
+  await window.keyboard.press('Enter')
+  await expect(inspectorGroup('Language')).toHaveAttribute('aria-expanded', 'false')
+  await expect(inspectorLanguage()).toBeHidden()
+
   await previewButton().click()
   await expectPreviewMode()
+  await expect(inspectorGroup('Style')).toHaveAttribute('aria-expanded', 'false')
+  await expect(inspectorGroup('Language')).toHaveAttribute('aria-expanded', 'false')
+
+  await window.getByRole('button', { name: '← CV library' }).click()
+  await openFirstCvWithPages()
+  await expect(inspectorGroup('Style')).toHaveAttribute('aria-expanded', 'false')
+  await expect(inspectorGroup('Language')).toHaveAttribute('aria-expanded', 'false')
+  await expect(inspectorGroup('Template')).toHaveAttribute('aria-expanded', 'true')
+  await inspectorGroup('Style').click()
+  await expect(fontCards()).toBeVisible()
+})
+
+test('changing the Template, the accent colour (swatch and custom), the font and the CV language in the Inspector changes the pages and the PDF at once, and Cmd+Z undoes each in one step', async () => {
+  await openFirstCvWithPages()
   const preview = window.locator('.preview')
-  await designButton().click()
-  const panel = designPanel()
 
-  await panel.getByLabel('Accent color').fill('#8a2be2')
+  // Kolor akcentu (w Classic imię jest w kolorze akcentu): próbka, potem własny kolor.
+  await accentSwatches().getByRole('radio', { name: 'Crimson', exact: true }).click()
+  await expect(pageName()).toHaveCSS('color', 'rgb(163, 36, 59)')
+  await expect(accentSwatches().getByRole('radio', { name: 'Crimson', exact: true })).toBeChecked()
+  // Własny kolor: przeciąganie w wyborze koloru to jeden krok cofania (ten sam klucz łączenia co dotąd).
+  await customColor().fill('#8a2be1')
+  await customColor().fill('#8a2be2')
   await expect(pageName()).toHaveCSS('color', 'rgb(138, 43, 226)')
-  const picker = panel.getByRole('radiogroup', { name: 'Template' })
-  await picker.locator('label', { has: window.getByRole('radio', { name: 'Modern' }) }).click()
-  await expect(picker.getByRole('radio', { name: 'Modern' })).toBeChecked()
-  await expect(preview.locator('.cv.cv-template-modern')).toHaveCount(1)
-  // Panel zostaje otwarty przy zmianach – strony przerysowane pod nim.
-  await expect(panel).toBeVisible()
-  const pageCount = await preview.locator('.cv-page').count()
+  await expect(accentSwatches().getByRole('radio', { checked: true })).toHaveCount(0)
 
-  // Eksport z panelem otwartym: klik w „Export to PDF” zamyka panel, PDF w nowym szablonie i kolorze.
-  const pdfPath = join(outputDir, 'modern.pdf')
+  await fontCards().locator('label', { has: window.getByRole('radio', { name: 'Arimo' }) }).click()
+  await expect(fontCards().getByRole('radio', { name: 'Arimo' })).toBeChecked()
+  await expect(pageName()).toHaveCSS('font-family', /^"?Arimo/)
+
+  await inspectorLanguage().selectOption('pl')
+  await expect(preview.locator('.cv')).toHaveAttribute('lang', 'pl')
+  await expect(preview.locator('.cv-page .cv-date').first()).toHaveText('03.2023 – obecnie')
+
+  await inspectorTemplates().locator('label', { has: window.getByRole('radio', { name: 'Modern' }) }).click()
+  await expect(inspectorTemplates().getByRole('radio', { name: 'Modern' })).toBeChecked()
+  await expect(preview.locator('.cv.cv-template-modern')).toHaveCount(1)
+  await expect(window.getByText('Changes saved')).toBeVisible()
+
+  // Wszystko od razu w PDF.
+  const pdfPath = join(outputDir, 'inspector.pdf')
   await stubSaveDialog(pdfPath)
   await window.getByRole('button', { name: 'Export to PDF' }).click()
-  await expect(panel).toHaveCount(0)
-  await expect(window.getByText('Saved PDF: modern.pdf')).toBeVisible()
-  const text = await pdfText(pdfPath)
-  expect(text).toContain(`1 / ${pageCount}`)
+  await expect(window.getByText('Saved PDF: inspector.pdf')).toBeVisible()
+  expect(await pdfText(pdfPath)).toContain('03.2023 – obecnie')
   expect(await pdfFillColors(pdfPath)).toContain('#8a2be2')
 
-  // Każda zmiana to jeden krok cofania, jak w formularzu.
+  // Każda zmiana to jeden krok cofania – także z fokusem w Inspektorze.
+  await inspectorLanguage().focus()
   await window.keyboard.press('Meta+z')
   await expect(preview.locator('.cv.cv-template-classic')).toHaveCount(1)
-  await expect(pageName()).toHaveCSS('color', 'rgb(138, 43, 226)')
+  await expect(inspectorTemplates().getByRole('radio', { name: 'Classic' })).toBeChecked()
+  await window.keyboard.press('Meta+z')
+  await expect(preview.locator('.cv')).toHaveAttribute('lang', 'en')
+  await expect(inspectorLanguage()).toHaveValue('en')
+  await window.keyboard.press('Meta+z')
+  await expect(pageName()).not.toHaveCSS('font-family', /^"?Arimo/)
+  await expect(fontCards().getByRole('radio', { name: 'Lato' })).toBeChecked()
+  await window.keyboard.press('Meta+z')
+  await expect(pageName()).toHaveCSS('color', 'rgb(163, 36, 59)')
+  await expect(customColor()).toHaveValue('#a3243b')
   await window.keyboard.press('Meta+z')
   await expect(pageName()).toHaveCSS('color', 'rgb(26, 110, 114)')
-  await designButton().click()
-  await expect(panel.getByLabel('Accent color')).toHaveValue('#1a6e72')
-  await expect(picker.getByRole('radio', { name: 'Classic' })).toBeChecked()
+  await expect(accentSwatches().getByRole('radio', { name: 'Teal', exact: true })).toBeChecked()
   await window.keyboard.press('Meta+Shift+z')
-  await expect(panel.getByLabel('Accent color')).toHaveValue('#8a2be2')
+  await expect(pageName()).toHaveCSS('color', 'rgb(163, 36, 59)')
 
-  // W Edit mode CV form pokazuje te same ustawienia.
-  await window.keyboard.press('Escape')
-  await editButton().click()
-  await expect(window.locator('.editor-form').getByLabel('Accent color')).toHaveValue('#8a2be2')
-  await expect(window.locator('.editor-form').getByRole('radio', { name: 'Classic' })).toBeChecked()
+  // Preview mode: te same zmiany działają na czystych stronach.
+  await previewButton().click()
+  await expectPreviewMode()
+  await accentSwatches().getByRole('radio', { name: 'Green', exact: true }).click()
+  await expect(pageName()).toHaveCSS('color', 'rgb(46, 107, 52)')
+  await window.keyboard.press('Meta+z')
+  await expect(pageName()).toHaveCSS('color', 'rgb(163, 36, 59)')
+})
+
+test('the Inspector follows the light and the dark appearance, while its Template thumbnails stay white paper', async () => {
+  for (const [appearance, panelBackground, text] of [
+    ['light', 'rgb(255, 255, 255)', 'rgb(28, 39, 51)'],
+    ['dark', 'rgb(24, 34, 46)', 'rgb(230, 237, 245)']
+  ] as const) {
+    await app.close()
+    await launch({ appearance })
+    await openFirstCvWithPages()
+    const panel = inspector()
+    await expect(panel).toHaveCSS('background-color', panelBackground)
+    await expect(panel).toHaveCSS('color', text)
+    await expect(panel).toHaveCSS('color-scheme', 'light dark')
+    await expect(panel.locator('.template-thumbnail').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+  }
 })
 
 // ---------- Menu fragmentu na stronie ----------
@@ -2108,8 +2222,9 @@ test('the menu works from the keyboard alone: Shift+F10 in a field opens the men
   await expect(announcement()).toHaveText('Moved section “Education” to position 1 of 4.')
   await window.keyboard.press('Meta+z')
 
-  // „Add education” – kursor w nowym wpisie.
-  await clickAtCharacter(title, 3)
+  // „Add education” – kursor w nowym wpisie. Fokus z klawiatury: przy stronach pomniejszonych obok Inspektora pigułka
+  // „+ Position” poprzedniej sekcji zachodzi na początek tytułu.
+  await title.focus()
   await window.keyboard.press('ContextMenu')
   await window.keyboard.press('End')
   await window.keyboard.press('Enter')
@@ -2148,7 +2263,7 @@ test('the menu works from the keyboard alone: Shift+F10 in a field opens the men
 const fieldMenu = (name: string) => window.getByRole('menu', { name: `Actions for ${name}`, exact: true })
 
 test('a right-click or Shift+F10 in a bullet, a list item or a contact opens its menu: “Move … up/down” with the shortcut moves it like Alt+Shift+arrows, disabled at the end of the list; the caret stays in the field and each move is one undo step', async () => {
-  await openFirstCvWithOutline()
+  await openFirstCvWithPages()
   const bullets = window.locator('.preview .cv-pages [data-field-key^="experience:e1:bullet:"]')
   const before = await bullets.allTextContents()
   const third = before[2]!
@@ -2493,12 +2608,11 @@ test('a CV is edited with the keyboard alone: the start hint, page fields with E
   await expect(window.locator('.editor-form')).toHaveCount(0)
 })
 
-test('a full CV is built from a new CV in the Outline without any card and without the CV form: every field of the Sample CV is on the page or in a Field popover, and Edit mode then splits the pages like Preview mode', async () => {
+test('a full CV is built from a new CV with the pages and the CV elements list, without any card and without the CV form: every field of the Sample CV is on the page or in a Field popover, and Edit mode then splits the pages like Preview mode', async () => {
   const photoPath = await writeRedBluePhoto()
   await openNewCv()
-  await expect(outline()).toBeVisible()
+  await expect(cvElements()).toBeVisible()
   const bar = (name: string) => addBar().getByRole('button', { name, exact: true })
-  const outlineSection = (name: string) => outlineRow(name).locator('.outline-row-button')
   // Bez CV form – przez cały czas (Edit card nie ma w ogóle).
   const expectNoForms = async () => {
     await expect(window.locator('.editor-form')).toHaveCount(0)
@@ -2538,8 +2652,9 @@ test('a full CV is built from a new CV in the Outline without any card and witho
   await expect(pageField('Summary')).toBeFocused()
   await window.keyboard.type('Buyer with ten years in procurement.')
 
-  // Pusta sekcja w Outline: jej pierwszy wpis odsłonięty na stronie z kursorem w stanowisku; Enter – kolejne pola.
-  await outlineSection('Work experience').click()
+  // Pusta sekcja na liście „CV elements”: jej pierwszy wpis odsłonięty na stronie z kursorem w stanowisku; Enter – kolejne pola.
+  await showDocumentPanel()
+  await elementButton('Work experience').click()
   await expect(roleField('New position')).toBeFocused()
   expect(await placeholderOf(roleField('New position'))).toBe('"Job title"')
   await window.keyboard.type('Senior Buyer')
@@ -2571,7 +2686,9 @@ test('a full CV is built from a new CV in the Outline without any card and witho
   await clickAtCharacter(titleField('Work experience'), 4)
   await window.keyboard.press('Meta+a')
   await window.keyboard.type('Experience')
-  await expect(outlineRow('Experience')).toHaveText(/^Experience1$/)
+  await expect(panelTitle()).toHaveText('Experience')
+  await showDocumentPanel()
+  await expect(elementRow('Experience')).toHaveText(/^Experience1$/)
   // Drugie stanowisko pigułką.
   await pageRole('Senior Buyer').hover()
   await pill('Position').click()
@@ -2579,7 +2696,8 @@ test('a full CV is built from a new CV in the Outline without any card and witho
   await window.keyboard.type('Buyer')
   await expectNoForms()
 
-  await outlineSection('Education').click()
+  await showDocumentPanel()
+  await elementButton('Education').click()
   await expect(pageField('Level – Education “New education”')).toBeFocused()
   await window.keyboard.type('Master’s degree')
   await window.keyboard.press('Enter')
@@ -2592,8 +2710,9 @@ test('a full CV is built from a new CV in the Outline without any card and witho
   await graduation.fill('2015-06')
   await graduation.press('Enter')
 
-  // Sekcje listowe: z Outline i z paska.
-  await outlineSection('Skills').click()
+  // Sekcje listowe: z listy „CV elements” i z paska.
+  await showDocumentPanel()
+  await elementButton('Skills').click()
   await expect(itemField(1, 'Skills')).toBeFocused()
   await window.keyboard.type('Negotiation')
   await window.keyboard.press('Enter')
@@ -2671,43 +2790,53 @@ test('a full CV is built from a new CV in the Outline without any card and witho
   expect(await pdfImagesPerPage(pdfPath)).toEqual([1, ...Array(edit.length - 1).fill(0)])
 })
 
-// ---------- Outline ----------
+// ---------- „CV elements” w Inspektorze (zamiast Outline, #138) ----------
 
-const outline = () => window.getByRole('navigation', { name: 'Outline' })
-const outlineRow = (name: string) => outline().locator('.outline-section').filter({ has: window.locator('.outline-row-name', { hasText: new RegExp(`^${name}$`) }) })
-const outlineHandle = (name: string) => outlineRow(name).getByRole('button', { name: `Actions for section “${name}”` })
-const outlineNames = () => outline().locator('.outline-section .outline-row-name').allTextContents()
+const cvElements = () => inspector().locator('.cv-elements')
+const elementRow = (name: string) =>
+  cvElements().locator('.cv-element').filter({ has: window.locator('.cv-element-label', { hasText: new RegExp(`^${name}$`) }) })
+const elementButton = (name: string) => elementRow(name).locator('button.cv-element-name')
+const elementHandle = (name: string) => elementRow(name).getByRole('button', { name: `Actions for section “${name}”` })
+const elementSwitch = (name: string) => elementRow(name).getByRole('switch')
+// Panel „Dokument” z listą „CV elements”: zaznaczona część CV (np. pole z kursorem na stronie) ma w Inspektorze swój panel.
+async function showDocumentPanel() {
+  if (await backToDocument().isVisible()) await backToDocument().click()
+  await expect(cvElements()).toBeVisible()
+}
+const sectionNames = () => cvElements().locator('.cv-element[data-element="section"] .cv-element-label').allTextContents()
 const pageSectionTitles = () => window.locator('.preview .cv-page .cv-section-title').allTextContents()
+const sampleElements = [/^Header$/, /^Photo$/, /^Work experience4$/, /^Education2$/, /^Skills5$/, /^Languages2$/, /^Interestshidden1$/, /^Consent clausehidden$/]
 const savedSidebar = async () =>
   (JSON.parse(await readFile(join(outputDir, 'user-data', 'settings.json'), 'utf8').catch(() => '{}')) as { editorSidebar?: string })
     .editorSidebar
 
-test('by default the sidebar is the Outline, about 240 px wide: the header, every section in CV order with its marks and entry count, and the consent clause; a click on a section scrolls to it and puts the caret at the end of its title', async () => {
+test('there is no Outline: the Inspector’s “CV elements” list shows the header, the photo, every section in CV order with its marks and entry count, and the consent clause; a click on a section opens its panel, scrolls to it and puts the caret at the end of its title', async () => {
   await window.setViewportSize({ width: 1600, height: 1000 })
-  await openFirstCvWithOutline()
-  const nav = outline()
-  await expect(nav).toBeVisible()
-  expect((await nav.boundingBox())!.width).toBeCloseTo(240, 0)
+  await openFirstCvWithPages()
+  await expect(window.getByRole('navigation', { name: 'Outline' })).toHaveCount(0)
   await expect(window.locator('.editor-form')).toHaveCount(0)
-  await expect(window.getByRole('separator')).toHaveCount(0)
-  await expect(nav.locator('.outline-section')).toHaveText([
-    /^Work experience4$/,
-    /^Education2$/,
-    /^Skills5$/,
-    /^Languages2$/,
-    /^Interestshidden1Show on CV$/
-  ])
-  // Liczba wpisów dla czytnika ekranu: opis wiersza, nie część nazwy.
-  await expect(outlineRow('Work experience').locator('.outline-row-button')).toHaveAccessibleName('Work experience')
-  await expect(outlineRow('Work experience').locator('.outline-row-button')).toHaveAccessibleDescription('4 items')
-  await expect(outlineRow('Interests').locator('.outline-row-button')).toHaveAccessibleDescription('1 item Show the section on the CV to edit it')
-  await expect(nav.getByRole('button', { name: 'Consent clause' })).toBeVisible()
-  await expect(nav.getByRole('switch', { name: 'Show on CV' })).not.toBeChecked()
+  await expect(inspectorGroup('CV elements')).toHaveAttribute('aria-expanded', 'true')
+  await expect(cvElements().locator('.cv-element')).toHaveText(sampleElements)
+
+  // Przełącznik „Show on CV” przy każdej części, którą da się ukryć – nazwany jej nazwą; nagłówka nie da się ukryć.
+  await expect(elementRow('Header').getByRole('switch')).toHaveCount(0)
+  await expect(elementSwitch('Photo')).toHaveAccessibleName('Show photo on CV')
+  await expect(elementSwitch('Photo')).toBeChecked()
+  await expect(elementSwitch('Work experience')).toHaveAccessibleName('Show “Work experience” on CV')
+  await expect(elementSwitch('Work experience')).toBeChecked()
+  await expect(elementSwitch('Interests')).not.toBeChecked()
+  await expect(elementSwitch('Consent clause')).toHaveAccessibleName('Show consent clause on CV')
+  await expect(elementSwitch('Consent clause')).not.toBeChecked()
+  // Dla czytnika ekranu: oznaczenie „hidden” w nazwie wiersza, liczba wpisów w jego opisie.
+  await expect(elementButton('Work experience')).toHaveAccessibleName('Work experience')
+  await expect(elementButton('Work experience')).toHaveAccessibleDescription('4 items')
+  await expect(elementButton('Interests')).toHaveAccessibleName('Interests hidden')
+  await expect(elementButton('Interests')).toHaveAccessibleDescription('1 item')
 
   // Klik w sekcję na drugiej stronie: strony przewijają się do jej tytułu, a kursor staje na końcu tytułu (bez karty).
   const preview = window.locator('.preview')
   expect(await preview.evaluate((element) => element.scrollTop)).toBe(0)
-  await outlineRow('Languages').locator('.outline-row-button').click()
+  await elementButton('Languages').click()
   const title = titleField('Languages')
   await expect(title).toBeFocused()
   await expect.poll(caret).toEqual({ key: 'section:languages:title', offset: 9, collapsed: true })
@@ -2716,105 +2845,93 @@ test('by default the sidebar is the Outline, about 240 px wide: the header, ever
   await expect(window.getByRole('dialog')).toHaveCount(0)
   await window.keyboard.press('Meta+a')
   await window.keyboard.type('Language skills')
-  await expect(outlineRow('Language skills')).toHaveText(/^Language skills2$/)
+  await expect(panelTitle()).toHaveText('Language skills')
   await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: 'Language skills' })).toHaveCount(1)
+  await showDocumentPanel()
+  await expect(elementRow('Language skills')).toHaveText(/^Language skills2$/)
 
-  // „Header” – kursor w imieniu i nazwisku na stronie.
-  await nav.getByRole('button', { name: 'Header' }).click()
+  // „Header” – panel nagłówka i kursor w imieniu i nazwisku na stronie.
+  await elementButton('Header').click()
   await expect(pageField('Full name')).toBeFocused()
+  await expect(panelTitle()).toHaveText('Header')
   await expect(pageField('Full name')).toBeInViewport()
   await expect(window.getByRole('dialog')).toHaveCount(0)
 })
 
-test('a section hidden from the Outline leaves the pages but stays in the Outline: a click on it goes to its “Show on CV” switch, which shows it with the caret in its title on the page; each change is one undo step', async () => {
+test('the “Show on CV” switch hides and shows a section, which stays in the list marked hidden; a click on a hidden section opens its panel without the caret on the pages; each change is one undo step', async () => {
   await window.setViewportSize({ width: 1600, height: 1000 })
-  await openFirstCvWithOutline()
-  const skillsOnPage = () => window.locator('.preview .cv-page .cv-section-title', { hasText: /^Skills/ })
-  const hide = window.getByRole('menuitemcheckbox', { name: 'Hide section' })
-  await outlineHandle('Skills').click()
-  await expect(hide).toHaveAttribute('aria-checked', 'false')
-  await hide.click()
-  await expect(outlineHandle('Skills')).toBeFocused()
-  await expect(skillsOnPage()).toHaveCount(0)
-  await expect(outlineRow('Skills')).toHaveText(/^Skillshidden5Show on CV$/)
+  await openFirstCvWithPages()
+  const onPage = (name: string) => window.locator('.preview .cv-page .cv-section-title', { hasText: new RegExp(`^${name}$`) })
 
-  // Ukrytej sekcji nie ma na stronach: klik w jej wiersz przenosi fokus na jej przełącznik „Show on CV” (bez karty), a
-  // wiersz mówi czytnikowi ekranu, że trzeba ją pokazać.
-  const row = outlineRow('Skills').locator('.outline-row-button')
-  await expect(row).toHaveAccessibleDescription('5 items Show the section on the CV to edit it')
-  await row.click()
-  const showSkills = outline().getByRole('switch', { name: 'Show “Skills” on CV', exact: true })
-  await expect(showSkills).toBeFocused()
-  await expect(showSkills).not.toBeChecked()
+  await elementSwitch('Skills').click()
+  await expect(onPage('Skills')).toHaveCount(0)
+  await expect(elementSwitch('Skills')).toBeFocused()
+  await expect(elementSwitch('Skills')).not.toBeChecked()
+  await expect(elementRow('Skills')).toHaveText(/^Skillshidden5$/)
+  await expect(elementButton('Skills')).toHaveAccessibleName('Skills hidden')
+
+  // Ukrytej sekcji nie ma na stronach: klik w jej wiersz otwiera jej panel z fokusem na jego tytule (bez karty i bez
+  // kursora na stronie).
+  await elementButton('Skills').click()
+  await expect(panelTitle()).toHaveText('Skills')
+  await expect(panelTitle()).toBeFocused()
   await expect(window.getByRole('dialog')).toHaveCount(0)
+  await showDocumentPanel()
 
-  // Pokazanie – sekcja wraca na strony z kursorem na końcu jej tytułu; przełącznik znika.
-  await showSkills.click()
-  await expect(skillsOnPage()).toHaveText(['Skills'])
-  await expect(titleField('Skills')).toBeFocused()
-  await expect.poll(caret).toEqual({ key: 'section:skills:title', offset: 6, collapsed: true })
-  await expect(outlineRow('Skills')).toHaveText(/^Skills5$/)
-  await window.keyboard.type(' & tools')
-  await expect(skillsOnPage()).toHaveText(['Skills & tools'])
-
-  // „Hide section” w menu – zaznaczone przy ukrytej sekcji, kolejny wybór ją pokazuje.
-  await outlineHandle('Skills & tools').click()
-  await hide.click()
-  await expect(skillsOnPage()).toHaveCount(0)
-  await outlineHandle('Skills & tools').click()
-  await expect(hide).toHaveAttribute('aria-checked', 'true')
-  await hide.click()
-  await expect(skillsOnPage()).toHaveText(['Skills & tools'])
-
-  // Cofanie: pokazanie, ukrycie, pisanie, pokazanie, ukrycie – po jednym kroku.
-  for (const expected of [/^Skills & toolshidden5Show on CV$/, /^Skills & tools5$/, /^Skills5$/, /^Skillshidden5Show on CV$/, /^Skills5$/]) {
-    await window.keyboard.press('Meta+z')
-    await expect(outlineRow(expected.source.startsWith('^Skills & tools') ? 'Skills & tools' : 'Skills')).toHaveText(expected)
-  }
-  await expect(skillsOnPage()).toHaveText(['Skills'])
-
-  // „Add item” w menu ukrytej sekcji dodaje element, a fokus idzie na przełącznik „Show on CV” – bez karty.
-  await outlineHandle('Skills').click()
-  await hide.click()
-  await outlineHandle('Skills').click()
-  await window.getByRole('menuitem', { name: 'Add item' }).click()
-  await expect(outlineRow('Skills')).toHaveText(/^Skillshidden6Show on CV$/)
-  await expect(showSkills).toBeFocused()
-  await expect(window.getByRole('dialog')).toHaveCount(0)
+  // Klawiatura: spacja na przełączniku pokazuje sekcję; fokus zostaje na przełączniku.
+  await elementSwitch('Skills').focus()
   await window.keyboard.press('Space')
-  await expect(titleField('Skills')).toBeFocused()
+  await expect(onPage('Skills')).toHaveCount(1)
+  await expect(elementSwitch('Skills')).toBeChecked()
+  await expect(elementSwitch('Skills')).toBeFocused()
+  await expect(elementRow('Skills')).toHaveText(/^Skills5$/)
+
+  // Ukryta w przykładowym CV sekcja wraca na strony.
+  await elementSwitch('Interests').check()
+  await expect(onPage('Interests')).toHaveCount(1)
+  await expect(elementRow('Interests')).toHaveText(/^Interests1$/)
+
+  // Cofanie: pokazanie Interests, pokazanie i ukrycie Skills – po jednym kroku.
+  await window.keyboard.press('Meta+z')
+  await expect(elementRow('Interests')).toHaveText(/^Interestshidden1$/)
+  await expect(onPage('Interests')).toHaveCount(0)
+  await window.keyboard.press('Meta+z')
+  await expect(elementRow('Skills')).toHaveText(/^Skillshidden5$/)
+  await window.keyboard.press('Meta+z')
+  await expect(elementRow('Skills')).toHaveText(/^Skills5$/)
+  await expect(onPage('Skills')).toHaveCount(1)
 })
 
-const outlinePhoto = () => outline().locator('.outline-photo')
-const outlinePhotoButton = () => outlinePhoto().locator('.outline-row-button')
-const showPhotoSwitch = () => outline().getByRole('switch', { name: 'Show photo on CV', exact: true })
-
-test('“Hide photo” in the photo popover takes the photo off the pages, the PDF and “Add to CV” but keeps it: the Outline marks it hidden and its “Show photo on CV” switch brings back the same image; each change is one undo step', async () => {
+test('“Hide photo” in the photo popover takes the photo off the pages, the PDF and “Add to CV” but keeps it: the CV elements list marks it hidden and its “Show photo on CV” switch brings back the same image; each change is one undo step', async () => {
   await window.setViewportSize({ width: 1600, height: 1000 })
-  await openFirstCvWithOutline()
+  await openFirstCvWithPages()
   const photo = window.locator('.preview .cv-page .cv-photo')
   const image = await photo.getAttribute('src')
 
   // Wiersz „Photo” pod „Header”: widoczne zdjęcie – przełącznik włączony, klik w wiersz przenosi fokus na zdjęcie.
-  await expect(outline().locator('.outline-body > *').nth(1)).toHaveClass(/outline-photo/)
-  await expect(outlinePhoto()).toHaveText(/^PhotoShow on CV$/)
-  await expect(showPhotoSwitch()).toBeChecked()
-  await outlinePhotoButton().click()
+  await expect(cvElements().locator('.cv-element').nth(1)).toHaveText(/^Photo$/)
+  await expect(elementSwitch('Photo')).toBeChecked()
+  await elementButton('Photo').click()
   await expect(photoButton()).toBeFocused()
+  await expect(panelTitle()).toHaveText('Photo')
 
-  // „Hide photo” w popoverze: zdjęcia nie ma na stronie (bez „Removed. Undo”), fokus na przełączniku w Outline.
+  // „Hide photo” w popoverze: zdjęcia nie ma na stronie (bez „Removed. Undo”), fokus na przełączniku „Show on CV”
+  // w panelu zdjęcia, a na liście zdjęcie jest oznaczone jako ukryte.
+  const panelSwitch = inspector().getByRole('switch', { name: 'Show on CV', exact: true })
   await photoButton().press('Enter')
   await photoPopover().getByRole('button', { name: 'Hide photo' }).click()
   await expect(photo).toHaveCount(0)
   await expect(photoPopover()).toHaveCount(0)
   await expect(photoButton()).toHaveCount(0)
   await expect(window.getByRole('status').filter({ hasText: 'Removed.' })).toHaveCount(0)
-  await expect(showPhotoSwitch()).toBeFocused()
-  await expect(showPhotoSwitch()).not.toBeChecked()
-  await expect(outlinePhoto()).toHaveText(/^PhotohiddenShow on CV$/)
-  await expect(outlinePhotoButton()).toHaveAccessibleName('Photo hidden')
-  await expect(outlinePhotoButton()).toHaveAccessibleDescription('Show the photo on the CV to edit it')
-  // Ukryte zdjęcie jest tylko w Outline – nie w pasku „Add to CV” ani w PDF.
+  await expect(panelSwitch).toBeFocused()
+  await expect(panelSwitch).not.toBeChecked()
+  await expect(panelTitle()).toHaveText('Photo')
+  await showDocumentPanel()
+  await expect(elementSwitch('Photo')).not.toBeChecked()
+  await expect(elementRow('Photo')).toHaveText(/^Photohidden$/)
+  await expect(elementButton('Photo')).toHaveAccessibleName('Photo hidden')
+  // Ukryte zdjęcie jest tylko na liście – nie w pasku „Add to CV” ani w PDF.
   await expect(addBar().getByRole('button', { name: 'Photo', exact: true })).toHaveCount(0)
   const pdfPath = join(outputDir, 'hidden-photo.pdf')
   await stubSaveDialog(pdfPath)
@@ -2822,16 +2939,20 @@ test('“Hide photo” in the photo popover takes the photo off the pages, the P
   await expect(window.getByText('Saved PDF: hidden-photo.pdf')).toBeVisible()
   expect((await pdfImagesPerPage(pdfPath)).every((count) => count === 0)).toBe(true)
 
-  // Klik w wiersz ukrytego zdjęcia przenosi fokus na przełącznik, a przełącznik pokazuje to samo zdjęcie.
-  await outlinePhotoButton().click()
-  await expect(showPhotoSwitch()).toBeFocused()
+  // Klik w wiersz ukrytego zdjęcia otwiera panel zdjęcia z fokusem na jego tytule; przełącznik na liście pokazuje to samo
+  // zdjęcie.
+  await elementButton('Photo').click()
+  await expect(panelTitle()).toHaveText('Photo')
+  await expect(panelTitle()).toBeFocused()
+  await showDocumentPanel()
+  await elementSwitch('Photo').focus()
   await window.keyboard.press('Space')
   await expect(photo).toHaveAttribute('src', image!)
-  await expect(showPhotoSwitch()).toBeChecked()
-  await expect(outlinePhoto()).toHaveText(/^PhotoShow on CV$/)
+  await expect(elementSwitch('Photo')).toBeChecked()
+  await expect(elementRow('Photo')).toHaveText(/^Photo$/)
 
   // Wyłączenie przełącznikiem też ukrywa.
-  await showPhotoSwitch().uncheck()
+  await elementSwitch('Photo').uncheck()
   await expect(photo).toHaveCount(0)
 
   // Cofanie: wyłączenie, pokazanie, ukrycie – po jednym kroku.
@@ -2842,127 +2963,647 @@ test('“Hide photo” in the photo popover takes the photo off the pages, the P
   await expect(photo).toHaveAttribute('src', image!)
 })
 
-test('without a photo the Outline “Photo” row has no switch and picks a photo like “Add to CV”: a cancelled crop returns the focus to the row, an applied one focuses the photo on the page', async () => {
+test('without a photo the “Photo” row has no switch and picks a photo like “Add to CV” in the photo panel: a cancelled crop leaves the focus on its “Add photo”, an applied one focuses the photo on the page', async () => {
   await openNewCv()
   const cropper = window.getByRole('dialog', { name: 'Crop photo' })
-  await expect(outlinePhoto()).toHaveText(/^Photo$/)
-  await expect(showPhotoSwitch()).toHaveCount(0)
+  const addPhoto = inspector().getByRole('button', { name: 'Add photo', exact: true })
+  await expect(elementRow('Photo')).toHaveText(/^Photo$/)
+  await expect(elementSwitch('Photo')).toHaveCount(0)
 
   await stubOpenDialog(await writeRedBluePhoto())
-  await outlinePhotoButton().click()
+  await elementButton('Photo').click()
   await cropper.getByRole('button', { name: 'Cancel' }).click()
   await expect(cropper).toHaveCount(0)
-  await expect(outlinePhotoButton()).toBeFocused()
+  await expect(panelTitle()).toHaveText('Photo')
+  await expect(addPhoto).toBeFocused()
   await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(0)
 
-  await outlinePhotoButton().click()
+  await addPhoto.click()
   await cropper.getByRole('button', { name: 'Apply' }).click()
   await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(1)
   await expect(photoButton()).toBeFocused()
-  await expect(showPhotoSwitch()).toBeChecked()
+  // Zdjęcie z fokusem na stronie – w Inspektorze jego panel.
+  await expect(panelTitle()).toHaveText('Photo')
+  await expect(inspector().getByRole('switch', { name: 'Show on CV', exact: true })).toBeChecked()
 })
 
-test('sections are reordered in the Outline by dragging and from the row menu, also the hidden ones; the pages follow and each move is one undo step', async () => {
-  await openFirstCvWithOutline()
+test('sections are reordered in the CV elements list by dragging and from the handle menu (also with Shift+F10), also the hidden ones, and “New page before this section” is set there; the pages follow and each change is one undo step', async () => {
+  await openFirstCvWithPages()
   const original = ['Work experience', 'Education', 'Skills', 'Languages', 'Interests']
-  await expect.poll(outlineNames).toEqual(original)
+  await expect.poll(sectionNames).toEqual(original)
 
-  await dragOnto(outlineHandle('Languages'), outlineRow('Work experience'))
-  await expect.poll(outlineNames).toEqual(['Languages', 'Work experience', 'Education', 'Skills', 'Interests'])
+  await dragOnto(elementHandle('Languages'), elementRow('Work experience'))
+  await expect.poll(sectionNames).toEqual(['Languages', 'Work experience', 'Education', 'Skills', 'Interests'])
   await expect.poll(pageSectionTitles).toEqual(['Languages', 'Work experience', 'Education', 'Skills'])
 
-  // Ukryta sekcja też ma swoje miejsce w kolejności.
-  await outlineHandle('Interests').click()
+  // Menu uchwytu: tylko kolejność i „Nowa strona przed” (ukrywa przełącznik wiersza). Ukryta sekcja też ma swoje miejsce.
+  await elementHandle('Interests').click()
+  await expect(window.getByRole('menu').getByRole('menuitem').or(window.getByRole('menu').getByRole('menuitemcheckbox'))).toHaveText([
+    /^Move up/,
+    /^Move down/,
+    /^New page before this section/
+  ])
   await window.getByRole('menuitem', { name: 'Move up' }).click()
-  await expect.poll(outlineNames).toEqual(['Languages', 'Work experience', 'Education', 'Interests', 'Skills'])
-  await expect(outlineHandle('Interests')).toBeFocused()
+  await expect.poll(sectionNames).toEqual(['Languages', 'Work experience', 'Education', 'Interests', 'Skills'])
+  await expect(elementHandle('Interests')).toBeFocused()
   await window.keyboard.press('Alt+Shift+ArrowUp')
-  await expect.poll(outlineNames).toEqual(['Languages', 'Work experience', 'Interests', 'Education', 'Skills'])
+  await expect.poll(sectionNames).toEqual(['Languages', 'Work experience', 'Interests', 'Education', 'Skills'])
+
+  // Shift+F10 na uchwycie otwiera to samo menu; „New page before this section” – sekcja przechodzi na nową stronę
+  // (krótkie Languages zostaje samo na pierwszej).
+  const pageOf = (title: string) =>
+    window
+      .locator('.preview .cv-page')
+      .evaluateAll((pages, title) => pages.findIndex((page) => [...page.querySelectorAll('.cv-section-title')].some((element) => element.textContent === title)), title)
+  await expect.poll(() => pageOf('Work experience')).toBe(0)
+  // Z wiersza sekcji: Escape zamyka menu i wraca do wiersza.
+  await elementButton('Work experience').focus()
+  await window.keyboard.press('Shift+F10')
+  await expect(window.getByRole('menu', { name: 'Actions for section “Work experience”' })).toBeVisible()
+  await window.keyboard.press('Escape')
+  await expect(window.getByRole('menu')).toHaveCount(0)
+  await expect(elementButton('Work experience')).toBeFocused()
+  await elementHandle('Work experience').focus()
+  await window.keyboard.press('Shift+F10')
+  const pageBreak = window.getByRole('menuitemcheckbox', { name: 'New page before this section' })
+  await expect(pageBreak).toHaveAttribute('aria-checked', 'false')
+  await pageBreak.click()
+  await expect(elementHandle('Work experience')).toBeFocused()
+  await expect.poll(() => pageOf('Work experience')).toBe(1)
 
   await window.keyboard.press('Meta+z')
-  await expect.poll(outlineNames).toEqual(['Languages', 'Work experience', 'Education', 'Interests', 'Skills'])
+  await expect.poll(() => pageOf('Work experience')).toBe(0)
   await window.keyboard.press('Meta+z')
-  await expect.poll(outlineNames).toEqual(['Languages', 'Work experience', 'Education', 'Skills', 'Interests'])
+  await expect.poll(sectionNames).toEqual(['Languages', 'Work experience', 'Education', 'Interests', 'Skills'])
   await window.keyboard.press('Meta+z')
-  await expect.poll(outlineNames).toEqual(original)
+  await expect.poll(sectionNames).toEqual(['Languages', 'Work experience', 'Education', 'Skills', 'Interests'])
+  await window.keyboard.press('Meta+z')
+  await expect.poll(sectionNames).toEqual(original)
   await expect.poll(pageSectionTitles).toEqual(['Work experience', 'Education', 'Skills', 'Languages'])
 })
 
-test('in a new CV the Outline marks the empty sections; “Add …” in a row menu puts the caret in the new entry on the page, and the consent clause is switched on from the Outline and edited on the page', async () => {
+test('in a new CV the CV elements list marks the empty sections; a click on one reveals its entry with the caret on the page, and the consent clause is switched on from the list and edited on the page', async () => {
   await openNewCv()
-  const nav = outline()
-  await expect(nav.locator('.outline-section')).toHaveText([/^Work experienceempty$/, /^Educationempty$/, /^Skillsempty$/, /^Languagesempty$/])
+  await expect(cvElements().locator('.cv-element[data-element="section"]')).toHaveText([
+    /^Work experienceempty$/,
+    /^Educationempty$/,
+    /^Skillsempty$/,
+    /^Languagesempty$/
+  ])
+  await expect(elementButton('Skills')).toHaveAccessibleName('Skills empty')
 
-  await outlineHandle('Work experience').click()
-  await window.getByRole('menuitem', { name: 'Add position' }).click()
-  // Nowy wpis odsłonięty na stronie razem z tytułem sekcji, kursor w stanowisku – bez karty.
+  await elementButton('Work experience').click()
+  // Pierwszy wpis odsłonięty na stronie razem z tytułem sekcji, kursor w stanowisku – bez karty.
   await expect(roleField('New position')).toBeFocused()
   await expect(window.locator('.preview .cv-page .cv-section-title')).toHaveText(['Work experience'])
   await expect(window.getByRole('dialog')).toHaveCount(0)
   await window.keyboard.type('Buyer')
   await expect(window.locator('.preview .cv-page .cv-role')).toHaveText(['Buyer'])
-  await expect(outlineRow('Work experience')).toHaveText(/^Work experience1$/)
+  await expect(panelTitle()).toHaveText('Work experience')
+  await showDocumentPanel()
+  await expect(elementRow('Work experience')).toHaveText(/^Work experience1$/)
 
-  // Wyłączona klauzula: klik w jej wiersz przenosi fokus na przełącznik; włączona – kursor w jej tekście na stronie.
-  const consentSwitch = nav.getByRole('switch', { name: 'Show on CV' })
-  await nav.getByRole('button', { name: 'Consent clause' }).click()
-  await expect(consentSwitch).toBeFocused()
-  await consentSwitch.check()
-  await nav.getByRole('button', { name: 'Consent clause' }).click()
+  // Wyłączona klauzula: klik w jej wiersz otwiera jej panel z fokusem na jego tytule; włączona – także kursor w jej
+  // tekście na stronie.
+  await elementButton('Consent clause').click()
+  await expect(panelTitle()).toHaveText('Consent clause')
+  await expect(panelTitle()).toBeFocused()
+  await showDocumentPanel()
+  await elementSwitch('Consent clause').check()
+  await expect(elementRow('Consent clause')).toHaveText(/^Consent clause$/)
+  await elementButton('Consent clause').click()
   await expect(consentField()).toBeFocused()
   await window.keyboard.type('I agree to the processing of my data.')
   await expect(window.locator('.preview .cv-page .cv-consent')).toHaveText('I agree to the processing of my data.')
   await expect(window.getByRole('dialog')).toHaveCount(0)
-  await consentSwitch.uncheck()
+  // „Show on CV” w panelu klauzuli ją wyłącza.
+  await expect(panelTitle()).toHaveText('Consent clause')
+  await inspector().getByRole('switch', { name: 'Show on CV', exact: true }).uncheck()
   await expect(window.locator('.preview .cv-page .cv-consent')).toHaveCount(0)
-  await expect(consentSwitch).not.toBeChecked()
+  await showDocumentPanel()
+  await expect(elementSwitch('Consent clause')).not.toBeChecked()
 })
 
-test('the sidebar collapses to a rail and expands back to the panel it came from; Outline, CV form and rail are an app preference kept across restarts; Preview mode has no sidebar', async () => {
-  await openFirstCvWithOutline()
+test('in Preview mode the CV elements rows do not go into editing and have no handles, but the switches work and are one undo step each', async () => {
+  await openFirstCvWithPages()
+  await previewButton().click()
+  await expectPreviewMode()
+  await expect(cvElements().locator('.cv-element')).toHaveText(sampleElements)
+  await expect(cvElements().getByRole('button')).toHaveCount(0)
+  await expect(cvElements().getByRole('switch')).toHaveCount(7)
+
+  await elementSwitch('Skills').uncheck()
+  await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: /^Skills$/ })).toHaveCount(0)
+  await elementSwitch('Photo').uncheck()
+  await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(0)
+  // Klauzula Sample CV jest bez tekstu, więc włączona nie ma nic na stronach – zmienia się tylko jej wiersz.
+  await elementSwitch('Consent clause').check()
+  await expect(elementRow('Consent clause')).toHaveText(/^Consent clause$/)
+  await expectPreviewMode()
+
+  await window.keyboard.press('Meta+z')
+  await expect(elementSwitch('Consent clause')).not.toBeChecked()
+  await window.keyboard.press('Meta+z')
+  await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(1)
+  await window.keyboard.press('Meta+z')
+  await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: /^Skills$/ })).toHaveCount(1)
+})
+
+// ---------- Zaznaczenie Inspektora i panel sekcji (#139) ----------
+
+const panelTitle = () => inspector().getByRole('heading', { level: 2 })
+const backToDocument = () => inspector().getByRole('button', { name: 'Document', exact: true })
+const pageTitle = (title: string) => window.locator('.preview .cv-page .cv-section-title', { hasText: new RegExp(`^${title}$`) })
+
+// Klik w tło stron: w lewym marginesie panelu stron, obok kartek.
+async function clickPagesBackground() {
+  const box = (await window.locator('.preview').boundingBox())!
+  await window.mouse.click(box.x + 6, box.y + box.height / 2)
+}
+
+test('a click on a part of the CV on the page opens its panel with the path “‹ Document / name”: a section title or an entry – its section, the name – the header, the photo – the photo; a click in the Inspector keeps it, and a click on the page background or “‹ Document” returns to the Document panel', async () => {
+  await window.setViewportSize({ width: 1600, height: 1000 })
+  await openFirstCvWithPages()
+  await expect(panelTitle()).toHaveText('Document')
+  await expect(backToDocument()).toHaveCount(0)
+
+  await titleField('Education').click()
+  await expect(titleField('Education')).toBeFocused()
+  await expect(panelTitle()).toHaveText('Education')
+  await expect(backToDocument()).toBeVisible()
+  await expect(inspectorGroup('CV elements')).toHaveCount(0)
+
+  // Wpis na stronie – panel jego sekcji.
+  await roleField(positions[1]).click()
+  await expect(roleField(positions[1])).toBeFocused()
+  await expect(panelTitle()).toHaveText('Work experience')
+
+  // Klik w Inspektorze (pole nazwy, nagłówek panelu) nie zmienia zaznaczenia.
+  await inspector().getByRole('textbox', { name: 'Name', exact: true }).click()
+  await expect(panelTitle()).toHaveText('Work experience')
+  await panelTitle().click()
+  await expect(panelTitle()).toHaveText('Work experience')
+
+  // Imię i nazwisko – nagłówek; zdjęcie – zdjęcie, a klik w jego Field popover zaznaczenia nie zmienia.
+  await pageField('Full name').click()
+  await expect(pageField('Full name')).toBeFocused()
+  await expect(panelTitle()).toHaveText('Header')
+  await photoButton().click()
+  await expect(panelTitle()).toHaveText('Photo')
+  await photoPopover().click()
+  await expect(panelTitle()).toHaveText('Photo')
+
+  // Tło stron – panel „Dokument”.
+  await clickPagesBackground()
+  await expect(panelTitle()).toHaveText('Document')
+  await expect(inspectorGroup('CV elements')).toBeVisible()
+
+  // „‹ Document” wraca do panelu „Dokument” z fokusem na wierszu tej części na liście.
+  await titleField('Education').click()
+  await expect(panelTitle()).toHaveText('Education')
+  await backToDocument().click()
+  await expect(panelTitle()).toHaveText('Document')
+  await expect(elementButton('Education')).toBeFocused()
+})
+
+const sectionItems = () => inspector().getByRole('list', { name: 'Items', exact: true })
+const sectionOrder = () => inspector().getByRole('group', { name: 'Order', exact: true })
+const pageOfSection = (title: string) =>
+  window
+    .locator('.preview .cv-page')
+    .evaluateAll((pages, title) => pages.findIndex((page) => [...page.querySelectorAll('.cv-section-title')].some((element) => element.textContent === title)), title)
+
+test('a click on a section in the CV elements list opens its panel, also for a hidden or an empty section that is not on the pages: the focus goes to the panel, or into the section on the page when it is there', async () => {
+  await window.setViewportSize({ width: 1600, height: 1000 })
+  await openFirstCvWithPages()
+
+  // Ukryta sekcja: panel z wyłączonym „Show on CV”; pozycji nie ma na stronach, więc są nieaktywne.
+  await elementButton('Interests').click()
+  await expect(panelTitle()).toHaveText('Interests')
+  await expect(panelTitle()).toBeFocused()
+  await expect(inspector().getByRole('switch', { name: 'Show on CV', exact: true })).not.toBeChecked()
+  await expect(sectionItems().getByRole('button')).toHaveCount(1)
+  await expect(sectionItems().getByRole('button')).toBeDisabled()
+  await backToDocument().click()
+  await expect(elementButton('Interests')).toBeFocused()
+
+  // Sekcja na stronach: panel i kursor na końcu jej tytułu na stronie.
+  await elementButton('Languages').click()
+  await expect(titleField('Languages')).toBeFocused()
+  await expect(panelTitle()).toHaveText('Languages')
+  await expect(sectionOrder()).toContainText('4 of 5')
+})
+
+test('in a new CV a click on an empty section in the CV elements list opens its panel with “This section is empty” and reveals its entry with the caret on the page', async () => {
+  await openNewCv()
+  await elementButton('Education').click()
+  await expect(panelTitle()).toHaveText('Education')
+  await expect(inspector().getByText('This section is empty', { exact: true })).toBeVisible()
+  await expect(sectionItems()).toHaveCount(0)
+  await expect.poll(focusedKey).toMatch(/^education:/)
+})
+
+test('the section panel renames the section, shows and hides it, starts it on a new page and moves it up and down with its position; each change is one undo step, and its items list shows the entry titles and puts the caret in an entry on the page', async () => {
+  await window.setViewportSize({ width: 1600, height: 1000 })
+  await openFirstCvWithPages()
+  await titleField('Education').click()
+  await expect(panelTitle()).toHaveText('Education')
+
+  // Nazwa: wpisywanie zmienia tytuł na stronie i w ścieżce panelu – jeden krok cofania.
+  const name = inspector().getByRole('textbox', { name: 'Name', exact: true })
+  await expect(name).toHaveValue('Education')
+  await name.press('End')
+  await name.pressSequentially(' and courses')
+  await expect(pageTitle('Education and courses')).toHaveCount(1)
+  await expect(panelTitle()).toHaveText('Education and courses')
+
+  // Nowa strona przed sekcją.
+  expect(await pageOfSection('Education and courses')).toBe(1)
+  const newPage = inspector().getByRole('switch', { name: 'Start on a new page', exact: true })
+  await expect(newPage).not.toBeChecked()
+  await newPage.check()
+  await expect.poll(() => pageOfSection('Education and courses')).toBe(2)
+
+  // „Show on CV”: ukryta sekcja znika ze stron, a jej panel zostaje.
+  const shown = inspector().getByRole('switch', { name: 'Show on CV', exact: true })
+  await expect(shown).toBeChecked()
+  await shown.uncheck()
+  await expect(pageTitle('Education and courses')).toHaveCount(0)
+  await expect(panelTitle()).toHaveText('Education and courses')
+  await shown.check()
+  await expect(pageTitle('Education and courses')).toHaveCount(1)
+
+  // Kolejność ↑/↓ z pozycją; na skraju fokus przechodzi na drugi przycisk.
+  await expect(sectionOrder()).toContainText('2 of 5')
+  await sectionOrder().getByRole('button', { name: 'Move up', exact: true }).click()
+  await expect(sectionOrder()).toContainText('1 of 5')
+  await expect(sectionOrder().getByRole('button', { name: 'Move up', exact: true })).toBeDisabled()
+  await expect(sectionOrder().getByRole('button', { name: 'Move down', exact: true })).toBeFocused()
+  await expect.poll(pageSectionTitles).toEqual(['Education and courses', 'Work experience', 'Skills', 'Languages'])
+  await sectionOrder().getByRole('button', { name: 'Move down', exact: true }).click()
+  await expect(sectionOrder()).toContainText('2 of 5')
+
+  // Cofanie: każda zmiana z panelu to jeden krok, a panel zostaje otwarty.
+  await window.keyboard.press('Meta+z')
+  await expect(sectionOrder()).toContainText('1 of 5')
+  await window.keyboard.press('Meta+z')
+  await expect(sectionOrder()).toContainText('2 of 5')
+  await window.keyboard.press('Meta+z')
+  await expect(shown).not.toBeChecked()
+  await window.keyboard.press('Meta+z')
+  await expect(shown).toBeChecked()
+  await window.keyboard.press('Meta+z')
+  await expect(newPage).not.toBeChecked()
+  await expect.poll(() => pageOfSection('Education and courses')).toBe(1)
+  await window.keyboard.press('Meta+z')
+  await expect(name).toHaveValue('Education')
+  await expect(pageTitle('Education')).toHaveCount(1)
+  await expect(panelTitle()).toHaveText('Education')
+
+  // Pozycje: tytuły wpisów; klik stawia kursor we wpisie na stronie.
+  await expect(sectionItems().getByRole('button')).toHaveText(educations)
+  await sectionItems().getByRole('button', { name: educations[1], exact: true }).click()
+  await expect.poll(focusedKey).toMatch(/^education:ed2:/)
+  await expect(panelTitle()).toHaveText('Education')
+})
+
+// ---------- Inspector: „+ Dodaj …” w panelu sekcji (#140) ----------
+
+test.describe('adding from the section panel', () => {
+  const addButton = (label: string) => inspector().getByRole('button', { name: `+ ${label}`, exact: true })
+  const sectionShown = () => inspector().getByRole('switch', { name: 'Show on CV', exact: true })
+
+  test('in a non-empty section “+ Education” adds an entry at the end with the caret in it on the page, and one undo removes it', async () => {
+    await window.setViewportSize({ width: 1600, height: 1000 })
+    await openFirstCvWithPages()
+    await titleField('Education').click()
+    await expect(panelTitle()).toHaveText('Education')
+    await expect(inspector().getByText('This section is empty', { exact: true })).toHaveCount(0)
+
+    await addButton('Education').click()
+    await expect.poll(focusedKey).toMatch(/^education:/)
+    expect(await focusedKey()).not.toMatch(/^education:ed[12]:/)
+    await expect(sectionItems().getByRole('button')).toHaveCount(3)
+    await expect(panelTitle()).toHaveText('Education')
+
+    await window.keyboard.press('Meta+z')
+    await expect(sectionItems().getByRole('button')).toHaveText(educations)
+  })
+
+  test('in an empty section “This section is empty” sits above “+ Education”, which reveals its existing empty entry instead of adding a second one', async () => {
+    await openNewCv()
+    await elementButton('Education').click()
+    await expect(panelTitle()).toHaveText('Education')
+    await expect.poll(focusedKey).toMatch(/^education:/)
+    const revealed = (await focusedKey())!.split(':')[1]
+
+    await expect(inspector().getByText('This section is empty', { exact: true })).toBeVisible()
+    await expect(addButton('Education')).toBeVisible()
+    await addButton('Education').click()
+    await expect.poll(focusedKey).toMatch(new RegExp(`^education:${revealed}:`))
+    // Nadal jeden (pusty) wpis: kolejny nie powstał.
+    await backToDocument().click()
+    await expect(elementButton('Education')).toHaveAccessibleDescription('1 item')
+  })
+
+  test('in a hidden section “+ Item” shows it and adds an element with the caret in it, and one undo hides it again without the element', async () => {
+    await window.setViewportSize({ width: 1600, height: 1000 })
+    await openFirstCvWithPages()
+    await elementButton('Interests').click()
+    await expect(panelTitle()).toHaveText('Interests')
+    await expect(sectionShown()).not.toBeChecked()
+
+    await addButton('Item').click()
+    await expect(sectionShown()).toBeChecked()
+    await expect(pageTitle('Interests')).toHaveCount(1)
+    await expect.poll(focusedKey).toMatch(/^list:/)
+    expect(await focusedKey()).not.toMatch(/^list:h1:/)
+    await expect(sectionItems().getByRole('button')).toHaveCount(2)
+
+    await window.keyboard.press('Meta+z')
+    await expect(pageTitle('Interests')).toHaveCount(0)
+    await expect(panelTitle()).toHaveText('Interests')
+    await expect(sectionShown()).not.toBeChecked()
+    await expect(sectionItems().getByRole('button')).toHaveCount(1)
+    await backToDocument().click()
+    await expect(elementButton('Interests')).toHaveAccessibleName('Interests hidden')
+    await expect(elementButton('Interests')).toHaveAccessibleDescription('1 item')
+  })
+
+  test('in a hidden empty section “+ Education” shows it and reveals its existing empty entry, and one undo hides it again', async () => {
+    await openNewCv()
+    await elementButton('Education').click()
+    await expect(panelTitle()).toHaveText('Education')
+    await expect.poll(focusedKey).toMatch(/^education:/)
+    const revealed = (await focusedKey())!.split(':')[1]
+    await sectionShown().uncheck()
+    await expect(sectionShown()).not.toBeChecked()
+
+    await addButton('Education').click()
+    await expect(sectionShown()).toBeChecked()
+    await expect.poll(focusedKey).toMatch(new RegExp(`^education:${revealed}:`))
+
+    await window.keyboard.press('Meta+z')
+    await expect(sectionShown()).not.toBeChecked()
+    await backToDocument().click()
+    await expect(elementButton('Education')).toHaveAccessibleDescription('1 item')
+  })
+})
+
+test('in Preview mode the Inspector shows only the Document panel, and back in Edit mode it starts from the Document panel', async () => {
+  await openFirstCvWithPages()
+  await titleField('Education').click()
+  await expect(panelTitle()).toHaveText('Education')
+  await previewButton().click()
+  await expectPreviewMode()
+  await expect(panelTitle()).toHaveText('Document')
+  await expect(backToDocument()).toHaveCount(0)
+  // Klik w stronę w Preview mode niczego nie zaznacza.
+  await clickOnPage(window.locator('.preview .cv-page .cv-section-title', { hasText: /^Education$/ }))
+  await expect(panelTitle()).toHaveText('Document')
+  await editButton().click()
+  await expect(editButton()).toHaveAttribute('aria-pressed', 'true')
+  await expect(panelTitle()).toHaveText('Document')
+})
+
+// ---------- Panele nagłówka, zdjęcia i klauzuli zgody (#141) ----------
+
+test.describe('Inspector panels of the header, the photo and the consent clause', () => {
+  const panelButton = (name: string) => inspector().locator('.inspector-panel').getByRole('button', { name, exact: true })
+  const panelSwitch = (name: string) => inspector().locator('.inspector-panel').getByRole('switch', { name, exact: true })
+  const pageContacts = () => window.locator('.preview .cv-page .cv-contact > *')
+
+  test('the header panel goes to the full name, the contacts (with their count) and the summary on the page, adds a contact with the caret in it and shows and hides the photo; each change is one undo step', async () => {
+    await window.setViewportSize({ width: 1600, height: 1000 })
+    await openFirstCvWithPages()
+    await elementButton('Header').click()
+    await expect(panelTitle()).toHaveText('Header')
+
+    // Skróty do części nagłówka na stronie; kontakty z liczbą (dla czytnika ekranu – opis przycisku).
+    const goTo = inspector().getByRole('list', { name: 'Go to', exact: true })
+    await expect(goTo.getByRole('button')).toHaveText(['Full name', 'Contacts4', 'Summary'])
+    await expect(goTo.getByRole('button', { name: 'Contacts' })).toHaveAccessibleDescription('4 contacts')
+    await goTo.getByRole('button', { name: 'Contacts' }).click()
+    await expect.poll(focusedKey).toBe('contact:c1:value')
+    await expect(panelTitle()).toHaveText('Header')
+    await goTo.getByRole('button', { name: 'Summary', exact: true }).click()
+    await expect.poll(focusedKey).toBe('header:summary')
+    await goTo.getByRole('button', { name: 'Full name', exact: true }).click()
+    await expect.poll(focusedKey).toBe('header:fullName')
+    await expect(panelTitle()).toHaveText('Header')
+
+    // „+ Add contact”: nowy kontakt na stronie z kursorem w jego etykiecie; panel nagłówka zostaje.
+    await panelButton('+ Add contact').click()
+    await expect.poll(focusedKey).toMatch(/^contact:.+:label$/)
+    await expect(window.locator('.preview .cv-pages').getByRole('combobox', { name: 'Contact label 5', exact: true })).toBeFocused()
+    await expect(panelTitle()).toHaveText('Header')
+    await window.keyboard.type('Web')
+    await window.keyboard.press('Tab')
+    await window.keyboard.type('example.com')
+    await expect(pageContacts()).toHaveCount(5)
+    await expect(goTo.getByRole('button', { name: 'Contacts' })).toHaveAccessibleDescription('5 contacts')
+
+    // Przełącznik zdjęcia: ukryte zdjęcie znika ze strony, a jego obraz zostaje; przycisk otwiera panel zdjęcia.
+    const photo = window.locator('.preview .cv-page .cv-photo')
+    const image = await photo.getAttribute('src')
+    const showPhoto = panelSwitch('Show photo on CV')
+    await expect(showPhoto).toBeChecked()
+    await showPhoto.uncheck()
+    await expect(photo).toHaveCount(0)
+    await expect(panelTitle()).toHaveText('Header')
+    await showPhoto.check()
+    await expect(photo).toHaveAttribute('src', image!)
+
+    // Cofanie: pokazanie, ukrycie zdjęcia, potem wpisany kontakt i jego dodanie.
+    await undoButton().click()
+    await expect(photo).toHaveCount(0)
+    await undoButton().click()
+    await expect(photo).toHaveCount(1)
+    await expect(pageContacts()).toHaveCount(5)
+
+    await panelButton('Change, crop or remove photo').click()
+    await expect(panelTitle()).toHaveText('Photo')
+  })
+
+  test('in a new CV the header panel counts no contacts, and “+ Add contact” puts the caret in a contact without a value instead of adding another one', async () => {
+    await openNewCv()
+    await elementButton('Header').click()
+    const contacts = inspector().getByRole('list', { name: 'Go to', exact: true }).getByRole('button', { name: 'Contacts' })
+    await expect(contacts).toHaveAccessibleDescription('0 contacts')
+    // Nowe CV ma kontakty z etykietą bez wartości – „+ Add contact” stawia kursor w wartości pierwszego z nich zamiast
+    // dodawać kolejny pusty, także za drugim razem.
+    await panelButton('+ Add contact').click()
+    await expect.poll(focusedKey).toMatch(/^contact:.+:value$/)
+    const reused = await focusedKey()
+    await panelButton('+ Add contact').click()
+    await expect.poll(focusedKey).toBe(reused)
+    await expect(panelTitle()).toHaveText('Header')
+    await expect(contacts).toHaveAccessibleDescription('0 contacts')
+  })
+
+  test('the photo panel changes and crops the photo in the same dialog as the page, hides and shows it keeping the image, and removes it with “Removed. Undo”; without a photo it adds one', async () => {
+    await window.setViewportSize({ width: 1600, height: 1000 })
+    const photoPath = await writeRedBluePhoto()
+    await openFirstCvWithPages()
+    const photo = window.locator('.preview .cv-page .cv-photo')
+    const cropper = window.getByRole('dialog', { name: 'Crop photo' })
+    const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+    await elementButton('Photo').click()
+    await expect(panelTitle()).toHaveText('Photo')
+    await expect(inspector().getByRole('img', { name: 'Photo in the CV' })).toHaveAttribute('src', (await photo.getAttribute('src'))!)
+    await expect(inspector().locator('.inspector-panel').getByRole('button')).toHaveText(['Change photo', 'Crop photo', 'Remove photo'])
+
+    // „Change photo”: wybór pliku i to samo okno kadrowania co na stronie; po nim fokus wraca na przycisk.
+    await stubOpenDialog(photoPath)
+    await panelButton('Change photo').click()
+    await expect(cropper).toBeVisible()
+    await cropper.getByRole('button', { name: 'Apply' }).click()
+    await expect(cropper).toHaveCount(0)
+    await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+    await expect(panelButton('Change photo')).toBeFocused()
+    await expect(panelTitle()).toHaveText('Photo')
+
+    // „Crop photo” kadruje zdjęcie z CV jeszcze raz.
+    const changed = await photo.getAttribute('src')
+    await panelButton('Crop photo').click()
+    await cropper.getByRole('slider', { name: 'Zoom' }).fill('2')
+    await cropper.getByRole('button', { name: 'Apply' }).click()
+    await expect(photo).not.toHaveAttribute('src', changed!)
+    await expect(panelButton('Crop photo')).toBeFocused()
+    const cropped = await photo.getAttribute('src')
+
+    // „Show on CV”: ukryte zdjęcie znika ze stron, a obraz zostaje (miniatura w panelu i ten sam obraz po pokazaniu).
+    await panelSwitch('Show on CV').uncheck()
+    await expect(photo).toHaveCount(0)
+    await expect(inspector().getByRole('img', { name: 'Photo in the CV' })).toHaveAttribute('src', cropped!)
+    await panelSwitch('Show on CV').check()
+    await expect(photo).toHaveAttribute('src', cropped!)
+
+    // „Remove photo”: „Removed.” jak na stronie, fokus na „Add photo”; „Undo” przywraca zdjęcie i fokus na „Remove photo”.
+    await panelButton('Remove photo').click()
+    await expect(photo).toHaveCount(0)
+    await expect(removed).toBeVisible()
+    await expect(panelTitle()).toHaveText('Photo')
+    await expect(panelButton('Add photo')).toBeFocused()
+    await expect(panelSwitch('Show on CV')).toHaveCount(0)
+    await removed.getByRole('button', { name: 'Undo' }).click()
+    await expect(photo).toHaveAttribute('src', cropped!)
+    await expect(panelButton('Remove photo')).toBeFocused()
+
+    // Bez zdjęcia „Add photo” wybiera i kadruje zdjęcie: anulowanie wraca na przycisk, zatwierdzenie – fokus na zdjęciu.
+    await panelButton('Remove photo').click()
+    await panelButton('Add photo').click()
+    await cropper.getByRole('button', { name: 'Cancel' }).click()
+    await expect(panelButton('Add photo')).toBeFocused()
+    await expect(photo).toHaveCount(0)
+    await panelButton('Add photo').click()
+    await cropper.getByRole('button', { name: 'Apply' }).click()
+    await expect(photo).toHaveCount(1)
+    await expect(photoButton()).toBeFocused()
+    await expect(panelTitle()).toHaveText('Photo')
+
+    // Cofnięcie dodania zostawia panel zdjęcia – z „Add photo”.
+    await window.keyboard.press('Meta+z')
+    await expect(photo).toHaveCount(0)
+    await expect(panelTitle()).toHaveText('Photo')
+    await expect(panelButton('Add photo')).toBeVisible()
+  })
+
+  test('the consent panel switches the clause on and off, goes to its text on the page, saves the text as a new clause and picks a clause from the library; each change is one undo step', async () => {
+    await window.setViewportSize({ width: 1600, height: 1000 })
+    await openFirstCvWithPages()
+    const pageConsent = window.locator('.preview .cv-page .cv-consent')
+    const library = inspector().getByRole('combobox', { name: 'Clause from the library', exact: true })
+    const editOnPage = panelButton('Edit on the page')
+    const saveAsNew = panelButton('Save as new clause')
+
+    // Wyłączona klauzula: panel z wyłączonym „Show on CV”, bez przejścia na stronę; pusta biblioteka – wybór nieaktywny.
+    await elementButton('Consent clause').click()
+    await expect(panelTitle()).toHaveText('Consent clause')
+    await expect(panelSwitch('Show on CV')).not.toBeChecked()
+    await expect(editOnPage).toBeDisabled()
+    await expect(library).toBeDisabled()
+    await expect(pageConsent).toHaveCount(0)
+
+    // Włączenie i „Edit on the page”: kursor w tekście klauzuli na stronie, panel zostaje.
+    await panelSwitch('Show on CV').check()
+    await expect(editOnPage).toBeEnabled()
+    await editOnPage.click()
+    await expect(consentField()).toBeFocused()
+    await expect(panelTitle()).toHaveText('Consent clause')
+    await window.keyboard.type('I agree to the processing of my personal data.')
+    await expect(pageConsent).toHaveText('I agree to the processing of my personal data.')
+
+    // „Save as new clause” pyta o nazwę; nowa klauzula jest wybrana w CV.
+    await saveAsNew.click()
+    await expect(inspector().getByLabel('New clause name')).toBeFocused()
+    await window.keyboard.type('Recruitment')
+    await window.keyboard.press('Enter')
+    await expect(library).toBeEnabled()
+    await expect(library.locator('option:checked')).toHaveText('Recruitment')
+
+    // Druga klauzula (tekst zmieniony na stronie) i wybór pierwszej z biblioteki w panelu – kopia jej treści na stronie.
+    await editOnPage.click()
+    await window.keyboard.press('Meta+a')
+    await window.keyboard.type('Short clause.')
+    await saveAsNew.click()
+    await window.keyboard.type('Short')
+    await window.keyboard.press('Enter')
+    await expect(library.locator('option:checked')).toHaveText('Short')
+    await library.selectOption({ label: 'Recruitment' })
+    await expect(pageConsent).toHaveText('I agree to the processing of my personal data.')
+    await expect(panelTitle()).toHaveText('Consent clause')
+
+    // Wybór z biblioteki to jeden krok cofania.
+    await undoButton().click()
+    await expect(pageConsent).toHaveText('Short clause.')
+    await expect(library.locator('option:checked')).toHaveText('Short')
+
+    // Wyłączenie: klauzula znika ze strony (zostaje w CV), „Edit on the page” nieaktywne; cofnięcie ją przywraca.
+    await panelSwitch('Show on CV').uncheck()
+    await expect(pageConsent).toHaveCount(0)
+    await expect(editOnPage).toBeDisabled()
+    await undoButton().click()
+    await expect(pageConsent).toHaveText('Short clause.')
+  })
+})
+
+test('the sidebar holds only the CV form, collapsed to a rail by default; the rail and the form are an app preference kept across restarts, a saved Outline opens as the rail, and Preview mode has no sidebar', async () => {
+  // Plik ustawień z wcześniejszej wersji: wybrany Outline, którego już nie ma.
+  await app.close()
+  await mkdir(join(outputDir, 'user-data'), { recursive: true })
+  await writeFile(
+    join(outputDir, 'user-data', 'settings.json'),
+    JSON.stringify({ schemaVersion: 1, clauses: [], defaultClauseId: null, editorSidebar: 'outline' })
+  )
+  await launch()
+  await openFirstCvWithPages()
   // Lokatory od bieżącego okna – po ponownym uruchomieniu aplikacji to inne okno.
   const panes = () => window.locator('.editor-panes')
-  const rail = () => window.locator('.editor-rail')
+  const rail = () => window.getByRole('complementary', { name: 'Sidebar' })
   const form = () => window.locator('.editor-form')
-  await panes().getByRole('button', { name: 'Collapse' }).click()
   await expect(rail()).toBeVisible()
-  await expect(window.getByRole('complementary', { name: 'Sidebar' })).toBeVisible()
   expect((await rail().boundingBox())!.width).toBeCloseTo(44, 0)
-  await expect(outline()).toHaveCount(0)
-  await expect(panes().getByRole('button', { name: 'Expand' })).toBeFocused()
-  await panes().getByRole('button', { name: 'Expand' }).click()
-  await expect(outline()).toBeVisible()
+  await expect(form()).toHaveCount(0)
+  await expect(panes().getByRole('button', { name: 'Outline' })).toHaveCount(0)
+
+  await rail().getByRole('button', { name: 'Form', exact: true }).click()
+  await expect(form()).toBeVisible()
+  await expect(rail()).toHaveCount(0)
   await expect(panes().getByRole('button', { name: 'Collapse' })).toBeFocused()
-
-  // Z CV form: „Expand” wraca do CV form.
-  await panes().getByRole('button', { name: 'Form', exact: true }).click()
-  await expect(form()).toBeVisible()
-  await expect(panes().getByRole('button', { name: 'Form', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  await expect(panes().getByRole('button', { name: 'Form', exact: true })).toBeFocused()
-  await panes().getByRole('button', { name: 'Collapse' }).click()
-  await panes().getByRole('button', { name: 'Expand' }).click()
-  await expect(form()).toBeVisible()
-
-  // Szyna zostaje po ponownym uruchomieniu; ikona Outline na szynie rozwija Outline.
-  await panes().getByRole('button', { name: 'Collapse' }).click()
-  await expect.poll(savedSidebar).toBe('collapsed')
-  await app.close()
-  await launch()
-  await openFirstCvWithOutline()
-  await expect(rail()).toBeVisible()
-  await panes().getByRole('button', { name: 'Outline', exact: true }).click()
-  await expect(outline()).toBeVisible()
-  await expect.poll(savedSidebar).toBe('outline')
-  await panes().getByRole('button', { name: 'Form', exact: true }).click()
   await expect.poll(savedSidebar).toBe('form')
   await app.close()
   await launch()
-  await openFirstCvWithOutline()
+  await openFirstCvWithPages()
   await expect(form()).toBeVisible()
+
+  await panes().getByRole('button', { name: 'Collapse' }).click()
+  await expect(rail()).toBeVisible()
+  await expect(rail().getByRole('button', { name: 'Form', exact: true })).toBeFocused()
+  await expect.poll(savedSidebar).toBe('collapsed')
 
   await window.keyboard.press('Meta+Shift+P')
   await expectPreviewMode()
   await expect(form()).toHaveCount(0)
-  await expect(outline()).toHaveCount(0)
   await expect(rail()).toHaveCount(0)
 })

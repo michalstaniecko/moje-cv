@@ -71,14 +71,13 @@ body {
 .export-dialog,
 .library,
 .editor-form,
-.outline,
 .editor-rail,
 .row-menu,
 .field-popover,
 .edit-pill,
 .edit-start-hint,
 .add-to-cv,
-.cv-design-panel,
+.inspector,
 .removal-message,
 .preview-bar,
 .photo-cropper,
@@ -524,7 +523,7 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--ui-border);
 }
 
-/* Pasek edytora ma siedem elementów (wstecz, nazwa CV, przełącznik trybu, CV design, status zapisu, dwa eksporty).
+/* Pasek edytora ma siedem elementów (wstecz, nazwa CV, przełącznik trybu, Cofnij / Ponów, status zapisu, dwa eksporty).
    Przyciski i status nigdy się nie zawijają ani nie ściskają – przy braku miejsca ucina się tylko nazwa CV
    (wielokropek). W wąskim oknie (do minimum 960 px) mniejsze odstępy zostawiają nazwie więcej miejsca: w dłuższych
    językach (de, fr, pt, ru…) z „Zmiany zapisane” pasek bez tego zawijał przyciski w dwie linie. */
@@ -674,42 +673,37 @@ textarea:focus-visible {
   border-color: var(--ui-accent-dark);
 }
 
-/* ---------- „Projekt CV” w pasku narzędzi ----------
-   Przycisk obok przełącznika trybu (wyróżniony, gdy panel jest otwarty) i niemodalny panel CV design w warstwie
-   górnej (popover) – pozycję pod przyciskiem ustawia CvDesignButton. Szerokość mieści trzy Template thumbnails
-   w rzędzie; przy niskim oknie panel przewija się w sobie. */
-.cv-design-button {
-  flex-shrink: 0;
-  white-space: nowrap;
+/* ---------- Cofnij / Ponów w pasku narzędzi ----------
+   Dwa przyciski z ikoną sklejone w jeden segment (jak przełącznik trybu); bez tekstu, żeby pasek mieścił się przy
+   minimalnym oknie w każdym języku. Wyłączony przycisk jest wyszarzony (button:disabled). */
+.history-buttons {
+  display: flex;
 }
 
-.cv-design-button[aria-expanded='true'] {
-  background: var(--ui-accent-glow);
-  border-color: var(--ui-accent);
+.history-buttons button {
+  display: inline-grid;
+  place-items: center;
+  padding: 4px 8px;
 }
 
-.cv-design-panel {
-  position: fixed;
-  inset: auto;
-  box-sizing: border-box;
-  width: 500px;
-  max-width: calc(100vw - 8px);
-  max-height: calc(100vh - 8px);
-  margin: 0;
-  padding: 0;
-  overflow: auto;
-  background: var(--ui-panel-bg);
-  border: 1px solid var(--ui-border);
-  border-radius: 10px;
-  box-shadow: 0 8px 28px var(--ui-shadow);
+.history-buttons button:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
-.cv-design-panel .form {
-  padding: 14px 16px 16px;
+.history-buttons button:last-child {
+  margin-left: -1px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 
-.cv-design-panel .form-section {
-  margin-bottom: 0;
+.history-buttons button:hover:not(:disabled),
+.history-buttons button:focus-visible {
+  position: relative;
+}
+
+.history-icon--redo {
+  transform: scaleX(-1);
 }
 
 /* ---------- Split button „Nowe CV” z menu pod strzałką ---------- */
@@ -943,9 +937,10 @@ textarea:focus-visible {
 .editor-panes {
   position: relative;
   display: grid;
-  /* --sidebar-width: Outline (240 px), szyna (44 px) albo CV form (--form-width z separatora, editor/PaneSeparator.tsx)
-     – canvas/EditorSidebar.tsx. */
-  grid-template-columns: var(--sidebar-width, 240px) minmax(0, 1fr);
+  /* --sidebar-width: szyna (44 px) albo CV form (--form-width z separatora, editor/PaneSeparator.tsx)
+     – canvas/EditorSidebar.tsx. Ostatnia kolumna to Inspector o stałej szerokości (inspector/Inspector.tsx). */
+  --inspector-width: clamp(284px, 24vw, 320px);
+  grid-template-columns: var(--sidebar-width, 240px) minmax(0, 1fr) var(--inspector-width);
   flex: 1;
   min-height: 0;
   /* Zabezpieczenie: nic z paneli nie rozszerza ekranu (.app-screen), więc ekran edytora nigdy się nie przewija.
@@ -984,9 +979,9 @@ textarea:focus-visible {
   color: var(--ui-text-muted);
 }
 
-/* W Preview mode nie ma formularza ani separatora: strony na całą szerokość. */
+/* W Preview mode nie ma paska bocznego ani separatora: strony i Inspector. */
 .editor-panes--preview {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) var(--inspector-width);
 }
 
 /* ---------- Formularz edytora ---------- */
@@ -1002,175 +997,16 @@ textarea:focus-visible {
   flex: 1 0 auto;
 }
 
-/* ---------- Pasek boczny: Outline, przełącznik widoku, szyna (canvas/EditorSidebar.tsx, canvas/Outline.tsx) ---------- */
-.editor-panes > .outline {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--ui-app-bg);
-  border-right: 1px solid var(--ui-border);
-}
-
-.outline-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 12px 8px;
-}
-
-/* Wiersz Outline: nazwa części CV (przycisk na całą szerokość), za nią oznaczenie i liczba wpisów. Bez ramki – lista,
-   nie rząd przycisków; tło akcentu przy najechaniu. */
-.outline-row-button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
-  min-height: 30px;
-  padding: 4px 8px;
-  text-align: left;
-  background: transparent;
-  border-color: transparent;
-}
-
-.outline-row-button:hover:not(:disabled) {
-  background: var(--ui-accent-glow);
-  border-color: transparent;
-}
-
-.outline-header {
-  width: 100%;
-  padding-left: 36px;
-  font-weight: 600;
-}
-
-/* Długa nazwa (dłuższe tłumaczenia, własny tytuł sekcji) zawija się zamiast znikać pod wielokropkiem. */
-.outline-row-name {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.outline-section {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding-left: 4px;
-}
-
-.outline-section[data-hidden] .outline-row-name,
-.outline-photo[data-hidden] .outline-row-name {
-  color: var(--ui-text-muted);
-  text-decoration: line-through;
-}
-
-.outline-badge {
-  flex-shrink: 0;
-  padding: 0 6px;
-  color: var(--ui-text-muted);
-  font-size: 11px;
-  line-height: 18px;
-  border: 1px solid var(--ui-border);
-  border-radius: 9px;
-}
-
-.outline-count {
-  flex-shrink: 0;
-  min-width: 1.5em;
-  color: var(--ui-text-muted);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.outline-consent {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--ui-border);
-}
-
-/* Wiersz „Zdjęcie” pod „Nagłówkiem”: jak klauzula zgody (przełącznik pod nazwą), ukryte – przekreślone jak sekcja. */
-.outline-photo .outline-row-button,
-.outline-consent .outline-row-button {
-  width: 100%;
-  padding-left: 36px;
-}
-
-.outline-switch {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px 4px 36px;
-  color: var(--ui-text-muted);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.outline-switch input {
-  margin: 0;
-  accent-color: var(--ui-accent);
-}
-
-/* Przełącznik „Pokaż na CV” ukrytej sekcji – w osobnej linii pod jej nazwą, na wysokości nazwy. */
-.outline-section[data-hidden] {
-  flex-wrap: wrap;
-}
-
-.outline-section-switch {
-  flex-basis: 100%;
-  padding-top: 0;
-}
-
-/* Dół Outline i CV form: „Outline | Formularz” (jak przełącznik trybu) i „Zwiń”. W CV form przyklejony do dołu
-   przewijanej kolumny. */
+/* ---------- Pasek boczny: CV form albo szyna (canvas/EditorSidebar.tsx) ----------
+   Dół CV form: „Zwiń” przy prawej krawędzi, przyklejony do dołu przewijanej kolumny. */
 .sidebar-footer {
   position: sticky;
   bottom: 0;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
   padding: 8px;
   background: var(--ui-app-bg);
   border-top: 1px solid var(--ui-border);
-}
-
-.sidebar-switch {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-}
-
-.sidebar-switch button {
-  flex: 1;
-  min-width: 0;
-  padding-inline: 8px;
-  white-space: nowrap;
-}
-
-.sidebar-switch button:first-child {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.sidebar-switch button:last-child {
-  margin-left: -1px;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-.sidebar-switch button:focus-visible {
-  position: relative;
-}
-
-.sidebar-switch button[aria-pressed='true'] {
-  color: var(--ui-text-on-accent);
-  background: var(--ui-accent);
-  border-color: var(--ui-accent);
-}
-
-.sidebar-switch button[aria-pressed='true']:hover:not(:disabled) {
-  background: var(--ui-accent-dark);
-  border-color: var(--ui-accent-dark);
 }
 
 .sidebar-icon-button {
@@ -1191,7 +1027,7 @@ textarea:focus-visible {
   border-color: transparent;
 }
 
-/* Zwinięty pasek boczny: ikony widoków u góry, „Rozwiń” na dole. */
+/* Zwinięty pasek boczny: ikona CV form u góry. */
 .editor-panes > .editor-rail {
   display: flex;
   flex-direction: column;
@@ -1201,10 +1037,6 @@ textarea:focus-visible {
   overflow: hidden;
   background: var(--ui-app-bg);
   border-right: 1px solid var(--ui-border);
-}
-
-.editor-rail-expand {
-  margin-top: auto;
 }
 
 .form {
@@ -1233,6 +1065,489 @@ textarea:focus-visible {
 .form-bullets > span {
   color: var(--ui-text-muted);
   font-size: 12px;
+}
+
+/* ---------- Inspector (inspector/Inspector.tsx) ----------
+   Kolumna opcji CV po prawej stronie stron, w obu trybach. Przewija się sama (reguła paneli .editor-panes), w poziomie
+   nigdy; tytuł panelu zostaje na górze. Kolory tylko z tokenów --ui-*, więc ciemny wygląd przychodzi z :root. */
+.inspector {
+  --inspector-inset: 14px;
+  overflow-x: hidden;
+  background: var(--ui-panel-bg);
+  border-left: 1px solid var(--ui-border);
+}
+
+.inspector-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 12px var(--inspector-inset);
+  font-size: 15px;
+  background: var(--ui-panel-bg);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+/* Nagłówek panelu elementu (inspector/ElementPanel.tsx): ścieżka „‹ Dokument / nazwa” w jednym wierszu; długa nazwa
+   sekcji kończy się wielokropkiem. */
+.inspector-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 12px var(--inspector-inset);
+  background: var(--ui-panel-bg);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.inspector-head .inspector-title {
+  position: static;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: none;
+}
+
+.inspector-head .inspector-title:focus {
+  outline: none;
+}
+
+.inspector-back {
+  flex-shrink: 0;
+  padding: 0;
+  color: var(--ui-accent);
+  font: inherit;
+  background: none;
+  border: none;
+}
+
+.inspector-back:hover {
+  text-decoration: underline;
+}
+
+.inspector-path-separator {
+  color: var(--ui-text-muted);
+}
+
+.inspector-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px var(--inspector-inset) 16px;
+}
+
+/* Przełącznik panelu elementu: napis i przełącznik w jednym wierszu (inspector/InspectorSwitch.tsx). */
+.inspector-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+}
+
+/* Kolejność sekcji: ↑ „2 z 5” ↓. */
+.inspector-order {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inspector-order button {
+  min-width: 32px;
+  padding: 4px 8px;
+}
+
+.inspector-order-position {
+  min-width: 4em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pozycje sekcji: tylko tytuły jako przyciski nawigacji, bez ramek – lista, jak „CV elements”. */
+.inspector-items {
+  display: flex;
+  flex-direction: column;
+  margin: 0 -6px;
+  padding: 0;
+  list-style: none;
+}
+
+.inspector-item {
+  width: 100%;
+  min-height: 28px;
+  padding: 4px 6px;
+  overflow: hidden;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  border-radius: 4px;
+}
+
+.inspector-item:hover:not(:disabled) {
+  background: var(--ui-accent-glow);
+}
+
+.inspector-item:disabled {
+  color: var(--ui-text-muted);
+}
+
+/* Liczba przy pozycji (kontakty w panelu nagłówka) – przy prawej krawędzi, jak na liście „CV elements”. */
+.inspector-item .cv-element-count {
+  float: right;
+  margin-inline-start: 8px;
+}
+
+/* Akcje paneli nagłówka, zdjęcia i klauzuli (#141): „+ Add contact”, „Add photo”, „Edit on the page ›” – zwykłe
+   przyciski na szerokość treści; dłuższe tłumaczenie zawija się w Inspektorze, nie wychodzi poza niego. */
+.inspector-action {
+  align-self: flex-start;
+  max-width: 100%;
+  text-align: start;
+  white-space: normal;
+}
+
+/* Akcje zdjęcia w jednym wierszu, zawijane przy dłuższych tłumaczeniach. */
+.inspector-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Miniatura zdjęcia w jego panelu (proporcje zdjęcia CV). */
+.inspector-photo {
+  align-self: flex-start;
+  width: 72px;
+  height: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+}
+
+/* „Save as new clause” w wąskim Inspektorze: pole nazwy na całą szerokość, „Save” i „Cancel” pod nim. */
+.inspector-save-clause > button {
+  align-self: flex-start;
+}
+
+.inspector-save-clause .form-row {
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+
+.inspector-save-clause .form-row input {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+/* „+ Dodaj …” pod pozycjami sekcji (#140): zwykły przycisk, nie na całą szerokość panelu. */
+.inspector-add {
+  align-self: flex-start;
+  margin-top: -8px;
+}
+
+.inspector-group + .inspector-group {
+  border-top: 1px solid var(--ui-border);
+}
+
+.inspector-group-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Nagłówek grupy: przycisk na całą szerokość, bez ramki; strzałka obraca się przy rozwinięciu. */
+.inspector-group-title button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px var(--inspector-inset);
+  color: var(--ui-text-muted);
+  font: inherit;
+  text-align: start;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.inspector-group-title button:hover:not(:disabled) {
+  color: var(--ui-text);
+  background: var(--ui-accent-glow);
+}
+
+.inspector-group-title button:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Strzałka z obramowania (pusta treść): nie wchodzi do nazwy przycisku ani do tekstu nagłówka. */
+.inspector-group-title button::before {
+  content: '';
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  margin-inline: 1px 3px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.12s;
+}
+
+.inspector-group-title button[aria-expanded='true']::before {
+  transform: rotate(45deg);
+}
+
+.inspector-group-body:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 2px var(--inspector-inset) 16px;
+}
+
+.inspector-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.inspector-label {
+  color: var(--ui-text-muted);
+  font-size: 12px;
+}
+
+.inspector-hint {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Trzy Template thumbnails w rzędzie także przy najwęższym Inspektorze (284 px). */
+.inspector .template-picker {
+  --thumbnail-scale: 0.085;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.inspector .template-option {
+  padding: 4px;
+  text-align: center;
+}
+
+/* Próbki koloru akcentu: kółka (radio bez wyglądu systemowego) i własny kolor w ostatnim kółku. Wybrane kółko ma
+   pierścień w kolorze tekstu interfejsu, odsunięty od próbki tłem panelu – widoczny w obu wyglądach. */
+.inspector-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.inspector-swatch-list {
+  display: contents;
+}
+
+.inspector-swatch,
+.inspector-custom-color {
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 50%;
+  cursor: pointer;
+  appearance: none;
+}
+
+.inspector-custom-color {
+  background: conic-gradient(#e5484d, #f5d90a, #30a46c, #0091ff, #8e4ec6, #e5484d);
+}
+
+.inspector-custom-color::-webkit-color-swatch-wrapper {
+  padding: 4px;
+}
+
+.inspector-custom-color::-webkit-color-swatch {
+  border: 2px solid var(--ui-panel-bg);
+  border-radius: 50%;
+}
+
+.inspector-swatch:checked,
+.inspector-custom-color[data-checked] {
+  box-shadow:
+    0 0 0 2px var(--ui-panel-bg),
+    0 0 0 4px var(--ui-text);
+}
+
+/* Karty fontów pisane własnym krojem; radio niewidoczne, ale w kolejności Tab i ze strzałkami. */
+.inspector-font-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.inspector-font-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 4px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.inspector-font-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.inspector-font-card:hover {
+  border-color: var(--ui-accent);
+}
+
+.inspector-font-card:has(input:checked) {
+  background: var(--ui-accent-glow);
+  border-color: var(--ui-accent);
+}
+
+.inspector-font-card:has(input:focus-visible) {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.inspector-font-sample {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.inspector-font-name {
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+/* „CV elements” (inspector/CvElements.tsx): wiersz = uchwyt sekcji (albo miejsce na niego), nazwa z oznaczeniem
+   i liczbą wpisów, przełącznik „Pokaż na CV”. Bez ramek – lista, nie rząd przycisków; tło akcentu przy najechaniu. */
+.cv-elements {
+  margin-inline: -6px;
+}
+
+.cv-element {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+}
+
+.cv-element-handle-space {
+  flex-shrink: 0;
+  width: 24px;
+}
+
+.cv-element-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  min-height: 30px;
+  padding: 4px 6px;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+button.cv-element-name:hover:not(:disabled) {
+  background: var(--ui-accent-glow);
+  border-color: transparent;
+}
+
+/* Długa nazwa (dłuższe tłumaczenia, własny tytuł sekcji) zawija się zamiast znikać pod wielokropkiem. */
+.cv-element-label {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Część ukryta na CV: nazwa wyszarzona i przekreślona. */
+.cv-element[data-muted] .cv-element-label {
+  color: var(--ui-text-muted);
+  text-decoration: line-through;
+}
+
+.cv-element-badge {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 0 6px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  line-height: 18px;
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
+}
+
+.cv-element-count {
+  flex-shrink: 0;
+  min-width: 1.5em;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Przełącznik „Pokaż na CV”: pole wyboru z rolą switch narysowane jako suwak (kolor akcentu, gdy włączony). */
+.cv-element-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 28px;
+  height: 16px;
+  margin: 0 4px 0 2px;
+  appearance: none;
+  background: var(--ui-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.cv-element-switch::before {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  content: '';
+  background: var(--ui-paper);
+  border-radius: 50%;
+  transition: transform 0.15s;
+}
+
+.cv-element-switch:checked {
+  background: var(--ui-accent);
+}
+
+.cv-element-switch:checked::before {
+  transform: translateX(12px);
+}
+
+.cv-element-switch:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
 }
 
 /* ---------- Wybór szablonu ---------- */

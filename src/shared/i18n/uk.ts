@@ -168,19 +168,15 @@ export const uk: Dictionary = {
     exportCutOff: 'Частина вмісту не вміщується на сторінку й буде обрізана. Однаково експортувати?',
     exportCutOffHint: 'Задовгі фрагменти виділено в режимі редагування.',
     mode: { label: 'Режим', edit: 'Редагування', preview: 'Перегляд' },
-    cvDesignButton: 'Дизайн',
+    history: 'Історія змін',
     outline: {
-      title: 'Структура',
       empty: 'порожній',
       hidden: 'прихований',
       form: 'Форма',
       collapse: 'Згорнути',
-      expand: 'Розгорнути',
-      showOnCv: 'Показати в резюме',
       showSection: (name) => `Показати «${name}» в резюме`,
-      showToEdit: 'Покажіть розділ у резюме, щоб його редагувати',
       showPhoto: 'Показати фото в резюме',
-      showPhotoToEdit: 'Покажіть фото в резюме, щоб його редагувати',
+      showConsent: 'Показати згоду на обробку даних у резюме',
       items: {
         one: (count) => `${count} елемент`,
         few: (count) => `${count} елементи`,
@@ -228,6 +224,36 @@ export const uk: Dictionary = {
     cvLanguage: 'Мова резюме',
     template: 'Шаблон',
     templateNames: { classic: 'Класичний', modern: 'Сучасний', bold: 'Виразний' },
+    inspector: {
+      label: 'Інспектор',
+      document: 'Документ',
+      groups: { template: 'Шаблон', style: 'Стиль', elements: 'Елементи резюме', language: 'Мова' },
+      colors: { teal: 'Морська хвиля', blue: 'Синій', graphite: 'Графітовий', violet: 'Фіолетовий', crimson: 'Малиновий', orange: 'Помаранчевий', green: 'Зелений', black: 'Чорний' },
+      customColor: 'Власний колір',
+      languageNote: 'Змінює сталий текст резюме, наприклад «дотепер». Ваш вміст не перекладається.',
+      showOnCv: 'Показувати в резюме',
+      section: {
+        name: 'Назва',
+        newPage: 'Починати з нової сторінки',
+        order: 'Порядок',
+        position: (position, total) => `${position} з ${total}`,
+        items: 'Пункти',
+        empty: 'Розділ порожній'
+      },
+      header: {
+        goTo: 'Перейти до',
+        contacts: 'Контакти',
+        contactCount: {
+          one: (count) => `${count} контакт`,
+          few: (count) => `${count} контакти`,
+          many: (count) => `${count} контактів`,
+          other: (count) => `${count} контакту`
+        },
+        photoOptions: 'Змінити, обрізати або видалити фото'
+      },
+      photo: { add: 'Додати фото' },
+      consent: { editOnPage: 'Редагувати на сторінці' }
+    },
     header: 'Заголовок',
     fullName: 'Ім’я та прізвище',
     contact: 'Контакти',

@@ -4,6 +4,7 @@ import type { PluralForms } from './plural'
 // Odmiana „page” – zmienna z typem, a nie rzutowanie, żeby brak formy `other` był błędem kompilacji.
 const pages: PluralForms = { one: (count) => `${count} page`, other: (count) => `${count} pages` }
 const outlineItems: PluralForms = { one: (count) => `${count} item`, other: (count) => `${count} items` }
+const headerContacts: PluralForms = { one: (count) => `${count} contact`, other: (count) => `${count} contacts` }
 
 // Słownik angielski – źródło prawdy: każdy inny język musi spełniać jego typ (ADR-0001).
 export const en = {
@@ -190,24 +191,20 @@ export const en = {
     exportCutOffHint: 'The fragments that are too long are highlighted in edit mode.',
     // Przełącznik Edit mode / Preview mode w pasku narzędzi edytora.
     mode: { label: 'Mode', edit: 'Edit', preview: 'Preview' },
-    // Przycisk „Projekt CV” w pasku narzędzi: otwiera panel CV design (krótko – pasek mieści się w oknie minimalnym).
-    cvDesignButton: 'CV design',
-    // Pasek boczny w Edit mode: Outline (konspekt CV) i przełącznik Outline / CV form / szyna.
+    // Grupa przycisków Cofnij / Ponów w pasku narzędzi (nazwy przycisków jak w menu Edycja: `menu.undo`, `menu.redo`).
+    history: 'Change history',
+    // Lista „CV elements” w Inspektorze (dawniej Outline) i pasek boczny w Edit mode (CV form albo szyna, do #135).
     outline: {
-      title: 'Outline',
+      // Oznaczenia wiersza listy: część ukryta na CV, sekcja bez treści.
       empty: 'empty',
       hidden: 'hidden',
       form: 'Form',
       collapse: 'Collapse',
-      expand: 'Expand',
-      showOnCv: 'Show on CV',
-      // Przełącznik w wierszu ukrytej sekcji (pokazuje ją na stronach) i opis wiersza: ukrytej sekcji nie ma na stronie.
+      // Przełączniki „Pokaż na CV” w wierszach listy, nazwane nazwą części.
       showSection: (name: string) => `Show “${name}” on CV`,
-      showToEdit: 'Show the section on the CV to edit it',
-      // Przełącznik w wierszu „Photo” (zdjęcie widoczne / ukryte) i opis wiersza ukrytego zdjęcia.
       showPhoto: 'Show photo on CV',
-      showPhotoToEdit: 'Show the photo on the CV to edit it',
-      // Liczba wpisów sekcji w Outline – dla czytnika ekranu (na ekranie sama liczba).
+      showConsent: 'Show consent clause on CV',
+      // Liczba wpisów sekcji na liście – dla czytnika ekranu (na ekranie sama liczba).
       items: outlineItems,
       // Nazwa zwiniętego paska bocznego (szyny) dla czytnika ekranu.
       sidebar: 'Sidebar'
@@ -256,6 +253,41 @@ export const en = {
     cvLanguage: 'CV language',
     template: 'Template',
     templateNames: { classic: 'Classic', modern: 'Modern', bold: 'Bold' },
+    // Inspector (zob. GLOSSARY.md): stały panel opcji CV obok stron. Bez zaznaczenia – panel „Dokument” z CV design
+    // w zwijanych grupach; gotowe kolory akcentu mają nazwy dla czytnika ekranu.
+    inspector: {
+      label: 'Inspector',
+      document: 'Document',
+      groups: { template: 'Template', style: 'Style', elements: 'CV elements', language: 'Language' },
+      colors: { teal: 'Teal', blue: 'Blue', graphite: 'Graphite', violet: 'Violet', crimson: 'Crimson', orange: 'Orange', green: 'Green', black: 'Black' },
+      customColor: 'Custom color',
+      // Notka pod CV language: zmienia tylko stały tekst na dokumencie, nie treść CV.
+      languageNote: 'Changes fixed text on the CV, such as “present”. Your content isn’t translated.',
+      // Panel elementu (część CV zaznaczona na stronie albo na liście „CV elements”); ścieżka „‹ Document / nazwa”
+      // wraca przyciskiem `document` do panelu „Dokument”. Przełącznik widoczności części w jej panelu.
+      showOnCv: 'Show on CV',
+      // Panel sekcji: nazwa (tytuł sekcji), nowa strona, kolejność („2 of 5”) i lista pozycji (tylko tytuły).
+      section: {
+        name: 'Name',
+        newPage: 'Start on a new page',
+        order: 'Order',
+        position: (position: number, total: number) => `${position} of ${total}`,
+        items: 'Items',
+        empty: 'This section is empty'
+      },
+      // Panel nagłówka: skróty do części nagłówka na stronie (przy kontaktach liczba kontaktów z wartością – dla czytnika
+      // ekranu jako opis), „+ Add contact” i zdjęcie (przycisk otwiera panel zdjęcia).
+      header: {
+        goTo: 'Go to',
+        contacts: 'Contacts',
+        contactCount: headerContacts,
+        photoOptions: 'Change, crop or remove photo'
+      },
+      // Panel zdjęcia bez zdjęcia: wybór pliku i kadrowanie.
+      photo: { add: 'Add photo' },
+      // Panel klauzuli zgody: kursor w tekście klauzuli na stronie.
+      consent: { editOnPage: 'Edit on the page' }
+    },
     header: 'Header',
     fullName: 'Full name',
     contact: 'Contact',

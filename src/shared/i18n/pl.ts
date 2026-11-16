@@ -168,19 +168,15 @@ export const pl: Dictionary = {
     exportCutOff: 'Część treści nie zmieści się na stronie i zostanie ucięta. Eksportować mimo to?',
     exportCutOffHint: 'Za długie fragmenty są wyróżnione w trybie edycji.',
     mode: { label: 'Tryb', edit: 'Edycja', preview: 'Podgląd' },
-    cvDesignButton: 'Projekt CV',
+    history: 'Historia zmian',
     outline: {
-      title: 'Konspekt',
       empty: 'pusta',
       hidden: 'ukryta',
       form: 'Formularz',
       collapse: 'Zwiń',
-      expand: 'Rozwiń',
-      showOnCv: 'Pokaż na CV',
       showSection: (name) => `Pokaż „${name}” na CV`,
-      showToEdit: 'Pokaż sekcję na CV, żeby ją edytować',
       showPhoto: 'Pokaż zdjęcie na CV',
-      showPhotoToEdit: 'Pokaż zdjęcie na CV, żeby je edytować',
+      showConsent: 'Pokaż klauzulę zgody na CV',
       items: {
         one: (count) => `${count} element`,
         few: (count) => `${count} elementy`,
@@ -228,6 +224,36 @@ export const pl: Dictionary = {
     cvLanguage: 'Język CV',
     template: 'Szablon',
     templateNames: { classic: 'Klasyczny', modern: 'Nowoczesny', bold: 'Wyrazisty' },
+    inspector: {
+      label: 'Inspektor',
+      document: 'Dokument',
+      groups: { template: 'Szablon', style: 'Styl', elements: 'Elementy CV', language: 'Język' },
+      colors: { teal: 'Morski', blue: 'Niebieski', graphite: 'Grafitowy', violet: 'Fioletowy', crimson: 'Karmazynowy', orange: 'Pomarańczowy', green: 'Zielony', black: 'Czarny' },
+      customColor: 'Własny kolor',
+      languageNote: 'Zmienia stały tekst na CV, np. „obecnie”. Twoja treść nie jest tłumaczona.',
+      showOnCv: 'Pokaż na CV',
+      section: {
+        name: 'Nazwa',
+        newPage: 'Zacznij od nowej strony',
+        order: 'Kolejność',
+        position: (position, total) => `${position} z ${total}`,
+        items: 'Pozycje',
+        empty: 'Sekcja jest pusta'
+      },
+      header: {
+        goTo: 'Przejdź do',
+        contacts: 'Kontakty',
+        contactCount: {
+          one: (count) => `${count} kontakt`,
+          few: (count) => `${count} kontakty`,
+          many: (count) => `${count} kontaktów`,
+          other: (count) => `${count} kontaktu`
+        },
+        photoOptions: 'Zmień, wykadruj lub usuń zdjęcie'
+      },
+      photo: { add: 'Dodaj zdjęcie' },
+      consent: { editOnPage: 'Edytuj na stronie' }
+    },
     header: 'Nagłówek',
     fullName: 'Imię i nazwisko',
     contact: 'Kontakt',

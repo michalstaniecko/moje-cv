@@ -9,7 +9,7 @@ import type { TextSelection } from './pageFieldInput'
 // - `blurred` – pole straciło fokus: przestaje być aktywne, chyba że fokus idzie do innego Page field (to staje się
 //   aktywne) albo wrócił do pola o tym samym kluczu (blok przeniesiony na inną stronę jest nowym węzłem, a fokus
 //   przywraca `restore` jeszcze przed malowaniem).
-// - `request` – fokus z zewnątrz (Outline, „Add to CV”, menu): pole staje się aktywne od razu (jego fragment jest
+// - `request` – fokus z zewnątrz („CV elements”, „Add to CV”, menu): pole staje się aktywne od razu (jego fragment jest
 //   odsłaniany), a fokus dostaje teraz albo – gdy pola jeszcze nie ma na stronach – po najbliższym podziale stron.
 // - `expect` – fokus po zmianie struktury z pola (podział, złączenie, wklejenie wielu linii, przeniesienie): pole
 //   staje się aktywne od razu, a fokus z zaznaczeniem `selection` dostaje po najbliższym podziale stron, gdy jego tekst

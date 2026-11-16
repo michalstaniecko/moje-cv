@@ -168,19 +168,15 @@ export const pt: Dictionary = {
     exportCutOff: 'Parte do conteúdo não cabe em uma página e será cortada. Exportar mesmo assim?',
     exportCutOffHint: 'Os trechos longos demais estão destacados no modo de edição.',
     mode: { label: 'Modo', edit: 'Edição', preview: 'Pré-visualização' },
-    cvDesignButton: 'Design',
+    history: 'Histórico de alterações',
     outline: {
-      title: 'Estrutura',
       empty: 'vazia',
       hidden: 'oculta',
       form: 'Formulário',
       collapse: 'Recolher',
-      expand: 'Expandir',
-      showOnCv: 'Mostrar no CV',
       showSection: (name) => `Mostrar “${name}” no CV`,
-      showToEdit: 'Mostre a seção no CV para editá-la',
       showPhoto: 'Mostrar a foto no CV',
-      showPhotoToEdit: 'Mostre a foto no CV para editá-la',
+      showConsent: 'Mostrar a cláusula de consentimento no CV',
       items: {
         one: (count) => `${count} item`,
         many: (count) => `${count} de itens`,
@@ -227,6 +223,34 @@ export const pt: Dictionary = {
     cvLanguage: 'Idioma do currículo',
     template: 'Modelo',
     templateNames: { classic: 'Clássico', modern: 'Moderno', bold: 'Marcante' },
+    inspector: {
+      label: 'Inspetor',
+      document: 'Documento',
+      groups: { template: 'Modelo', style: 'Estilo', elements: 'Elementos do CV', language: 'Idioma' },
+      colors: { teal: 'Verde-azulado', blue: 'Azul', graphite: 'Grafite', violet: 'Violeta', crimson: 'Carmesim', orange: 'Laranja', green: 'Verde', black: 'Preto' },
+      customColor: 'Cor personalizada',
+      languageNote: 'Muda o texto fixo do currículo, como “atual”. O seu conteúdo não é traduzido.',
+      showOnCv: 'Mostrar no currículo',
+      section: {
+        name: 'Nome',
+        newPage: 'Começar numa nova página',
+        order: 'Ordem',
+        position: (position, total) => `${position} de ${total}`,
+        items: 'Itens',
+        empty: 'Esta secção está vazia'
+      },
+      header: {
+        goTo: 'Ir para',
+        contacts: 'Contatos',
+        contactCount: {
+          one: (count) => `${count} contato`,
+          other: (count) => `${count} contatos`
+        },
+        photoOptions: 'Alterar, recortar ou remover a foto'
+      },
+      photo: { add: 'Adicionar foto' },
+      consent: { editOnPage: 'Editar na página' }
+    },
     header: 'Cabeçalho',
     fullName: 'Nome completo',
     contact: 'Contato',

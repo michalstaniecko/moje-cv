@@ -73,7 +73,7 @@ describe('anchoredPosition', () => {
   })
 
   it('with `contain`, keeps the panel in the window when its anchor has scrolled out of it', () => {
-    // Fragment przewinięty nad okno (np. wyższe strony obok wąskiego Outline): panel z fokusem nie ucieka z ekranu.
+    // Fragment przewinięty nad okno (np. wyższe strony obok szyny paska bocznego): panel z fokusem nie ucieka z ekranu.
     const scrolledAbove = { top: -400, left: 400, right: 700, bottom: -360 }
     expect(anchoredPosition({ anchor: scrolledAbove, panel, viewport, contain: true })).toEqual({ top: 4, left: 400, placement: 'below' })
     const scrolledBelow = { top: 900, left: 400, right: 700, bottom: 940 }

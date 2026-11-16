@@ -175,19 +175,15 @@ export const de: Dictionary = {
     exportCutOff: 'Ein Teil des Inhalts passt nicht auf eine Seite und wird abgeschnitten. Trotzdem exportieren?',
     exportCutOffHint: 'Die zu langen Abschnitte sind im Bearbeitungsmodus hervorgehoben.',
     mode: { label: 'Modus', edit: 'Bearbeiten', preview: 'Vorschau' },
-    cvDesignButton: 'Design',
+    history: 'Änderungsverlauf',
     outline: {
-      title: 'Gliederung',
       empty: 'leer',
       hidden: 'ausgeblendet',
       form: 'Formular',
       collapse: 'Einklappen',
-      expand: 'Ausklappen',
-      showOnCv: 'Im Lebenslauf zeigen',
       showSection: (name) => `„${name}“ im Lebenslauf zeigen`,
-      showToEdit: 'Zeige den Abschnitt im Lebenslauf, um ihn zu bearbeiten',
       showPhoto: 'Foto im Lebenslauf zeigen',
-      showPhotoToEdit: 'Zeige das Foto im Lebenslauf, um es zu bearbeiten',
+      showConsent: 'Einwilligungserklärung im Lebenslauf zeigen',
       items: { one: (count) => `${count} Eintrag`, other: (count) => `${count} Einträge` },
       sidebar: 'Seitenleiste'
     },
@@ -230,6 +226,34 @@ export const de: Dictionary = {
     cvLanguage: 'Sprache des Lebenslaufs',
     template: 'Vorlage',
     templateNames: { classic: 'Klassisch', modern: 'Modern', bold: 'Markant' },
+    inspector: {
+      label: 'Inspektor',
+      document: 'Dokument',
+      groups: { template: 'Vorlage', style: 'Stil', elements: 'Lebenslauf-Elemente', language: 'Sprache' },
+      colors: { teal: 'Petrol', blue: 'Blau', graphite: 'Graphit', violet: 'Violett', crimson: 'Karmesin', orange: 'Orange', green: 'Grün', black: 'Schwarz' },
+      customColor: 'Eigene Farbe',
+      languageNote: 'Ändert festen Text im Lebenslauf, etwa „heute“. Deine Inhalte werden nicht übersetzt.',
+      showOnCv: 'Im Lebenslauf zeigen',
+      section: {
+        name: 'Name',
+        newPage: 'Auf neuer Seite beginnen',
+        order: 'Reihenfolge',
+        position: (position, total) => `${position} von ${total}`,
+        items: 'Einträge',
+        empty: 'Dieser Abschnitt ist leer'
+      },
+      header: {
+        goTo: 'Gehe zu',
+        contacts: 'Kontakte',
+        contactCount: {
+          one: (count) => `${count} Kontakt`,
+          other: (count) => `${count} Kontakte`
+        },
+        photoOptions: 'Foto ändern, zuschneiden oder entfernen'
+      },
+      photo: { add: 'Foto hinzufügen' },
+      consent: { editOnPage: 'Auf der Seite bearbeiten' }
+    },
     header: 'Kopfbereich',
     fullName: 'Vollständiger Name',
     contact: 'Kontakt',

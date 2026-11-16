@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { useStore } from 'zustand'
 import type { MenuCommand } from '../../shared/api'
 import { EditorSidebar, sidebarWidth } from './canvas/EditorSidebar'
@@ -6,10 +6,10 @@ import { useEditSession, type EditorMode } from './canvas/useEditSession'
 import type { PaginateResult } from './domain/paginate'
 import { cvDisplayName, type Clause, type ClauseContent, type CvDocument } from './domain/schema'
 import { createCvEditor, type CvEditor } from './editor/cvEditor'
-import { CvDesignButton } from './editor/CvDesignButton'
 import { updateName } from './editor/documentEdits'
 import { useEditorSidebar } from './editor/useEditorSidebar'
 import { useFormWidth } from './editor/useFormWidth'
+import { Inspector } from './inspector/Inspector'
 import { RemovalMessage, useRemovalUndo } from './editor/removalUndo'
 import { useDictionary } from './i18n'
 import { useMenuCommands } from './menuCommands'
@@ -39,9 +39,9 @@ type DocxExportState =
 const idleUnlessExporting = <State extends { status: string }>(state: State): State | { status: 'idle' } =>
   state.status === 'exporting' ? state : { status: 'idle' }
 
-// Otwarte CV: pasek boczny (Outline, CV form albo szyna – canvas/EditorSidebar.tsx), strony z warstwą edycji i eksport do
-// PDF. W Preview mode tylko strony – bez paska bocznego i bez wyróżnień na kartkach; pasek narzędzi, cofanie
-// i powiększenie działają w obu trybach.
+// Otwarte CV: pasek boczny (CV form albo szyna – canvas/EditorSidebar.tsx), strony z warstwą edycji, Inspector po prawej
+// stronie stron (inspector/Inspector.tsx) i eksport do PDF. W Preview mode strony i Inspector – bez paska
+// bocznego i bez wyróżnień na kartkach; pasek narzędzi, cofanie i powiększenie działają w obu trybach.
 // `onBack` dostaje komendę menu Plik (Nowe CV, Dodaj przykładowe CV, Importuj…), gdy edytor wychodzi, żeby wykonała
 // ją biblioteka CV.
 export function CvScreen({
@@ -73,15 +73,14 @@ export function CvScreen({
   useEditorLifecycle(editor)
   const modeToggle = useRef<ModeToggleHandle>(null)
   const panes = useRef<HTMLDivElement>(null)
-  // Fokus, który nie ma dokąd wrócić (pole części CV, której już nie ma – np. po cofnięciu), trafia na pasek
-  // boczny: „Nagłówek” w Outline, przełącznik przy CV form, ikonę Outline na szynie (`data-safe-focus`); bez paska –
-  // na przełącznik trybu.
+  // Fokus, który nie ma dokąd wrócić (pole części CV, której już nie ma – np. po cofnięciu), trafia na Inspector – nagłówek
+  // jego pierwszej grupy (`data-safe-focus`); bez niego – na przełącznik trybu.
   const focusSafePlace = useCallback(() => {
     requestAnimationFrame(() => {
       const active = window.document.activeElement
       if (active && active !== window.document.body) return
-      const sidebar = panes.current?.querySelector<HTMLElement>('[data-safe-focus]')
-      if (sidebar) sidebar.focus()
+      const safePlace = panes.current?.querySelector<HTMLElement>('[data-safe-focus]')
+      if (safePlace) safePlace.focus()
       else modeToggle.current?.focus('edit')
     })
   }, [])
@@ -191,8 +190,7 @@ export function CvScreen({
         </button>
         <CvNameHeading name={document.name} onRename={(name) => editor.edit(updateName(name))} />
         <ModeToggle ref={modeToggle} mode={session.mode} onChange={session.setMode} />
-        {/* „Projekt CV” – w obu trybach. */}
-        <CvDesignButton editor={editor} document={document} />
+        <HistoryButtons editor={editor} />
         {/* Przy nieudanym zapisie status jest pusty – błąd ogłasza pasek komunikatu pod paskiem narzędzi. */}
         <span className="toolbar-status" role="status">
           {saveStatus === 'failed' ? '' : t.saveStatus[saveStatus]}
@@ -276,8 +274,6 @@ export function CvScreen({
           <EditorSidebar
             control={sidebar}
             editor={editor}
-            document={document}
-            session={session}
             formWidth={formWidth}
             clauses={clauses}
             onSaveClause={saveClause}
@@ -300,6 +296,14 @@ export function CvScreen({
             session.setMode('edit')
             modeToggle.current?.focus('edit')
           }}
+        />
+        {/* Inspector po prawej stronie stron – w obu trybach (panel „Dokument” z CV design i „CV elements”). */}
+        <Inspector
+          editor={editor}
+          document={document}
+          session={session}
+          onRemove={removal.remove}
+          library={{ clauses, onSaveClause: saveClause }}
         />
         {/* „Usunięto. Cofnij” ze stron i z CV form – w lewym dolnym rogu panelu stron. */}
         <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
@@ -340,6 +344,60 @@ function ModeToggle({
         </button>
       ))}
     </div>
+  )
+}
+
+// Cofnij / Ponów w pasku narzędzi, w obu trybach: ta sama droga co ⌘Z / ⇧⌘Z i menu Edycja (`editor.undo` / `redo`).
+// Wyłączone (`disabled`, także dla czytnika ekranu), gdy w historii edytora nie ma czego cofnąć albo ponowić.
+function HistoryButtons({ editor }: { editor: CvEditor }) {
+  const { editor: t, menu } = useDictionary()
+  const canUndo = useSyncExternalStore(editor.subscribeHistory, editor.canUndo)
+  const canRedo = useSyncExternalStore(editor.subscribeHistory, editor.canRedo)
+
+  return (
+    <div className="history-buttons" role="group" aria-label={t.history}>
+      <button
+        type="button"
+        aria-label={menu.undo}
+        title={`${menu.undo} (⌘Z)`}
+        aria-keyshortcuts="Meta+Z"
+        disabled={!canUndo}
+        onClick={() => editor.undo()}
+      >
+        <HistoryIcon />
+      </button>
+      <button
+        type="button"
+        aria-label={menu.redo}
+        title={`${menu.redo} (⇧⌘Z)`}
+        aria-keyshortcuts="Meta+Shift+Z"
+        disabled={!canRedo}
+        onClick={() => editor.redo()}
+      >
+        <HistoryIcon redo />
+      </button>
+    </div>
+  )
+}
+
+// Zakręcona strzałka w lewo (Cofnij); Ponów to jej lustrzane odbicie.
+function HistoryIcon({ redo = false }: { redo?: boolean }) {
+  return (
+    <svg
+      className={redo ? 'history-icon history-icon--redo' : 'history-icon'}
+      width="18"
+      height="18"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 4.5 4.5 8 8 11.5" />
+      <path d="M4.5 8H12a4 4 0 0 1 0 8H9" />
+    </svg>
   )
 }
 
