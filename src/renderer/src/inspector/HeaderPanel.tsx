@@ -67,7 +67,7 @@ export function HeaderPanel({ editor, document, session, onSelect }: PanelProps)
         {photo ? (
           <>
             <InspectorSwitch
-              label={t.outline.showPhoto}
+              label={t.inspector.elements.showPhoto}
               part="photo"
               checked={!photo.hidden}
               onChange={(shown) => editor.edit(setPhotoHidden(!shown))}

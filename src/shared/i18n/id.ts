@@ -169,16 +169,10 @@ export const id: Dictionary = {
     exportCutOffHint: 'Bagian yang terlalu panjang ditandai di mode edit.',
     mode: { label: 'Mode', edit: 'Edit', preview: 'Pratinjau' },
     history: 'Riwayat perubahan',
-    outline: {
-      empty: 'kosong',
-      hidden: 'tersembunyi',
+    sidebar: {
       form: 'Formulir',
       collapse: 'Ciutkan',
-      showSection: (name) => `Tampilkan “${name}” di CV`,
-      showPhoto: 'Tampilkan foto di CV',
-      showConsent: 'Tampilkan klausul persetujuan di CV',
-      items: { other: (count) => `${count} item` },
-      sidebar: 'Bilah samping'
+      label: 'Bilah samping'
     },
     canvas: {
       addToCv: 'Tambahkan ke CV:',
@@ -226,6 +220,14 @@ export const id: Dictionary = {
       colors: { teal: 'Hijau toska', blue: 'Biru', graphite: 'Grafit', violet: 'Ungu', crimson: 'Merah tua', orange: 'Oranye', green: 'Hijau', black: 'Hitam' },
       customColor: 'Warna kustom',
       languageNote: 'Mengubah teks tetap di CV, seperti “sekarang”. Konten Anda tidak diterjemahkan.',
+      elements: {
+        hidden: 'tersembunyi',
+        empty: 'kosong',
+        showSection: (name) => `Tampilkan “${name}” di CV`,
+        showPhoto: 'Tampilkan foto di CV',
+        showConsent: 'Tampilkan klausul persetujuan di CV',
+        items: { other: (count) => `${count} item` }
+      },
       showOnCv: 'Tampilkan di CV',
       section: {
         name: 'Nama',

@@ -50,14 +50,14 @@ export function CvElements({
       <ElementRow
         element={{ kind: 'section', id: section.id }}
         name={name}
-        badge={section.hidden ? t.outline.hidden : sectionEmpty(section, document) ? t.outline.empty : undefined}
+        badge={section.hidden ? t.inspector.elements.hidden : sectionEmpty(section, document) ? t.inspector.elements.empty : undefined}
         count={section.items.length}
         countId={section.items.length > 0 ? countId(section) : undefined}
         handle={handle}
         editable={editable}
         onOpen={onOpen}
         shown={{
-          label: t.outline.showSection(name),
+          label: t.inspector.elements.showSection(name),
           checked: !section.hidden,
           onChange: (shown) => editor.edit(updateSection(section.id, { hidden: !shown }))
         }}
@@ -82,12 +82,12 @@ export function CvElements({
       <ElementRow
         element={{ kind: 'photo' }}
         name={t.photo.legend}
-        badge={photo?.hidden ? t.outline.hidden : undefined}
+        badge={photo?.hidden ? t.inspector.elements.hidden : undefined}
         editable={editable}
         onOpen={onOpen}
         shown={
           photo
-            ? { label: t.outline.showPhoto, checked: !photo.hidden, onChange: (shown) => editor.edit(setPhotoHidden(!shown)) }
+            ? { label: t.inspector.elements.showPhoto, checked: !photo.hidden, onChange: (shown) => editor.edit(setPhotoHidden(!shown)) }
             : undefined
         }
       />
@@ -107,11 +107,11 @@ export function CvElements({
       <ElementRow
         element={{ kind: 'consent' }}
         name={t.consent.title}
-        badge={document.consent.enabled ? undefined : t.outline.hidden}
+        badge={document.consent.enabled ? undefined : t.inspector.elements.hidden}
         editable={editable}
         onOpen={onOpen}
         shown={{
-          label: t.outline.showConsent,
+          label: t.inspector.elements.showConsent,
           checked: document.consent.enabled,
           onChange: (shown) => editor.edit(updateConsent({ enabled: shown }))
         }}
@@ -123,7 +123,7 @@ export function CvElements({
           (section) =>
             section.items.length > 0 && (
               <span key={section.id} id={countId(section)}>
-                {plural(language, t.outline.items, section.items.length)}
+                {plural(language, t.inspector.elements.items, section.items.length)}
               </span>
             )
         )}

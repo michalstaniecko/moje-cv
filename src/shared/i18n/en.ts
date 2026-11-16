@@ -3,7 +3,7 @@ import type { PluralForms } from './plural'
 
 // Odmiana „page” – zmienna z typem, a nie rzutowanie, żeby brak formy `other` był błędem kompilacji.
 const pages: PluralForms = { one: (count) => `${count} page`, other: (count) => `${count} pages` }
-const outlineItems: PluralForms = { one: (count) => `${count} item`, other: (count) => `${count} items` }
+const elementItems: PluralForms = { one: (count) => `${count} item`, other: (count) => `${count} items` }
 const headerContacts: PluralForms = { one: (count) => `${count} contact`, other: (count) => `${count} contacts` }
 
 // Słownik angielski – źródło prawdy: każdy inny język musi spełniać jego typ (ADR-0001).
@@ -193,21 +193,12 @@ export const en = {
     mode: { label: 'Mode', edit: 'Edit', preview: 'Preview' },
     // Grupa przycisków Cofnij / Ponów w pasku narzędzi (nazwy przycisków jak w menu Edycja: `menu.undo`, `menu.redo`).
     history: 'Change history',
-    // Lista „CV elements” w Inspektorze (dawniej Outline) i pasek boczny w Edit mode (CV form albo szyna, do #135).
-    outline: {
-      // Oznaczenia wiersza listy: część ukryta na CV, sekcja bez treści.
-      empty: 'empty',
-      hidden: 'hidden',
+    // Pasek boczny w Edit mode: CV form albo szyna (do #135).
+    sidebar: {
       form: 'Form',
       collapse: 'Collapse',
-      // Przełączniki „Pokaż na CV” w wierszach listy, nazwane nazwą części.
-      showSection: (name: string) => `Show “${name}” on CV`,
-      showPhoto: 'Show photo on CV',
-      showConsent: 'Show consent clause on CV',
-      // Liczba wpisów sekcji na liście – dla czytnika ekranu (na ekranie sama liczba).
-      items: outlineItems,
       // Nazwa zwiniętego paska bocznego (szyny) dla czytnika ekranu.
-      sidebar: 'Sidebar'
+      label: 'Sidebar'
     },
     // Edycja na stronach CV w Edit mode.
     canvas: {
@@ -263,6 +254,18 @@ export const en = {
       customColor: 'Custom color',
       // Notka pod CV language: zmienia tylko stały tekst na dokumencie, nie treść CV.
       languageNote: 'Changes fixed text on the CV, such as “present”. Your content isn’t translated.',
+      // Lista „CV elements” w panelu „Dokument” (dawniej Outline).
+      elements: {
+        // Oznaczenia wiersza listy: część ukryta na CV, sekcja bez treści.
+        hidden: 'hidden',
+        empty: 'empty',
+        // Przełączniki „Pokaż na CV” w wierszach listy, nazwane nazwą części.
+        showSection: (name: string) => `Show “${name}” on CV`,
+        showPhoto: 'Show photo on CV',
+        showConsent: 'Show consent clause on CV',
+        // Liczba wpisów sekcji na liście – dla czytnika ekranu (na ekranie sama liczba).
+        items: elementItems
+      },
       // Panel elementu (część CV zaznaczona na stronie albo na liście „CV elements”); ścieżka „‹ Document / nazwa”
       // wraca przyciskiem `document` do panelu „Dokument”. Przełącznik widoczności części w jej panelu.
       showOnCv: 'Show on CV',

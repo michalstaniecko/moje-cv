@@ -176,16 +176,10 @@ export const de: Dictionary = {
     exportCutOffHint: 'Die zu langen Abschnitte sind im Bearbeitungsmodus hervorgehoben.',
     mode: { label: 'Modus', edit: 'Bearbeiten', preview: 'Vorschau' },
     history: 'Änderungsverlauf',
-    outline: {
-      empty: 'leer',
-      hidden: 'ausgeblendet',
+    sidebar: {
       form: 'Formular',
       collapse: 'Einklappen',
-      showSection: (name) => `„${name}“ im Lebenslauf zeigen`,
-      showPhoto: 'Foto im Lebenslauf zeigen',
-      showConsent: 'Einwilligungserklärung im Lebenslauf zeigen',
-      items: { one: (count) => `${count} Eintrag`, other: (count) => `${count} Einträge` },
-      sidebar: 'Seitenleiste'
+      label: 'Seitenleiste'
     },
     canvas: {
       addToCv: 'Zum Lebenslauf hinzufügen:',
@@ -233,6 +227,14 @@ export const de: Dictionary = {
       colors: { teal: 'Petrol', blue: 'Blau', graphite: 'Graphit', violet: 'Violett', crimson: 'Karmesin', orange: 'Orange', green: 'Grün', black: 'Schwarz' },
       customColor: 'Eigene Farbe',
       languageNote: 'Ändert festen Text im Lebenslauf, etwa „heute“. Deine Inhalte werden nicht übersetzt.',
+      elements: {
+        hidden: 'ausgeblendet',
+        empty: 'leer',
+        showSection: (name) => `„${name}“ im Lebenslauf zeigen`,
+        showPhoto: 'Foto im Lebenslauf zeigen',
+        showConsent: 'Einwilligungserklärung im Lebenslauf zeigen',
+        items: { one: (count) => `${count} Eintrag`, other: (count) => `${count} Einträge` }
+      },
       showOnCv: 'Im Lebenslauf zeigen',
       section: {
         name: 'Name',

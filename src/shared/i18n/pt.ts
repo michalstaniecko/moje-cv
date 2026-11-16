@@ -169,20 +169,10 @@ export const pt: Dictionary = {
     exportCutOffHint: 'Os trechos longos demais estão destacados no modo de edição.',
     mode: { label: 'Modo', edit: 'Edição', preview: 'Pré-visualização' },
     history: 'Histórico de alterações',
-    outline: {
-      empty: 'vazia',
-      hidden: 'oculta',
+    sidebar: {
       form: 'Formulário',
       collapse: 'Recolher',
-      showSection: (name) => `Mostrar “${name}” no CV`,
-      showPhoto: 'Mostrar a foto no CV',
-      showConsent: 'Mostrar a cláusula de consentimento no CV',
-      items: {
-        one: (count) => `${count} item`,
-        many: (count) => `${count} de itens`,
-        other: (count) => `${count} itens`
-      },
-      sidebar: 'Barra lateral'
+      label: 'Barra lateral'
     },
     canvas: {
       addToCv: 'Adicionar ao currículo:',
@@ -230,6 +220,18 @@ export const pt: Dictionary = {
       colors: { teal: 'Verde-azulado', blue: 'Azul', graphite: 'Grafite', violet: 'Violeta', crimson: 'Carmesim', orange: 'Laranja', green: 'Verde', black: 'Preto' },
       customColor: 'Cor personalizada',
       languageNote: 'Muda o texto fixo do currículo, como “atual”. O seu conteúdo não é traduzido.',
+      elements: {
+        hidden: 'oculta',
+        empty: 'vazia',
+        showSection: (name) => `Mostrar “${name}” no CV`,
+        showPhoto: 'Mostrar a foto no CV',
+        showConsent: 'Mostrar a cláusula de consentimento no CV',
+        items: {
+          one: (count) => `${count} item`,
+          many: (count) => `${count} de itens`,
+          other: (count) => `${count} itens`
+        }
+      },
       showOnCv: 'Mostrar no currículo',
       section: {
         name: 'Nome',

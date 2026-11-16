@@ -169,21 +169,10 @@ export const pl: Dictionary = {
     exportCutOffHint: 'Za długie fragmenty są wyróżnione w trybie edycji.',
     mode: { label: 'Tryb', edit: 'Edycja', preview: 'Podgląd' },
     history: 'Historia zmian',
-    outline: {
-      empty: 'pusta',
-      hidden: 'ukryta',
+    sidebar: {
       form: 'Formularz',
       collapse: 'Zwiń',
-      showSection: (name) => `Pokaż „${name}” na CV`,
-      showPhoto: 'Pokaż zdjęcie na CV',
-      showConsent: 'Pokaż klauzulę zgody na CV',
-      items: {
-        one: (count) => `${count} element`,
-        few: (count) => `${count} elementy`,
-        many: (count) => `${count} elementów`,
-        other: (count) => `${count} elementu`
-      },
-      sidebar: 'Pasek boczny'
+      label: 'Pasek boczny'
     },
     canvas: {
       addToCv: 'Dodaj do CV:',
@@ -231,6 +220,19 @@ export const pl: Dictionary = {
       colors: { teal: 'Morski', blue: 'Niebieski', graphite: 'Grafitowy', violet: 'Fioletowy', crimson: 'Karmazynowy', orange: 'Pomarańczowy', green: 'Zielony', black: 'Czarny' },
       customColor: 'Własny kolor',
       languageNote: 'Zmienia stały tekst na CV, np. „obecnie”. Twoja treść nie jest tłumaczona.',
+      elements: {
+        hidden: 'ukryta',
+        empty: 'pusta',
+        showSection: (name) => `Pokaż „${name}” na CV`,
+        showPhoto: 'Pokaż zdjęcie na CV',
+        showConsent: 'Pokaż klauzulę zgody na CV',
+        items: {
+          one: (count) => `${count} element`,
+          few: (count) => `${count} elementy`,
+          many: (count) => `${count} elementów`,
+          other: (count) => `${count} elementu`
+        }
+      },
       showOnCv: 'Pokaż na CV',
       section: {
         name: 'Nazwa',

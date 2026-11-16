@@ -169,20 +169,10 @@ export const ro: Dictionary = {
     exportCutOffHint: 'Fragmentele prea lungi sunt evidențiate în modul de editare.',
     mode: { label: 'Mod', edit: 'Editare', preview: 'Previzualizare' },
     history: 'Istoricul modificărilor',
-    outline: {
-      empty: 'goală',
-      hidden: 'ascunsă',
+    sidebar: {
       form: 'Formular',
       collapse: 'Restrânge',
-      showSection: (name) => `Arată „${name}” în CV`,
-      showPhoto: 'Arată fotografia în CV',
-      showConsent: 'Arată clauza de acord în CV',
-      items: {
-        one: (count) => `${count} element`,
-        few: (count) => `${count} elemente`,
-        other: (count) => `${count} de elemente`
-      },
-      sidebar: 'Bară laterală'
+      label: 'Bară laterală'
     },
     canvas: {
       addToCv: 'Adaugă în CV:',
@@ -230,6 +220,18 @@ export const ro: Dictionary = {
       colors: { teal: 'Petrol', blue: 'Albastru', graphite: 'Grafit', violet: 'Violet', crimson: 'Carmin', orange: 'Portocaliu', green: 'Verde', black: 'Negru' },
       customColor: 'Culoare personalizată',
       languageNote: 'Schimbă textul fix din CV, de exemplu „prezent”. Conținutul tău nu este tradus.',
+      elements: {
+        hidden: 'ascunsă',
+        empty: 'goală',
+        showSection: (name) => `Arată „${name}” în CV`,
+        showPhoto: 'Arată fotografia în CV',
+        showConsent: 'Arată clauza de acord în CV',
+        items: {
+          one: (count) => `${count} element`,
+          few: (count) => `${count} elemente`,
+          other: (count) => `${count} de elemente`
+        }
+      },
       showOnCv: 'Afișează în CV',
       section: {
         name: 'Nume',
