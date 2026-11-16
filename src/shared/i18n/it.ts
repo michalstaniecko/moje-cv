@@ -168,6 +168,7 @@ export const it: Dictionary = {
     exportCutOff: 'Parte del contenuto non entra in una pagina e verrà tagliata. Esportare comunque?',
     exportCutOffHint: 'I frammenti troppo lunghi sono evidenziati in modalità modifica.',
     mode: { label: 'Modalità', edit: 'Modifica', preview: 'Anteprima' },
+    history: 'Cronologia modifiche',
     outline: {
       title: 'Struttura',
       empty: 'vuota',

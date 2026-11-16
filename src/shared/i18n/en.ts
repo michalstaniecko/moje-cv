@@ -190,6 +190,8 @@ export const en = {
     exportCutOffHint: 'The fragments that are too long are highlighted in edit mode.',
     // Przełącznik Edit mode / Preview mode w pasku narzędzi edytora.
     mode: { label: 'Mode', edit: 'Edit', preview: 'Preview' },
+    // Grupa przycisków Cofnij / Ponów w pasku narzędzi (nazwy przycisków jak w menu Edycja: `menu.undo`, `menu.redo`).
+    history: 'Change history',
     // Pasek boczny w Edit mode: Outline (konspekt CV) i przełącznik Outline / CV form / szyna.
     outline: {
       title: 'Outline',

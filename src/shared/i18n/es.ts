@@ -168,6 +168,7 @@ export const es: Dictionary = {
     exportCutOff: 'Parte del contenido no cabe en una página y quedará cortado. ¿Exportar de todos modos?',
     exportCutOffHint: 'Los fragmentos demasiado largos están resaltados en el modo de edición.',
     mode: { label: 'Modo', edit: 'Edición', preview: 'Vista previa' },
+    history: 'Historial de cambios',
     outline: {
       title: 'Esquema',
       empty: 'vacía',
