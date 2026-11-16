@@ -3,11 +3,12 @@ import { plural } from '../../../shared/i18n/plural'
 import { sectionEmpty } from '../canvas/addOnPage'
 import type { CvDocument, Section } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
-import { moveSection, setPhotoHidden, updateConsent, updateSection } from '../editor/documentEdits'
+import { moveSection, updateConsent, updateSection } from '../editor/documentEdits'
 import { sectionName } from '../editor/fields/SectionTitleField'
 import type { RowMenuAction } from '../editor/RowMenu'
 import { SortableList } from '../editor/SortableList'
 import { useDictionary, useInterfaceLanguage } from '../i18n'
+import { photoShown } from './InspectorSwitch'
 import { elementKey, type CvElement } from './selection'
 
 // Przełącznik „Pokaż na CV” zdjęcia w Inspektorze – na liście „CV elements” albo w panelu zdjęcia (InspectorSwitch.tsx):
@@ -42,6 +43,7 @@ export function CvElements({
   const language = useInterfaceLanguage()
   const describedBy = useId()
   const { photo } = document.header
+  const photoSwitch = photoShown(editor, document)
   const countId = (section: Section) => `${describedBy}-${section.id}`
 
   const sectionRow = (section: Section, handle?: ReactNode) => {
@@ -85,11 +87,7 @@ export function CvElements({
         badge={photo?.hidden ? t.inspector.elements.hidden : undefined}
         editable={editable}
         onOpen={onOpen}
-        shown={
-          photo
-            ? { label: t.inspector.elements.showPhoto, checked: !photo.hidden, onChange: (shown) => editor.edit(setPhotoHidden(!shown)) }
-            : undefined
-        }
+        shown={photoSwitch && { label: t.inspector.elements.showPhoto, ...photoSwitch }}
       />
       {editable ? (
         <SortableList

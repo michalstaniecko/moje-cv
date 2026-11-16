@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { EditSession } from '../canvas/useEditSession'
-import { setPhotoHidden, updateHeader } from '../editor/documentEdits'
+import { updateHeader } from '../editor/documentEdits'
 import { usePhotoPicker } from '../editor/fields/PhotoField'
 import { useDictionary } from '../i18n'
 import type { PanelProps } from './ElementPanel'
-import { InspectorSwitch } from './InspectorSwitch'
+import { PhotoSwitch } from './InspectorSwitch'
 
 // „Remove photo” w panelu zdjęcia – tu wraca fokus po „Undo” w komunikacie „Removed.”.
 const REMOVE_SELECTOR = '.inspector [data-photo-action="remove"]'
@@ -76,12 +76,7 @@ export function PhotoPanel({ editor, document, session, onRemove }: PanelProps) 
           </p>
         )}
       </div>
-      <InspectorSwitch
-        label={t.inspector.showOnCv}
-        part="photo"
-        checked={!photo.hidden}
-        onChange={(shown) => editor.edit(setPhotoHidden(!shown))}
-      />
+      <PhotoSwitch editor={editor} document={document} label={t.inspector.showOnCv} />
       {cropper}
     </>
   )
