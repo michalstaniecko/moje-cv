@@ -239,7 +239,18 @@ export const sv: Dictionary = {
         position: (position, total) => `${position} av ${total}`,
         items: 'Poster',
         empty: 'Avsnittet är tomt'
-      }
+      },
+      header: {
+        goTo: 'Gå till',
+        contacts: 'Kontakter',
+        contactCount: {
+          one: (count) => `${count} kontakt`,
+          other: (count) => `${count} kontakter`
+        },
+        photoOptions: 'Byt, beskär eller ta bort foto'
+      },
+      photo: { add: 'Lägg till foto' },
+      consent: { editOnPage: 'Redigera på sidan' }
     },
     header: 'Sidhuvud',
     fullName: 'Fullständigt namn',

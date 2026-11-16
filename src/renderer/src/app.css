@@ -1199,6 +1199,52 @@ textarea:focus-visible {
   color: var(--ui-text-muted);
 }
 
+/* Liczba przy pozycji (kontakty w panelu nagłówka) – przy prawej krawędzi, jak na liście „CV elements”. */
+.inspector-item .cv-element-count {
+  float: right;
+  margin-inline-start: 8px;
+}
+
+/* Akcje paneli nagłówka, zdjęcia i klauzuli (#141): „+ Add contact”, „Add photo”, „Edit on the page ›” – zwykłe
+   przyciski na szerokość treści; dłuższe tłumaczenie zawija się w Inspektorze, nie wychodzi poza niego. */
+.inspector-add {
+  align-self: flex-start;
+  max-width: 100%;
+  text-align: start;
+  white-space: normal;
+}
+
+/* Akcje zdjęcia w jednym wierszu, zawijane przy dłuższych tłumaczeniach. */
+.inspector-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Miniatura zdjęcia w jego panelu (proporcje zdjęcia CV). */
+.inspector-photo {
+  align-self: flex-start;
+  width: 72px;
+  height: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+}
+
+/* „Save as new clause” w wąskim Inspektorze: pole nazwy na całą szerokość, „Save” i „Cancel” pod nim. */
+.inspector-save-clause > button {
+  align-self: flex-start;
+}
+
+.inspector-save-clause .form-row {
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+
+.inspector-save-clause .form-row input {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
 .inspector-group + .inspector-group {
   border-top: 1px solid var(--ui-border);
 }

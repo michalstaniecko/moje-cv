@@ -239,7 +239,20 @@ export const pl: Dictionary = {
         position: (position, total) => `${position} z ${total}`,
         items: 'Pozycje',
         empty: 'Sekcja jest pusta'
-      }
+      },
+      header: {
+        goTo: 'Przejdź do',
+        contacts: 'Kontakty',
+        contactCount: {
+          one: (count) => `${count} kontakt`,
+          few: (count) => `${count} kontakty`,
+          many: (count) => `${count} kontaktów`,
+          other: (count) => `${count} kontaktu`
+        },
+        photoOptions: 'Zmień, wykadruj lub usuń zdjęcie'
+      },
+      photo: { add: 'Dodaj zdjęcie' },
+      consent: { editOnPage: 'Edytuj na stronie' }
     },
     header: 'Nagłówek',
     fullName: 'Imię i nazwisko',

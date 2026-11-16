@@ -234,7 +234,17 @@ export const id: Dictionary = {
         position: (position, total) => `${position} dari ${total}`,
         items: 'Item',
         empty: 'Bagian ini kosong'
-      }
+      },
+      header: {
+        goTo: 'Buka',
+        contacts: 'Kontak',
+        contactCount: {
+          other: (count) => `${count} kontak`
+        },
+        photoOptions: 'Ganti, pangkas, atau hapus foto'
+      },
+      photo: { add: 'Tambah foto' },
+      consent: { editOnPage: 'Edit di halaman' }
     },
     header: 'Kepala',
     fullName: 'Nama lengkap',

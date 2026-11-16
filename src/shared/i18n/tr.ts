@@ -234,7 +234,17 @@ export const tr: Dictionary = {
         position: (position, total) => `${position}/${total}`,
         items: 'Öğeler',
         empty: 'Bu bölüm boş'
-      }
+      },
+      header: {
+        goTo: 'Git',
+        contacts: 'İletişim',
+        contactCount: {
+          other: (count) => `${count} iletişim bilgisi`
+        },
+        photoOptions: 'Fotoğrafı değiştir, kırp veya kaldır'
+      },
+      photo: { add: 'Fotoğraf ekle' },
+      consent: { editOnPage: 'Sayfada düzenle' }
     },
     header: 'Başlık',
     fullName: 'Ad soyad',

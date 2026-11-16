@@ -239,7 +239,20 @@ export const ru: Dictionary = {
         position: (position, total) => `${position} из ${total}`,
         items: 'Пункты',
         empty: 'Раздел пуст'
-      }
+      },
+      header: {
+        goTo: 'Перейти к',
+        contacts: 'Контакты',
+        contactCount: {
+          one: (count) => `${count} контакт`,
+          few: (count) => `${count} контакта`,
+          many: (count) => `${count} контактов`,
+          other: (count) => `${count} контакта`
+        },
+        photoOptions: 'Изменить, обрезать или удалить фото'
+      },
+      photo: { add: 'Добавить фото' },
+      consent: { editOnPage: 'Редактировать на странице' }
     },
     header: 'Шапка',
     fullName: 'Имя и фамилия',

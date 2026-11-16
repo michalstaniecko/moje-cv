@@ -239,7 +239,20 @@ export const cs: Dictionary = {
         position: (position, total) => `${position} z ${total}`,
         items: 'Položky',
         empty: 'Sekce je prázdná'
-      }
+      },
+      header: {
+        goTo: 'Přejít na',
+        contacts: 'Kontakty',
+        contactCount: {
+          one: (count) => `${count} kontakt`,
+          few: (count) => `${count} kontakty`,
+          many: (count) => `${count} kontaktu`,
+          other: (count) => `${count} kontaktů`
+        },
+        photoOptions: 'Změnit, oříznout nebo odstranit fotku'
+      },
+      photo: { add: 'Přidat fotku' },
+      consent: { editOnPage: 'Upravit na stránce' }
     },
     header: 'Záhlaví',
     fullName: 'Jméno a příjmení',
