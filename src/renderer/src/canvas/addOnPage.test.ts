@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { emptyCv } from '../domain/emptyCv'
 import { sampleCvs } from '../domain/sampleCv'
 import type { CvDocument, Section } from '../domain/schema'
-import { addToCvItems, isEmptyCv, sectionPills } from './addOnPage'
+import { addToCvItems, isEmptyCv, sectionEmpty, sectionPills } from './addOnPage'
 import type { Fragment, Rect } from './fragmentRects'
 
 const sample = sampleCvs.en
@@ -43,7 +43,7 @@ describe('addToCvItems', () => {
     expect(kinds(header({ fullName: 'Jane' }))).not.toContain('fullName')
     expect(kinds(header({ fullName: '   ' }))).toContain('fullName')
     expect(kinds(header({ photo: { dataUrl: 'data:image/png;base64,', hidden: false } }))).not.toContain('photo')
-    // Ukryte zdjęcie jest tylko w Outline – „Add to CV” dodaje zdjęcie, gdy go nie ma.
+    // Ukryte zdjęcie jest tylko na liście „CV elements” – „Add to CV” dodaje zdjęcie, gdy go nie ma.
     expect(kinds(header({ photo: { dataUrl: 'data:image/png;base64,', hidden: true } }))).not.toContain('photo')
     expect(kinds(header({ summary: 'Buyer' }))).not.toContain('summary')
     // Kontakt z samą etykietą albo pusty nowy kontakt nie jest na stronie.
@@ -70,6 +70,20 @@ describe('addToCvItems', () => {
   it('leaves out hidden sections even when they are empty', () => {
     const hidden = withSections(fresh, (section) => (section.id === languages.id ? { ...section, hidden: true } : section))
     expect(addToCvItems(hidden).map((item) => item.key)).not.toContain(`section:${languages.id}`)
+  })
+})
+
+describe('sectionEmpty', () => {
+  it('marks the sections of a new CV empty and the filled sections of the Sample CV not, also the hidden one', () => {
+    expect(fresh.sections.map((section) => sectionEmpty(section, fresh))).toEqual([true, true, true, true])
+    expect(sample.sections.map((section) => sectionEmpty(section, sample))).toEqual([false, false, false, false, false])
+  })
+
+  it('marks a section empty when its entries have no content yet', () => {
+    const blank = withSections(sample, (section) =>
+      section.id === 'skills' && section.type === 'list' ? { ...section, items: [{ id: 'blank', text: '  ' }] } : section
+    )
+    expect(blank.sections.map((section) => sectionEmpty(section, blank))).toEqual([false, false, true, false, false])
   })
 })
 

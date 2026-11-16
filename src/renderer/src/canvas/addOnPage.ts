@@ -32,9 +32,13 @@ const withOnly = (document: CvDocument, section: Section): CvDocument => ({
 // Czy sekcja coś pokazuje na stronach (ma wpis lub element z treścią i nie jest ukryta).
 export const sectionShown = (section: Section, document: CvDocument) => blocksOf(withOnly(document, section)).length > 0
 
+// Czy sekcja jest pusta – nie miałaby nic na stronach nawet pokazana (bez wpisów albo tylko z pustymi). Ukrycie nie ma
+// znaczenia: ukryta sekcja z treścią nie jest pusta.
+export const sectionEmpty = (section: Section, document: CvDocument) => !sectionShown({ ...section, hidden: false }, document)
+
 // Czego brakuje w CV, w kolejności dokumentu: puste części nagłówka (imię i nazwisko, zdjęcie, kontakt – żaden kontakt
 // nie ma wartości, podsumowanie), widoczne sekcje bez treści i klauzula zgody, której nie ma na stronie (wyłączona albo
-// bez tekstu). Sekcji ukrytych tu nie ma – są w Outline.
+// bez tekstu). Sekcji ukrytych tu nie ma – są na liście „CV elements”.
 export function addToCvItems(document: CvDocument): AddToCvItem[] {
   const { header } = document
   const items: AddToCvItem[] = []
