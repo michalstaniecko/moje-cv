@@ -19,7 +19,7 @@ export const elementRowSelector = (element: CvElement) =>
   `.cv-elements [data-element="${element.kind}"]${element.kind === 'section' ? `[data-element-id="${CSS.escape(element.id)}"]` : ''} .cv-element-name`
 
 // „CV elements” w panelu „Dokument” Inspektora (GLOSSARY.md, ADR-0012; zastępuje Outline): jedna lista części CV
-// w kolejności dokumentu – Nagłówek, Zdjęcie, każda sekcja (także ukryte i puste) i Klauzula zgody.
+// (dla czytnika ekranu lista „CV elements” z wierszem na część) w kolejności dokumentu – Nagłówek, Zdjęcie, każda sekcja (także ukryte i puste) i Klauzula zgody.
 // - Każda część, którą da się ukryć, ma ten sam przełącznik „Pokaż na CV” nazwany jej nazwą (zdjęcie – tylko gdy jest;
 //   ukryte zachowuje obraz). Ukryta część zostaje na liście z oznaczeniem „ukryta”, sekcja bez treści – „pusta”;
 //   oznaczenie jest częścią nazwy wiersza, liczba wpisów sekcji – jego opisem dla czytnika ekranu.
@@ -77,7 +77,7 @@ export function CvElements({
   ]
 
   return (
-    <div className="cv-elements">
+    <div className="cv-elements" role="list" aria-label={t.inspector.groups.elements}>
       <ElementRow element={{ kind: 'header' }} name={t.header} editable={editable} onOpen={onOpen} />
       <ElementRow
         element={{ kind: 'photo' }}
@@ -180,6 +180,7 @@ function ElementRow({
   return (
     <div
       className="cv-element"
+      role="listitem"
       data-element={element.kind}
       data-element-id={element.kind === 'section' ? element.id : undefined}
       data-muted={(shown && !shown.checked) || undefined}

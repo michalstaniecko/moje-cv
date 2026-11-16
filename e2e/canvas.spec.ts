@@ -2792,10 +2792,11 @@ test('a full CV is built from a new CV with the pages and the CV elements list, 
 
 // ---------- „CV elements” w Inspektorze (zamiast Outline, #138) ----------
 
-const cvElements = () => inspector().locator('.cv-elements')
-const elementRow = (name: string) =>
-  cvElements().locator('.cv-element').filter({ has: window.locator('.cv-element-label', { hasText: new RegExp(`^${name}$`) }) })
-const elementButton = (name: string) => elementRow(name).locator('button.cv-element-name')
+const cvElements = () => inspector().getByRole('list', { name: 'CV elements', exact: true })
+const elementRows = () => cvElements().getByRole('listitem')
+const elementRow = (name: string) => elementRows().filter({ has: window.getByText(name, { exact: true }) })
+// Nazwa wiersza to nazwa części z oznaczeniem („Interests hidden”); uchwyt sekcji ma swoją nazwę („Actions for …”).
+const elementButton = (name: string) => elementRow(name).getByRole('button', { name: new RegExp(`^${name}( hidden| empty)?$`) })
 const elementHandle = (name: string) => elementRow(name).getByRole('button', { name: `Actions for section “${name}”` })
 const elementSwitch = (name: string) => elementRow(name).getByRole('switch')
 // Panel „Dokument” z listą „CV elements”: zaznaczona część CV (np. pole z kursorem na stronie) ma w Inspektorze swój panel.
@@ -2803,7 +2804,9 @@ async function showDocumentPanel() {
   if (await backToDocument().isVisible()) await backToDocument().click()
   await expect(cvElements()).toBeVisible()
 }
-const sectionNames = () => cvElements().locator('.cv-element[data-element="section"] .cv-element-label').allTextContents()
+// Wiersze sekcji (w Edit mode – z uchwytem) i ich nazwy bez oznaczenia i liczby wpisów.
+const sectionRows = () => elementRows().filter({ has: window.getByRole('button', { name: /^Actions for section “/ }) })
+const sectionNames = async () => (await sectionRows().allTextContents()).map((text) => text.replace(/(hidden|empty)?\d*$/, ''))
 const pageSectionTitles = () => window.locator('.preview .cv-page .cv-section-title').allTextContents()
 const sampleElements = [/^Header$/, /^Photo$/, /^Work experience4$/, /^Education2$/, /^Skills5$/, /^Languages2$/, /^Interestshidden1$/, /^Consent clausehidden$/]
 const savedSidebar = async () =>
@@ -2816,7 +2819,7 @@ test('there is no Outline: the Inspector’s “CV elements” list shows the he
   await expect(window.getByRole('navigation', { name: 'Outline' })).toHaveCount(0)
   await expect(window.locator('.editor-form')).toHaveCount(0)
   await expect(inspectorGroup('CV elements')).toHaveAttribute('aria-expanded', 'true')
-  await expect(cvElements().locator('.cv-element')).toHaveText(sampleElements)
+  await expect(elementRows()).toHaveText(sampleElements)
 
   // Przełącznik „Show on CV” przy każdej części, którą da się ukryć – nazwany jej nazwą; nagłówka nie da się ukryć.
   await expect(elementRow('Header').getByRole('switch')).toHaveCount(0)
@@ -2909,7 +2912,7 @@ test('“Hide photo” in the photo popover takes the photo off the pages, the P
   const image = await photo.getAttribute('src')
 
   // Wiersz „Photo” pod „Header”: widoczne zdjęcie – przełącznik włączony, klik w wiersz przenosi fokus na zdjęcie.
-  await expect(cvElements().locator('.cv-element').nth(1)).toHaveText(/^Photo$/)
+  await expect(elementRows().nth(1)).toHaveText(/^Photo$/)
   await expect(elementSwitch('Photo')).toBeChecked()
   await elementButton('Photo').click()
   await expect(photoButton()).toBeFocused()
@@ -3044,7 +3047,7 @@ test('sections are reordered in the CV elements list by dragging and from the ha
 
 test('in a new CV the CV elements list marks the empty sections; a click on one reveals its entry with the caret on the page, and the consent clause is switched on from the list and edited on the page', async () => {
   await openNewCv()
-  await expect(cvElements().locator('.cv-element[data-element="section"]')).toHaveText([
+  await expect(sectionRows()).toHaveText([
     /^Work experienceempty$/,
     /^Educationempty$/,
     /^Skillsempty$/,
@@ -3088,7 +3091,7 @@ test('in Preview mode the CV elements rows do not go into editing and have no ha
   await openFirstCvWithPages()
   await previewButton().click()
   await expectPreviewMode()
-  await expect(cvElements().locator('.cv-element')).toHaveText(sampleElements)
+  await expect(elementRows()).toHaveText(sampleElements)
   await expect(cvElements().getByRole('button')).toHaveCount(0)
   await expect(cvElements().getByRole('switch')).toHaveCount(7)
 
@@ -3369,8 +3372,8 @@ test('in Preview mode the Inspector shows only the Document panel, and back in E
 // ---------- Panele nagłówka, zdjęcia i klauzuli zgody (#141) ----------
 
 test.describe('Inspector panels of the header, the photo and the consent clause', () => {
-  const panelButton = (name: string) => inspector().locator('.inspector-panel').getByRole('button', { name, exact: true })
-  const panelSwitch = (name: string) => inspector().locator('.inspector-panel').getByRole('switch', { name, exact: true })
+  const panelButton = (name: string) => inspector().getByRole('button', { name, exact: true })
+  const panelSwitch = (name: string) => inspector().getByRole('switch', { name, exact: true })
   const pageContacts = () => window.locator('.preview .cv-page .cv-contact > *')
 
   test('the header panel goes to the full name, the contacts (with their count) and the summary on the page, adds a contact with the caret in it and shows and hides the photo; each change is one undo step', async () => {
@@ -3451,7 +3454,8 @@ test.describe('Inspector panels of the header, the photo and the consent clause'
     await elementButton('Photo').click()
     await expect(panelTitle()).toHaveText('Photo')
     await expect(inspector().getByRole('img', { name: 'Photo in the CV' })).toHaveAttribute('src', (await photo.getAttribute('src'))!)
-    await expect(inspector().locator('.inspector-panel').getByRole('button')).toHaveText(['Change photo', 'Crop photo', 'Remove photo'])
+    // Poza „‹ Document” w ścieżce panelu.
+    await expect(inspector().getByRole('button')).toHaveText(['‹ Document', 'Change photo', 'Crop photo', 'Remove photo'])
 
     // „Change photo”: wybór pliku i to samo okno kadrowania co na stronie; po nim fokus wraca na przycisk.
     await stubOpenDialog(photoPath)
