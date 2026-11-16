@@ -3426,6 +3426,63 @@ test.describe('Inspector panels of the header, the photo and the consent clause'
     await expect(panelButton('Add photo')).toBeVisible()
   })
 
+  test('the consent panel switches the clause on and off, goes to its text on the page, saves the text as a new clause and picks a clause from the library; each change is one undo step', async () => {
+    await window.setViewportSize({ width: 1600, height: 1000 })
+    await openFirstCvWithPages()
+    const pageConsent = window.locator('.preview .cv-page .cv-consent')
+    const library = inspector().getByRole('combobox', { name: 'Clause from the library', exact: true })
+    const editOnPage = panelButton('Edit on the page')
+    const saveAsNew = panelButton('Save as new clause')
+
+    // Wyłączona klauzula: panel z wyłączonym „Show on CV”, bez przejścia na stronę; pusta biblioteka – wybór nieaktywny.
+    await elementButton('Consent clause').click()
+    await expect(panelTitle()).toHaveText('Consent clause')
+    await expect(panelSwitch('Show on CV')).not.toBeChecked()
+    await expect(editOnPage).toBeDisabled()
+    await expect(library).toBeDisabled()
+    await expect(pageConsent).toHaveCount(0)
+
+    // Włączenie i „Edit on the page”: kursor w tekście klauzuli na stronie, panel zostaje.
+    await panelSwitch('Show on CV').check()
+    await expect(editOnPage).toBeEnabled()
+    await editOnPage.click()
+    await expect(consentField()).toBeFocused()
+    await expect(panelTitle()).toHaveText('Consent clause')
+    await window.keyboard.type('I agree to the processing of my personal data.')
+    await expect(pageConsent).toHaveText('I agree to the processing of my personal data.')
+
+    // „Save as new clause” pyta o nazwę; nowa klauzula jest wybrana w CV.
+    await saveAsNew.click()
+    await expect(inspector().getByLabel('New clause name')).toBeFocused()
+    await window.keyboard.type('Recruitment')
+    await window.keyboard.press('Enter')
+    await expect(library).toBeEnabled()
+    await expect(library.locator('option:checked')).toHaveText('Recruitment')
+
+    // Druga klauzula (tekst zmieniony na stronie) i wybór pierwszej z biblioteki w panelu – kopia jej treści na stronie.
+    await editOnPage.click()
+    await window.keyboard.press('Meta+a')
+    await window.keyboard.type('Short clause.')
+    await saveAsNew.click()
+    await window.keyboard.type('Short')
+    await window.keyboard.press('Enter')
+    await expect(library.locator('option:checked')).toHaveText('Short')
+    await library.selectOption({ label: 'Recruitment' })
+    await expect(pageConsent).toHaveText('I agree to the processing of my personal data.')
+    await expect(panelTitle()).toHaveText('Consent clause')
+
+    // Wybór z biblioteki to jeden krok cofania.
+    await undoButton().click()
+    await expect(pageConsent).toHaveText('Short clause.')
+    await expect(library.locator('option:checked')).toHaveText('Short')
+
+    // Wyłączenie: klauzula znika ze strony (zostaje w CV), „Edit on the page” nieaktywne; cofnięcie ją przywraca.
+    await panelSwitch('Show on CV').uncheck()
+    await expect(pageConsent).toHaveCount(0)
+    await expect(editOnPage).toBeDisabled()
+    await undoButton().click()
+    await expect(pageConsent).toHaveText('Short clause.')
+  })
 })
 
 test('the sidebar holds only the CV form, collapsed to a rail by default; the rail and the form are an app preference kept across restarts, a saved Outline opens as the rail, and Preview mode has no sidebar', async () => {

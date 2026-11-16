@@ -51,8 +51,7 @@ function Toolbar({
   library: ClauseLibrary
   onFocusLost: () => void
 }) {
-  const dictionary = useDictionary()
-  const t = dictionary.editor.consent
+  const t = useDictionary().editor.consent
   const toolbar = useRef<HTMLDivElement>(null)
   const { clauses, onSaveClause } = library
   const libraryClause = clauses.find((clause) => clause.id === consent.clauseId) ?? null
@@ -101,24 +100,7 @@ function Toolbar({
       onTabOut={tabOut}
     >
       <div ref={toolbar} className="consent-toolbar">
-        <select
-          aria-label={t.fromLibrary}
-          value={libraryClause?.id ?? ''}
-          disabled={clauses.length === 0}
-          onChange={(event) => {
-            const clause = clauses.find((candidate) => candidate.id === event.target.value)
-            if (clause) editor.edit(applyClause(clause))
-          }}
-        >
-          <option value="" disabled>
-            {consent.clauseId !== null ? t.deleted : clauses.length ? t.choose : t.emptyLibrary}
-          </option>
-          {clauses.map((clause) => (
-            <option key={clause.id} value={clause.id}>
-              {clauseName(clause, dictionary.clauses.untitled)}
-            </option>
-          ))}
-        </select>
+        <ClauseSelect editor={editor} consent={consent} clauses={clauses} aria-label={t.fromLibrary} />
         {modified && (
           <button
             type="button"
@@ -144,5 +126,44 @@ function Toolbar({
         </button>
       </div>
     </FieldPopover>
+  )
+}
+
+// Wybór klauzuli z biblioteki (w pasku klauzuli i w panelu klauzuli zgody Inspektora): CV dostaje kopię treści
+// wybranej klauzuli – jeden krok cofania. Pusta biblioteka – wybór nieaktywny; klauzula usunięta z biblioteki – napis
+// zamiast nazwy. Nazwa z `aria-label` albo z etykiety wokół.
+export function ClauseSelect({
+  editor,
+  consent,
+  clauses,
+  'aria-label': label
+}: {
+  editor: CvEditor
+  consent: CvDocument['consent']
+  clauses: Clause[]
+  'aria-label'?: string
+}) {
+  const dictionary = useDictionary()
+  const t = dictionary.editor.consent
+  const libraryClause = clauses.find((clause) => clause.id === consent.clauseId) ?? null
+  return (
+    <select
+      aria-label={label}
+      value={libraryClause?.id ?? ''}
+      disabled={clauses.length === 0}
+      onChange={(event) => {
+        const clause = clauses.find((candidate) => candidate.id === event.target.value)
+        if (clause) editor.edit(applyClause(clause))
+      }}
+    >
+      <option value="" disabled>
+        {consent.clauseId !== null ? t.deleted : clauses.length ? t.choose : t.emptyLibrary}
+      </option>
+      {clauses.map((clause) => (
+        <option key={clause.id} value={clause.id}>
+          {clauseName(clause, dictionary.clauses.untitled)}
+        </option>
+      ))}
+    </select>
   )
 }
