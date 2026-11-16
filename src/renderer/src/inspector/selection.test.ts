@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { sampleCvs } from '../domain/sampleCv'
-import { selectionOfFragment } from './selection'
+import { selectionInDocument, selectionOfFragment } from './selection'
 
 const sample = sampleCvs.en
 
@@ -33,5 +33,26 @@ describe('selectionOfFragment', () => {
     expect(selectionOfFragment('item:gone', sample)).toBeNull()
     expect(selectionOfFragment('sectionTitle:gone', sample)).toBeNull()
     expect(selectionOfFragment('list:gone', sample)).toBeNull()
+  })
+})
+
+describe('selectionInDocument', () => {
+  const withoutPhoto = { ...sample, header: { ...sample.header, photo: null } }
+
+  it('keeps the photo without a photo: its panel offers “Add photo”', () => {
+    expect(selectionInDocument({ kind: 'photo' }, withoutPhoto)).toEqual({ kind: 'photo' })
+    expect(selectionInDocument({ kind: 'photo' }, sample)).toEqual({ kind: 'photo' })
+  })
+
+  it('keeps the header and the consent clause, also a switched-off one, and a section still in the document', () => {
+    expect(selectionInDocument({ kind: 'header' }, sample)).toEqual({ kind: 'header' })
+    const consentOff = { ...sample, consent: { ...sample.consent, enabled: false } }
+    expect(selectionInDocument({ kind: 'consent' }, consentOff)).toEqual({ kind: 'consent' })
+    expect(selectionInDocument({ kind: 'section', id: 'education' }, sample)).toEqual({ kind: 'section', id: 'education' })
+  })
+
+  it('drops a section no longer in the document (the Document panel)', () => {
+    expect(selectionInDocument({ kind: 'section', id: 'gone' }, sample)).toBeNull()
+    expect(selectionInDocument(null, sample)).toBeNull()
   })
 })
