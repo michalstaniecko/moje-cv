@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { useStore } from 'zustand'
 import type { MenuCommand } from '../../shared/api'
 import { EditorSidebar, sidebarWidth } from './canvas/EditorSidebar'
@@ -191,6 +191,7 @@ export function CvScreen({
         </button>
         <CvNameHeading name={document.name} onRename={(name) => editor.edit(updateName(name))} />
         <ModeToggle ref={modeToggle} mode={session.mode} onChange={session.setMode} />
+        <HistoryButtons editor={editor} />
         {/* „Projekt CV” – w obu trybach. */}
         <CvDesignButton editor={editor} document={document} />
         {/* Przy nieudanym zapisie status jest pusty – błąd ogłasza pasek komunikatu pod paskiem narzędzi. */}
@@ -340,6 +341,60 @@ function ModeToggle({
         </button>
       ))}
     </div>
+  )
+}
+
+// Cofnij / Ponów w pasku narzędzi, w obu trybach: ta sama droga co ⌘Z / ⇧⌘Z i menu Edycja (`editor.undo` / `redo`).
+// Wyłączone (`disabled`, także dla czytnika ekranu), gdy w historii edytora nie ma czego cofnąć albo ponowić.
+function HistoryButtons({ editor }: { editor: CvEditor }) {
+  const { editor: t, menu } = useDictionary()
+  const canUndo = useSyncExternalStore(editor.subscribeHistory, editor.canUndo)
+  const canRedo = useSyncExternalStore(editor.subscribeHistory, editor.canRedo)
+
+  return (
+    <div className="history-buttons" role="group" aria-label={t.history}>
+      <button
+        type="button"
+        aria-label={menu.undo}
+        title={`${menu.undo} (⌘Z)`}
+        aria-keyshortcuts="Meta+Z"
+        disabled={!canUndo}
+        onClick={() => editor.undo()}
+      >
+        <HistoryIcon />
+      </button>
+      <button
+        type="button"
+        aria-label={menu.redo}
+        title={`${menu.redo} (⇧⌘Z)`}
+        aria-keyshortcuts="Meta+Shift+Z"
+        disabled={!canRedo}
+        onClick={() => editor.redo()}
+      >
+        <HistoryIcon redo />
+      </button>
+    </div>
+  )
+}
+
+// Zakręcona strzałka w lewo (Cofnij); Ponów to jej lustrzane odbicie.
+function HistoryIcon({ redo = false }: { redo?: boolean }) {
+  return (
+    <svg
+      className={redo ? 'history-icon history-icon--redo' : 'history-icon'}
+      width="18"
+      height="18"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 4.5 4.5 8 8 11.5" />
+      <path d="M4.5 8H12a4 4 0 0 1 0 8H9" />
+    </svg>
   )
 }
 
