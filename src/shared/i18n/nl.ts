@@ -175,6 +175,7 @@ export const nl: Dictionary = {
     exportCutOff: 'Een deel van de inhoud past niet op een pagina en wordt afgesneden. Toch exporteren?',
     exportCutOffHint: 'De te lange fragmenten zijn gemarkeerd in de bewerkingsmodus.',
     mode: { label: 'Modus', edit: 'Bewerken', preview: 'Voorbeeld' },
+    history: 'Wijzigingsgeschiedenis',
     cvDesignButton: 'Ontwerp',
     outline: {
       title: 'Overzicht',

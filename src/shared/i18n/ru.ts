@@ -168,6 +168,7 @@ export const ru: Dictionary = {
     exportCutOff: 'Часть содержимого не помещается на страницу и будет обрезана. Всё равно экспортировать?',
     exportCutOffHint: 'Слишком длинные фрагменты выделены в режиме редактирования.',
     mode: { label: 'Режим', edit: 'Правка', preview: 'Просмотр' },
+    history: 'История изменений',
     cvDesignButton: 'Дизайн',
     outline: {
       title: 'Структура',

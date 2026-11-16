@@ -190,6 +190,61 @@ test('switching the mode is not an undo step and does not change the document; z
   await expect.poll(() => preview.evaluate((element) => element.scrollTop)).toBe(400)
 })
 
+const historyGroup = () => window.locator('.toolbar').getByRole('group', { name: 'Change history' })
+const undoButton = () => historyGroup().getByRole('button', { name: 'Undo', exact: true })
+const redoButton = () => historyGroup().getByRole('button', { name: 'Redo', exact: true })
+
+test('Undo and Redo in the toolbar undo and redo a change made on the page in both modes, are disabled when there is nothing to undo or redo and show their shortcuts', async () => {
+  await openFirstCvWithOutline()
+  // Na świeżo otwartym CV nie ma czego cofnąć ani ponowić: oba przyciski wyłączone (także dla czytnika ekranu).
+  await expect(undoButton()).toBeDisabled()
+  await expect(redoButton()).toBeDisabled()
+  await expect(undoButton()).toHaveAttribute('title', 'Undo (⌘Z)')
+  await expect(redoButton()).toHaveAttribute('title', 'Redo (⇧⌘Z)')
+  await expect(undoButton()).toHaveAttribute('aria-keyshortcuts', 'Meta+Z')
+  await expect(redoButton()).toHaveAttribute('aria-keyshortcuts', 'Meta+Shift+Z')
+
+  // Zmiana na stronie: Cofnij ją cofa, Ponów przywraca.
+  const name = pageField('Full name')
+  await clickAtCharacter(name, 4)
+  await window.keyboard.type(' X')
+  await expect(pageName()).toHaveText('Jane X Example')
+  await expect(undoButton()).toBeEnabled()
+  await expect(redoButton()).toBeDisabled()
+  await undoButton().click()
+  await expect(pageName()).toHaveText('Jane Example')
+  await expect(undoButton()).toBeDisabled()
+  await expect(redoButton()).toBeEnabled()
+  await redoButton().click()
+  await expect(pageName()).toHaveText('Jane X Example')
+  await expect(undoButton()).toBeEnabled()
+  await expect(redoButton()).toBeDisabled()
+
+  // To samo w Preview mode.
+  await previewButton().click()
+  await undoButton().click()
+  await expect(pageName()).toHaveText('Jane Example')
+  await expect(redoButton()).toBeEnabled()
+  await redoButton().click()
+  await expect(pageName()).toHaveText('Jane X Example')
+  await expect(redoButton()).toBeDisabled()
+
+  // Przy minimalnej szerokości okna (960 px) pasek narzędzi zostaje w jednym wierszu, w obu trybach.
+  await app.evaluate(({ BrowserWindow }) => {
+    const [browserWindow] = BrowserWindow.getAllWindows()
+    browserWindow!.setSize(960, browserWindow!.getSize()[1]!)
+  })
+  // Jeden wiersz: każdy element zaczyna się wyżej, niż kończy się którykolwiek inny.
+  const inOneRow = () =>
+    window.locator('.editor-toolbar > *').evaluateAll((elements) => {
+      const boxes = elements.map((element) => element.getBoundingClientRect())
+      return Math.max(...boxes.map((box) => box.top)) < Math.min(...boxes.map((box) => box.bottom))
+    })
+  await expect.poll(inOneRow).toBe(true)
+  await editButton().click()
+  await expect.poll(inOneRow).toBe(true)
+})
+
 test('Preview mode does not highlight oversized fragments on the pages but warns in the preview bar, and “Show” switches to Edit mode', async () => {
   await openFirstCv()
   const preview = window.locator('.preview')

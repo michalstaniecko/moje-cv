@@ -524,7 +524,8 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--ui-border);
 }
 
-/* Pasek edytora ma siedem elementów (wstecz, nazwa CV, przełącznik trybu, CV design, status zapisu, dwa eksporty).
+/* Pasek edytora ma osiem elementów (wstecz, nazwa CV, przełącznik trybu, CV design, Cofnij / Ponów, status zapisu, dwa
+   eksporty).
    Przyciski i status nigdy się nie zawijają ani nie ściskają – przy braku miejsca ucina się tylko nazwa CV
    (wielokropek). W wąskim oknie (do minimum 960 px) mniejsze odstępy zostawiają nazwie więcej miejsca: w dłuższych
    językach (de, fr, pt, ru…) z „Zmiany zapisane” pasek bez tego zawijał przyciski w dwie linie. */
@@ -672,6 +673,39 @@ textarea:focus-visible {
 .mode-toggle button[aria-pressed='true']:hover:not(:disabled) {
   background: var(--ui-accent-dark);
   border-color: var(--ui-accent-dark);
+}
+
+/* ---------- Cofnij / Ponów w pasku narzędzi ----------
+   Dwa przyciski z ikoną sklejone w jeden segment (jak przełącznik trybu); bez tekstu, żeby pasek mieścił się przy
+   minimalnym oknie w każdym języku. Wyłączony przycisk jest wyszarzony (button:disabled). */
+.history-buttons {
+  display: flex;
+}
+
+.history-buttons button {
+  display: inline-grid;
+  place-items: center;
+  padding: 4px 8px;
+}
+
+.history-buttons button:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.history-buttons button:last-child {
+  margin-left: -1px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.history-buttons button:hover:not(:disabled),
+.history-buttons button:focus-visible {
+  position: relative;
+}
+
+.history-icon--redo {
+  transform: scaleX(-1);
 }
 
 /* ---------- „Projekt CV” w pasku narzędzi ----------

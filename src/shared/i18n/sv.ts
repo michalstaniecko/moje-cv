@@ -173,6 +173,7 @@ export const sv: Dictionary = {
     exportCutOff: 'En del av innehållet får inte plats på en sida och kommer att klippas av. Exportera ändå?',
     exportCutOffHint: 'De för långa avsnitten är markerade i redigeringsläget.',
     mode: { label: 'Läge', edit: 'Redigera', preview: 'Förhandsvisning' },
+    history: 'Ändringshistorik',
     cvDesignButton: 'Design',
     outline: {
       title: 'Disposition',

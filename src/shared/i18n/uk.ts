@@ -168,6 +168,7 @@ export const uk: Dictionary = {
     exportCutOff: 'Частина вмісту не вміщується на сторінку й буде обрізана. Однаково експортувати?',
     exportCutOffHint: 'Задовгі фрагменти виділено в режимі редагування.',
     mode: { label: 'Режим', edit: 'Редагування', preview: 'Перегляд' },
+    history: 'Історія змін',
     cvDesignButton: 'Дизайн',
     outline: {
       title: 'Структура',
