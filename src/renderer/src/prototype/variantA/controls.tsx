@@ -1,6 +1,6 @@
 // PROTOTYP – wariant A „Inspektor”: małe kontrolki panelu (przełącznik, segmenty, grupa, miniatury szablonów,
 // próbki koloru, karty fontów). Wszystkie z klasami `pa-` (variantA.css).
-import { memo, useId, useMemo, type ReactNode } from 'react'
+import { memo, useId, useMemo, useState, type ReactNode } from 'react'
 import { cvFontFamilies, cvFontIds, type CvFontId } from '../../../../shared/cvFonts'
 import { templateThumbnailCv } from '../../domain/sampleCv'
 import { cvTemplateIds, type CvDocument, type CvTemplateId } from '../../domain/schema'
@@ -9,29 +9,64 @@ import { templates } from '../../template/templates'
 import { StubBadge } from '../StubBadge'
 
 // Jeden przełącznik dla wszystkich „pokaż / ukryj” w Inspektorze (zdjęcie, sekcje, klauzula, nowa strona).
+// Samodzielny (w wierszu listy) – sam jest `<label>` z `aria-label`; w `SwitchRow` – `bare`, a etykietą jest wiersz.
 export function Switch({
   checked,
   onChange,
   label,
-  disabled
+  disabled,
+  bare
 }: {
   checked: boolean
   onChange: (checked: boolean) => void
-  label: string
+  label?: string
   disabled?: boolean
+  bare?: boolean
 }) {
-  return (
-    <label className="pa-switch" title={label}>
+  const input = (
+    <>
       <input
         type="checkbox"
         role="switch"
         checked={checked}
         disabled={disabled}
-        aria-label={label}
+        aria-label={bare ? undefined : label}
         onChange={(event) => onChange(event.target.checked)}
       />
       <span className="pa-switch-track" aria-hidden="true" />
+    </>
+  )
+  return bare ? (
+    <span className="pa-switch">{input}</span>
+  ) : (
+    <label className="pa-switch" title={label}>
+      {input}
     </label>
+  )
+}
+
+// Wiersz „etykieta … przełącznik” – klik w całą etykietę przełącza.
+export function SwitchRow({
+  label,
+  checked,
+  onChange,
+  disabled,
+  hint
+}: {
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+  disabled?: boolean
+  hint?: ReactNode
+}) {
+  return (
+    <div className="pa-row">
+      <label className="pa-row-main pa-row-main--switch" data-disabled={disabled || undefined}>
+        <span className="pa-row-label">{label}</span>
+        <Switch bare checked={checked} disabled={disabled} onChange={onChange} />
+      </label>
+      {hint && <p className="pa-hint">{hint}</p>}
+    </div>
   )
 }
 
@@ -51,13 +86,50 @@ export function Row({ label, stub, children, hint }: { label: ReactNode; stub?: 
   )
 }
 
-// Zwijana grupa opcji Inspektora (nagłówek z trójkątem, jak w Keynote).
-export function Group({ title, children, defaultOpen = true }: { title: string; children: ReactNode; defaultOpen?: boolean }) {
+// Zwijana grupa opcji Inspektora (nagłówek z trójkątem, jak w Keynote). Stan zwinięcia zapamiętany na czas sesji
+// (klucz `id`, domyślnie tytuł), żeby powrót do panelu nie rozwijał z powrotem tego, co użytkownik zwinął.
+const groupOpen = new Map<string, boolean>()
+
+export function Group({
+  title,
+  id = typeof title === 'string' ? title : undefined,
+  aside,
+  children,
+  defaultOpen = true
+}: {
+  title: ReactNode
+  id?: string
+  aside?: ReactNode
+  children: ReactNode
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(() => (id !== undefined ? groupOpen.get(id) : undefined) ?? defaultOpen)
   return (
-    <details className="pa-group" open={defaultOpen}>
-      <summary className="pa-group-title">{title}</summary>
+    <details
+      className="pa-group"
+      open={open}
+      onToggle={(event) => {
+        const next = event.currentTarget.open
+        if (id !== undefined) groupOpen.set(id, next)
+        setOpen(next)
+      }}
+    >
+      <summary className="pa-group-title">
+        <span className="pa-group-name">{title}</span>
+        {aside !== undefined && <span className="pa-group-aside">{aside}</span>}
+      </summary>
       <div className="pa-group-body">{children}</div>
     </details>
+  )
+}
+
+// Ikony paska narzędzi (obrys 1.6 px, kolor tekstu).
+export function UndoIcon({ redo }: { redo?: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={redo ? { transform: 'scaleX(-1)' } : undefined}>
+      <path d="M8 4.5 4.5 8 8 11.5" />
+      <path d="M4.5 8H12a4 4 0 0 1 0 8H9" />
+    </svg>
   )
 }
 

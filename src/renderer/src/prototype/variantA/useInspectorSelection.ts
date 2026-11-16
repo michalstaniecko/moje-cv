@@ -1,5 +1,5 @@
 // PROTOTYP – wariant A „Inspektor”: co jest zaznaczone na stronach, czyli czego opcje pokazuje Inspektor.
-// Źródła: aktywne pole sesji (Page field z fokusem, także po skoku z Outline) oraz klik/fokus w elementy stron
+// Źródła: aktywne pole sesji (Page field z fokusem, także po skoku z listy „Elementy CV”) oraz klik/fokus w elementy stron
 // z `data-fragment` (np. przycisk zdjęcia, który nie jest polem). Fokus wędrujący do samego Inspektora NIE czyści
 // zaznaczenia – inaczej każdy klik w opcję przełączałby Inspektor z powrotem na „Dokument”.
 import { useEffect, useState, type RefObject } from 'react'
@@ -42,7 +42,7 @@ export function useInspectorSelection(session: EditSession, document: CvDocument
     // Dokument celowo poza zależnościami: zmiana treści nie zmienia zaznaczenia.
   }, [fragment])
 
-  // Klik/fokus w stronach: fragment → jego opcje; tło stron → „Dokument”. Poza stronami (pasek, Outline, Inspektor) – bez zmian.
+  // Klik/fokus w stronach: fragment → jego opcje; tło stron → „Dokument”. Poza stronami (pasek, Inspektor) – bez zmian.
   useEffect(() => {
     const onEvent = (event: Event) => {
       const target = event.target

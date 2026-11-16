@@ -1,11 +1,12 @@
-/* PROTOTYP – wariant A „Inspektor”: style konspektu, Inspektora i paska narzędzi. Wszystkie klasy z prefiksem `pa-`.
-   Ekran się nie przewija: .editor-panes (app.css) ma `overflow: clip`, a przewijają się tylko konspekt, strony i ciało
-   Inspektora. Selektory `.editor-panes.pa-panes > …` przebijają ogólną regułę `.editor-panes > :not(…)` z app.css. */
+/* PROTOTYP – wariant A „Inspektor”: style Inspektora i paska narzędzi. Wszystkie klasy z prefiksem `pa-`.
+   Ekran się nie przewija: .editor-panes (app.css) ma `overflow: clip`, a przewijają się tylko strony i ciało
+   Inspektora. Selektory `.editor-panes.pa-panes > …` przebijają ogólną regułę `.editor-panes > :not(…)` z app.css.
+   Skala odstępów: 4 / 8 / 12 / 16 px; poziomy margines panelu --pa-inset. */
 
 /* ---------- Korzenie: czcionka i kolory interfejsu ---------- */
-.pa-outline,
 .pa-inspector,
 .pa-toolbar {
+  --pa-inset: 14px;
   color: var(--ui-text);
   color-scheme: light dark;
   font: 14px system-ui, sans-serif;
@@ -16,129 +17,46 @@
   padding-block: 8px;
 }
 
+/* Cofnij / Ponów: para przycisków z obramowaniem jak przyciski powiększenia, wyraźnie aktywne albo wyszarzone. */
 .pa-history {
-  display: flex;
-  gap: 2px;
+  display: inline-flex;
 }
 
 .pa-icon-button {
-  width: 30px;
-  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 30px;
   padding: 0;
-  font-size: 16px;
-  line-height: 1;
-  border-color: transparent;
-  background: transparent;
+  color: var(--ui-text);
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
 }
 
-.pa-icon-button:hover:not(:disabled) {
+.pa-history .pa-icon-button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.pa-history .pa-icon-button:last-child {
+  margin-left: -1px;
+  border-radius: 0 6px 6px 0;
+}
+
+button.pa-icon-button:hover:not(:disabled) {
+  position: relative;
+  color: var(--ui-accent);
   background: var(--ui-accent-glow);
+  border-color: var(--ui-accent);
 }
 
 .pa-icon-button:disabled {
-  opacity: 0.35;
-}
-
-/* ---------- Konspekt (lewa kolumna) ---------- */
-.editor-panes.pa-panes > .pa-outline {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-height: 0;
-  padding: 12px 8px 24px;
-  overflow: auto;
-  font-size: 13px;
-  background: var(--ui-app-bg);
-  border-right: 1px solid var(--ui-border);
-}
-
-.pa-outline-title,
-.pa-inspector-title {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--ui-text-muted);
+  opacity: 0.45;
 }
 
-.pa-outline-title {
-  padding: 0 8px 8px;
-}
-
-.pa-outline-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.pa-nav-row {
-  display: flex;
-  align-items: center;
-}
-
-/* Uchwyt sekcji pojawia się przy najechaniu lub fokusie, jak w Finderze. */
-.pa-nav-row .row-handle {
-  min-width: 20px;
-  opacity: 0;
-}
-
-.pa-nav-row:hover .row-handle,
-.pa-nav-row .row-handle:focus-visible,
-.pa-nav-row .row-handle[aria-expanded='true'] {
-  opacity: 1;
-}
-
-.pa-nav {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
-  padding: 4px 8px;
-  text-align: left;
-  background: transparent;
-  border-color: transparent;
-  border-radius: 5px;
-}
-
-/* Wiersze bez uchwytu (Nagłówek, Klauzula) wyrównane z nazwami sekcji. */
-.pa-outline > .pa-nav {
-  flex: none;
-  margin-left: 20px;
-}
-
-.pa-outline > .pa-nav--child {
-  margin-left: 32px;
-}
-
-.pa-nav:hover {
-  background: var(--ui-accent-glow);
-}
-
-.pa-nav[aria-current='true'] {
-  color: var(--ui-text-on-accent);
-  background: var(--ui-accent);
-}
-
-.pa-nav[data-off]:not([aria-current='true']) {
-  color: var(--ui-text-muted);
-  text-decoration: line-through;
-  text-decoration-color: color-mix(in srgb, var(--ui-text-muted) 60%, transparent);
-}
-
-.pa-nav-text {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pa-nav-count {
-  font-size: 11px;
-  color: inherit;
-  opacity: 0.6;
+.pa-icon-button:focus-visible {
+  position: relative;
+  z-index: 1;
 }
 
 /* ---------- Inspektor (prawa kolumna) ---------- */
@@ -151,47 +69,54 @@
   border-left: 1px solid var(--ui-border);
 }
 
+.pa-inspector :focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 1px;
+}
+
 .pa-inspector-head {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 44px;
+  padding: 0 var(--pa-inset);
   border-bottom: 1px solid var(--ui-border);
+}
+
+.pa-inspector-title {
+  margin: 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pa-breadcrumb {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
-}
-
-.pa-breadcrumb .pa-inspector-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: 13px;
-  color: var(--ui-text);
 }
 
 .pa-crumb {
   flex-shrink: 0;
-  padding: 2px 6px;
+  margin-left: -6px;
+  padding: 3px 6px;
   font-size: 13px;
   color: var(--ui-accent);
   background: transparent;
   border-color: transparent;
 }
 
-.pa-crumb:hover {
-  background: var(--ui-accent-glow);
+.pa-crumb::after {
+  content: '/';
+  margin-left: 8px;
+  color: var(--ui-text-muted);
 }
 
-.pa-crumb-separator {
-  color: var(--ui-text-muted);
+button.pa-crumb:hover:not(:disabled) {
+  background: var(--ui-accent-glow);
 }
 
 .pa-inspector-body {
@@ -208,20 +133,20 @@
 }
 
 .pa-gear {
-  padding: 3px 8px;
+  padding: 4px 8px;
   font-size: 12px;
   color: var(--ui-text-muted);
   background: transparent;
   border-color: transparent;
 }
 
-.pa-gear:hover,
+button.pa-gear:hover:not(:disabled),
 .pa-gear[aria-pressed='true'] {
   color: var(--ui-text);
   background: var(--ui-accent-glow);
 }
 
-/* ---------- Grupy ---------- */
+/* ---------- Grupy (zwijane) ---------- */
 .pa-group {
   border-bottom: 1px solid var(--ui-border);
 }
@@ -229,13 +154,18 @@
 .pa-group-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  font-size: 12px;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 var(--pa-inset);
+  font-size: 13px;
   font-weight: 600;
   cursor: default;
   list-style: none;
   user-select: none;
+}
+
+.pa-group-title:hover {
+  background: color-mix(in srgb, var(--ui-app-bg) 60%, transparent);
 }
 
 .pa-group-title::-webkit-details-marker {
@@ -244,9 +174,10 @@
 
 .pa-group-title::before {
   content: '';
+  flex-shrink: 0;
   width: 0;
   height: 0;
-  border-left: 4px solid var(--ui-text-muted);
+  border-left: 5px solid var(--ui-text-muted);
   border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
   transition: transform 0.12s;
@@ -256,11 +187,29 @@
   transform: rotate(90deg);
 }
 
+.pa-group-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pa-group-aside {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ui-text-muted);
+}
+
+.pa-group-aside .prototype-stub-badge {
+  margin: 0;
+}
+
 .pa-group-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 14px 14px;
+  padding: 0 var(--pa-inset) 16px;
 }
 
 /* ---------- Wiersze, pola, podpowiedzi ---------- */
@@ -268,12 +217,30 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
+  min-height: 28px;
+}
+
+.pa-row-main--switch {
+  cursor: pointer;
+}
+
+.pa-row-main--switch[data-disabled] {
+  cursor: default;
+  color: var(--ui-text-muted);
 }
 
 .pa-row-label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
   font-size: 13px;
+}
+
+.pa-row-label .prototype-stub-badge {
+  margin: 0;
 }
 
 .pa-row-control {
@@ -299,9 +266,14 @@
   color: var(--ui-text-muted);
 }
 
+.pa-hint--flush {
+  margin: 0;
+}
+
 .pa-hint--panel {
   margin: 0;
-  padding: 12px 14px;
+  padding: 12px var(--pa-inset);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .pa-error {
@@ -314,7 +286,8 @@
 .pa-input {
   min-width: 0;
   max-width: 150px;
-  padding: 3px 6px;
+  height: 28px;
+  padding: 0 8px;
   font: inherit;
   font-size: 13px;
   color: var(--ui-text);
@@ -325,7 +298,13 @@
 
 .pa-input {
   max-width: none;
-  padding: 5px 8px;
+}
+
+.pa-select:focus-visible,
+.pa-input:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: -1px;
+  border-color: transparent;
 }
 
 .pa-actions {
@@ -335,11 +314,72 @@
   gap: 8px;
 }
 
-.pa-actions button,
-.pa-photo-actions button,
-.pa-move button {
-  padding: 3px 10px;
+/* ---------- Przyciski ---------- */
+.pa-button {
+  height: 28px;
+  padding: 0 10px;
   font-size: 13px;
+  border-radius: 6px;
+}
+
+.pa-button--small {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.pa-button--icon {
+  width: 28px;
+  padding: 0;
+}
+
+/* „+ Dodaj …”: przerywana ramka jak miejsce na nowy element, kolor akcentu. */
+.pa-button--add {
+  width: 100%;
+  height: 32px;
+  font-weight: 500;
+  color: var(--ui-accent);
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--ui-accent) 55%, var(--ui-border));
+}
+
+button.pa-button--add:hover:not(:disabled) {
+  background: var(--ui-accent-glow);
+  border-style: solid;
+  border-color: var(--ui-accent);
+}
+
+.pa-link {
+  align-self: flex-start;
+  padding: 2px 0;
+  font-size: 13px;
+  color: var(--ui-accent);
+  background: transparent;
+  border: none;
+}
+
+button.pa-link:hover:not(:disabled) {
+  text-decoration: underline;
+  background: transparent;
+}
+
+.pa-link:disabled {
+  color: var(--ui-text-muted);
+  opacity: 0.6;
+}
+
+.pa-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pa-stepper-value {
+  min-width: 40px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--ui-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Przełącznik ---------- */
@@ -363,7 +403,7 @@
   width: 30px;
   height: 18px;
   border-radius: 9px;
-  background: var(--ui-border);
+  background: color-mix(in srgb, var(--ui-text-muted) 45%, var(--ui-border));
   transition: background 0.15s;
 }
 
@@ -498,7 +538,7 @@
 .pa-swatches {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .pa-swatch {
@@ -586,19 +626,20 @@
   font-size: 11px;
 }
 
-/* ---------- Elementy CV ---------- */
+/* ---------- Elementy CV (konspekt w Inspektorze) ---------- */
 .pa-elements {
   display: flex;
   flex-direction: column;
-  margin-inline: -6px;
+  gap: 1px;
+  margin-inline: -8px;
 }
 
 .pa-element {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   min-height: 32px;
-  padding-right: 6px;
+  padding-right: 8px;
   border-radius: 6px;
   background: var(--ui-panel-bg);
 }
@@ -609,8 +650,20 @@
 
 .pa-element-handle {
   display: inline-flex;
-  width: 24px;
+  justify-content: center;
+  width: 22px;
   flex-shrink: 0;
+}
+
+.pa-element-handle .row-handle {
+  min-width: 20px;
+  opacity: 0.35;
+}
+
+.pa-element:hover .row-handle,
+.pa-element .row-handle:focus-visible,
+.pa-element .row-handle[aria-expanded='true'] {
+  opacity: 1;
 }
 
 .pa-element-name {
@@ -619,11 +672,26 @@
   gap: 6px;
   flex: 1;
   min-width: 0;
-  padding: 4px 4px;
+  height: 30px;
+  padding: 0 6px;
   font-size: 13px;
   text-align: left;
+  color: inherit;
   background: transparent;
-  border-color: transparent;
+  border: none;
+  border-radius: 5px;
+}
+
+button.pa-element-name:hover:not(:disabled) {
+  background: transparent;
+}
+
+.pa-element[data-child] .pa-element-name {
+  padding-left: 20px;
+}
+
+.pa-element[data-off] .pa-element-text {
+  color: var(--ui-text-muted);
 }
 
 .pa-element-text {
@@ -633,24 +701,106 @@
   white-space: nowrap;
 }
 
-.pa-element-badge {
+.pa-badge {
   flex-shrink: 0;
+  padding: 0 6px;
   font-size: 11px;
+  line-height: 17px;
   color: var(--ui-text-muted);
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
+}
+
+.pa-element-count {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--ui-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .pa-element-chevron {
   margin-left: auto;
+  padding-left: 4px;
   color: var(--ui-text-muted);
   opacity: 0;
 }
 
-.pa-element:hover .pa-element-chevron {
+.pa-element:hover .pa-element-chevron,
+.pa-element-name:focus-visible .pa-element-chevron {
   opacity: 1;
 }
 
-.pa-elements > .pa-hint {
-  padding-inline: 6px;
+.pa-element-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 30px;
+}
+
+.pa-elements-hint {
+  padding-inline: 8px;
+}
+
+/* ---------- Lista elementów części CV (panel sekcji, nagłówka) ---------- */
+.pa-items {
+  display: flex;
+  flex-direction: column;
+  margin: 0 -8px;
+  padding: 0;
+  list-style: none;
+}
+
+.pa-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1px;
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+}
+
+button.pa-item:hover:not(:disabled) {
+  background: var(--ui-app-bg);
+}
+
+.pa-item-title,
+.pa-item-detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pa-item-title {
+  font-size: 13px;
+}
+
+.pa-item-title[data-placeholder] {
+  font-style: italic;
+  color: var(--ui-text-muted);
+}
+
+.pa-item-detail {
+  font-size: 12px;
+  color: var(--ui-text-muted);
+}
+
+.pa-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 12px;
+  text-align: center;
+  background: var(--ui-app-bg);
+  border-radius: 8px;
+}
+
+.pa-empty-title {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 /* ---------- Zdjęcie ---------- */
@@ -662,11 +812,11 @@
 
 .pa-photo-thumb {
   flex-shrink: 0;
-  width: 64px;
-  height: 80px;
+  width: 72px;
+  height: 90px;
   object-fit: cover;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px var(--ui-shadow);
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px var(--ui-border);
 }
 
 .pa-photo-thumb[data-hidden] {
@@ -676,30 +826,19 @@
 .pa-photo-thumb--empty {
   display: grid;
   place-items: center;
+  padding: 4px;
   font-size: 11px;
+  text-align: center;
   color: var(--ui-text-muted);
   background: var(--ui-app-bg);
-  box-shadow: inset 0 0 0 1px var(--ui-border);
 }
 
 .pa-photo-actions {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-/* ---------- Położenie sekcji ---------- */
-.pa-move {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: stretch;
   gap: 8px;
-}
-
-.pa-move-position {
-  font-size: 12px;
-  color: var(--ui-text-muted);
+  min-width: 110px;
 }
 
 /* ---------- Klauzule ---------- */
@@ -765,9 +904,4 @@
   gap: 8px;
   padding: 6px 0;
   border-bottom: 1px solid var(--ui-border);
-}
-
-.pa-library button {
-  padding: 2px 8px;
-  font-size: 12px;
 }
