@@ -298,7 +298,13 @@ export function CvScreen({
           }}
         />
         {/* Inspector po prawej stronie stron – w obu trybach (panel „Dokument” z CV design i „CV elements”). */}
-        <Inspector editor={editor} document={document} session={session} />
+        <Inspector
+          editor={editor}
+          document={document}
+          session={session}
+          onRemove={removal.remove}
+          library={{ clauses, onSaveClause: saveClause }}
+        />
         {/* „Usunięto. Cofnij” ze stron i z CV form – w lewym dolnym rogu panelu stron. */}
         <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
       </div>

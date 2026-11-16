@@ -238,7 +238,19 @@ export const ro: Dictionary = {
         position: (position, total) => `${position} din ${total}`,
         items: 'Elemente',
         empty: 'Secțiunea este goală'
-      }
+      },
+      header: {
+        goTo: 'Mergi la',
+        contacts: 'Contacte',
+        contactCount: {
+          one: (count) => `${count} contact`,
+          few: (count) => `${count} contacte`,
+          other: (count) => `${count} de contacte`
+        },
+        photoOptions: 'Schimbă, decupează sau elimină fotografia'
+      },
+      photo: { add: 'Adaugă fotografie' },
+      consent: { editOnPage: 'Editează pe pagină' }
     },
     header: 'Antet',
     fullName: 'Nume complet',

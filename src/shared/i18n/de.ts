@@ -241,7 +241,18 @@ export const de: Dictionary = {
         position: (position, total) => `${position} von ${total}`,
         items: 'Einträge',
         empty: 'Dieser Abschnitt ist leer'
-      }
+      },
+      header: {
+        goTo: 'Gehe zu',
+        contacts: 'Kontakte',
+        contactCount: {
+          one: (count) => `${count} Kontakt`,
+          other: (count) => `${count} Kontakte`
+        },
+        photoOptions: 'Foto ändern, zuschneiden oder entfernen'
+      },
+      photo: { add: 'Foto hinzufügen' },
+      consent: { editOnPage: 'Auf der Seite bearbeiten' }
     },
     header: 'Kopfbereich',
     fullName: 'Vollständiger Name',

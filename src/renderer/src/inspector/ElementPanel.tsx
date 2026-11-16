@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react'
 import type { Dictionary } from '../../../shared/i18n/en'
+import type { ClauseLibrary } from '../canvas/ConsentToolbar'
 import type { EditSession } from '../canvas/useEditSession'
 import type { CvDocument } from '../domain/schema'
 import type { CvEditor } from '../editor/cvEditor'
+import type { RemoveWithUndo } from '../editor/removalUndo'
 import { sectionName } from '../editor/fields/SectionTitleField'
 import { useDictionary } from '../i18n'
 import { ConsentPanel } from './ConsentPanel'
@@ -12,8 +14,16 @@ import { PhotoPanel } from './PhotoPanel'
 import { SectionPanel } from './SectionPanel'
 
 // Co dostaje panel elementu: edytor (każda zmiana przez `editor.edit` – jeden krok cofania), bieżący dokument i sesję
-// edycji (np. `focusOnPage` z openOnPage.ts – kursor w części CV na stronie).
-export type PanelProps = { editor: CvEditor; document: CvDocument; session: EditSession }
+// edycji (np. `focusOnPage` z openOnPage.ts – kursor w części CV na stronie). Do tego to, co mają akcje na stronach:
+// usunięcie z „Removed. Undo” (`onRemove`), biblioteka klauzul (`library`), a także `onSelect` – panel innej części CV.
+export type PanelProps = {
+  editor: CvEditor
+  document: CvDocument
+  session: EditSession
+  onRemove: RemoveWithUndo
+  library: ClauseLibrary
+  onSelect: (element: CvElement) => void
+}
 
 // Panel elementu Inspektora (#139): ścieżka „‹ Dokument / nazwa” (przycisk wraca do panelu „Dokument”) i panel części
 // CV – każdy rodzaj w osobnym pliku. Element jest w dokumencie (zaznaczenie bez swojej części to panel „Dokument” –

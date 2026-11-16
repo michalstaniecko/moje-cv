@@ -49,7 +49,12 @@ export function SectionPanel({ editor, document, session, section }: PanelProps 
 // „+ Dodaj …” (#140) – brzmienie z pigułek „+” na stronach. Dodaje element na końcu sekcji jedną zmianą dokumentu
 // („pokaż sekcję i dodaj element”): ukrytą sekcję najpierw pokazuje, a w pustej odsłania jej istniejący pusty element
 // zamiast tworzyć kolejny. Kursor staje w elemencie na stronie, a panel zostaje (zaznaczenie idzie za jego fragmentem).
-function AddToSection({ editor, document, session, section }: PanelProps & { section: Section }) {
+function AddToSection({
+  editor,
+  document,
+  session,
+  section
+}: Pick<PanelProps, 'editor' | 'document' | 'session'> & { section: Section }) {
   const add = useDictionary().editor.canvas.add
   const label = { experience: add.position, education: add.education, list: add.item }[section.type]
   const onClick = () => {

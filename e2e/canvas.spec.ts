@@ -2963,9 +2963,10 @@ test('“Hide photo” in the photo popover takes the photo off the pages, the P
   await expect(photo).toHaveAttribute('src', image!)
 })
 
-test('without a photo the “Photo” row has no switch and picks a photo like “Add to CV”: a cancelled crop returns the focus to the row, an applied one focuses the photo on the page', async () => {
+test('without a photo the “Photo” row has no switch and picks a photo like “Add to CV” in the photo panel: a cancelled crop leaves the focus on its “Add photo”, an applied one focuses the photo on the page', async () => {
   await openNewCv()
   const cropper = window.getByRole('dialog', { name: 'Crop photo' })
+  const addPhoto = inspector().getByRole('button', { name: 'Add photo', exact: true })
   await expect(elementRow('Photo')).toHaveText(/^Photo$/)
   await expect(elementSwitch('Photo')).toHaveCount(0)
 
@@ -2973,10 +2974,11 @@ test('without a photo the “Photo” row has no switch and picks a photo like �
   await elementButton('Photo').click()
   await cropper.getByRole('button', { name: 'Cancel' }).click()
   await expect(cropper).toHaveCount(0)
-  await expect(elementButton('Photo')).toBeFocused()
+  await expect(panelTitle()).toHaveText('Photo')
+  await expect(addPhoto).toBeFocused()
   await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(0)
 
-  await elementButton('Photo').click()
+  await addPhoto.click()
   await cropper.getByRole('button', { name: 'Apply' }).click()
   await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(1)
   await expect(photoButton()).toBeFocused()
@@ -3348,24 +3350,6 @@ test.describe('adding from the section panel', () => {
   })
 })
 
-test('when an undo takes away the selected part of the CV, the Inspector returns to the Document panel', async () => {
-  await openNewCv()
-  const cropper = window.getByRole('dialog', { name: 'Crop photo' })
-  await stubOpenDialog(await writeRedBluePhoto())
-  await elementButton('Photo').click()
-  await cropper.getByRole('button', { name: 'Apply' }).click()
-  await expect(photoButton()).toBeFocused()
-  await expect(panelTitle()).toHaveText('Photo')
-
-  await window.keyboard.press('Meta+z')
-  await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(0)
-  await expect(panelTitle()).toHaveText('Document')
-  // Ponowienie nie otwiera panelu z powrotem.
-  await window.keyboard.press('Shift+Meta+z')
-  await expect(window.locator('.preview .cv-page .cv-photo')).toHaveCount(1)
-  await expect(panelTitle()).toHaveText('Document')
-})
-
 test('in Preview mode the Inspector shows only the Document panel, and back in Edit mode it starts from the Document panel', async () => {
   await openFirstCvWithPages()
   await titleField('Education').click()
@@ -3380,6 +3364,208 @@ test('in Preview mode the Inspector shows only the Document panel, and back in E
   await editButton().click()
   await expect(editButton()).toHaveAttribute('aria-pressed', 'true')
   await expect(panelTitle()).toHaveText('Document')
+})
+
+// ---------- Panele nagłówka, zdjęcia i klauzuli zgody (#141) ----------
+
+test.describe('Inspector panels of the header, the photo and the consent clause', () => {
+  const panelButton = (name: string) => inspector().locator('.inspector-panel').getByRole('button', { name, exact: true })
+  const panelSwitch = (name: string) => inspector().locator('.inspector-panel').getByRole('switch', { name, exact: true })
+  const pageContacts = () => window.locator('.preview .cv-page .cv-contact > *')
+
+  test('the header panel goes to the full name, the contacts (with their count) and the summary on the page, adds a contact with the caret in it and shows and hides the photo; each change is one undo step', async () => {
+    await window.setViewportSize({ width: 1600, height: 1000 })
+    await openFirstCvWithPages()
+    await elementButton('Header').click()
+    await expect(panelTitle()).toHaveText('Header')
+
+    // Skróty do części nagłówka na stronie; kontakty z liczbą (dla czytnika ekranu – opis przycisku).
+    const goTo = inspector().getByRole('list', { name: 'Go to', exact: true })
+    await expect(goTo.getByRole('button')).toHaveText(['Full name', 'Contacts4', 'Summary'])
+    await expect(goTo.getByRole('button', { name: 'Contacts' })).toHaveAccessibleDescription('4 contacts')
+    await goTo.getByRole('button', { name: 'Contacts' }).click()
+    await expect.poll(focusedKey).toBe('contact:c1:value')
+    await expect(panelTitle()).toHaveText('Header')
+    await goTo.getByRole('button', { name: 'Summary', exact: true }).click()
+    await expect.poll(focusedKey).toBe('header:summary')
+    await goTo.getByRole('button', { name: 'Full name', exact: true }).click()
+    await expect.poll(focusedKey).toBe('header:fullName')
+    await expect(panelTitle()).toHaveText('Header')
+
+    // „+ Add contact”: nowy kontakt na stronie z kursorem w jego etykiecie; panel nagłówka zostaje.
+    await panelButton('+ Add contact').click()
+    await expect.poll(focusedKey).toMatch(/^contact:.+:label$/)
+    await expect(window.locator('.preview .cv-pages').getByRole('combobox', { name: 'Contact label 5', exact: true })).toBeFocused()
+    await expect(panelTitle()).toHaveText('Header')
+    await window.keyboard.type('Web')
+    await window.keyboard.press('Tab')
+    await window.keyboard.type('example.com')
+    await expect(pageContacts()).toHaveCount(5)
+    await expect(goTo.getByRole('button', { name: 'Contacts' })).toHaveAccessibleDescription('5 contacts')
+
+    // Przełącznik zdjęcia: ukryte zdjęcie znika ze strony, a jego obraz zostaje; przycisk otwiera panel zdjęcia.
+    const photo = window.locator('.preview .cv-page .cv-photo')
+    const image = await photo.getAttribute('src')
+    const showPhoto = panelSwitch('Show photo on CV')
+    await expect(showPhoto).toBeChecked()
+    await showPhoto.uncheck()
+    await expect(photo).toHaveCount(0)
+    await expect(panelTitle()).toHaveText('Header')
+    await showPhoto.check()
+    await expect(photo).toHaveAttribute('src', image!)
+
+    // Cofanie: pokazanie, ukrycie zdjęcia, potem wpisany kontakt i jego dodanie.
+    await undoButton().click()
+    await expect(photo).toHaveCount(0)
+    await undoButton().click()
+    await expect(photo).toHaveCount(1)
+    await expect(pageContacts()).toHaveCount(5)
+
+    await panelButton('Change, crop or remove photo').click()
+    await expect(panelTitle()).toHaveText('Photo')
+  })
+
+  test('in a new CV the header panel counts no contacts, and “+ Add contact” puts the caret in a contact without a value instead of adding another one', async () => {
+    await openNewCv()
+    await elementButton('Header').click()
+    const contacts = inspector().getByRole('list', { name: 'Go to', exact: true }).getByRole('button', { name: 'Contacts' })
+    await expect(contacts).toHaveAccessibleDescription('0 contacts')
+    // Nowe CV ma kontakty z etykietą bez wartości – „+ Add contact” stawia kursor w wartości pierwszego z nich zamiast
+    // dodawać kolejny pusty, także za drugim razem.
+    await panelButton('+ Add contact').click()
+    await expect.poll(focusedKey).toMatch(/^contact:.+:value$/)
+    const reused = await focusedKey()
+    await panelButton('+ Add contact').click()
+    await expect.poll(focusedKey).toBe(reused)
+    await expect(panelTitle()).toHaveText('Header')
+    await expect(contacts).toHaveAccessibleDescription('0 contacts')
+  })
+
+  test('the photo panel changes and crops the photo in the same dialog as the page, hides and shows it keeping the image, and removes it with “Removed. Undo”; without a photo it adds one', async () => {
+    await window.setViewportSize({ width: 1600, height: 1000 })
+    const photoPath = await writeRedBluePhoto()
+    await openFirstCvWithPages()
+    const photo = window.locator('.preview .cv-page .cv-photo')
+    const cropper = window.getByRole('dialog', { name: 'Crop photo' })
+    const removed = window.getByRole('status').filter({ hasText: 'Removed.' })
+    await elementButton('Photo').click()
+    await expect(panelTitle()).toHaveText('Photo')
+    await expect(inspector().getByRole('img', { name: 'Photo in the CV' })).toHaveAttribute('src', (await photo.getAttribute('src'))!)
+    await expect(inspector().locator('.inspector-panel').getByRole('button')).toHaveText(['Change photo', 'Crop photo', 'Remove photo'])
+
+    // „Change photo”: wybór pliku i to samo okno kadrowania co na stronie; po nim fokus wraca na przycisk.
+    await stubOpenDialog(photoPath)
+    await panelButton('Change photo').click()
+    await expect(cropper).toBeVisible()
+    await cropper.getByRole('button', { name: 'Apply' }).click()
+    await expect(cropper).toHaveCount(0)
+    await expect(photo).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+    await expect(panelButton('Change photo')).toBeFocused()
+    await expect(panelTitle()).toHaveText('Photo')
+
+    // „Crop photo” kadruje zdjęcie z CV jeszcze raz.
+    const changed = await photo.getAttribute('src')
+    await panelButton('Crop photo').click()
+    await cropper.getByRole('slider', { name: 'Zoom' }).fill('2')
+    await cropper.getByRole('button', { name: 'Apply' }).click()
+    await expect(photo).not.toHaveAttribute('src', changed!)
+    await expect(panelButton('Crop photo')).toBeFocused()
+    const cropped = await photo.getAttribute('src')
+
+    // „Show on CV”: ukryte zdjęcie znika ze stron, a obraz zostaje (miniatura w panelu i ten sam obraz po pokazaniu).
+    await panelSwitch('Show on CV').uncheck()
+    await expect(photo).toHaveCount(0)
+    await expect(inspector().getByRole('img', { name: 'Photo in the CV' })).toHaveAttribute('src', cropped!)
+    await panelSwitch('Show on CV').check()
+    await expect(photo).toHaveAttribute('src', cropped!)
+
+    // „Remove photo”: „Removed.” jak na stronie, fokus na „Add photo”; „Undo” przywraca zdjęcie i fokus na „Remove photo”.
+    await panelButton('Remove photo').click()
+    await expect(photo).toHaveCount(0)
+    await expect(removed).toBeVisible()
+    await expect(panelTitle()).toHaveText('Photo')
+    await expect(panelButton('Add photo')).toBeFocused()
+    await expect(panelSwitch('Show on CV')).toHaveCount(0)
+    await removed.getByRole('button', { name: 'Undo' }).click()
+    await expect(photo).toHaveAttribute('src', cropped!)
+    await expect(panelButton('Remove photo')).toBeFocused()
+
+    // Bez zdjęcia „Add photo” wybiera i kadruje zdjęcie: anulowanie wraca na przycisk, zatwierdzenie – fokus na zdjęciu.
+    await panelButton('Remove photo').click()
+    await panelButton('Add photo').click()
+    await cropper.getByRole('button', { name: 'Cancel' }).click()
+    await expect(panelButton('Add photo')).toBeFocused()
+    await expect(photo).toHaveCount(0)
+    await panelButton('Add photo').click()
+    await cropper.getByRole('button', { name: 'Apply' }).click()
+    await expect(photo).toHaveCount(1)
+    await expect(photoButton()).toBeFocused()
+    await expect(panelTitle()).toHaveText('Photo')
+
+    // Cofnięcie dodania zostawia panel zdjęcia – z „Add photo”.
+    await window.keyboard.press('Meta+z')
+    await expect(photo).toHaveCount(0)
+    await expect(panelTitle()).toHaveText('Photo')
+    await expect(panelButton('Add photo')).toBeVisible()
+  })
+
+  test('the consent panel switches the clause on and off, goes to its text on the page, saves the text as a new clause and picks a clause from the library; each change is one undo step', async () => {
+    await window.setViewportSize({ width: 1600, height: 1000 })
+    await openFirstCvWithPages()
+    const pageConsent = window.locator('.preview .cv-page .cv-consent')
+    const library = inspector().getByRole('combobox', { name: 'Clause from the library', exact: true })
+    const editOnPage = panelButton('Edit on the page')
+    const saveAsNew = panelButton('Save as new clause')
+
+    // Wyłączona klauzula: panel z wyłączonym „Show on CV”, bez przejścia na stronę; pusta biblioteka – wybór nieaktywny.
+    await elementButton('Consent clause').click()
+    await expect(panelTitle()).toHaveText('Consent clause')
+    await expect(panelSwitch('Show on CV')).not.toBeChecked()
+    await expect(editOnPage).toBeDisabled()
+    await expect(library).toBeDisabled()
+    await expect(pageConsent).toHaveCount(0)
+
+    // Włączenie i „Edit on the page”: kursor w tekście klauzuli na stronie, panel zostaje.
+    await panelSwitch('Show on CV').check()
+    await expect(editOnPage).toBeEnabled()
+    await editOnPage.click()
+    await expect(consentField()).toBeFocused()
+    await expect(panelTitle()).toHaveText('Consent clause')
+    await window.keyboard.type('I agree to the processing of my personal data.')
+    await expect(pageConsent).toHaveText('I agree to the processing of my personal data.')
+
+    // „Save as new clause” pyta o nazwę; nowa klauzula jest wybrana w CV.
+    await saveAsNew.click()
+    await expect(inspector().getByLabel('New clause name')).toBeFocused()
+    await window.keyboard.type('Recruitment')
+    await window.keyboard.press('Enter')
+    await expect(library).toBeEnabled()
+    await expect(library.locator('option:checked')).toHaveText('Recruitment')
+
+    // Druga klauzula (tekst zmieniony na stronie) i wybór pierwszej z biblioteki w panelu – kopia jej treści na stronie.
+    await editOnPage.click()
+    await window.keyboard.press('Meta+a')
+    await window.keyboard.type('Short clause.')
+    await saveAsNew.click()
+    await window.keyboard.type('Short')
+    await window.keyboard.press('Enter')
+    await expect(library.locator('option:checked')).toHaveText('Short')
+    await library.selectOption({ label: 'Recruitment' })
+    await expect(pageConsent).toHaveText('I agree to the processing of my personal data.')
+    await expect(panelTitle()).toHaveText('Consent clause')
+
+    // Wybór z biblioteki to jeden krok cofania.
+    await undoButton().click()
+    await expect(pageConsent).toHaveText('Short clause.')
+    await expect(library.locator('option:checked')).toHaveText('Short')
+
+    // Wyłączenie: klauzula znika ze strony (zostaje w CV), „Edit on the page” nieaktywne; cofnięcie ją przywraca.
+    await panelSwitch('Show on CV').uncheck()
+    await expect(pageConsent).toHaveCount(0)
+    await expect(editOnPage).toBeDisabled()
+    await undoButton().click()
+    await expect(pageConsent).toHaveText('Short clause.')
+  })
 })
 
 test('the sidebar holds only the CV form, collapsed to a rail by default; the rail and the form are an app preference kept across restarts, a saved Outline opens as the rail, and Preview mode has no sidebar', async () => {

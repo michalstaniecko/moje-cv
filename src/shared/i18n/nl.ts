@@ -241,7 +241,18 @@ export const nl: Dictionary = {
         position: (position, total) => `${position} van ${total}`,
         items: 'Items',
         empty: 'Deze sectie is leeg'
-      }
+      },
+      header: {
+        goTo: 'Ga naar',
+        contacts: 'Contacten',
+        contactCount: {
+          one: (count) => `${count} contact`,
+          other: (count) => `${count} contacten`
+        },
+        photoOptions: 'Wijzig, snijd bij of verwijder foto'
+      },
+      photo: { add: 'Voeg foto toe' },
+      consent: { editOnPage: 'Bewerk op de pagina' }
     },
     header: 'Kop',
     fullName: 'Volledige naam',

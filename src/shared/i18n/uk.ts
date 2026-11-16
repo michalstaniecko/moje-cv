@@ -239,7 +239,20 @@ export const uk: Dictionary = {
         position: (position, total) => `${position} з ${total}`,
         items: 'Пункти',
         empty: 'Розділ порожній'
-      }
+      },
+      header: {
+        goTo: 'Перейти до',
+        contacts: 'Контакти',
+        contactCount: {
+          one: (count) => `${count} контакт`,
+          few: (count) => `${count} контакти`,
+          many: (count) => `${count} контактів`,
+          other: (count) => `${count} контакту`
+        },
+        photoOptions: 'Змінити, обрізати або видалити фото'
+      },
+      photo: { add: 'Додати фото' },
+      consent: { editOnPage: 'Редагувати на сторінці' }
     },
     header: 'Заголовок',
     fullName: 'Ім’я та прізвище',

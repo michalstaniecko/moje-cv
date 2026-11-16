@@ -234,7 +234,17 @@ export const vi: Dictionary = {
         position: (position, total) => `${position} trên ${total}`,
         items: 'Mục',
         empty: 'Mục này trống'
-      }
+      },
+      header: {
+        goTo: 'Đi tới',
+        contacts: 'Liên hệ',
+        contactCount: {
+          other: (count) => `${count} liên hệ`
+        },
+        photoOptions: 'Đổi, cắt hoặc xóa ảnh'
+      },
+      photo: { add: 'Thêm ảnh' },
+      consent: { editOnPage: 'Sửa trên trang' }
     },
     header: 'Phần đầu',
     fullName: 'Họ và tên',

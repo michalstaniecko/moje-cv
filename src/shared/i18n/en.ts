@@ -4,6 +4,7 @@ import type { PluralForms } from './plural'
 // Odmiana „page” – zmienna z typem, a nie rzutowanie, żeby brak formy `other` był błędem kompilacji.
 const pages: PluralForms = { one: (count) => `${count} page`, other: (count) => `${count} pages` }
 const outlineItems: PluralForms = { one: (count) => `${count} item`, other: (count) => `${count} items` }
+const headerContacts: PluralForms = { one: (count) => `${count} contact`, other: (count) => `${count} contacts` }
 
 // Słownik angielski – źródło prawdy: każdy inny język musi spełniać jego typ (ADR-0001).
 export const en = {
@@ -273,7 +274,19 @@ export const en = {
         position: (position: number, total: number) => `${position} of ${total}`,
         items: 'Items',
         empty: 'This section is empty'
-      }
+      },
+      // Panel nagłówka: skróty do części nagłówka na stronie (przy kontaktach liczba kontaktów z wartością – dla czytnika
+      // ekranu jako opis), „+ Add contact” i zdjęcie (przycisk otwiera panel zdjęcia).
+      header: {
+        goTo: 'Go to',
+        contacts: 'Contacts',
+        contactCount: headerContacts,
+        photoOptions: 'Change, crop or remove photo'
+      },
+      // Panel zdjęcia bez zdjęcia: wybór pliku i kadrowanie.
+      photo: { add: 'Add photo' },
+      // Panel klauzuli zgody: kursor w tekście klauzuli na stronie.
+      consent: { editOnPage: 'Edit on the page' }
     },
     header: 'Header',
     fullName: 'Full name',

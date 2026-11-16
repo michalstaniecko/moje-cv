@@ -35,11 +35,12 @@ export function selectionOfFragment(fragment: string, document: CvDocument): Ins
   return null
 }
 
-// Zaznaczenie, które nadal ma swoją część w dokumencie; część, która zniknęła (np. sekcja albo zdjęcie po cofnięciu),
-// daje null – Inspektor wraca do panelu „Dokument”. Ukryte części zostają (ich panel je pokazuje).
+// Zaznaczenie, które nadal ma swoją część w dokumencie; sekcja, która zniknęła, daje null – Inspektor wraca do panelu
+// „Dokument”. Ukryte części zostają (ich panel je pokazuje). Zdjęcie zostaje także bez zdjęcia: wiersz „Photo” jest na
+// liście „CV elements” zawsze, a panel zdjęcia bez zdjęcia proponuje „Add photo” (#141) – także po usunięciu albo
+// cofnięciu dodania zdjęcia.
 export function selectionInDocument(selection: InspectorSelection, document: CvDocument): InspectorSelection {
   if (selection?.kind === 'section') return document.sections.some((section) => section.id === selection.id) ? selection : null
-  if (selection?.kind === 'photo') return document.header.photo ? selection : null
   return selection
 }
 

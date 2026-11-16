@@ -238,7 +238,18 @@ export const fr: Dictionary = {
         position: (position, total) => `${position} sur ${total}`,
         items: 'Éléments',
         empty: 'Cette section est vide'
-      }
+      },
+      header: {
+        goTo: 'Aller à',
+        contacts: 'Contacts',
+        contactCount: {
+          one: (count) => `${count} contact`,
+          other: (count) => `${count} contacts`
+        },
+        photoOptions: 'Changer, recadrer ou supprimer la photo'
+      },
+      photo: { add: 'Ajouter une photo' },
+      consent: { editOnPage: 'Modifier sur la page' }
     },
     header: 'En-tête',
     fullName: 'Nom complet',
