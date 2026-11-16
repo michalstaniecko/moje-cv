@@ -8,7 +8,7 @@ import { sectionName } from '../editor/fields/SectionTitleField'
 import type { RowMenuAction } from '../editor/RowMenu'
 import { SortableList } from '../editor/SortableList'
 import { useDictionary, useInterfaceLanguage } from '../i18n'
-import type { CvElement } from './openOnPage'
+import { elementKey, type CvElement } from './selection'
 
 // Przełącznik „Pokaż na CV” zdjęcia w Inspektorze – na liście „CV elements” albo w panelu zdjęcia (InspectorSwitch.tsx):
 // tu wraca fokus po „Ukryj zdjęcie” w popoverze zdjęcia (canvas/PhotoPopover.tsx).
@@ -16,7 +16,7 @@ export const PHOTO_SWITCH_SELECTOR = '.inspector [data-switch="photo"]'
 
 // Przycisk wiersza części CV na liście (np. powrót fokusu z panelu tej części).
 export const elementRowSelector = (element: CvElement) =>
-  `.cv-elements [data-element="${element.kind}"]${element.kind === 'section' ? `[data-element-id="${CSS.escape(element.id)}"]` : ''} .cv-element-name`
+  `.cv-elements [data-element="${CSS.escape(elementKey(element))}"] .cv-element-name`
 
 // „CV elements” w panelu „Dokument” Inspektora (GLOSSARY.md, ADR-0012; zastępuje Outline): jedna lista części CV
 // (dla czytnika ekranu lista „CV elements” z wierszem na część) w kolejności dokumentu – Nagłówek, Zdjęcie, każda sekcja (także ukryte i puste) i Klauzula zgody.
@@ -181,8 +181,7 @@ function ElementRow({
     <div
       className="cv-element"
       role="listitem"
-      data-element={element.kind}
-      data-element-id={element.kind === 'section' ? element.id : undefined}
+      data-element={elementKey(element)}
       data-muted={(shown && !shown.checked) || undefined}
       onKeyDown={handle ? openMenu : undefined}
     >

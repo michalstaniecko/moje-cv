@@ -1,8 +1,16 @@
-import type { CvDocument } from '../domain/schema'
-import type { CvElement } from './openOnPage'
+import type { CvDocument, Section } from '../domain/schema'
+
+// Część CV w Inspektorze (#136): wiersz listy „CV elements” i zaznaczenie – panel tej części.
+export type CvElement = { kind: 'header' } | { kind: 'photo' } | { kind: 'section'; id: string } | { kind: 'consent' }
 
 // Zaznaczenie Inspektora (#136, #139): część CV, której panel Inspektor pokazuje; null – panel „Dokument”.
 export type InspectorSelection = CvElement | null
+
+// Stały klucz części CV: rodzaj, a dla sekcji – z jej id (np. `section:education`).
+export const elementKey = (element: CvElement) => (element.kind === 'section' ? `section:${element.id}` : element.kind)
+
+export const findSection = (document: CvDocument, id: string): Section | undefined =>
+  document.sections.find((section) => section.id === id)
 
 const SECTION_PREFIXES = ['sectionTitle:', 'list:'] as const
 const ITEM_PREFIX = 'item:'
@@ -25,7 +33,7 @@ export function selectionOfFragment(fragment: string, document: CvDocument): Ins
   for (const prefix of SECTION_PREFIXES) {
     if (!fragment.startsWith(prefix)) continue
     const id = fragment.slice(prefix.length)
-    return document.sections.some((section) => section.id === id) ? { kind: 'section', id } : null
+    return findSection(document, id) ? { kind: 'section', id } : null
   }
   if (fragment.startsWith(ITEM_PREFIX)) {
     const itemId = fragment.slice(ITEM_PREFIX.length)
@@ -40,9 +48,8 @@ export function selectionOfFragment(fragment: string, document: CvDocument): Ins
 // liście „CV elements” zawsze, a panel zdjęcia bez zdjęcia proponuje „Add photo” (#141) – także po usunięciu albo
 // cofnięciu dodania zdjęcia.
 export function selectionInDocument(selection: InspectorSelection, document: CvDocument): InspectorSelection {
-  if (selection?.kind === 'section') return document.sections.some((section) => section.id === selection.id) ? selection : null
-  return selection
+  return selection?.kind === 'section' && !findSection(document, selection.id) ? null : selection
 }
 
 export const sameSelection = (a: InspectorSelection, b: InspectorSelection) =>
-  a === b || (a !== null && b !== null && a.kind === b.kind && (a.kind !== 'section' || (b.kind === 'section' && a.id === b.id)))
+  a === b || (a !== null && b !== null && elementKey(a) === elementKey(b))

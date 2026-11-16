@@ -8,7 +8,8 @@ import { useDictionary } from '../i18n'
 import { elementRowSelector } from './CvElements'
 import { DocumentPanel } from './DocumentPanel'
 import { ElementPanel } from './ElementPanel'
-import { openOnPage, type CvElement } from './openOnPage'
+import { openOnPage } from './openOnPage'
+import { elementKey, type CvElement } from './selection'
 import { useInspectorSelection } from './useInspectorSelection'
 
 // Inspector (GLOSSARY.md, ADR-0012): stała kolumna opcji CV po prawej stronie stron, w Edit mode i w Preview mode.
@@ -73,7 +74,7 @@ export function Inspector({
     <aside ref={aside} className="inspector" aria-label={t.label}>
       {selection ? (
         <ElementPanel
-          key={selection.kind === 'section' ? `section:${selection.id}` : selection.kind}
+          key={elementKey(selection)}
           element={selection}
           onBack={back}
           editor={editor}

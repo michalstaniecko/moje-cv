@@ -3,9 +3,7 @@ import { sectionEmpty } from '../canvas/addOnPage'
 import { fragmentKey, type EditTarget } from '../canvas/editTargets'
 import type { EditSession } from '../canvas/useEditSession'
 import type { CvEditor } from '../editor/cvEditor'
-
-// Część CV na liście „CV elements” Inspektora – ten sam kształt co zaznaczenie Inspektora ze specyfikacji #136.
-export type CvElement = { kind: 'header' } | { kind: 'photo' } | { kind: 'section'; id: string } | { kind: 'consent' }
+import { findSection, type CvElement } from './selection'
 
 // Kursor w części CV na stronie: strony przewinięte do jej fragmentu (jeśli już tam jest) i `session.focusPart`
 // (pusta część jest odsłaniana z placeholderem).
@@ -39,7 +37,7 @@ export function openOnPage(
       return
     }
     case 'section': {
-      const section = document.sections.find((candidate) => candidate.id === element.id)
+      const section = findSection(document, element.id)
       if (!section || section.hidden) return
       if (!sectionEmpty(section, document)) {
         focusOnPage(session, { kind: 'sectionTitle', sectionId: section.id })
