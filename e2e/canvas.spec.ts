@@ -3112,6 +3112,46 @@ test('in Preview mode the CV elements rows do not go into editing and have no ha
   await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: /^Skills$/ })).toHaveCount(1)
 })
 
+// Fokus z klawiatury widać: obrys fokusu (`outline`), którego nie ucina przewijany przodek (Inspector przewija się sam
+// i ucina to, co wystaje w poziomie).
+const focusVisible = (locator: Locator) =>
+  locator.evaluate((element) => {
+    const styleOf = (target: typeof element) => target.ownerDocument.defaultView!.getComputedStyle(target)
+    const style = styleOf(element)
+    const ring = style.outlineStyle === 'none' ? 0 : parseFloat(style.outlineWidth)
+    if (ring === 0) return false
+    const reach = ring + parseFloat(style.outlineOffset)
+    const box = element.getBoundingClientRect()
+    for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+      if (styleOf(parent).overflowX === 'visible') continue
+      const clip = parent.getBoundingClientRect()
+      if (box.left - reach < clip.left || box.right + reach > clip.right) return false
+    }
+    return true
+  })
+
+test('the CV elements rows, section handles and switches are reached with Tab in list order, each with a visible focus', async () => {
+  await window.setViewportSize({ width: 1600, height: 1000 })
+  await openFirstCvWithPages()
+  await expect(cvElements()).toBeVisible()
+  const sections = ['Work experience', 'Education', 'Skills', 'Languages', 'Interests']
+  const order = [
+    elementButton('Header'),
+    elementButton('Photo'),
+    elementSwitch('Photo'),
+    ...sections.flatMap((name) => [elementHandle(name), elementButton(name), elementSwitch(name)]),
+    elementButton('Consent clause'),
+    elementSwitch('Consent clause')
+  ]
+
+  await inspectorGroup('CV elements').focus()
+  for (const control of order) {
+    await window.keyboard.press('Tab')
+    await expect(control).toBeFocused()
+    expect(await focusVisible(control), `${control}`).toBe(true)
+  }
+})
+
 // ---------- Zaznaczenie Inspektora i panel sekcji (#139) ----------
 
 const panelTitle = () => inspector().getByRole('heading', { level: 2 })
