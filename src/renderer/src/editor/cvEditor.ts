@@ -87,6 +87,12 @@ export function createCvEditor(initial: CvDocument, save: (document: CvDocument)
       history.getState().redo()
     },
 
+    // Czy jest co cofnąć / ponowić – dla przycisków Cofnij / Ponów; interfejs nie czyta historii (`zundo`) bezpośrednio.
+    canUndo: () => history.getState().pastStates.length > 0,
+    canRedo: () => history.getState().futureStates.length > 0,
+    // Powiadamia o każdej zmianie historii (do `useSyncExternalStore` razem z `canUndo` / `canRedo`).
+    subscribeHistory: (listener: () => void) => history.subscribe(listener),
+
     flush
   }
 }
