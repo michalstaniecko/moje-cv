@@ -177,17 +177,13 @@ export const de: Dictionary = {
     mode: { label: 'Modus', edit: 'Bearbeiten', preview: 'Vorschau' },
     history: 'Änderungsverlauf',
     outline: {
-      title: 'Gliederung',
       empty: 'leer',
       hidden: 'ausgeblendet',
       form: 'Formular',
       collapse: 'Einklappen',
-      expand: 'Ausklappen',
-      showOnCv: 'Im Lebenslauf zeigen',
       showSection: (name) => `„${name}“ im Lebenslauf zeigen`,
-      showToEdit: 'Zeige den Abschnitt im Lebenslauf, um ihn zu bearbeiten',
       showPhoto: 'Foto im Lebenslauf zeigen',
-      showPhotoToEdit: 'Zeige das Foto im Lebenslauf, um es zu bearbeiten',
+      showConsent: 'Einwilligungserklärung im Lebenslauf zeigen',
       items: { one: (count) => `${count} Eintrag`, other: (count) => `${count} Einträge` },
       sidebar: 'Seitenleiste'
     },
@@ -233,7 +229,7 @@ export const de: Dictionary = {
     inspector: {
       label: 'Inspektor',
       document: 'Dokument',
-      groups: { template: 'Vorlage', style: 'Stil', language: 'Sprache' },
+      groups: { template: 'Vorlage', style: 'Stil', elements: 'Lebenslauf-Elemente', language: 'Sprache' },
       colors: { teal: 'Petrol', blue: 'Blau', graphite: 'Graphit', violet: 'Violett', crimson: 'Karmesin', orange: 'Orange', green: 'Grün', black: 'Schwarz' },
       customColor: 'Eigene Farbe',
       languageNote: 'Ändert festen Text im Lebenslauf, etwa „heute“. Deine Inhalte werden nicht übersetzt.'

@@ -23,7 +23,7 @@ export function App() {
 
   // Proces główny wie, który ekran jest otwarty: od tego zależy aktywność menu Plik i Cofnij / Ponów.
   useEffect(() => window.api.menu.setScreen(appScreen[screen.kind]), [screen.kind])
-  // Pasek boczny edytora (Outline / CV form / szyna) wczytany zawczasu: pierwsze otwarte CV ma od razu właściwy.
+  // Pasek boczny edytora (CV form / szyna) wczytany zawczasu: pierwsze otwarte CV ma od razu właściwy.
   useEffect(preloadEditorSidebar, [])
 
   // Powłoka aplikacji: przełącznik ekranów nad jedną, wspólną belką Sponsor bar. Belka zajmuje stałą wysokość

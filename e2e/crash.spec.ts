@@ -141,7 +141,7 @@ test('a rendering error shows a translated “Something went wrong” screen who
 test('a change made in the editor right before a rendering error is kept after Reload', async () => {
   await launchWithLanguageMenu()
   await cvList().getByRole('button', { name: 'Open' }).click()
-  // Pole w CV form (domyślny pasek boczny to Outline); wybór zostaje po Wczytaj ponownie.
+  // Pole w CV form (domyślnie pasek boczny zwinięty do szyny); wybór zostaje po Wczytaj ponownie.
   await window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click()
   const fullName = window.locator('.editor-form').getByLabel('Full name')
   await expect(fullName).toBeVisible()

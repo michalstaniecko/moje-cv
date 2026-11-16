@@ -170,17 +170,13 @@ export const uk: Dictionary = {
     mode: { label: 'Режим', edit: 'Редагування', preview: 'Перегляд' },
     history: 'Історія змін',
     outline: {
-      title: 'Структура',
       empty: 'порожній',
       hidden: 'прихований',
       form: 'Форма',
       collapse: 'Згорнути',
-      expand: 'Розгорнути',
-      showOnCv: 'Показати в резюме',
       showSection: (name) => `Показати «${name}» в резюме`,
-      showToEdit: 'Покажіть розділ у резюме, щоб його редагувати',
       showPhoto: 'Показати фото в резюме',
-      showPhotoToEdit: 'Покажіть фото в резюме, щоб його редагувати',
+      showConsent: 'Показати згоду на обробку даних у резюме',
       items: {
         one: (count) => `${count} елемент`,
         few: (count) => `${count} елементи`,
@@ -231,7 +227,7 @@ export const uk: Dictionary = {
     inspector: {
       label: 'Інспектор',
       document: 'Документ',
-      groups: { template: 'Шаблон', style: 'Стиль', language: 'Мова' },
+      groups: { template: 'Шаблон', style: 'Стиль', elements: 'Елементи резюме', language: 'Мова' },
       colors: { teal: 'Морська хвиля', blue: 'Синій', graphite: 'Графітовий', violet: 'Фіолетовий', crimson: 'Малиновий', orange: 'Помаранчевий', green: 'Зелений', black: 'Чорний' },
       customColor: 'Власний колір',
       languageNote: 'Змінює сталий текст резюме, наприклад «дотепер». Ваш вміст не перекладається.'

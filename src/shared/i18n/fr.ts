@@ -170,17 +170,13 @@ export const fr: Dictionary = {
     mode: { label: 'Mode', edit: 'Édition', preview: 'Aperçu' },
     history: 'Historique des modifications',
     outline: {
-      title: 'Plan',
       empty: 'vide',
       hidden: 'masquée',
       form: 'Formulaire',
       collapse: 'Réduire',
-      expand: 'Développer',
-      showOnCv: 'Afficher dans le CV',
       showSection: (name) => `Afficher « ${name} » dans le CV`,
-      showToEdit: 'Affichez la section dans le CV pour la modifier',
       showPhoto: 'Afficher la photo dans le CV',
-      showPhotoToEdit: 'Affichez la photo dans le CV pour la modifier',
+      showConsent: 'Afficher la clause de consentement dans le CV',
       items: {
         one: (count) => `${count} élément`,
         many: (count) => `${count} d’éléments`,
@@ -230,7 +226,7 @@ export const fr: Dictionary = {
     inspector: {
       label: 'Inspecteur',
       document: 'Document',
-      groups: { template: 'Modèle', style: 'Style', language: 'Langue' },
+      groups: { template: 'Modèle', style: 'Style', elements: 'Éléments du CV', language: 'Langue' },
       colors: { teal: 'Bleu canard', blue: 'Bleu', graphite: 'Graphite', violet: 'Violet', crimson: 'Cramoisi', orange: 'Orange', green: 'Vert', black: 'Noir' },
       customColor: 'Couleur personnalisée',
       languageNote: 'Change le texte fixe du CV, comme « aujourd’hui ». Votre contenu n’est pas traduit.'

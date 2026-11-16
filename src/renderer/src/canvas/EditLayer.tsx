@@ -63,7 +63,7 @@ export function EditLayer({
   })
   const compact = scale < CONTROLS_MIN_SCALE
   const photo = usePhotoEditing({ editor, photo: document.header.photo, onRemove, onFocusLost })
-  // Wiersz „Photo” w Outline wybiera zdjęcie i przenosi fokus na nie tak jak warstwa (bieżące obsługi).
+  // Wiersz „Photo” na liście „CV elements” wybiera zdjęcie i przenosi fokus na nie tak jak warstwa (bieżące obsługi).
   const latestPhoto = useRef(photo)
   useEffect(() => {
     latestPhoto.current = photo

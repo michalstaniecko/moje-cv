@@ -7,7 +7,9 @@ import { updateSettings } from '../editor/documentEdits'
 import { TemplatePicker } from '../editor/TemplatePicker'
 import { useDictionary } from '../i18n'
 import { fontStack } from '../template/fonts'
+import { CvElements } from './CvElements'
 import { InspectorGroup } from './InspectorGroup'
+import type { CvElement } from './openOnPage'
 
 // Gotowe kolory akcentu: stonowane barwy dobrze czytelne na bieli; pierwszy to domyślny akcent CV (domain/schema.ts).
 export const accentPresets = [
@@ -24,9 +26,20 @@ export const accentPresets = [
 // Klucz łączenia kroków cofania własnego koloru – ten sam co w CV form: przeciąganie w wyborze koloru to jeden krok.
 const ACCENT_MERGE_KEY = 'settings:accentColor'
 
-// Panel „Dokument” Inspektora (bez zaznaczenia): CV design w zwijanych grupach Szablon, Styl i Język. Każda zmiana idzie
-// przez edytor – od razu na stronach, w autozapisie i jako jeden krok cofania. Działa w Edit mode i w Preview mode.
-export function DocumentPanel({ editor, document }: { editor: CvEditor; document: CvDocument }) {
+// Panel „Dokument” Inspektora (bez zaznaczenia): zwijane grupy Szablon, Styl, „CV elements” i Język. Każda zmiana idzie
+// przez edytor – od razu na stronach, w autozapisie i jako jeden krok cofania. Działa w Edit mode i w Preview mode;
+// `editable` (Edit mode) – wiersze „CV elements” zgłaszają `onOpen`.
+export function DocumentPanel({
+  editor,
+  document,
+  editable,
+  onOpen
+}: {
+  editor: CvEditor
+  document: CvDocument
+  editable: boolean
+  onOpen: (element: CvElement, from: () => HTMLElement | null) => void
+}) {
   const t = useDictionary().editor
   const { settings } = document
   const change = (patch: Parameters<typeof updateSettings>[0], mergeKey?: string) => editor.edit(updateSettings(patch), mergeKey)
@@ -39,6 +52,9 @@ export function DocumentPanel({ editor, document }: { editor: CvEditor; document
       <InspectorGroup id="style" title={t.inspector.groups.style}>
         <AccentColor value={settings.accentColor} onChange={change} />
         <FontCards value={settings.font} onChange={(font) => change({ font })} />
+      </InspectorGroup>
+      <InspectorGroup id="elements" title={t.inspector.groups.elements}>
+        <CvElements editor={editor} document={document} editable={editable} onOpen={onOpen} />
       </InspectorGroup>
       <InspectorGroup id="language" title={t.inspector.groups.language}>
         <CvLanguageField value={settings.language} onChange={(language) => change({ language })} />

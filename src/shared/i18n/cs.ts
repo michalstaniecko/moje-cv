@@ -170,17 +170,13 @@ export const cs: Dictionary = {
     mode: { label: 'Režim', edit: 'Úpravy', preview: 'Náhled' },
     history: 'Historie změn',
     outline: {
-      title: 'Osnova',
       empty: 'prázdná',
       hidden: 'skrytá',
       form: 'Formulář',
       collapse: 'Sbalit',
-      expand: 'Rozbalit',
-      showOnCv: 'Zobrazit v CV',
       showSection: (name) => `Zobrazit „${name}“ v CV`,
-      showToEdit: 'Zobrazte sekci v CV, abyste ji mohli upravit',
       showPhoto: 'Zobrazit fotku v CV',
-      showPhotoToEdit: 'Zobrazte fotku v CV, abyste ji mohli upravit',
+      showConsent: 'Zobrazit souhlas se zpracováním údajů v CV',
       items: {
         one: (count) => `${count} položka`,
         few: (count) => `${count} položky`,
@@ -231,7 +227,7 @@ export const cs: Dictionary = {
     inspector: {
       label: 'Inspektor',
       document: 'Dokument',
-      groups: { template: 'Šablona', style: 'Styl', language: 'Jazyk' },
+      groups: { template: 'Šablona', style: 'Styl', elements: 'Prvky CV', language: 'Jazyk' },
       colors: { teal: 'Petrolejová', blue: 'Modrá', graphite: 'Grafitová', violet: 'Fialová', crimson: 'Karmínová', orange: 'Oranžová', green: 'Zelená', black: 'Černá' },
       customColor: 'Vlastní barva',
       languageNote: 'Mění pevný text v CV, například „dosud“. Váš obsah se nepřekládá.'

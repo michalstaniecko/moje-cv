@@ -36,10 +36,14 @@ test.afterEach(async () => {
   await rm(outputDir, { recursive: true, force: true })
 })
 
-// Otwiera pierwsze CV i przełącza pasek boczny na CV form – separator jest tylko przy nim (domyślny Outline ma stałą szerokość).
+// Otwiera pierwsze CV i przełącza pasek boczny na CV form – separator jest tylko przy nim (domyślna szyna ma stałą szerokość).
 async function openFirstCv() {
   await window.getByRole('list', { name: 'CV list' }).getByRole('button', { name: 'Open' }).click()
-  await window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click()
+  // Wybór CV form zostaje na całą sesję aplikacji – „Form” na szynie tylko wtedy, gdy pasek jest zwinięty.
+  const form = window.locator('.editor-form')
+  await expect(form.or(window.locator('.editor-rail'))).toBeVisible()
+  if (!(await form.isVisible())) await window.locator('.editor-rail').getByRole('button', { name: 'Form', exact: true }).click()
+  await expect(form).toBeVisible()
 }
 
 async function setWindowWidth(width: number) {

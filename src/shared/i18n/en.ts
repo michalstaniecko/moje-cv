@@ -192,22 +192,18 @@ export const en = {
     mode: { label: 'Mode', edit: 'Edit', preview: 'Preview' },
     // Grupa przycisków Cofnij / Ponów w pasku narzędzi (nazwy przycisków jak w menu Edycja: `menu.undo`, `menu.redo`).
     history: 'Change history',
-    // Pasek boczny w Edit mode: Outline (konspekt CV) i przełącznik Outline / CV form / szyna.
+    // Lista „CV elements” w Inspektorze (dawniej Outline) i pasek boczny w Edit mode (CV form albo szyna, do #135).
     outline: {
-      title: 'Outline',
+      // Oznaczenia wiersza listy: część ukryta na CV, sekcja bez treści.
       empty: 'empty',
       hidden: 'hidden',
       form: 'Form',
       collapse: 'Collapse',
-      expand: 'Expand',
-      showOnCv: 'Show on CV',
-      // Przełącznik w wierszu ukrytej sekcji (pokazuje ją na stronach) i opis wiersza: ukrytej sekcji nie ma na stronie.
+      // Przełączniki „Pokaż na CV” w wierszach listy, nazwane nazwą części.
       showSection: (name: string) => `Show “${name}” on CV`,
-      showToEdit: 'Show the section on the CV to edit it',
-      // Przełącznik w wierszu „Photo” (zdjęcie widoczne / ukryte) i opis wiersza ukrytego zdjęcia.
       showPhoto: 'Show photo on CV',
-      showPhotoToEdit: 'Show the photo on the CV to edit it',
-      // Liczba wpisów sekcji w Outline – dla czytnika ekranu (na ekranie sama liczba).
+      showConsent: 'Show consent clause on CV',
+      // Liczba wpisów sekcji na liście – dla czytnika ekranu (na ekranie sama liczba).
       items: outlineItems,
       // Nazwa zwiniętego paska bocznego (szyny) dla czytnika ekranu.
       sidebar: 'Sidebar'
@@ -261,7 +257,7 @@ export const en = {
     inspector: {
       label: 'Inspector',
       document: 'Document',
-      groups: { template: 'Template', style: 'Style', language: 'Language' },
+      groups: { template: 'Template', style: 'Style', elements: 'CV elements', language: 'Language' },
       colors: { teal: 'Teal', blue: 'Blue', graphite: 'Graphite', violet: 'Violet', crimson: 'Crimson', orange: 'Orange', green: 'Green', black: 'Black' },
       customColor: 'Custom color',
       // Notka pod CV language: zmienia tylko stały tekst na dokumencie, nie treść CV.

@@ -7,14 +7,14 @@ General CV options had no single place: CV design lived in the toolbar's "CV des
 ## Considered Options
 
 - **Keep CV design in the toolbar popover** (ADR-0011, Q18): rejected – the argument that the popover is the only place reachable in both modes no longer holds once the Inspector is in both modes, and a popover hides the pages it changes.
-- **Keep the Outline as a left sidebar next to a right-hand Inspector**: rejected as the end state – two side panels take space from the pages and split the same part-of-CV actions; the Outline stays only temporarily (layout Outline | pages | Inspector) until the "CV elements" list replaces it (#138).
+- **Keep the Outline as a left sidebar next to a right-hand Inspector**: rejected as the end state – two side panels take space from the pages and split the same part-of-CV actions; the Outline stayed only temporarily (layout Outline | pages | Inspector) until the "CV elements" list replaced it (#138).
 - **Put the Inspector in the left sidebar instead of the Outline**: rejected – the sidebar disappears in Preview mode and is still shared with the CV form until #135.
 - **Remember collapsed groups in the app settings**: rejected for now – needs schema, IPC and migration work for a minor preference; session memory is enough.
 - **"Layout and format" options (text size, density, photo shape, date format, page size) and an "App" tab** from the prototype: out of scope – each option without a schema field is a separate schema change (ADR-0002); Interface language and Appearance stay in the native menu.
 
 ## Consequences
 
-- `editorSidebar`, the sidebar rail and the CV form stay until #135; while the CV form is shown its CV design section and the Inspector's Document panel show the same settings, so e2e locators for the form's controls are scoped to `.editor-form`.
+- The Outline is gone (#138); the sidebar holds only the CV form, collapsed to its rail by default, and a saved `editorSidebar: 'outline'` reads as the rail. `editorSidebar`, the sidebar rail and the CV form stay until #135; while the CV form is shown its CV design section and the Inspector's Document panel show the same settings, so e2e locators for the form's controls are scoped to `.editor-form`.
 - E2E tests that used the popover are rewritten to the Inspector; golden pages pick the Template in the Inspector and must not change.
 - The Inspector is a UI root (`color-scheme: light dark`, `--ui-*` tokens, ADR-0004); Template thumbnails in it stay white paper.
 - A linear accessible path (Inspector → Page fields) and VoiceOver on the "CV elements" list must be checked by a human before the Outline and the CV form are gone.

@@ -170,17 +170,13 @@ export const id: Dictionary = {
     mode: { label: 'Mode', edit: 'Edit', preview: 'Pratinjau' },
     history: 'Riwayat perubahan',
     outline: {
-      title: 'Kerangka',
       empty: 'kosong',
       hidden: 'tersembunyi',
       form: 'Formulir',
       collapse: 'Ciutkan',
-      expand: 'Bentangkan',
-      showOnCv: 'Tampilkan di CV',
       showSection: (name) => `Tampilkan “${name}” di CV`,
-      showToEdit: 'Tampilkan bagian di CV untuk mengeditnya',
       showPhoto: 'Tampilkan foto di CV',
-      showPhotoToEdit: 'Tampilkan foto di CV untuk mengeditnya',
+      showConsent: 'Tampilkan klausul persetujuan di CV',
       items: { other: (count) => `${count} item` },
       sidebar: 'Bilah samping'
     },
@@ -226,7 +222,7 @@ export const id: Dictionary = {
     inspector: {
       label: 'Inspektor',
       document: 'Dokumen',
-      groups: { template: 'Templat', style: 'Gaya', language: 'Bahasa' },
+      groups: { template: 'Templat', style: 'Gaya', elements: 'Elemen CV', language: 'Bahasa' },
       colors: { teal: 'Hijau toska', blue: 'Biru', graphite: 'Grafit', violet: 'Ungu', crimson: 'Merah tua', orange: 'Oranye', green: 'Hijau', black: 'Hitam' },
       customColor: 'Warna kustom',
       languageNote: 'Mengubah teks tetap di CV, seperti “sekarang”. Konten Anda tidak diterjemahkan.'
