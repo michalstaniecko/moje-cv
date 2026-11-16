@@ -168,7 +168,6 @@ export const uk: Dictionary = {
     exportCutOff: 'Частина вмісту не вміщується на сторінку й буде обрізана. Однаково експортувати?',
     exportCutOffHint: 'Задовгі фрагменти виділено в режимі редагування.',
     mode: { label: 'Режим', edit: 'Редагування', preview: 'Перегляд' },
-    cvDesignButton: 'Дизайн',
     outline: {
       title: 'Структура',
       empty: 'порожній',
@@ -228,6 +227,14 @@ export const uk: Dictionary = {
     cvLanguage: 'Мова резюме',
     template: 'Шаблон',
     templateNames: { classic: 'Класичний', modern: 'Сучасний', bold: 'Виразний' },
+    inspector: {
+      label: 'Інспектор',
+      document: 'Документ',
+      groups: { template: 'Шаблон', style: 'Стиль', language: 'Мова' },
+      colors: { teal: 'Морська хвиля', blue: 'Синій', graphite: 'Графітовий', violet: 'Фіолетовий', crimson: 'Малиновий', orange: 'Помаранчевий', green: 'Зелений', black: 'Чорний' },
+      customColor: 'Власний колір',
+      languageNote: 'Змінює сталий текст резюме, наприклад «дотепер». Ваш вміст не перекладається.'
+    },
     header: 'Заголовок',
     fullName: 'Ім’я та прізвище',
     contact: 'Контакти',

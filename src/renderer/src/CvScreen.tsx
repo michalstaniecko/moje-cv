@@ -6,10 +6,10 @@ import { useEditSession, type EditorMode } from './canvas/useEditSession'
 import type { PaginateResult } from './domain/paginate'
 import { cvDisplayName, type Clause, type ClauseContent, type CvDocument } from './domain/schema'
 import { createCvEditor, type CvEditor } from './editor/cvEditor'
-import { CvDesignButton } from './editor/CvDesignButton'
 import { updateName } from './editor/documentEdits'
 import { useEditorSidebar } from './editor/useEditorSidebar'
 import { useFormWidth } from './editor/useFormWidth'
+import { Inspector } from './inspector/Inspector'
 import { RemovalMessage, useRemovalUndo } from './editor/removalUndo'
 import { useDictionary } from './i18n'
 import { useMenuCommands } from './menuCommands'
@@ -39,9 +39,9 @@ type DocxExportState =
 const idleUnlessExporting = <State extends { status: string }>(state: State): State | { status: 'idle' } =>
   state.status === 'exporting' ? state : { status: 'idle' }
 
-// Otwarte CV: pasek boczny (Outline, CV form albo szyna – canvas/EditorSidebar.tsx), strony z warstwą edycji i eksport do
-// PDF. W Preview mode tylko strony – bez paska bocznego i bez wyróżnień na kartkach; pasek narzędzi, cofanie
-// i powiększenie działają w obu trybach.
+// Otwarte CV: pasek boczny (Outline, CV form albo szyna – canvas/EditorSidebar.tsx), strony z warstwą edycji, Inspector
+// po prawej stronie stron (inspector/Inspector.tsx) i eksport do PDF. W Preview mode strony i Inspector – bez paska
+// bocznego i bez wyróżnień na kartkach; pasek narzędzi, cofanie i powiększenie działają w obu trybach.
 // `onBack` dostaje komendę menu Plik (Nowe CV, Dodaj przykładowe CV, Importuj…), gdy edytor wychodzi, żeby wykonała
 // ją biblioteka CV.
 export function CvScreen({
@@ -191,8 +191,6 @@ export function CvScreen({
         </button>
         <CvNameHeading name={document.name} onRename={(name) => editor.edit(updateName(name))} />
         <ModeToggle ref={modeToggle} mode={session.mode} onChange={session.setMode} />
-        {/* „Projekt CV” – w obu trybach. */}
-        <CvDesignButton editor={editor} document={document} />
         {/* Przy nieudanym zapisie status jest pusty – błąd ogłasza pasek komunikatu pod paskiem narzędzi. */}
         <span className="toolbar-status" role="status">
           {saveStatus === 'failed' ? '' : t.saveStatus[saveStatus]}
@@ -301,6 +299,8 @@ export function CvScreen({
             modeToggle.current?.focus('edit')
           }}
         />
+        {/* Inspector po prawej stronie stron – w obu trybach (panel „Dokument” z CV design). */}
+        <Inspector editor={editor} document={document} />
         {/* „Usunięto. Cofnij” ze stron i z CV form – w lewym dolnym rogu panelu stron. */}
         <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
       </div>

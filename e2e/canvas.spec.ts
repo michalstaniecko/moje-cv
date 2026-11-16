@@ -13,9 +13,10 @@ let outputDir: string
 const packagedExecutable = process.env['MOJE_CV_APP']
 
 // Jak w export.spec.ts: tymczasowy katalog danych, angielski i jasny wygląd, okno w tle.
-async function launch() {
+async function launch({ appearance }: { appearance?: 'light' | 'dark' } = {}) {
   const userDataDir = `--user-data-dir=${join(outputDir, 'user-data')}`
   const env = { MOJE_CV_APPEARANCE: 'light', ...process.env } as Record<string, string>
+  if (appearance) env['MOJE_CV_APPEARANCE'] = appearance
   if (!process.env['MOJE_CV_E2E_HEADED']) env['MOJE_CV_E2E_HIDDEN'] = '1'
   env['MOJE_CV_UPDATE_URL'] = 'off'
   env['MOJE_CV_LANGUAGE'] = 'en'
@@ -113,7 +114,11 @@ test('the Edit | Preview toggle switches the editor between Edit mode and Previe
   await expect(previewButton()).toBeFocused()
   const preview = window.locator('.preview')
   const panes = window.locator('.editor-panes')
-  await expect.poll(async () => (await preview.boundingBox())!.width).toBeCloseTo((await panes.boundingBox())!.width, 0)
+  // Bez paska bocznego: strony zajmują panel edytora poza Inspektorem.
+  const inspectorWidth = (await window.getByRole('complementary', { name: 'Inspector', exact: true }).boundingBox())!.width
+  await expect
+    .poll(async () => (await preview.boundingBox())!.width)
+    .toBeCloseTo((await panes.boundingBox())!.width - inspectorWidth, 0)
   // Pasek narzędzi i pasek podglądu zostają.
   await expect(window.getByRole('button', { name: 'Export to PDF' })).toBeVisible()
   await expect(preview.getByRole('button', { name: 'Zoom in' })).toBeVisible()
@@ -301,8 +306,16 @@ async function clickAtCharacter(field: Locator, index: number) {
     const range = element.ownerDocument.createRange()
     range.setStart(element.firstChild!, index)
     range.setEnd(element.firstChild!, index + 1)
-    const rect = range.getBoundingClientRect()
-    return { x: rect.left + 1, y: rect.top + rect.height / 2 }
+    // W pierwszej ćwierci znaku (a nie 1 px od lewej): przy stronach pomniejszonych do szerokości panelu wąski znak
+    // (spacja) ma mniej niż 2 px i klik za jego połową stawiałby kursor za nim.
+    const at = () => {
+      const rect = range.getBoundingClientRect()
+      return { x: rect.left + rect.width / 4, y: rect.top + rect.height / 2 }
+    }
+    // Znak przykryty paskiem podglądu (pole tuż pod górną krawędzią panelu stron): pole na środek panelu.
+    const { x, y } = at()
+    if (!element.contains(element.ownerDocument.elementFromPoint(x, y))) element.scrollIntoView({ block: 'center' })
+    return at()
   }, index)
   await window.mouse.click(point.x, point.y)
 }
@@ -379,7 +392,7 @@ test('the summary and the section titles are edited on the page in every place a
   await window.keyboard.type(' & tools')
   await expect(window.locator('.preview .cv-page .cv-section-title', { hasText: /^Skills & tools$/ })).toHaveCount(1)
   await expect(window.locator('.editor-form').getByLabel('Section title “Skills & tools”')).toHaveValue('Skills & tools')
-  const picker = window.getByRole('radiogroup', { name: 'Template' })
+  const picker = window.locator('.editor-form').getByRole('radiogroup', { name: 'Template' })
   await picker.locator('label', { has: window.getByRole('radio', { name: 'Modern' }) }).click()
   await expect(window.locator('.preview .cv.cv-template-modern')).toHaveCount(1)
   await clickAtCharacter(titleField('Skills & tools'), 0)
@@ -671,7 +684,7 @@ for (const template of ['Classic', 'Modern', 'Bold'] as const) {
   test(`page fields: every field of the Sample CV in the ${template} template is edited on the page (Page fields, date and photo popovers), and the contacts, section titles and entries have their handles`, async () => {
     await openFirstCv()
     const preview = window.locator('.preview')
-    const picker = window.getByRole('radiogroup', { name: 'Template' })
+    const picker = window.locator('.editor-form').getByRole('radiogroup', { name: 'Template' })
     await picker.locator('label', { has: window.getByRole('radio', { name: template }) }).click()
     await expect(preview.locator(`.cv.cv-template-${template.toLowerCase()}`)).toHaveCount(1)
     await enableConsent('I agree to the processing of my personal data.')
@@ -1768,10 +1781,15 @@ test('the consent clause is edited on the page; its toolbar saves the text as a 
   await expect(form.getByLabel('Show the clause at the bottom of the last page')).toBeChecked()
 })
 
-// ---------- „Projekt CV” w pasku narzędzi ----------
+// ---------- Inspector: panel „Dokument” z CV design ----------
 
-const designButton = () => window.locator('.toolbar').getByRole('button', { name: 'CV design', exact: true })
-const designPanel = () => window.getByRole('dialog', { name: 'CV design', exact: true })
+const inspector = () => window.getByRole('complementary', { name: 'Inspector', exact: true })
+const inspectorGroup = (name: string) => inspector().getByRole('button', { name, exact: true })
+const accentSwatches = () => inspector().getByRole('radiogroup', { name: 'Accent color', exact: true })
+const customColor = () => inspector().getByLabel('Custom color', { exact: true })
+const fontCards = () => inspector().getByRole('radiogroup', { name: 'Font', exact: true })
+const inspectorTemplates = () => inspector().getByRole('radiogroup', { name: 'Template', exact: true })
+const inspectorLanguage = () => inspector().getByRole('combobox', { name: 'CV language', exact: true })
 
 async function pdfFillColors(path: string): Promise<string[]> {
   const { getDocument, OPS } = await import('pdfjs-dist/legacy/build/pdf.mjs')
@@ -1786,106 +1804,144 @@ async function pdfFillColors(path: string): Promise<string[]> {
   return [...colors]
 }
 
-test('CV design in the toolbar opens a panel with the colour, font, Template and CV language in both modes; Escape and a click outside close it and return the focus to the button', async () => {
-  await openFirstCv()
-  await expect(designButton()).toHaveAttribute('aria-expanded', 'false')
+test('the Inspector beside the pages shows the Document panel with the Template, Style and Language groups in both modes, and the toolbar has no CV design button', async () => {
+  await openFirstCvWithOutline()
+  await expect(window.locator('.toolbar').getByRole('button', { name: 'CV design' })).toHaveCount(0)
+  await expect(window.getByRole('dialog', { name: 'CV design' })).toHaveCount(0)
 
-  // Otwarcie panelu zamyka otwarty Field popover; fokus na pierwszym polu panelu.
-  await clickOnPage(window.locator('.preview .cv-page .cv-photo'))
-  await expect(photoPopover()).toBeVisible()
-  await designButton().click()
-  await expect(photoPopover()).toHaveCount(0)
-  const panel = designPanel()
-  await expect(panel).toBeVisible()
-  await expect(designButton()).toHaveAttribute('aria-expanded', 'true')
-  await expect(panel.getByLabel('Accent color')).toBeFocused()
-  await expect(panel.getByLabel('Accent color')).toHaveValue('#1a6e72')
-  await expect(panel.getByLabel('Font')).toHaveValue('lato')
-  await expect(panel.getByRole('radiogroup', { name: 'Template' }).getByRole('radio', { name: 'Classic' })).toBeChecked()
-  await expect(panel.getByLabel('CV language')).toHaveValue('en')
-  // Panel leży pod przyciskiem, cały w oknie.
-  const buttonBox = (await designButton().boundingBox())!
-  const panelBox = (await panel.boundingBox())!
-  expect(panelBox.y).toBeGreaterThanOrEqual(buttonBox.y + buttonBox.height)
-  expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(await window.locator('html').evaluate((html) => html.clientWidth))
+  const panel = inspector()
+  await expect(panel.getByRole('heading', { name: 'Document', exact: true })).toBeVisible()
+  for (const group of ['Template', 'Style', 'Language']) await expect(inspectorGroup(group)).toHaveAttribute('aria-expanded', 'true')
+  await expect(inspectorTemplates().getByRole('radio', { name: 'Classic' })).toBeChecked()
+  await expect(accentSwatches().getByRole('radio', { name: 'Teal', exact: true })).toBeChecked()
+  await expect(accentSwatches().getByRole('radio')).toHaveCount(8)
+  await expect(customColor()).toHaveValue('#1a6e72')
+  await expect(fontCards().getByRole('radio', { name: 'Lato' })).toBeChecked()
+  // Karta fontu jest pisana swoim krojem.
+  await expect(panel.locator('label', { has: window.getByRole('radio', { name: 'Arimo' }) })).toHaveCSS('font-family', /Arimo/)
+  await expect(inspectorLanguage()).toHaveValue('en')
+  await expect(inspectorLanguage()).toHaveAccessibleDescription(/such as “present”.*isn’t translated/)
 
-  await window.keyboard.press('Escape')
-  await expect(panel).toHaveCount(0)
-  await expect(designButton()).toBeFocused()
-  await expect(designButton()).toHaveAttribute('aria-expanded', 'false')
+  // Kolumna po prawej stronie stron, na całą wysokość panelu edytora.
+  const pagesBox = (await window.locator('.preview').boundingBox())!
+  const inspectorBox = (await panel.boundingBox())!
+  expect(inspectorBox.x).toBeGreaterThanOrEqual(pagesBox.x + pagesBox.width - 1)
+  expect(Math.round(inspectorBox.height)).toBe(Math.round(pagesBox.height))
 
-  // Ponowny klik przycisku przy otwartym panelu zamyka go.
-  await designButton().click()
-  await expect(panel).toBeVisible()
-  await designButton().click()
-  await expect(panel).toHaveCount(0)
-
-  // Preview mode: ten sam panel; klik w kartkę go zamyka, fokus wraca na przycisk.
+  // Preview mode: Inspector zostaje, z tymi samymi grupami.
   await previewButton().click()
   await expectPreviewMode()
-  await designButton().click()
-  await expect(panel).toBeVisible()
-  await expect(panel.getByRole('radiogroup', { name: 'Template' })).toBeVisible()
-  await window.locator('.preview .cv-page').first().click({ position: { x: 20, y: 20 } })
-  await expect(panel).toHaveCount(0)
-  await expect(designButton()).toBeFocused()
-
-  // Klawiatura: Enter otwiera, Tab przechodzi po polach panelu.
-  await window.keyboard.press('Enter')
-  await expect(panel).toBeVisible()
-  await expect(panel.getByLabel('Accent color')).toBeFocused()
-  await window.keyboard.press('Tab')
-  await expect(panel.getByLabel('Font')).toBeFocused()
-  await window.keyboard.press('Escape')
-  await expect(panel).toHaveCount(0)
-  await expect(designButton()).toBeFocused()
+  await expect(panel.getByRole('heading', { name: 'Document', exact: true })).toBeVisible()
+  await expect(inspectorTemplates()).toBeVisible()
+  await expect(fontCards()).toBeVisible()
+  await expect(inspectorLanguage()).toBeVisible()
 })
 
-test('changing the Template and the accent colour in the CV design panel changes the pages and the PDF, and Cmd+Z undoes each change', async () => {
-  await openFirstCv()
+test('Inspector groups collapse and stay collapsed when switching modes and reopening a CV', async () => {
+  await openFirstCvWithOutline()
+  await inspectorGroup('Style').click()
+  await expect(inspectorGroup('Style')).toHaveAttribute('aria-expanded', 'false')
+  await expect(fontCards()).toBeHidden()
+  await expect(accentSwatches()).toBeHidden()
+  await expect(inspectorTemplates()).toBeVisible()
+  // Klawiatura: Enter na nagłówku grupy zwija ją i rozwija.
+  await inspectorGroup('Language').focus()
+  await window.keyboard.press('Enter')
+  await expect(inspectorGroup('Language')).toHaveAttribute('aria-expanded', 'false')
+  await expect(inspectorLanguage()).toBeHidden()
+
   await previewButton().click()
   await expectPreviewMode()
+  await expect(inspectorGroup('Style')).toHaveAttribute('aria-expanded', 'false')
+  await expect(inspectorGroup('Language')).toHaveAttribute('aria-expanded', 'false')
+
+  await window.getByRole('button', { name: '← CV library' }).click()
+  await openFirstCvWithOutline()
+  await expect(inspectorGroup('Style')).toHaveAttribute('aria-expanded', 'false')
+  await expect(inspectorGroup('Language')).toHaveAttribute('aria-expanded', 'false')
+  await expect(inspectorGroup('Template')).toHaveAttribute('aria-expanded', 'true')
+  await inspectorGroup('Style').click()
+  await expect(fontCards()).toBeVisible()
+})
+
+test('changing the Template, the accent colour (swatch and custom), the font and the CV language in the Inspector changes the pages and the PDF at once, and Cmd+Z undoes each in one step', async () => {
+  await openFirstCvWithOutline()
   const preview = window.locator('.preview')
-  await designButton().click()
-  const panel = designPanel()
 
-  await panel.getByLabel('Accent color').fill('#8a2be2')
+  // Kolor akcentu (w Classic imię jest w kolorze akcentu): próbka, potem własny kolor.
+  await accentSwatches().getByRole('radio', { name: 'Crimson', exact: true }).click()
+  await expect(pageName()).toHaveCSS('color', 'rgb(163, 36, 59)')
+  await expect(accentSwatches().getByRole('radio', { name: 'Crimson', exact: true })).toBeChecked()
+  // Własny kolor: przeciąganie w wyborze koloru to jeden krok cofania (ten sam klucz łączenia co dotąd).
+  await customColor().fill('#8a2be1')
+  await customColor().fill('#8a2be2')
   await expect(pageName()).toHaveCSS('color', 'rgb(138, 43, 226)')
-  const picker = panel.getByRole('radiogroup', { name: 'Template' })
-  await picker.locator('label', { has: window.getByRole('radio', { name: 'Modern' }) }).click()
-  await expect(picker.getByRole('radio', { name: 'Modern' })).toBeChecked()
-  await expect(preview.locator('.cv.cv-template-modern')).toHaveCount(1)
-  // Panel zostaje otwarty przy zmianach – strony przerysowane pod nim.
-  await expect(panel).toBeVisible()
-  const pageCount = await preview.locator('.cv-page').count()
+  await expect(accentSwatches().getByRole('radio', { checked: true })).toHaveCount(0)
 
-  // Eksport z panelem otwartym: klik w „Export to PDF” zamyka panel, PDF w nowym szablonie i kolorze.
-  const pdfPath = join(outputDir, 'modern.pdf')
+  await fontCards().locator('label', { has: window.getByRole('radio', { name: 'Arimo' }) }).click()
+  await expect(fontCards().getByRole('radio', { name: 'Arimo' })).toBeChecked()
+  await expect(pageName()).toHaveCSS('font-family', /^"?Arimo/)
+
+  await inspectorLanguage().selectOption('pl')
+  await expect(preview.locator('.cv')).toHaveAttribute('lang', 'pl')
+  await expect(preview.locator('.cv-page .cv-date').first()).toHaveText('03.2023 – obecnie')
+
+  await inspectorTemplates().locator('label', { has: window.getByRole('radio', { name: 'Modern' }) }).click()
+  await expect(inspectorTemplates().getByRole('radio', { name: 'Modern' })).toBeChecked()
+  await expect(preview.locator('.cv.cv-template-modern')).toHaveCount(1)
+  await expect(window.getByText('Changes saved')).toBeVisible()
+
+  // Wszystko od razu w PDF.
+  const pdfPath = join(outputDir, 'inspector.pdf')
   await stubSaveDialog(pdfPath)
   await window.getByRole('button', { name: 'Export to PDF' }).click()
-  await expect(panel).toHaveCount(0)
-  await expect(window.getByText('Saved PDF: modern.pdf')).toBeVisible()
-  const text = await pdfText(pdfPath)
-  expect(text).toContain(`1 / ${pageCount}`)
+  await expect(window.getByText('Saved PDF: inspector.pdf')).toBeVisible()
+  expect(await pdfText(pdfPath)).toContain('03.2023 – obecnie')
   expect(await pdfFillColors(pdfPath)).toContain('#8a2be2')
 
-  // Każda zmiana to jeden krok cofania, jak w formularzu.
+  // Każda zmiana to jeden krok cofania – także z fokusem w Inspektorze.
+  await inspectorLanguage().focus()
   await window.keyboard.press('Meta+z')
   await expect(preview.locator('.cv.cv-template-classic')).toHaveCount(1)
-  await expect(pageName()).toHaveCSS('color', 'rgb(138, 43, 226)')
+  await expect(inspectorTemplates().getByRole('radio', { name: 'Classic' })).toBeChecked()
+  await window.keyboard.press('Meta+z')
+  await expect(preview.locator('.cv')).toHaveAttribute('lang', 'en')
+  await expect(inspectorLanguage()).toHaveValue('en')
+  await window.keyboard.press('Meta+z')
+  await expect(pageName()).not.toHaveCSS('font-family', /^"?Arimo/)
+  await expect(fontCards().getByRole('radio', { name: 'Lato' })).toBeChecked()
+  await window.keyboard.press('Meta+z')
+  await expect(pageName()).toHaveCSS('color', 'rgb(163, 36, 59)')
+  await expect(customColor()).toHaveValue('#a3243b')
   await window.keyboard.press('Meta+z')
   await expect(pageName()).toHaveCSS('color', 'rgb(26, 110, 114)')
-  await designButton().click()
-  await expect(panel.getByLabel('Accent color')).toHaveValue('#1a6e72')
-  await expect(picker.getByRole('radio', { name: 'Classic' })).toBeChecked()
+  await expect(accentSwatches().getByRole('radio', { name: 'Teal', exact: true })).toBeChecked()
   await window.keyboard.press('Meta+Shift+z')
-  await expect(panel.getByLabel('Accent color')).toHaveValue('#8a2be2')
+  await expect(pageName()).toHaveCSS('color', 'rgb(163, 36, 59)')
 
-  // W Edit mode CV form pokazuje te same ustawienia.
-  await window.keyboard.press('Escape')
-  await editButton().click()
-  await expect(window.locator('.editor-form').getByLabel('Accent color')).toHaveValue('#8a2be2')
-  await expect(window.locator('.editor-form').getByRole('radio', { name: 'Classic' })).toBeChecked()
+  // Preview mode: te same zmiany działają na czystych stronach.
+  await previewButton().click()
+  await expectPreviewMode()
+  await accentSwatches().getByRole('radio', { name: 'Green', exact: true }).click()
+  await expect(pageName()).toHaveCSS('color', 'rgb(46, 107, 52)')
+  await window.keyboard.press('Meta+z')
+  await expect(pageName()).toHaveCSS('color', 'rgb(163, 36, 59)')
+})
+
+test('the Inspector follows the light and the dark appearance, while its Template thumbnails stay white paper', async () => {
+  for (const [appearance, panelBackground, text] of [
+    ['light', 'rgb(255, 255, 255)', 'rgb(28, 39, 51)'],
+    ['dark', 'rgb(24, 34, 46)', 'rgb(230, 237, 245)']
+  ] as const) {
+    await app.close()
+    await launch({ appearance })
+    await openFirstCvWithOutline()
+    const panel = inspector()
+    await expect(panel).toHaveCSS('background-color', panelBackground)
+    await expect(panel).toHaveCSS('color', text)
+    await expect(panel).toHaveCSS('color-scheme', 'light dark')
+    await expect(panel.locator('.template-thumbnail').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+  }
 })
 
 // ---------- Menu fragmentu na stronie ----------
@@ -2108,8 +2164,9 @@ test('the menu works from the keyboard alone: Shift+F10 in a field opens the men
   await expect(announcement()).toHaveText('Moved section “Education” to position 1 of 4.')
   await window.keyboard.press('Meta+z')
 
-  // „Add education” – kursor w nowym wpisie.
-  await clickAtCharacter(title, 3)
+  // „Add education” – kursor w nowym wpisie. Fokus z klawiatury: przy stronach pomniejszonych obok Inspektora pigułka
+  // „+ Position” poprzedniej sekcji zachodzi na początek tytułu.
+  await title.focus()
   await window.keyboard.press('ContextMenu')
   await window.keyboard.press('End')
   await window.keyboard.press('Enter')

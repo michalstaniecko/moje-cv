@@ -78,7 +78,7 @@ body {
 .edit-pill,
 .edit-start-hint,
 .add-to-cv,
-.cv-design-panel,
+.inspector,
 .removal-message,
 .preview-bar,
 .photo-cropper,
@@ -524,7 +524,7 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--ui-border);
 }
 
-/* Pasek edytora ma siedem elementów (wstecz, nazwa CV, przełącznik trybu, CV design, status zapisu, dwa eksporty).
+/* Pasek edytora ma sześć elementów (wstecz, nazwa CV, przełącznik trybu, status zapisu, dwa eksporty).
    Przyciski i status nigdy się nie zawijają ani nie ściskają – przy braku miejsca ucina się tylko nazwa CV
    (wielokropek). W wąskim oknie (do minimum 960 px) mniejsze odstępy zostawiają nazwie więcej miejsca: w dłuższych
    językach (de, fr, pt, ru…) z „Zmiany zapisane” pasek bez tego zawijał przyciski w dwie linie. */
@@ -672,44 +672,6 @@ textarea:focus-visible {
 .mode-toggle button[aria-pressed='true']:hover:not(:disabled) {
   background: var(--ui-accent-dark);
   border-color: var(--ui-accent-dark);
-}
-
-/* ---------- „Projekt CV” w pasku narzędzi ----------
-   Przycisk obok przełącznika trybu (wyróżniony, gdy panel jest otwarty) i niemodalny panel CV design w warstwie
-   górnej (popover) – pozycję pod przyciskiem ustawia CvDesignButton. Szerokość mieści trzy Template thumbnails
-   w rzędzie; przy niskim oknie panel przewija się w sobie. */
-.cv-design-button {
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.cv-design-button[aria-expanded='true'] {
-  background: var(--ui-accent-glow);
-  border-color: var(--ui-accent);
-}
-
-.cv-design-panel {
-  position: fixed;
-  inset: auto;
-  box-sizing: border-box;
-  width: 500px;
-  max-width: calc(100vw - 8px);
-  max-height: calc(100vh - 8px);
-  margin: 0;
-  padding: 0;
-  overflow: auto;
-  background: var(--ui-panel-bg);
-  border: 1px solid var(--ui-border);
-  border-radius: 10px;
-  box-shadow: 0 8px 28px var(--ui-shadow);
-}
-
-.cv-design-panel .form {
-  padding: 14px 16px 16px;
-}
-
-.cv-design-panel .form-section {
-  margin-bottom: 0;
 }
 
 /* ---------- Split button „Nowe CV” z menu pod strzałką ---------- */
@@ -944,8 +906,9 @@ textarea:focus-visible {
   position: relative;
   display: grid;
   /* --sidebar-width: Outline (240 px), szyna (44 px) albo CV form (--form-width z separatora, editor/PaneSeparator.tsx)
-     – canvas/EditorSidebar.tsx. */
-  grid-template-columns: var(--sidebar-width, 240px) minmax(0, 1fr);
+     – canvas/EditorSidebar.tsx. Ostatnia kolumna to Inspector o stałej szerokości (inspector/Inspector.tsx). */
+  --inspector-width: clamp(284px, 24vw, 320px);
+  grid-template-columns: var(--sidebar-width, 240px) minmax(0, 1fr) var(--inspector-width);
   flex: 1;
   min-height: 0;
   /* Zabezpieczenie: nic z paneli nie rozszerza ekranu (.app-screen), więc ekran edytora nigdy się nie przewija.
@@ -984,9 +947,9 @@ textarea:focus-visible {
   color: var(--ui-text-muted);
 }
 
-/* W Preview mode nie ma formularza ani separatora: strony na całą szerokość. */
+/* W Preview mode nie ma paska bocznego ani separatora: strony i Inspector. */
 .editor-panes--preview {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) var(--inspector-width);
 }
 
 /* ---------- Formularz edytora ---------- */
@@ -1233,6 +1196,217 @@ textarea:focus-visible {
 .form-bullets > span {
   color: var(--ui-text-muted);
   font-size: 12px;
+}
+
+/* ---------- Inspector (inspector/Inspector.tsx) ----------
+   Kolumna opcji CV po prawej stronie stron, w obu trybach. Przewija się sama (reguła paneli .editor-panes), w poziomie
+   nigdy; tytuł panelu zostaje na górze. Kolory tylko z tokenów --ui-*, więc ciemny wygląd przychodzi z :root. */
+.inspector {
+  --inspector-inset: 14px;
+  overflow-x: hidden;
+  background: var(--ui-panel-bg);
+  border-left: 1px solid var(--ui-border);
+}
+
+.inspector-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 12px var(--inspector-inset);
+  font-size: 15px;
+  background: var(--ui-panel-bg);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.inspector-group + .inspector-group {
+  border-top: 1px solid var(--ui-border);
+}
+
+.inspector-group-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Nagłówek grupy: przycisk na całą szerokość, bez ramki; strzałka obraca się przy rozwinięciu. */
+.inspector-group-title button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px var(--inspector-inset);
+  color: var(--ui-text-muted);
+  font: inherit;
+  text-align: start;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.inspector-group-title button:hover:not(:disabled) {
+  color: var(--ui-text);
+  background: var(--ui-accent-glow);
+}
+
+.inspector-group-title button:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Strzałka z obramowania (pusta treść): nie wchodzi do nazwy przycisku ani do tekstu nagłówka. */
+.inspector-group-title button::before {
+  content: '';
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  margin-inline: 1px 3px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.12s;
+}
+
+.inspector-group-title button[aria-expanded='true']::before {
+  transform: rotate(45deg);
+}
+
+.inspector-group-body:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 2px var(--inspector-inset) 16px;
+}
+
+.inspector-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.inspector-label {
+  color: var(--ui-text-muted);
+  font-size: 12px;
+}
+
+.inspector-hint {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Trzy Template thumbnails w rzędzie także przy najwęższym Inspektorze (284 px). */
+.inspector .template-picker {
+  --thumbnail-scale: 0.085;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.inspector .template-option {
+  padding: 4px;
+  text-align: center;
+}
+
+/* Próbki koloru akcentu: kółka (radio bez wyglądu systemowego) i własny kolor w ostatnim kółku. Wybrane kółko ma
+   pierścień w kolorze tekstu interfejsu, odsunięty od próbki tłem panelu – widoczny w obu wyglądach. */
+.inspector-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.inspector-swatch-list {
+  display: contents;
+}
+
+.inspector-swatch,
+.inspector-custom-color {
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 50%;
+  cursor: pointer;
+  appearance: none;
+}
+
+.inspector-custom-color {
+  background: conic-gradient(#e5484d, #f5d90a, #30a46c, #0091ff, #8e4ec6, #e5484d);
+}
+
+.inspector-custom-color::-webkit-color-swatch-wrapper {
+  padding: 4px;
+}
+
+.inspector-custom-color::-webkit-color-swatch {
+  border: 2px solid var(--ui-panel-bg);
+  border-radius: 50%;
+}
+
+.inspector-swatch:checked,
+.inspector-custom-color[data-checked] {
+  box-shadow:
+    0 0 0 2px var(--ui-panel-bg),
+    0 0 0 4px var(--ui-text);
+}
+
+/* Karty fontów pisane własnym krojem; radio niewidoczne, ale w kolejności Tab i ze strzałkami. */
+.inspector-font-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.inspector-font-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 4px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.inspector-font-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.inspector-font-card:hover {
+  border-color: var(--ui-accent);
+}
+
+.inspector-font-card:has(input:checked) {
+  background: var(--ui-accent-glow);
+  border-color: var(--ui-accent);
+}
+
+.inspector-font-card:has(input:focus-visible) {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.inspector-font-sample {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.inspector-font-name {
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
 }
 
 /* ---------- Wybór szablonu ---------- */

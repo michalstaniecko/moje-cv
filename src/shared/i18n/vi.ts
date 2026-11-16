@@ -168,7 +168,6 @@ export const vi: Dictionary = {
     exportCutOff: 'Một phần nội dung không vừa trên một trang và sẽ bị cắt. Vẫn xuất?',
     exportCutOffHint: 'Các đoạn quá dài được đánh dấu trong chế độ chỉnh sửa.',
     mode: { label: 'Chế độ', edit: 'Chỉnh sửa', preview: 'Xem trước' },
-    cvDesignButton: 'Thiết kế',
     outline: {
       title: 'Dàn ý',
       empty: 'trống',
@@ -223,6 +222,14 @@ export const vi: Dictionary = {
     cvLanguage: 'Ngôn ngữ CV',
     template: 'Mẫu',
     templateNames: { classic: 'Cổ điển', modern: 'Hiện đại', bold: 'Nổi bật' },
+    inspector: {
+      label: 'Bảng thuộc tính',
+      document: 'Tài liệu',
+      groups: { template: 'Mẫu', style: 'Kiểu', language: 'Ngôn ngữ' },
+      colors: { teal: 'Xanh mòng két', blue: 'Xanh dương', graphite: 'Than chì', violet: 'Tím', crimson: 'Đỏ thẫm', orange: 'Cam', green: 'Xanh lá', black: 'Đen' },
+      customColor: 'Màu tùy chỉnh',
+      languageNote: 'Thay đổi chữ cố định trên CV, như “hiện tại”. Nội dung của bạn không được dịch.'
+    },
     header: 'Phần đầu',
     fullName: 'Họ và tên',
     contact: 'Liên hệ',

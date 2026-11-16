@@ -168,7 +168,6 @@ export const es: Dictionary = {
     exportCutOff: 'Parte del contenido no cabe en una página y quedará cortado. ¿Exportar de todos modos?',
     exportCutOffHint: 'Los fragmentos demasiado largos están resaltados en el modo de edición.',
     mode: { label: 'Modo', edit: 'Edición', preview: 'Vista previa' },
-    cvDesignButton: 'Diseño',
     outline: {
       title: 'Esquema',
       empty: 'vacía',
@@ -227,6 +226,14 @@ export const es: Dictionary = {
     cvLanguage: 'Idioma del CV',
     template: 'Plantilla',
     templateNames: { classic: 'Clásica', modern: 'Moderna', bold: 'Intensa' },
+    inspector: {
+      label: 'Inspector',
+      document: 'Documento',
+      groups: { template: 'Plantilla', style: 'Estilo', language: 'Idioma' },
+      colors: { teal: 'Verde azulado', blue: 'Azul', graphite: 'Grafito', violet: 'Violeta', crimson: 'Carmesí', orange: 'Naranja', green: 'Verde', black: 'Negro' },
+      customColor: 'Color personalizado',
+      languageNote: 'Cambia el texto fijo del CV, como «actualidad». Tu contenido no se traduce.'
+    },
     header: 'Encabezado',
     fullName: 'Nombre completo',
     contact: 'Contacto',

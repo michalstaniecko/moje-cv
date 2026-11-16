@@ -175,7 +175,6 @@ export const nl: Dictionary = {
     exportCutOff: 'Een deel van de inhoud past niet op een pagina en wordt afgesneden. Toch exporteren?',
     exportCutOffHint: 'De te lange fragmenten zijn gemarkeerd in de bewerkingsmodus.',
     mode: { label: 'Modus', edit: 'Bewerken', preview: 'Voorbeeld' },
-    cvDesignButton: 'Ontwerp',
     outline: {
       title: 'Overzicht',
       empty: 'leeg',
@@ -230,6 +229,14 @@ export const nl: Dictionary = {
     cvLanguage: 'Taal van cv',
     template: 'Sjabloon',
     templateNames: { classic: 'Klassiek', modern: 'Modern', bold: 'Krachtig' },
+    inspector: {
+      label: 'Inspector',
+      document: 'Document',
+      groups: { template: 'Sjabloon', style: 'Stijl', language: 'Taal' },
+      colors: { teal: 'Petrol', blue: 'Blauw', graphite: 'Grafiet', violet: 'Violet', crimson: 'Karmijn', orange: 'Oranje', green: 'Groen', black: 'Zwart' },
+      customColor: 'Eigen kleur',
+      languageNote: 'Verandert vaste tekst op het cv, zoals “heden”. Je inhoud wordt niet vertaald.'
+    },
     header: 'Kop',
     fullName: 'Volledige naam',
     contact: 'Contact',

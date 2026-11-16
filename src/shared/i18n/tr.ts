@@ -168,7 +168,6 @@ export const tr: Dictionary = {
     exportCutOff: 'İçeriğin bir kısmı sayfaya sığmıyor ve kesilecek. Yine de dışa aktarılsın mı?',
     exportCutOffHint: 'Çok uzun bölümler düzenleme modunda vurgulanır.',
     mode: { label: 'Mod', edit: 'Düzenleme', preview: 'Önizleme' },
-    cvDesignButton: 'Tasarım',
     outline: {
       title: 'Ana hat',
       empty: 'boş',
@@ -223,6 +222,14 @@ export const tr: Dictionary = {
     cvLanguage: 'CV dili',
     template: 'Şablon',
     templateNames: { classic: 'Klasik', modern: 'Modern', bold: 'Belirgin' },
+    inspector: {
+      label: 'Denetçi',
+      document: 'Belge',
+      groups: { template: 'Şablon', style: 'Stil', language: 'Dil' },
+      colors: { teal: 'Petrol mavisi', blue: 'Mavi', graphite: 'Grafit', violet: 'Mor', crimson: 'Koyu kırmızı', orange: 'Turuncu', green: 'Yeşil', black: 'Siyah' },
+      customColor: 'Özel renk',
+      languageNote: 'CV’deki sabit metni değiştirir, örneğin “halen”. İçeriğiniz çevrilmez.'
+    },
     header: 'Başlık',
     fullName: 'Ad soyad',
     contact: 'İletişim',

@@ -168,7 +168,6 @@ export const cs: Dictionary = {
     exportCutOff: 'Část obsahu se nevejde na stránku a bude oříznuta. Přesto exportovat?',
     exportCutOffHint: 'Příliš dlouhé části jsou zvýrazněné v režimu úprav.',
     mode: { label: 'Režim', edit: 'Úpravy', preview: 'Náhled' },
-    cvDesignButton: 'Design CV',
     outline: {
       title: 'Osnova',
       empty: 'prázdná',
@@ -228,6 +227,14 @@ export const cs: Dictionary = {
     cvLanguage: 'Jazyk CV',
     template: 'Šablona',
     templateNames: { classic: 'Klasická', modern: 'Moderní', bold: 'Výrazná' },
+    inspector: {
+      label: 'Inspektor',
+      document: 'Dokument',
+      groups: { template: 'Šablona', style: 'Styl', language: 'Jazyk' },
+      colors: { teal: 'Petrolejová', blue: 'Modrá', graphite: 'Grafitová', violet: 'Fialová', crimson: 'Karmínová', orange: 'Oranžová', green: 'Zelená', black: 'Černá' },
+      customColor: 'Vlastní barva',
+      languageNote: 'Mění pevný text v CV, například „dosud“. Váš obsah se nepřekládá.'
+    },
     header: 'Záhlaví',
     fullName: 'Jméno a příjmení',
     contact: 'Kontakt',
