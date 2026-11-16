@@ -1,0 +1,773 @@
+/* PROTOTYP – wariant A „Inspektor”: style konspektu, Inspektora i paska narzędzi. Wszystkie klasy z prefiksem `pa-`.
+   Ekran się nie przewija: .editor-panes (app.css) ma `overflow: clip`, a przewijają się tylko konspekt, strony i ciało
+   Inspektora. Selektory `.editor-panes.pa-panes > …` przebijają ogólną regułę `.editor-panes > :not(…)` z app.css. */
+
+/* ---------- Korzenie: czcionka i kolory interfejsu ---------- */
+.pa-outline,
+.pa-inspector,
+.pa-toolbar {
+  color: var(--ui-text);
+  color-scheme: light dark;
+  font: 14px system-ui, sans-serif;
+}
+
+/* ---------- Pasek narzędzi ---------- */
+.pa-toolbar {
+  padding-block: 8px;
+}
+
+.pa-history {
+  display: flex;
+  gap: 2px;
+}
+
+.pa-icon-button {
+  width: 30px;
+  height: 28px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  border-color: transparent;
+  background: transparent;
+}
+
+.pa-icon-button:hover:not(:disabled) {
+  background: var(--ui-accent-glow);
+}
+
+.pa-icon-button:disabled {
+  opacity: 0.35;
+}
+
+/* ---------- Konspekt (lewa kolumna) ---------- */
+.editor-panes.pa-panes > .pa-outline {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  padding: 12px 8px 24px;
+  overflow: auto;
+  font-size: 13px;
+  background: var(--ui-app-bg);
+  border-right: 1px solid var(--ui-border);
+}
+
+.pa-outline-title,
+.pa-inspector-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.pa-outline-title {
+  padding: 0 8px 8px;
+}
+
+.pa-outline-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pa-nav-row {
+  display: flex;
+  align-items: center;
+}
+
+/* Uchwyt sekcji pojawia się przy najechaniu lub fokusie, jak w Finderze. */
+.pa-nav-row .row-handle {
+  min-width: 20px;
+  opacity: 0;
+}
+
+.pa-nav-row:hover .row-handle,
+.pa-nav-row .row-handle:focus-visible,
+.pa-nav-row .row-handle[aria-expanded='true'] {
+  opacity: 1;
+}
+
+.pa-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+  border-radius: 5px;
+}
+
+/* Wiersze bez uchwytu (Nagłówek, Klauzula) wyrównane z nazwami sekcji. */
+.pa-outline > .pa-nav {
+  flex: none;
+  margin-left: 20px;
+}
+
+.pa-outline > .pa-nav--child {
+  margin-left: 32px;
+}
+
+.pa-nav:hover {
+  background: var(--ui-accent-glow);
+}
+
+.pa-nav[aria-current='true'] {
+  color: var(--ui-text-on-accent);
+  background: var(--ui-accent);
+}
+
+.pa-nav[data-off]:not([aria-current='true']) {
+  color: var(--ui-text-muted);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--ui-text-muted) 60%, transparent);
+}
+
+.pa-nav-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pa-nav-count {
+  font-size: 11px;
+  color: inherit;
+  opacity: 0.6;
+}
+
+/* ---------- Inspektor (prawa kolumna) ---------- */
+.editor-panes.pa-panes > .pa-inspector {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--ui-panel-bg);
+  border-left: 1px solid var(--ui-border);
+}
+
+.pa-inspector-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.pa-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pa-breadcrumb .pa-inspector-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+  color: var(--ui-text);
+}
+
+.pa-crumb {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  font-size: 13px;
+  color: var(--ui-accent);
+  background: transparent;
+  border-color: transparent;
+}
+
+.pa-crumb:hover {
+  background: var(--ui-accent-glow);
+}
+
+.pa-crumb-separator {
+  color: var(--ui-text-muted);
+}
+
+.pa-inspector-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.pa-inspector-foot {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-top: 1px solid var(--ui-border);
+}
+
+.pa-gear {
+  padding: 3px 8px;
+  font-size: 12px;
+  color: var(--ui-text-muted);
+  background: transparent;
+  border-color: transparent;
+}
+
+.pa-gear:hover,
+.pa-gear[aria-pressed='true'] {
+  color: var(--ui-text);
+  background: var(--ui-accent-glow);
+}
+
+/* ---------- Grupy ---------- */
+.pa-group {
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.pa-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: default;
+  list-style: none;
+  user-select: none;
+}
+
+.pa-group-title::-webkit-details-marker {
+  display: none;
+}
+
+.pa-group-title::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 4px solid var(--ui-text-muted);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.12s;
+}
+
+.pa-group[open] > .pa-group-title::before {
+  transform: rotate(90deg);
+}
+
+.pa-group-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 14px 14px;
+}
+
+/* ---------- Wiersze, pola, podpowiedzi ---------- */
+.pa-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pa-row-label {
+  min-width: 0;
+  font-size: 13px;
+}
+
+.pa-row-control {
+  flex-shrink: 0;
+  display: flex;
+}
+
+.pa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pa-field-label {
+  font-size: 12px;
+  color: var(--ui-text-muted);
+}
+
+.pa-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ui-text-muted);
+}
+
+.pa-hint--panel {
+  margin: 0;
+  padding: 12px 14px;
+}
+
+.pa-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ui-error);
+}
+
+.pa-select,
+.pa-input {
+  min-width: 0;
+  max-width: 150px;
+  padding: 3px 6px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ui-text);
+  background: var(--ui-panel-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+}
+
+.pa-input {
+  max-width: none;
+  padding: 5px 8px;
+}
+
+.pa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pa-actions button,
+.pa-photo-actions button,
+.pa-move button {
+  padding: 3px 10px;
+  font-size: 13px;
+}
+
+/* ---------- Przełącznik ---------- */
+.pa-switch {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.pa-switch input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.pa-switch-track {
+  position: relative;
+  width: 30px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--ui-border);
+  transition: background 0.15s;
+}
+
+.pa-switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  transition: transform 0.15s;
+}
+
+.pa-switch input:checked + .pa-switch-track {
+  background: var(--ui-accent);
+}
+
+.pa-switch input:checked + .pa-switch-track::after {
+  transform: translateX(12px);
+}
+
+.pa-switch input:focus-visible + .pa-switch-track {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.pa-switch:has(input:disabled) {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* ---------- Segmenty ---------- */
+.pa-segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 7px;
+  background: var(--ui-app-bg);
+  border: 1px solid var(--ui-border);
+}
+
+.pa-segment {
+  position: relative;
+  padding: 2px 8px;
+  font-size: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pa-segment input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pa-segment[data-checked] {
+  background: var(--ui-panel-bg);
+  box-shadow: 0 1px 2px var(--ui-shadow);
+}
+
+.pa-segment:has(input:focus-visible) {
+  outline: 2px solid var(--ui-focus-ring);
+}
+
+/* ---------- Szablony ---------- */
+.pa-templates {
+  --pa-thumb-scale: 0.098;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.pa-template {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.pa-template input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pa-template:hover {
+  background: var(--ui-app-bg);
+}
+
+.pa-template[data-checked] .pa-thumbnail {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.pa-template[data-checked] .pa-template-name {
+  font-weight: 600;
+  color: var(--ui-accent);
+}
+
+.pa-template:has(input:focus-visible) {
+  outline: 2px solid var(--ui-focus-ring);
+}
+
+/* Papier zostaje biały w obu wyglądach (jak .template-thumbnail w app.css). */
+.pa-thumbnail {
+  position: relative;
+  width: calc(210mm * var(--pa-thumb-scale));
+  height: calc(297mm * var(--pa-thumb-scale));
+  overflow: hidden;
+  color-scheme: light;
+  color: initial;
+  background: var(--ui-paper);
+  border-radius: 2px;
+  box-shadow: 0 1px 3px var(--ui-shadow);
+}
+
+.pa-thumbnail .cv-pages {
+  width: 210mm;
+  transform: scale(var(--pa-thumb-scale));
+  transform-origin: top left;
+}
+
+/* ---------- Kolor akcentu ---------- */
+.pa-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pa-swatch {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15);
+  cursor: pointer;
+}
+
+.pa-swatch[aria-checked='true'],
+.pa-swatch--custom[data-checked] {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.pa-swatch:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.pa-swatch--custom {
+  display: inline-block;
+  background: conic-gradient(#e5484d, #f5a524, #46a758, #0090ff, #8e4ec6, #e5484d);
+}
+
+.pa-swatch--custom input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* ---------- Fonty ---------- */
+.pa-fonts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.pa-font {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.pa-font input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pa-font[data-checked] {
+  border-color: var(--ui-accent);
+  box-shadow: inset 0 0 0 1px var(--ui-accent);
+  background: var(--ui-accent-glow);
+}
+
+.pa-font:has(input:focus-visible) {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.pa-font-sample {
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.pa-font-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+/* ---------- Elementy CV ---------- */
+.pa-elements {
+  display: flex;
+  flex-direction: column;
+  margin-inline: -6px;
+}
+
+.pa-element {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding-right: 6px;
+  border-radius: 6px;
+  background: var(--ui-panel-bg);
+}
+
+.pa-element:hover {
+  background: var(--ui-app-bg);
+}
+
+.pa-element-handle {
+  display: inline-flex;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.pa-element-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px 4px;
+  font-size: 13px;
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+}
+
+.pa-element-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pa-element-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--ui-text-muted);
+}
+
+.pa-element-chevron {
+  margin-left: auto;
+  color: var(--ui-text-muted);
+  opacity: 0;
+}
+
+.pa-element:hover .pa-element-chevron {
+  opacity: 1;
+}
+
+.pa-elements > .pa-hint {
+  padding-inline: 6px;
+}
+
+/* ---------- Zdjęcie ---------- */
+.pa-photo {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.pa-photo-thumb {
+  flex-shrink: 0;
+  width: 64px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px var(--ui-shadow);
+}
+
+.pa-photo-thumb[data-hidden] {
+  opacity: 0.4;
+}
+
+.pa-photo-thumb--empty {
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--ui-text-muted);
+  background: var(--ui-app-bg);
+  box-shadow: inset 0 0 0 1px var(--ui-border);
+}
+
+.pa-photo-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+/* ---------- Położenie sekcji ---------- */
+.pa-move {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pa-move-position {
+  font-size: 12px;
+  color: var(--ui-text-muted);
+}
+
+/* ---------- Klauzule ---------- */
+.pa-clauses {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pa-clause {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.pa-clause input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pa-clause[data-checked] {
+  border-color: var(--ui-accent);
+  background: var(--ui-accent-glow);
+}
+
+.pa-clause:has(input:focus-visible) {
+  outline: 2px solid var(--ui-focus-ring);
+}
+
+.pa-clause-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pa-clause-text {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ui-text-muted);
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.pa-library {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pa-library li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.pa-library button {
+  padding: 2px 8px;
+  font-size: 12px;
+}

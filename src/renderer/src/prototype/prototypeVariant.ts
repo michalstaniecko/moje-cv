@@ -14,7 +14,7 @@ export type PrototypeVariant = (typeof prototypeVariants)[number]['key']
 
 const EVENT = 'prototype-variant-change'
 
-export const prototypeEnabled = import.meta.env.DEV
+export const prototypeEnabled = import.meta.env.DEV || import.meta.env.VITE_PROTOTYPE === '1'
 
 function read(): PrototypeVariant {
   const value = new URLSearchParams(window.location.search).get('variant')
