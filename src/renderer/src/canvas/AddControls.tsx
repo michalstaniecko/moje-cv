@@ -159,15 +159,8 @@ export function useAddControls({
       case 'photo':
         // Od razu wybór pliku i kadrowanie (PhotoPopover.tsx) – zdjęcie nie ma pola na stronie.
         return addPhoto(from)
-      case 'contacts': {
-        // Kontakt bez wartości (np. etykiety nowego CV) zamiast kolejnego pustego.
-        let contact = document.header.contacts.find((candidate) => candidate.value.trim() === '')
-        if (!contact) {
-          editor.edit(addContact())
-          contact = editor.store.getState().document.header.contacts.at(-1)
-        }
-        return openAdded({ kind: 'contacts', contactId: contact?.id })
-      }
+      case 'contacts':
+        return openAdded(addContactElement(editor))
       case 'section': {
         const section = sectionById(item.sectionId)
         return section ? openAdded(addSectionElement(editor, section, { reuseEmpty: true })) : undefined
@@ -213,4 +206,15 @@ export function useAddControls({
   )
 
   return { layerEvents, hoverOnPage, pillAfter, bar, hint }
+}
+
+// Kontakt do dodania (pasek „Add to CV”, „+ Add contact” w panelu nagłówka Inspektora): kontakt bez wartości (np.
+// etykiety nowego CV) zamiast kolejnego pustego, a bez niego – nowy na końcu. Zwraca kontakt – cel `session.focusPart`.
+export function addContactElement(editor: CvEditor): EditTarget {
+  let contact = editor.store.getState().document.header.contacts.find((candidate) => candidate.value.trim() === '')
+  if (!contact) {
+    editor.edit(addContact())
+    contact = editor.store.getState().document.header.contacts.at(-1)
+  }
+  return { kind: 'contacts', contactId: contact?.id }
 }
