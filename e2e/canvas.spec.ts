@@ -3265,6 +3265,89 @@ test('the section panel renames the section, shows and hides it, starts it on a 
   await expect(panelTitle()).toHaveText('Education')
 })
 
+// ---------- Inspector: „+ Dodaj …” w panelu sekcji (#140) ----------
+
+test.describe('adding from the section panel', () => {
+  const addButton = (label: string) => inspector().getByRole('button', { name: `+ ${label}`, exact: true })
+  const sectionShown = () => inspector().getByRole('switch', { name: 'Show on CV', exact: true })
+
+  test('in a non-empty section “+ Education” adds an entry at the end with the caret in it on the page, and one undo removes it', async () => {
+    await window.setViewportSize({ width: 1600, height: 1000 })
+    await openFirstCvWithPages()
+    await titleField('Education').click()
+    await expect(panelTitle()).toHaveText('Education')
+    await expect(inspector().getByText('This section is empty', { exact: true })).toHaveCount(0)
+
+    await addButton('Education').click()
+    await expect.poll(focusedKey).toMatch(/^education:/)
+    expect(await focusedKey()).not.toMatch(/^education:ed[12]:/)
+    await expect(sectionItems().getByRole('button')).toHaveCount(3)
+    await expect(panelTitle()).toHaveText('Education')
+
+    await window.keyboard.press('Meta+z')
+    await expect(sectionItems().getByRole('button')).toHaveText(educations)
+  })
+
+  test('in an empty section “This section is empty” sits above “+ Education”, which reveals its existing empty entry instead of adding a second one', async () => {
+    await openNewCv()
+    await elementButton('Education').click()
+    await expect(panelTitle()).toHaveText('Education')
+    await expect.poll(focusedKey).toMatch(/^education:/)
+    const revealed = (await focusedKey())!.split(':')[1]
+
+    await expect(inspector().getByText('This section is empty', { exact: true })).toBeVisible()
+    await expect(addButton('Education')).toBeVisible()
+    await addButton('Education').click()
+    await expect.poll(focusedKey).toMatch(new RegExp(`^education:${revealed}:`))
+    // Nadal jeden (pusty) wpis: kolejny nie powstał.
+    await backToDocument().click()
+    await expect(elementButton('Education')).toHaveAccessibleDescription('1 item')
+  })
+
+  test('in a hidden section “+ Item” shows it and adds an element with the caret in it, and one undo hides it again without the element', async () => {
+    await window.setViewportSize({ width: 1600, height: 1000 })
+    await openFirstCvWithPages()
+    await elementButton('Interests').click()
+    await expect(panelTitle()).toHaveText('Interests')
+    await expect(sectionShown()).not.toBeChecked()
+
+    await addButton('Item').click()
+    await expect(sectionShown()).toBeChecked()
+    await expect(pageTitle('Interests')).toHaveCount(1)
+    await expect.poll(focusedKey).toMatch(/^list:/)
+    expect(await focusedKey()).not.toMatch(/^list:h1:/)
+    await expect(sectionItems().getByRole('button')).toHaveCount(2)
+
+    await window.keyboard.press('Meta+z')
+    await expect(pageTitle('Interests')).toHaveCount(0)
+    await expect(panelTitle()).toHaveText('Interests')
+    await expect(sectionShown()).not.toBeChecked()
+    await expect(sectionItems().getByRole('button')).toHaveCount(1)
+    await backToDocument().click()
+    await expect(elementButton('Interests')).toHaveAccessibleName('Interests hidden')
+    await expect(elementButton('Interests')).toHaveAccessibleDescription('1 item')
+  })
+
+  test('in a hidden empty section “+ Education” shows it and reveals its existing empty entry, and one undo hides it again', async () => {
+    await openNewCv()
+    await elementButton('Education').click()
+    await expect(panelTitle()).toHaveText('Education')
+    await expect.poll(focusedKey).toMatch(/^education:/)
+    const revealed = (await focusedKey())!.split(':')[1]
+    await sectionShown().uncheck()
+    await expect(sectionShown()).not.toBeChecked()
+
+    await addButton('Education').click()
+    await expect(sectionShown()).toBeChecked()
+    await expect.poll(focusedKey).toMatch(new RegExp(`^education:${revealed}:`))
+
+    await window.keyboard.press('Meta+z')
+    await expect(sectionShown()).not.toBeChecked()
+    await backToDocument().click()
+    await expect(elementButton('Education')).toHaveAccessibleDescription('1 item')
+  })
+})
+
 test('when an undo takes away the selected part of the CV, the Inspector returns to the Document panel', async () => {
   await openNewCv()
   const cropper = window.getByRole('dialog', { name: 'Crop photo' })

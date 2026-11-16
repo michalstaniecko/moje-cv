@@ -1199,6 +1199,12 @@ textarea:focus-visible {
   color: var(--ui-text-muted);
 }
 
+/* „+ Dodaj …” pod pozycjami sekcji (#140): zwykły przycisk, nie na całą szerokość panelu. */
+.inspector-add {
+  align-self: flex-start;
+  margin-top: -8px;
+}
+
 .inspector-group + .inspector-group {
   border-top: 1px solid var(--ui-border);
 }
