@@ -1,13 +1,11 @@
 // PROTOTYP – do wyrzucenia (gałąź prototype/global-options-ui). Nie łączyć z main.
 // Pytanie: gdzie i jak spójnie umieścić opcje globalne CV (szablon, kolor, font, język, zdjęcie, sekcje, klauzula…)
-// w edytorze WYSIWYG. Trzy warianty ekranu edytora, przełączane parametrem `?variant=` (A, B, C; `current` = obecny).
+// w edytorze WYSIWYG. Wybrany wariant A (Inspektor); `?variant=current` = obecny ekran do porównania. B i C odrzucone (historia gałęzi).
 import { useEffect, useState } from 'react'
 
 export const prototypeVariants = [
   { key: 'current', name: 'Obecny ekran (punkt odniesienia)' },
-  { key: 'A', name: 'Inspektor – panel kontekstowy po prawej' },
-  { key: 'B', name: 'Pasek formatowania nad stronami' },
-  { key: 'C', name: 'Tryb Projekt – osobny etap wyglądu' }
+  { key: 'A', name: 'Inspektor – panel kontekstowy po prawej' }
 ] as const
 
 export type PrototypeVariant = (typeof prototypeVariants)[number]['key']
