@@ -39,8 +39,8 @@ type DocxExportState =
 const idleUnlessExporting = <State extends { status: string }>(state: State): State | { status: 'idle' } =>
   state.status === 'exporting' ? state : { status: 'idle' }
 
-// Otwarte CV: pasek boczny (Outline, CV form albo szyna – canvas/EditorSidebar.tsx), strony z warstwą edycji, Inspector
-// po prawej stronie stron (inspector/Inspector.tsx) i eksport do PDF. W Preview mode strony i Inspector – bez paska
+// Otwarte CV: pasek boczny (CV form albo szyna – canvas/EditorSidebar.tsx), strony z warstwą edycji, Inspector po prawej
+// stronie stron (inspector/Inspector.tsx) i eksport do PDF. W Preview mode strony i Inspector – bez paska
 // bocznego i bez wyróżnień na kartkach; pasek narzędzi, cofanie i powiększenie działają w obu trybach.
 // `onBack` dostaje komendę menu Plik (Nowe CV, Dodaj przykładowe CV, Importuj…), gdy edytor wychodzi, żeby wykonała
 // ją biblioteka CV.
@@ -73,15 +73,14 @@ export function CvScreen({
   useEditorLifecycle(editor)
   const modeToggle = useRef<ModeToggleHandle>(null)
   const panes = useRef<HTMLDivElement>(null)
-  // Fokus, który nie ma dokąd wrócić (pole części CV, której już nie ma – np. po cofnięciu), trafia na pasek
-  // boczny: „Nagłówek” w Outline, przełącznik przy CV form, ikonę Outline na szynie (`data-safe-focus`); bez paska –
-  // na przełącznik trybu.
+  // Fokus, który nie ma dokąd wrócić (pole części CV, której już nie ma – np. po cofnięciu), trafia na Inspector – nagłówek
+  // jego pierwszej grupy (`data-safe-focus`); bez niego – na przełącznik trybu.
   const focusSafePlace = useCallback(() => {
     requestAnimationFrame(() => {
       const active = window.document.activeElement
       if (active && active !== window.document.body) return
-      const sidebar = panes.current?.querySelector<HTMLElement>('[data-safe-focus]')
-      if (sidebar) sidebar.focus()
+      const safePlace = panes.current?.querySelector<HTMLElement>('[data-safe-focus]')
+      if (safePlace) safePlace.focus()
       else modeToggle.current?.focus('edit')
     })
   }, [])
@@ -275,8 +274,6 @@ export function CvScreen({
           <EditorSidebar
             control={sidebar}
             editor={editor}
-            document={document}
-            session={session}
             formWidth={formWidth}
             clauses={clauses}
             onSaveClause={saveClause}
@@ -300,8 +297,8 @@ export function CvScreen({
             modeToggle.current?.focus('edit')
           }}
         />
-        {/* Inspector po prawej stronie stron – w obu trybach (panel „Dokument” z CV design). */}
-        <Inspector editor={editor} document={document} />
+        {/* Inspector po prawej stronie stron – w obu trybach (panel „Dokument” z CV design i „CV elements”). */}
+        <Inspector editor={editor} document={document} session={session} />
         {/* „Usunięto. Cofnij” ze stron i z CV form – w lewym dolnym rogu panelu stron. */}
         <RemovalMessage removal={removal.removal} onUndo={removal.undo} onExpire={removal.dismiss} />
       </div>

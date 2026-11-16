@@ -122,7 +122,7 @@ type TypingPath = { label: string; prepare: () => Promise<void>; type: (typed: s
 
 const typingInForm: TypingPath = {
   label: 'CV form',
-  // Pisanie w CV form (domyślny pasek boczny to Outline).
+  // Pisanie w CV form (domyślnie pasek boczny zwinięty do szyny).
   prepare: () => window.locator('.editor-panes').getByRole('button', { name: 'Form', exact: true }).click(),
   type: async (typed, paused) => {
     const summary = window.locator('.editor-form').getByLabel('Summary')
@@ -139,7 +139,7 @@ const typingInForm: TypingPath = {
 }
 
 // Na stronach (Page fields): podsumowanie na pierwszej stronie, potem punkt 1 ostatniego stanowiska (na ostatniej
-// stronie, kawałek S2). Domyślny pasek boczny (Outline), czyli strony szersze niż obok CV form;
+// stronie, kawałek S2). Domyślny pasek boczny (szyna), czyli strony szersze niż obok CV form;
 // `cv:keystroke-to-preview` mierzy pisanie na stronie (`markInput` z `input` pól, PreviewPane).
 const typingOnPage: TypingPath = {
   label: 'pages',

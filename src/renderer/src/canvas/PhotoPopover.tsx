@@ -5,13 +5,14 @@ import { setPhotoHidden, updateHeader } from '../editor/documentEdits'
 import { usePhotoPicker } from '../editor/fields/PhotoField'
 import type { RemoveWithUndo } from '../editor/removalUndo'
 import { useDictionary } from '../i18n'
+import { PHOTO_SWITCH_SELECTOR } from '../inspector/CvElements'
 import { FieldPopover, focusAfter } from './FieldPopover'
 import type { Fragment } from './fragmentRects'
 
 // Zdjęcie na stronie w Edit mode (docs/specs/wysiwyg-editing.md, W13): nad `img.cv-photo` leży w warstwie edycji
 // przezroczysty przycisk „Photo”, a klik, Enter albo spacja otwiera przy nim Field popover zdjęcia: „Change photo”
 // (wybór pliku i kadrowanie), „Crop photo” (ponowne kadrowanie zdjęcia z CV), „Hide photo” (zdjęcie znika ze stron, ale
-// zostaje w CV – fokus na przełącznik „Show photo on CV” w Outline, który je przywraca; docs/specs/
+// zostaje w CV – fokus na przełącznik „Show photo on CV” na liście „CV elements” Inspektora, który je przywraca; docs/specs/
 // outline-instead-of-cv-form.md, D2) i „Remove photo” (z „Removed. Undo”). Ukrytego zdjęcia nie ma na stronach, więc nie
 // ma też przycisku.
 // Okno kadrowania zostaje modalnym `dialog` jak w CV form (`usePhotoPicker`); po nim fokus wraca na przycisk, który je
@@ -22,7 +23,7 @@ import type { Fragment } from './fragmentRects'
 // zatwierdzeniu kadru fokus przechodzi na przycisk nowego zdjęcia na stronie, po anulowaniu wraca na przycisk paska
 // (`from`). Pliku, którego nie da się wczytać, dotyczy Field popover przy przycisku paska: komunikat i „Choose photo”
 // (ponowny wybór); Escape wraca na przycisk paska. `adding` – okno kadrowania i ten popover (warstwa rysuje je zawsze).
-// Tak samo dodaje zdjęcie wiersz „Photo” w Outline (photoRequests.ts). `focus()` – fokus na przycisku zdjęcia na stronie
+// Tak samo dodaje zdjęcie wiersz „Photo” na liście „CV elements” (photoRequests.ts). `focus()` – fokus na przycisku zdjęcia na stronie
 // (strony przewinięte do niego), a gdy go jeszcze nie ma – zaraz po jego pojawieniu się.
 export function usePhotoEditing({
   editor,
@@ -69,13 +70,14 @@ export function usePhotoEditing({
     })
     onFocusLost()
   }
-  // Ukrycie: fokus na przełączniku „Show photo on CV” w Outline (przywraca zdjęcie), a bez Outline – w bezpieczne miejsce.
+  // Ukrycie: fokus na przełączniku „Show photo on CV” na liście „CV elements” Inspektora (przywraca zdjęcie), a bez niej
+  // (np. zwinięta grupa) – w bezpieczne miejsce.
   const hide = () => {
     setOpen(false)
     editor.edit(setPhotoHidden(true))
-    const showSwitch = window.document.querySelector<HTMLElement>('.outline-photo [role="switch"]')
-    if (showSwitch) showSwitch.focus()
-    else onFocusLost()
+    const showSwitch = window.document.querySelector<HTMLElement>(PHOTO_SWITCH_SELECTOR)
+    showSwitch?.focus()
+    if (!showSwitch || window.document.activeElement !== showSwitch) onFocusLost()
   }
   const focus = () => {
     if (!button.current) {

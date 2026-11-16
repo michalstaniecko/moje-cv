@@ -6,26 +6,28 @@ type EditorSidebarSettings = {
   setEditorSidebar(sidebar: EditorSidebar): Promise<unknown>
 }
 
-type ExpandedSidebar = Exclude<EditorSidebar, 'collapsed'>
+// Widok paska bocznego: CV form albo szyna (zwinięty). Outline już nie ma (ADR-0012, #138) – zapisane `outline` z
+// wcześniejszych wersji pokazuje szynę, a plik ustawień zmienia się dopiero przy następnym wyborze.
+export type SidebarView = Exclude<EditorSidebar, 'outline'>
 
-// Pasek boczny edytora CV w Edit mode (docs/specs/inline-editing-redesign.md, Q13, Q14): Outline (domyślnie), CV form
-// albo szyna z ikonami. Preferencja jak szerokość formularza: pierwsze `load()` czyta plik ustawień, a wybór dokonany,
-// zanim odczyt się skończy, ma pierwszeństwo. Każdy wybór jest zapisywany; nieczytelny plik ustawień nie blokuje zmiany
-// w bieżącej sesji. `expand()` wraca z szyny do panelu, z którego ją zwinięto (po restarcie – do Outline).
+const viewOf = (saved: EditorSidebar | undefined): SidebarView => (saved === 'form' ? 'form' : 'collapsed')
+
+// Pasek boczny edytora CV w Edit mode – do czasu #135 tylko widok zapasowy: CV form albo szyna, domyślnie szyna
+// (strony i Inspector mają miejsce). Preferencja jak szerokość formularza: pierwsze `load()` czyta plik ustawień,
+// a wybór dokonany, zanim odczyt się skończy, ma pierwszeństwo. Każdy wybór jest zapisywany; nieczytelny plik ustawień
+// nie blokuje zmiany w bieżącej sesji. `expand()` rozwija szynę do CV form.
 export function createEditorSidebarPreference(settings: EditorSidebarSettings) {
-  let sidebar: EditorSidebar = 'outline'
-  let lastExpanded: ExpandedSidebar = 'outline'
+  let sidebar: SidebarView = 'collapsed'
   let loadStarted = false
   let chosenByUser = false
   const listeners = new Set<() => void>()
 
-  const set = (next: EditorSidebar) => {
-    if (next !== 'collapsed') lastExpanded = next
+  const set = (next: SidebarView) => {
     if (next === sidebar) return
     sidebar = next
     listeners.forEach((listener) => listener())
   }
-  const choose = (next: EditorSidebar) => {
+  const choose = (next: SidebarView) => {
     chosenByUser = true
     set(next)
     settings.setEditorSidebar(next).catch(() => undefined)
@@ -45,12 +47,12 @@ export function createEditorSidebarPreference(settings: EditorSidebarSettings) {
       settings
         .get()
         .then(({ editorSidebar }) => {
-          if (!chosenByUser) set(editorSidebar ?? 'outline')
+          if (!chosenByUser) set(viewOf(editorSidebar))
         })
         .catch(() => undefined)
     },
     choose,
-    expand: () => choose(lastExpanded)
+    expand: () => choose('form')
   }
 }
 
@@ -60,7 +62,7 @@ export type EditorSidebarPreference = ReturnType<typeof createEditorSidebarPrefe
 let sessionPreference: EditorSidebarPreference | null = null
 const preference = () => (sessionPreference ??= createEditorSidebarPreference(window.api.settings))
 
-// Odczyt preferencji jeszcze w bibliotece CV, żeby pierwsze otwarte CV nie pokazało na chwilę Outline zamiast CV form.
+// Odczyt preferencji jeszcze w bibliotece CV, żeby pierwsze otwarte CV nie pokazało na chwilę szyny zamiast CV form.
 export const preloadEditorSidebar = () => preference().load()
 
 export function useEditorSidebar() {

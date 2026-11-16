@@ -20,10 +20,10 @@ export type EditSession = ReturnType<typeof useEditSession>
 //   Gdy z dokumentu zniknie aktywne pole, a fokus nie ma dokąd wrócić (np. cofnięte dodanie wpisu z kursorem w nim),
 //   sesja woła `onFocusLost` (edytor przenosi fokus w bezpieczne miejsce).
 // - Otwarty Field popover daty (`datePopover`, DatePopover.tsx) – zamykany przy przejściu do Preview mode.
-// - `focusPart` stawia kursor w części CV na stronie (Outline, „Add to CV”, pigułki „+”, menu uchwytu): w jej polu,
+// - `focusPart` stawia kursor w części CV na stronie („CV elements”, „Add to CV”, pigułki „+”, menu uchwytu): w jej polu,
 //   a pustą część – także nowy wpis – odsłania (W10, W21). Edit card nie ma (W20).
 // - `announcer` – komunikaty `aria-live` o zmianach struktury z klawiatury i z menu uchwytu (W22, announcer.tsx).
-// - `photo` – prośby wiersza „Photo” w Outline do warstwy edycji: wybór zdjęcia i fokus na nim (photoRequests.ts).
+// - `photo` – prośby wiersza „Photo” na liście „CV elements” do warstwy edycji: wybór zdjęcia i fokus na nim (photoRequests.ts).
 // `current` – bieżący dokument edytora: część CV dodana tuż przed „otwarciem” (nowy kontakt, włączona klauzula) jest już
 // w nim, choć `document` z ostatniego renderu jeszcze jej nie ma.
 export function useEditSession(

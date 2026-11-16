@@ -227,7 +227,7 @@ function refOf(key: string, document: CvDocument): FieldRef | null {
   return null
 }
 
-// Klucz Page field (albo żetonu daty) części CV edytowanej na stronie (fokus z Outline, „Add to CV”, menu) albo null –
+// Klucz Page field (albo żetonu daty) części CV edytowanej na stronie (fokus z „CV elements”, „Add to CV”, menu) albo null –
 // część bez pola (zdjęcie). Wpis bez wskazanego pola (np. nowy wpis) – jego pierwsze pole tekstu: stanowisko albo poziom
 // wykształcenia (pusty wpis jest odsłaniany z placeholderami). Sekcja listowa bez wskazanego
 // elementu – jej pierwszy element; kontakt – jego pierwsze puste pole, a wypełniony – wartość; bez wskazanego kontaktu –

@@ -170,17 +170,13 @@ export const ru: Dictionary = {
     mode: { label: 'Режим', edit: 'Правка', preview: 'Просмотр' },
     history: 'История изменений',
     outline: {
-      title: 'Структура',
       empty: 'пустой',
       hidden: 'скрытый',
       form: 'Форма',
       collapse: 'Свернуть',
-      expand: 'Развернуть',
-      showOnCv: 'Показать в резюме',
       showSection: (name) => `Показать «${name}» в резюме`,
-      showToEdit: 'Покажите раздел в резюме, чтобы его редактировать',
       showPhoto: 'Показать фото в резюме',
-      showPhotoToEdit: 'Покажите фото в резюме, чтобы его редактировать',
+      showConsent: 'Показать согласие на обработку данных в резюме',
       items: {
         one: (count) => `${count} элемент`,
         few: (count) => `${count} элемента`,
@@ -231,7 +227,7 @@ export const ru: Dictionary = {
     inspector: {
       label: 'Инспектор',
       document: 'Документ',
-      groups: { template: 'Шаблон', style: 'Стиль', language: 'Язык' },
+      groups: { template: 'Шаблон', style: 'Стиль', elements: 'Элементы резюме', language: 'Язык' },
       colors: { teal: 'Морская волна', blue: 'Синий', graphite: 'Графитовый', violet: 'Фиолетовый', crimson: 'Малиновый', orange: 'Оранжевый', green: 'Зелёный', black: 'Чёрный' },
       customColor: 'Свой цвет',
       languageNote: 'Меняет постоянный текст резюме, например «по настоящее время». Ваш текст не переводится.'

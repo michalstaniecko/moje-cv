@@ -32,7 +32,7 @@ export type SortableRow = {
 // `onMove(id, toIndex)` – element ma trafić na pozycję `toIndex`; `children` dostaje sterowanie wiersza (`SortableRow`).
 // `onRemove` dodaje do menu wiersza „Usuń” (punkty i elementy list; całe wpisy usuwa się przyciskiem w ich polu) –
 // wywołujący usuwa element z „Usunięto. Cofnij” i decyduje o fokusie. `moreActions` dokłada do menu wiersza kolejne
-// pozycje po „Przenieś wyżej/niżej” (np. w Outline „Nowa strona przed”, „Ukryj sekcję”, „Dodaj …”); `focusHandle`
+// pozycje po „Przenieś wyżej/niżej” (np. w „CV elements” „Nowa strona przed”); `focusHandle`
 // wraca na uchwyt wiersza, gdy pozycja nie przenosi fokusu gdzie indziej.
 export function SortableList<T extends { id: string }>({
   items,

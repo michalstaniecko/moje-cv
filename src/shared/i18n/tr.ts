@@ -170,17 +170,13 @@ export const tr: Dictionary = {
     mode: { label: 'Mod', edit: 'Düzenleme', preview: 'Önizleme' },
     history: 'Değişiklik geçmişi',
     outline: {
-      title: 'Ana hat',
       empty: 'boş',
       hidden: 'gizli',
       form: 'Form',
       collapse: 'Daralt',
-      expand: 'Genişlet',
-      showOnCv: 'CV’de göster',
       showSection: (name) => `“${name}” bölümünü CV’de göster`,
-      showToEdit: 'Düzenlemek için bölümü CV’de gösterin',
       showPhoto: 'Fotoğrafı CV’de göster',
-      showPhotoToEdit: 'Düzenlemek için fotoğrafı CV’de gösterin',
+      showConsent: 'Onay metnini CV’de göster',
       items: { one: (count) => `${count} öğe`, other: (count) => `${count} öğe` },
       sidebar: 'Kenar çubuğu'
     },
@@ -226,7 +222,7 @@ export const tr: Dictionary = {
     inspector: {
       label: 'Denetçi',
       document: 'Belge',
-      groups: { template: 'Şablon', style: 'Stil', language: 'Dil' },
+      groups: { template: 'Şablon', style: 'Stil', elements: 'CV öğeleri', language: 'Dil' },
       colors: { teal: 'Petrol mavisi', blue: 'Mavi', graphite: 'Grafit', violet: 'Mor', crimson: 'Koyu kırmızı', orange: 'Turuncu', green: 'Yeşil', black: 'Siyah' },
       customColor: 'Özel renk',
       languageNote: 'CV’deki sabit metni değiştirir, örneğin “halen”. İçeriğiniz çevrilmez.'

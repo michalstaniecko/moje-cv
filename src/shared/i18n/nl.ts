@@ -177,17 +177,13 @@ export const nl: Dictionary = {
     mode: { label: 'Modus', edit: 'Bewerken', preview: 'Voorbeeld' },
     history: 'Wijzigingsgeschiedenis',
     outline: {
-      title: 'Overzicht',
       empty: 'leeg',
       hidden: 'verborgen',
       form: 'Formulier',
       collapse: 'Inklappen',
-      expand: 'Uitklappen',
-      showOnCv: 'Tonen op cv',
       showSection: (name) => `“${name}” tonen op cv`,
-      showToEdit: 'Toon de sectie op het cv om hem te bewerken',
       showPhoto: 'Foto tonen op cv',
-      showPhotoToEdit: 'Toon de foto op het cv om deze te bewerken',
+      showConsent: 'Toestemmingsverklaring tonen op cv',
       items: { one: (count) => `${count} item`, other: (count) => `${count} items` },
       sidebar: 'Zijbalk'
     },
@@ -233,7 +229,7 @@ export const nl: Dictionary = {
     inspector: {
       label: 'Inspector',
       document: 'Document',
-      groups: { template: 'Sjabloon', style: 'Stijl', language: 'Taal' },
+      groups: { template: 'Sjabloon', style: 'Stijl', elements: 'Cv-onderdelen', language: 'Taal' },
       colors: { teal: 'Petrol', blue: 'Blauw', graphite: 'Grafiet', violet: 'Violet', crimson: 'Karmijn', orange: 'Oranje', green: 'Groen', black: 'Zwart' },
       customColor: 'Eigen kleur',
       languageNote: 'Verandert vaste tekst op het cv, zoals “heden”. Je inhoud wordt niet vertaald.'

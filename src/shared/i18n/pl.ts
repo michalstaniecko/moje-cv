@@ -170,17 +170,13 @@ export const pl: Dictionary = {
     mode: { label: 'Tryb', edit: 'Edycja', preview: 'Podgląd' },
     history: 'Historia zmian',
     outline: {
-      title: 'Konspekt',
       empty: 'pusta',
       hidden: 'ukryta',
       form: 'Formularz',
       collapse: 'Zwiń',
-      expand: 'Rozwiń',
-      showOnCv: 'Pokaż na CV',
       showSection: (name) => `Pokaż „${name}” na CV`,
-      showToEdit: 'Pokaż sekcję na CV, żeby ją edytować',
       showPhoto: 'Pokaż zdjęcie na CV',
-      showPhotoToEdit: 'Pokaż zdjęcie na CV, żeby je edytować',
+      showConsent: 'Pokaż klauzulę zgody na CV',
       items: {
         one: (count) => `${count} element`,
         few: (count) => `${count} elementy`,
@@ -231,7 +227,7 @@ export const pl: Dictionary = {
     inspector: {
       label: 'Inspektor',
       document: 'Dokument',
-      groups: { template: 'Szablon', style: 'Styl', language: 'Język' },
+      groups: { template: 'Szablon', style: 'Styl', elements: 'Elementy CV', language: 'Język' },
       colors: { teal: 'Morski', blue: 'Niebieski', graphite: 'Grafitowy', violet: 'Fioletowy', crimson: 'Karmazynowy', orange: 'Pomarańczowy', green: 'Zielony', black: 'Czarny' },
       customColor: 'Własny kolor',
       languageNote: 'Zmienia stały tekst na CV, np. „obecnie”. Twoja treść nie jest tłumaczona.'

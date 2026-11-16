@@ -170,17 +170,13 @@ export const vi: Dictionary = {
     mode: { label: 'Chế độ', edit: 'Chỉnh sửa', preview: 'Xem trước' },
     history: 'Lịch sử thay đổi',
     outline: {
-      title: 'Dàn ý',
       empty: 'trống',
       hidden: 'đã ẩn',
       form: 'Biểu mẫu',
       collapse: 'Thu gọn',
-      expand: 'Mở rộng',
-      showOnCv: 'Hiện trên CV',
       showSection: (name) => `Hiện “${name}” trên CV`,
-      showToEdit: 'Hiện mục trên CV để chỉnh sửa',
       showPhoto: 'Hiện ảnh trên CV',
-      showPhotoToEdit: 'Hiện ảnh trên CV để chỉnh sửa',
+      showConsent: 'Hiện điều khoản đồng ý trên CV',
       items: { other: (count) => `${count} mục` },
       sidebar: 'Thanh bên'
     },
@@ -226,7 +222,7 @@ export const vi: Dictionary = {
     inspector: {
       label: 'Bảng thuộc tính',
       document: 'Tài liệu',
-      groups: { template: 'Mẫu', style: 'Kiểu', language: 'Ngôn ngữ' },
+      groups: { template: 'Mẫu', style: 'Kiểu', elements: 'Thành phần CV', language: 'Ngôn ngữ' },
       colors: { teal: 'Xanh mòng két', blue: 'Xanh dương', graphite: 'Than chì', violet: 'Tím', crimson: 'Đỏ thẫm', orange: 'Cam', green: 'Xanh lá', black: 'Đen' },
       customColor: 'Màu tùy chỉnh',
       languageNote: 'Thay đổi chữ cố định trên CV, như “hiện tại”. Nội dung của bạn không được dịch.'

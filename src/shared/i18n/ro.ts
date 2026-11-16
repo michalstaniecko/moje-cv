@@ -170,17 +170,13 @@ export const ro: Dictionary = {
     mode: { label: 'Mod', edit: 'Editare', preview: 'Previzualizare' },
     history: 'Istoricul modificărilor',
     outline: {
-      title: 'Structură',
       empty: 'goală',
       hidden: 'ascunsă',
       form: 'Formular',
       collapse: 'Restrânge',
-      expand: 'Extinde',
-      showOnCv: 'Arată în CV',
       showSection: (name) => `Arată „${name}” în CV`,
-      showToEdit: 'Arată secțiunea în CV pentru a o edita',
       showPhoto: 'Arată fotografia în CV',
-      showPhotoToEdit: 'Arată fotografia în CV pentru a o edita',
+      showConsent: 'Arată clauza de acord în CV',
       items: {
         one: (count) => `${count} element`,
         few: (count) => `${count} elemente`,
@@ -230,7 +226,7 @@ export const ro: Dictionary = {
     inspector: {
       label: 'Inspector',
       document: 'Document',
-      groups: { template: 'Șablon', style: 'Stil', language: 'Limbă' },
+      groups: { template: 'Șablon', style: 'Stil', elements: 'Elementele CV-ului', language: 'Limbă' },
       colors: { teal: 'Petrol', blue: 'Albastru', graphite: 'Grafit', violet: 'Violet', crimson: 'Carmin', orange: 'Portocaliu', green: 'Verde', black: 'Negru' },
       customColor: 'Culoare personalizată',
       languageNote: 'Schimbă textul fix din CV, de exemplu „prezent”. Conținutul tău nu este tradus.'
